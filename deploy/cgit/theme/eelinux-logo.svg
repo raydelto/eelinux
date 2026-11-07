@@ -1,0 +1,6 @@
+<!-- Iniciais do Emotion Engine, com a tipografia e as cores do sitio. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">eeLinux</title>
+  <rect x="0.5" y="0.5" width="63" height="63" fill="#183e77" stroke="#183e77"/>
+  <text x="6" y="47" fill="#faf9f3" font-family="Georgia,serif" font-size="48" font-style="italic" font-weight="bold">ee</text>
+</svg>
