@@ -1,0 +1,34 @@
+{
+  "target": "mipsr5900el-unknown-linux-gnu",
+  "sources": [
+    {
+      "name": "binutils",
+      "version": "2.44",
+      "url": "https://ftp.gnu.org/gnu/binutils/binutils-2.44.tar.xz",
+      "algorithm": "sha512",
+      "digest": "b85d3bbc0e334cf67a96219d3c7c65fbf3e832b2c98a7417bf131f3645a0307057ec81cd2b29ff2563cec53e3d42f73e2c60cc5708e80d4a730efdcc6ae14ad7",
+      "hash_source": "https://gcc.gnu.org/pub/binutils/releases/sha512.sum"
+    },
+    {
+      "name": "gcc",
+      "version": "14.4.0",
+      "url": "https://ftp.gnu.org/gnu/gcc/gcc-14.4.0/gcc-14.4.0.tar.xz",
+      "algorithm": "sha512",
+      "digest": "725ed8bdd43ef1726ffe8b5e8615a13e247fac9575b7626ae013a2975d000ea213212dc414b2f2631ac4785c1c8beca85555222faf9904d3b2fa6a3807a83a15",
+      "hash_source": "https://gcc.gnu.org/pub/gcc/releases/gcc-14.4.0/sha512.sum"
+    },
+    {
+      "name": "glibc",
+      "version": "2.41",
+      "url": "https://ftp.gnu.org/gnu/glibc/glibc-2.41.tar.xz",
+      "algorithm": "sha256",
+      "digest": "a5a26b22f545d6b7d7b3dd828e11e428f24f4fac43c934fb071b6a7d0828e901",
+      "hash_source": "Downloaded official release and hashed locally; see release signature alongside the archive"
+    }
+  ],
+  "ps2dev": {
+    "repository": "https://github.com/ps2dev/ps2dev.git",
+    "commit": "0463697a324b3d3c000636e6fd12324b0f2a8df2",
+    "note": "Optional official SDK bootstrap; upstream dependency scripts use moving revisions. Use an installed versioned PS2DEV SDK for a reproducible IOP firmware build."
+  }
+}
