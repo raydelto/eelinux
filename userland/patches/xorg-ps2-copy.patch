@@ -1,0 +1,203 @@
+--- a/hw/xfree86/drivers/ps2/ps2_gc.c
++++ b/hw/xfree86/drivers/ps2/ps2_gc.c
+@@ -197,6 +197,19 @@
+     SOLID(PolySegment); SOLID(PolyRectangle); SOLID(PolyFillRect);
+ #undef SOLID
+ }
++static void copy_ops(struct ps2_gc_private *p)
++{
++    const GCOps *native=p->owner->copy_ops;
++    p->glyph.ops.CopyArea=native ? native->CopyArea : forward_CopyArea;
++}
++Bool ps2_gc_screen_set_copy_ops(struct ps2_gc_screen *b,const GCOps *ops)
++{
++    if(!b || !b->installed || (ops && !ops->CopyArea)) return FALSE;
++    b->copy_ops=ops;
++    for(struct ps2_gc_private *p=b->gcs;p;p=p->next)
++        if(p->glyph.gc) copy_ops(p);
++    return TRUE;
++}
+ Bool ps2_gc_screen_set_solid_ops(struct ps2_gc_screen *b, const GCOps *ops)
+ {
+     if (!b || !b->installed || (ops && (!ops->FillSpans || !ops->PolyPoint ||
+@@ -218,6 +231,7 @@
+     FORWARD(FillPolygon); FORWARD(PolyFillRect); FORWARD(PolyFillArc); FORWARD(PushPixels);
+ #undef FORWARD
+     solid_ops(p);
++    copy_ops(p);
+     p->glyph.ops.PolyText8 = poly8; p->glyph.ops.PolyText16 = poly16;
+     p->glyph.ops.ImageText8 = image8; p->glyph.ops.ImageText16 = image16;
+ }
+--- a/hw/xfree86/drivers/ps2/ps2_gc.h
++++ b/hw/xfree86/drivers/ps2/ps2_gc.h
+@@ -12,6 +12,7 @@
+     CloseScreenProcPtr CloseScreen;
+     struct ps2_gc_private *gcs;
+     const GCOps *solid_ops;
++    const GCOps *copy_ops;
+     unsigned count;
+     Bool installed;
+ };
+@@ -30,4 +31,6 @@
+  * the table must outlive its registration. All six callbacks are required.
+  * NULL restores lower dispatch in every currently validated GC. */
+ Bool ps2_gc_screen_set_solid_ops(struct ps2_gc_screen *, const GCOps *);
++/* Optional native CopyArea table; NULL restores lower dispatch. */
++Bool ps2_gc_screen_set_copy_ops(struct ps2_gc_screen *, const GCOps *);
+ #endif
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_copy.c
+@@ -0,0 +1,111 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_copy.h"
++#include "ps2_copy_batch.h"
++#include "ps2_gs_surface.h"
++#include "windowstr.h"
++#include "regionstr.h"
++#include "damage.h"
++#include "mi.h"
++#include "os.h"
++#include <errno.h>
++#include <limits.h>
++#include <string.h>
++
++static DevPrivateKeyRec key;
++static const GCOps operations;
++static Bool close_screen(ScreenPtr);
++struct storage { uint32_t handle; int ox,oy; const struct ps2_surface *surface; };
++struct request { struct ps2_copy_screen *owner; struct storage source,destination; };
++static void fail(const char *reason) { FatalError("PS2 GS: native CopyArea failed: %s\n",reason); }
++static struct storage storage(DrawablePtr d,struct ps2_copy_screen *b)
++{
++    ScreenPtr s=b->screen;
++    PixmapPtr p=d->type==DRAWABLE_PIXMAP ? (PixmapPtr)d :
++        d->type==DRAWABLE_WINDOW && s->GetWindowPixmap ? s->GetWindowPixmap((WindowPtr)d) : NULL;
++    struct storage result={0};
++    if(!p || p->drawable.pScreen!=s || !s->GetScreenPixmap) fail("missing drawable storage");
++    if(p!=s->GetScreenPixmap(s)) {
++        const void *private=exaGetPixmapDriverPrivate(p);
++        if(!private) fail("missing owned pixmap");
++        memcpy(&result.handle,private,sizeof(result.handle));
++        if(!result.handle) fail("unallocated pixmap");
++    }
++    struct ps2_render_client *r=ps2_pipe_context_render(b->context);
++    result.surface=r ? ps2_surface_lookup(r->gs,result.handle) : NULL;
++    if(!result.surface || r->gs!=b->gc->exa->gs ||
++        p->drawable.width!=result.surface->width || p->drawable.height!=result.surface->height ||
++        p->drawable.bitsPerPixel!=result.surface->bits_per_pixel ||
++        d->bitsPerPixel!=result.surface->bits_per_pixel ||
++        d->depth!=(result.surface->bits_per_pixel==16 ? 15 : 24)) fail("incompatible native storage");
++#ifdef COMPOSITE
++    if(d->type==DRAWABLE_WINDOW) { result.ox=p->screen_x;result.oy=p->screen_y; }
++#endif
++    return result;
++}
++static void copy_region(DrawablePtr source,DrawablePtr d,GCPtr gc,BoxPtr boxes,int n,
++    int dx,int dy,Bool reverse,Bool upside,Pixel plane,void *closure)
++{
++    (void)source;(void)reverse;(void)upside;(void)plane;
++    struct request *r=closure;
++    if(n<0 || n>(int)PS2_PIPE_MAX_COPY_BOXES || (n && !boxes)) fail("clipped region exceeds native limit");
++    struct ps2_pipe_copy_box jobs[PS2_PIPE_MAX_COPY_BOXES];
++    for(int i=0;i<n;++i) {
++        const BoxRec *b=boxes+i;
++        jobs[i]=(struct ps2_pipe_copy_box){.sx=(int)b->x1+dx-r->source.ox,
++            .sy=(int)b->y1+dy-r->source.oy,.dx=(int)b->x1-r->destination.ox,
++            .dy=(int)b->y1-r->destination.oy,.width=(int)b->x2-b->x1,.height=(int)b->y2-b->y1};
++    }
++    if(!n || !(gc->planemask&((1U<<d->depth)-1)) || gc->alu==GXnoop) return;
++    if(ps2_pipe_copy_boxes(r->owner->context,r->source.handle,r->destination.handle,jobs,n)) fail(strerror(errno));
++    exaMarkSync(d->pScreen);
++    DamageRegionAppend(d,gc->pCompositeClip);DamageRegionProcessPending(d);
++}
++static int coordinates(DrawablePtr d,int x,int y,int w,int h)
++{
++    int64_t a=(int64_t)d->x+x,b=(int64_t)d->y+y;
++    return a>=SHRT_MIN && b>=SHRT_MIN && a+w<=SHRT_MAX && b+h<=SHRT_MAX;
++}
++static RegionPtr copy_area(DrawablePtr source,DrawablePtr d,GCPtr gc,int x,int y,int w,int h,int dx,int dy)
++{
++    if(!source || !d || !gc || source->pScreen!=d->pScreen || d->pScreen!=gc->pScreen ||
++        !gc->pCompositeClip || source->depth!=d->depth || w<0 || h<0 || w>2048 || h>2048 ||
++        !coordinates(source,x,y,w,h) || !coordinates(d,dx,dy,w,h)) fail("invalid drawable or copy coordinates");
++    struct ps2_copy_screen *b=dixLookupPrivate(&d->pScreen->devPrivates,&key);
++    if(!b || !b->installed || !b->gc->installed || b->gc->copy_ops!=&operations ||
++        !b->screen->SourceValidate) fail("missing copy owner or source validation");
++    if(ps2_pipe_context_acquire(b->context)) fail("context is closed or failed");
++    ps2_pipe_context_release(b->context);
++    struct request r={.owner=b,.source=storage(source,b),.destination=storage(d,b)};
++    uint32_t mask=(1U<<d->depth)-1;
++    if(gc->alu!=GXnoop && ((gc->alu!=GXcopy) ||
++        ((gc->planemask&mask) && (gc->planemask&mask)!=mask))) fail("unsupported copy ALU or plane mask");
++    /* miDoCopy performs geometry/exposure bookkeeping only; this callback
++     * exclusively submits native GS drawing, including all overlap handling. */
++    return miDoCopy(source,d,gc,x,y,w,h,dx,dy,copy_region,0,&r);
++}
++static const GCOps operations={.CopyArea=copy_area};
++Bool ps2_copy_screen_prepare(ScreenPtr s,struct ps2_copy_screen *b,struct ps2_gc_screen *gc)
++{
++    if(!s || !b || b->installed || !gc || !gc->installed || gc->screen!=s || gc->copy_ops ||
++        !s->CloseScreen || !s->SourceValidate || !dixRegisterPrivateKey(&key,PRIVATE_SCREEN,0) ||
++        dixLookupPrivate(&s->devPrivates,&key) || ps2_pipe_context_acquire(gc->context)) return FALSE;
++    *b=(struct ps2_copy_screen){.gc=gc,.context=gc->context,.screen=s,.CloseScreen=s->CloseScreen,.installed=TRUE};
++    if(!ps2_gc_screen_set_copy_ops(gc,&operations)) {
++        ps2_pipe_context_release(b->context);memset(b,0,sizeof(*b));return FALSE;
++    }
++    dixSetPrivate(&s->devPrivates,&key,b);s->CloseScreen=close_screen;return TRUE;
++}
++void ps2_copy_screen_cleanup(struct ps2_copy_screen *b)
++{
++    if(!b || !b->installed) return;
++    if(b->screen->CloseScreen!=close_screen || !b->gc->installed ||
++        b->gc->copy_ops!=&operations || !ps2_gc_screen_set_copy_ops(b->gc,NULL)) fail("copy callback owner changed");
++    b->screen->CloseScreen=b->CloseScreen;dixSetPrivate(&b->screen->devPrivates,&key,NULL);
++    struct pipe_context *ctx=b->context;memset(b,0,sizeof(*b));ps2_pipe_context_release(ctx);
++}
++static Bool close_screen(ScreenPtr s)
++{
++    struct ps2_copy_screen *b=dixLookupPrivate(&s->devPrivates,&key);
++    if(!b || !b->installed) fail("missing copy screen at close");
++    CloseScreenProcPtr lower=b->CloseScreen;ps2_copy_screen_cleanup(b);return lower(s);
++}
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_copy.h
+@@ -0,0 +1,19 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_XORG_COPY_H
++#define PS2_XORG_COPY_H
++#include "ps2_gc.h"
++struct ps2_copy_screen {
++    struct ps2_gc_screen *gc;
++    struct pipe_context *context;
++    ScreenPtr screen;
++    CloseScreenProcPtr CloseScreen;
++    Bool installed;
++};
++/* Install after GC/solid preparation. Uses upstream miDoCopy for source and
++ * destination clipping, SourceValidate and GraphicsExpose/NoExpose handling.
++ * Native GXcopy/full RGB masks and GXnoop; no CPU pixel fallback. At most
++ * 256 clipped boxes and 1,048,576 copied pixels per request. Cleanup before
++ * solid/GC teardown; other CloseScreen wrappers must unwrap first. */
++Bool ps2_copy_screen_prepare(ScreenPtr, struct ps2_copy_screen *, struct ps2_gc_screen *);
++void ps2_copy_screen_cleanup(struct ps2_copy_screen *);
++#endif
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_copy_batch.h
+@@ -0,0 +1,17 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_COPY_BATCH_H
++#define PS2_COPY_BATCH_H
++#include <stdint.h>
++struct pipe_context;
++struct ps2_pipe_copy_box { int32_t sx, sy, dx, dy, width, height; };
++#define PS2_PIPE_MAX_COPY_BOXES 256U
++#define PS2_PIPE_MAX_COPY_PIXELS 1048576U
++/* Native GXcopy/full RGB mask. Boxes form a nonoverlapping banded region with
++ * one source-to-destination translation, in any order. Handles belong to this
++ * context's exclusive GS file; zero names its front surface. The whole region
++ * is validated before flushing or allocating. Overlaps use memmove ordering.
++ * Unaligned widths use one 8 KiB GS scratch page, never CPU pixel readback.
++ * Color/depth bindings and resource references remain unchanged. */
++int ps2_pipe_copy_boxes(struct pipe_context *, uint32_t source, uint32_t destination,
++    const struct ps2_pipe_copy_box *, unsigned count);
++#endif

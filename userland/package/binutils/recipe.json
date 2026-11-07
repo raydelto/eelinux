@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "name": "binutils",
+  "engine": "userland/package/eelinux-binutils/eelinux-binutils.mk",
+  "source": {
+    "name": "binutils",
+    "version": "2.47",
+    "url": "https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz",
+    "algorithm": "sha256",
+    "digest": "154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff",
+    "hash_source": "https://sourceware.org/pipermail/binutils/2026-July/150520.html",
+    "release_source": "https://sourceware.org/pub/binutils/releases/"
+  },
+  "source_archive": "../../sources/binutils-2.47.tar.xz"
+}

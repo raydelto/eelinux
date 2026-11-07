@@ -1,0 +1,2315 @@
+{
+  "schema": 1,
+  "project": "eeLinux",
+  "source_date_epoch": 1789074000,
+  "buildroot": {
+    "version": "2025.02.18",
+    "url": "https://buildroot.org/downloads/buildroot-2025.02.18.tar.xz",
+    "sha256": "e38ad1df6ea0479fff6419a87a64535d02131674d463be154a763ef725b55321",
+    "checksum_provenance": "SHA256 calculated from official HTTPS release archive on 2026-10-01"
+  },
+  "libc": {
+    "implementation": "GNU glibc",
+    "origin": "validated external R5900 Linux toolchain; GNU glibc ABI required"
+  },
+  "profiles": {
+    "base": {
+      "symbols": [
+        "BR2_PACKAGE_BASH",
+        "BR2_PACKAGE_COREUTILS",
+        "BR2_PACKAGE_FINDUTILS",
+        "BR2_PACKAGE_DIFFUTILS",
+        "BR2_PACKAGE_GREP",
+        "BR2_PACKAGE_SED",
+        "BR2_PACKAGE_GAWK",
+        "BR2_PACKAGE_TAR",
+        "BR2_PACKAGE_GZIP",
+        "BR2_PACKAGE_CPIO",
+        "BR2_PACKAGE_BC",
+        "BR2_PACKAGE_ED",
+        "BR2_PACKAGE_NANO",
+        "BR2_PACKAGE_LESS",
+        "BR2_PACKAGE_READLINE",
+        "BR2_PACKAGE_NCURSES",
+        "BR2_PACKAGE_NCURSES_WCHAR",
+        "BR2_PACKAGE_NCURSES_TARGET_PROGS",
+        "BR2_PACKAGE_SYSVINIT",
+        "BR2_PACKAGE_UTIL_LINUX",
+        "BR2_PACKAGE_UTIL_LINUX_BINARIES",
+        "BR2_PACKAGE_UTIL_LINUX_MOUNT",
+        "BR2_PACKAGE_UTIL_LINUX_MOUNTPOINT",
+        "BR2_PACKAGE_UTIL_LINUX_AGETTY",
+        "BR2_PACKAGE_UTIL_LINUX_FSCK",
+        "BR2_PACKAGE_UTIL_LINUX_SULOGIN",
+        "BR2_PACKAGE_UTIL_LINUX_SWITCH_ROOT",
+        "BR2_PACKAGE_UTIL_LINUX_PIVOT_ROOT",
+        "BR2_PACKAGE_UTIL_LINUX_SU",
+        "BR2_PACKAGE_UTIL_LINUX_SETTERM",
+        "BR2_PACKAGE_E2FSPROGS",
+        "BR2_PACKAGE_PROCPS_NG",
+        "BR2_PACKAGE_SHADOW",
+        "BR2_PACKAGE_SHADOW_SHA_CRYPT",
+        "BR2_PACKAGE_KMOD",
+        "BR2_PACKAGE_KMOD_TOOLS",
+        "BR2_PACKAGE_IPROUTE2",
+        "BR2_PACKAGE_IPUTILS",
+        "BR2_PACKAGE_IPUTILS_PING",
+        "BR2_PACKAGE_IPUTILS_TRACEPATH",
+        "BR2_PACKAGE_EELINUX_DHCPCD",
+        "BR2_PACKAGE_SYSKLOGD",
+        "BR2_PACKAGE_PSMISC",
+        "BR2_PACKAGE_E2FSPROGS_RESIZE2FS",
+        "BR2_PACKAGE_BZIP2",
+        "BR2_PACKAGE_XZ",
+        "BR2_PACKAGE_PATCH",
+        "BR2_PACKAGE_UTIL_LINUX_CAL",
+        "BR2_PACKAGE_UTIL_LINUX_EJECT",
+        "BR2_PACKAGE_UTIL_LINUX_FALLOCATE",
+        "BR2_PACKAGE_UTIL_LINUX_HARDLINK",
+        "BR2_PACKAGE_UTIL_LINUX_HWCLOCK",
+        "BR2_PACKAGE_UTIL_LINUX_IPCMK",
+        "BR2_PACKAGE_UTIL_LINUX_IPCRM",
+        "BR2_PACKAGE_UTIL_LINUX_IPCS",
+        "BR2_PACKAGE_UTIL_LINUX_IRQTOP",
+        "BR2_PACKAGE_UTIL_LINUX_LOGGER",
+        "BR2_PACKAGE_UTIL_LINUX_LOSETUP",
+        "BR2_PACKAGE_UTIL_LINUX_LSFD",
+        "BR2_PACKAGE_UTIL_LINUX_LSLOGINS",
+        "BR2_PACKAGE_UTIL_LINUX_LSMEM",
+        "BR2_PACKAGE_UTIL_LINUX_MESG",
+        "BR2_PACKAGE_UTIL_LINUX_NOLOGIN",
+        "BR2_PACKAGE_UTIL_LINUX_NSENTER",
+        "BR2_PACKAGE_UTIL_LINUX_PARTX",
+        "BR2_PACKAGE_UTIL_LINUX_RENAME",
+        "BR2_PACKAGE_UTIL_LINUX_SCHEDUTILS",
+        "BR2_PACKAGE_UTIL_LINUX_UNSHARE",
+        "BR2_PACKAGE_UTIL_LINUX_WAITPID",
+        "BR2_PACKAGE_UTIL_LINUX_WALL",
+        "BR2_PACKAGE_UTIL_LINUX_WIPEFS",
+        "BR2_PACKAGE_UTIL_LINUX_ZRAMCTL",
+        "BR2_PACKAGE_E2FSPROGS_DEBUGFS",
+        "BR2_PACKAGE_E2FSPROGS_E2IMAGE",
+        "BR2_PACKAGE_E2FSPROGS_E4DEFRAG",
+        "BR2_PACKAGE_FILE",
+        "BR2_PACKAGE_STRACE",
+        "BR2_PACKAGE_LSOF",
+        "BR2_PACKAGE_RSYNC",
+        "BR2_PACKAGE_LIBCURL",
+        "BR2_PACKAGE_JQ",
+        "BR2_PACKAGE_NETCAT",
+        "BR2_PACKAGE_TCPDUMP",
+        "BR2_PACKAGE_ETHTOOL",
+        "BR2_PACKAGE_DOSFSTOOLS",
+        "BR2_PACKAGE_DOSFSTOOLS_MKFS_FAT",
+        "BR2_PACKAGE_DOSFSTOOLS_FSCK_FAT",
+        "BR2_PACKAGE_DOSFSTOOLS_FATLABEL",
+        "BR2_PACKAGE_MTOOLS",
+        "BR2_PACKAGE_ZIP",
+        "BR2_PACKAGE_UNZIP",
+        "BR2_PACKAGE_TREE",
+        "BR2_PACKAGE_OPENSSH",
+        "BR2_PACKAGE_OPENSSH_CLIENT",
+        "BR2_PACKAGE_OPENSSH_KEY_UTILS",
+        "BR2_PACKAGE_LIBCURL_CURL",
+        "BR2_PACKAGE_LIBCURL_VERBOSE",
+        "BR2_PACKAGE_LIBCURL_OPENSSL",
+        "BR2_PACKAGE_OPENSSL",
+        "BR2_PACKAGE_CA_CERTIFICATES",
+        "BR2_PACKAGE_SHADOW_SHADOWGRP",
+        "BR2_PACKAGE_LIBOPENSSL_BIN",
+        "BR2_PACKAGE_ATFTP",
+        "BR2_PACKAGE_BMON",
+        "BR2_PACKAGE_BRIDGE_UTILS",
+        "BR2_PACKAGE_CONNTRACK_TOOLS",
+        "BR2_PACKAGE_FPING",
+        "BR2_PACKAGE_IFTOP",
+        "BR2_PACKAGE_IPCALC",
+        "BR2_PACKAGE_IPERF",
+        "BR2_PACKAGE_IPERF3",
+        "BR2_PACKAGE_IPSET",
+        "BR2_PACKAGE_IPTABLES",
+        "BR2_PACKAGE_IPTABLES_NFTABLES",
+        "BR2_PACKAGE_IPTABLES_BPF_NFSYNPROXY",
+        "BR2_PACKAGE_IPTRAF_NG",
+        "BR2_PACKAGE_IW",
+        "BR2_PACKAGE_LFTP",
+        "BR2_PACKAGE_LFTP_CMD_MIRROR",
+        "BR2_PACKAGE_LFTP_CMD_SLEEP",
+        "BR2_PACKAGE_LFTP_CMD_TORRENT",
+        "BR2_PACKAGE_LFTP_PROTO_FISH",
+        "BR2_PACKAGE_LFTP_PROTO_FTP",
+        "BR2_PACKAGE_LFTP_PROTO_HTTP",
+        "BR2_PACKAGE_LFTP_PROTO_SFTP",
+        "BR2_PACKAGE_LIBIDN2",
+        "BR2_PACKAGE_LIBSSH2",
+        "BR2_PACKAGE_MTR",
+        "BR2_PACKAGE_NCFTP",
+        "BR2_PACKAGE_NCFTP_GET",
+        "BR2_PACKAGE_NCFTP_PUT",
+        "BR2_PACKAGE_NCFTP_LS",
+        "BR2_PACKAGE_NCFTP_BATCH",
+        "BR2_PACKAGE_NCFTP_BOOKMARKS",
+        "BR2_PACKAGE_NET_TOOLS",
+        "BR2_PACKAGE_NETHOGS",
+        "BR2_PACKAGE_NFTABLES",
+        "BR2_PACKAGE_NGREP",
+        "BR2_PACKAGE_NLOAD",
+        "BR2_PACKAGE_NMAP",
+        "BR2_PACKAGE_NMAP_NMAP",
+        "BR2_PACKAGE_NMAP_NCAT",
+        "BR2_PACKAGE_NMAP_NPING",
+        "BR2_PACKAGE_NTP",
+        "BR2_PACKAGE_NTP_SNTP",
+        "BR2_PACKAGE_NTP_NTP_KEYGEN",
+        "BR2_PACKAGE_NTP_NTPDATE",
+        "BR2_PACKAGE_NTP_NTPDC",
+        "BR2_PACKAGE_NTP_NTPQ",
+        "BR2_PACKAGE_NTP_NTPTIME",
+        "BR2_PACKAGE_NTP_TICKADJ",
+        "BR2_PACKAGE_OPENSSH_SERVER",
+        "BR2_PACKAGE_OPENVPN",
+        "BR2_PACKAGE_OPENVPN_LZ4",
+        "BR2_PACKAGE_OPENVPN_LZO",
+        "BR2_PACKAGE_SOCAT",
+        "BR2_PACKAGE_TCPING",
+        "BR2_PACKAGE_TFTPD",
+        "BR2_PACKAGE_TRACEROUTE",
+        "BR2_PACKAGE_WHOIS",
+        "BR2_PACKAGE_WIREGUARD_TOOLS",
+        "BR2_PACKAGE_WIRELESS_TOOLS",
+        "BR2_PACKAGE_WIRELESS_TOOLS_IWCONFIG",
+        "BR2_PACKAGE_WIRELESS_TOOLS_IFRENAME",
+        "BR2_PACKAGE_WIRELESS_TOOLS_LIB",
+        "BR2_PACKAGE_WPA_SUPPLICANT",
+        "BR2_PACKAGE_WPA_SUPPLICANT_NL80211",
+        "BR2_PACKAGE_WPA_SUPPLICANT_WEXT",
+        "BR2_PACKAGE_WPA_SUPPLICANT_WIRED",
+        "BR2_PACKAGE_WPA_SUPPLICANT_EAP",
+        "BR2_PACKAGE_WPA_SUPPLICANT_WPA3",
+        "BR2_PACKAGE_WPA_SUPPLICANT_CLI",
+        "BR2_PACKAGE_WPA_SUPPLICANT_PASSPHRASE",
+        "BR2_PACKAGE_WGET",
+        "BR2_PACKAGE_LIBCURL_PROXY_SUPPORT",
+        "BR2_PACKAGE_LIBCURL_COOKIES_SUPPORT",
+        "BR2_PACKAGE_LIBCURL_EXTRA_PROTOCOLS_FEATURES",
+        "BR2_PACKAGE_LIBCURL_WEBSOCKETS_SUPPORT",
+        "BR2_PACKAGE_CIFS_UTILS",
+        "BR2_PACKAGE_NFS_UTILS",
+        "BR2_PACKAGE_NFS_UTILS_NFSV4",
+        "BR2_PACKAGE_NFS_UTILS_RPCDEBUG",
+        "BR2_PACKAGE_RPCBIND",
+        "BR2_PACKAGE_LIBLDNS",
+        "BR2_PACKAGE_S6_DNS",
+        "BR2_PACKAGE_C_ARES",
+        "BR2_PACKAGE_UNBOUND",
+        "BR2_PACKAGE_TIME",
+        "BR2_PACKAGE_TMUX",
+        "BR2_PACKAGE_HTOP",
+        "BR2_PACKAGE_NCDU",
+        "BR2_PACKAGE_PV",
+        "BR2_PACKAGE_SQLITE",
+        "BR2_PACKAGE_ACL",
+        "BR2_PACKAGE_ATTR",
+        "BR2_PACKAGE_DOS2UNIX",
+        "BR2_PACKAGE_ZSTD",
+        "BR2_PACKAGE_LZ4",
+        "BR2_PACKAGE_LZIP",
+        "BR2_PACKAGE_LZOP",
+        "BR2_PACKAGE_LIBARCHIVE",
+        "BR2_PACKAGE_EXPECT",
+        "BR2_PACKAGE_CPULIMIT",
+        "BR2_PACKAGE_DIALOG",
+        "BR2_PACKAGE_MC",
+        "BR2_PACKAGE_BASH_COMPLETION",
+        "BR2_PACKAGE_SCREEN",
+        "BR2_PACKAGE_TCL",
+        "BR2_PACKAGE_SQLITE_STAT4",
+        "BR2_PACKAGE_SQLITE_ENABLE_COLUMN_METADATA",
+        "BR2_PACKAGE_SQLITE_ENABLE_FTS3",
+        "BR2_PACKAGE_SQLITE_ENABLE_RTREE",
+        "BR2_PACKAGE_SQLITE_ENABLE_UNLOCK_NOTIFY",
+        "BR2_PACKAGE_LZ4_PROGS",
+        "BR2_PACKAGE_LIBARCHIVE_BSDTAR",
+        "BR2_PACKAGE_LIBARCHIVE_BSDCPIO",
+        "BR2_PACKAGE_LIBARCHIVE_BSDCAT",
+        "BR2_PACKAGE_LIBARCHIVE_BSDUNZIP",
+        "BR2_PACKAGE_WIRELESS_REGDB",
+        "BR2_PACKAGE_EELINUX_TCL86_COMPAT",
+        "BR2_PACKAGE_EELINUX_OPENSSL3_COMPAT",
+        "BR2_PACKAGE_PCRE2"
+      ],
+      "purpose": "GNU command-line runtime, administration, storage recovery, networking diagnostics, SSH clients and data tools; no X server or additional boot daemons",
+      "disabled_symbols": [
+        "BR2_PACKAGE_TCL_SHLIB_ONLY",
+        "BR2_PACKAGE_TCL_DEL_ENCODINGS",
+        "BR2_PACKAGE_SQLITE_NO_SYNC",
+        "BR2_PACKAGE_BIND_SERVER",
+        "BR2_PACKAGE_NTP_NTPD",
+        "BR2_PACKAGE_OPENVPN_SMALL",
+        "BR2_PACKAGE_NFS_UTILS_RPC_NFSD"
+      ]
+    },
+    "desktop": {
+      "symbols": [
+        "BR2_PACKAGE_XORG7",
+        "BR2_PACKAGE_XSERVER_XORG_SERVER",
+        "BR2_PACKAGE_XLIB_LIBXSCRNSAVER",
+        "BR2_PACKAGE_XDRIVER_XF86_VIDEO_FBDEV",
+        "BR2_PACKAGE_XDRIVER_XF86_INPUT_EVDEV",
+        "BR2_PACKAGE_XAPP_TWM",
+        "BR2_PACKAGE_XAPP_XINIT",
+        "BR2_PACKAGE_XAPP_XAUTH",
+        "BR2_PACKAGE_XAPP_XSET",
+        "BR2_PACKAGE_XAPP_XKBCOMP",
+        "BR2_PACKAGE_XFONT_FONT_MISC_MISC",
+        "BR2_PACKAGE_XFONT_FONT_CURSOR_MISC",
+        "BR2_PACKAGE_XFONT_FONT_ALIAS",
+        "BR2_PACKAGE_XTERM",
+        "BR2_PACKAGE_EUDEV",
+        "BR2_PACKAGE_XDRIVER_XF86_INPUT_MOUSE",
+        "BR2_PACKAGE_XAPP_XRDB",
+        "BR2_PACKAGE_XAPP_XSETROOT",
+        "BR2_PACKAGE_XAPP_XDPYINFO",
+        "BR2_PACKAGE_USBUTILS"
+      ],
+      "purpose": "Base plus on-demand Xorg, PS2-themed TWM, xterm, bitmap fonts and selectable evdev keyboard layouts (US/ANSI default)"
+    },
+    "development": {
+      "symbols": [
+        "BR2_PACKAGE_EELINUX_GCC",
+        "BR2_PACKAGE_EELINUX_BINUTILS",
+        "BR2_PACKAGE_MAKE",
+        "BR2_PACKAGE_GDB",
+        "BR2_PACKAGE_GDB_DEBUGGER",
+        "BR2_PACKAGE_PATCH",
+        "BR2_PACKAGE_EELINUX_M4",
+        "BR2_PACKAGE_EELINUX_BISON",
+        "BR2_PACKAGE_FLEX",
+        "BR2_PACKAGE_PKGCONF",
+        "BR2_PACKAGE_EELINUX_AUTOCONF",
+        "BR2_PACKAGE_EELINUX_AUTOMAKE",
+        "BR2_PACKAGE_EELINUX_LIBTOOL",
+        "BR2_PACKAGE_WGET",
+        "BR2_PACKAGE_CA_CERTIFICATES",
+        "BR2_PACKAGE_BZIP2",
+        "BR2_PACKAGE_XZ",
+        "BR2_PACKAGE_PERL",
+        "BR2_PACKAGE_SCREEN",
+        "BR2_PACKAGE_VIM",
+        "BR2_PACKAGE_VIM_RUNTIME",
+        "BR2_PACKAGE_LYNX",
+        "BR2_PACKAGE_WHICH"
+      ],
+      "purpose": "Desktop plus native GNU build/debug suite; disk and swap required"
+    }
+  },
+  "packages": {
+    "acl": {
+      "symbol": "BR2_PACKAGE_ACL",
+      "version": "2.4.0",
+      "recipe": "package/acl/acl.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "e661131456d2708a01c614a0f400e11d7d1bfaeb6f3e74b75bb980b72f0161a3",
+          "filename": "acl-2.4.0.tar.xz"
+        }
+      ],
+      "release_url": "https://download.savannah.nongnu.org/releases/acl/"
+    },
+    "atftp": {
+      "symbol": "BR2_PACKAGE_ATFTP",
+      "version": "0.8.1",
+      "recipe": "package/atftp/atftp.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "96cbdbd2f16615c89c9db36be9b306de176d9a1c03dcb8cb777625bfe068bc2b",
+          "filename": "atftp-0.8.1.tar.gz"
+        }
+      ],
+      "release_url": "https://sourceforge.net/projects/atftp/files/"
+    },
+    "attr": {
+      "symbol": "BR2_PACKAGE_ATTR",
+      "version": "2.6.0",
+      "recipe": "package/attr/attr.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "6c8a2148a7b85043b68492bce43316b0e2e214fc4e628c7ede078e76e216330b",
+          "filename": "attr-2.6.0.tar.xz"
+        }
+      ],
+      "release_url": "https://download-mirror.savannah.nongnu.org/releases/attr/"
+    },
+    "bash": {
+      "symbol": "BR2_PACKAGE_BASH",
+      "version": "5.2.37",
+      "recipe": "package/bash/bash.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "9599b22ecd1d5787ad7d3b7bf0c59f312b3396d1e281175dd1f8a4014da621ff",
+          "filename": "bash-5.2.37.tar.gz"
+        }
+      ]
+    },
+    "bash-completion": {
+      "symbol": "BR2_PACKAGE_BASH_COMPLETION",
+      "version": "2.18.0",
+      "recipe": "package/bash-completion/bash-completion.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "88bcf85124f77f74f2f2f8bcd16ac4382d807a827ede742a64940c7116aea33f",
+          "filename": "bash-completion-2.18.0.tar.xz"
+        }
+      ],
+      "release_url": "https://github.com/scop/bash-completion/releases/latest"
+    },
+    "bc": {
+      "symbol": "BR2_PACKAGE_BC",
+      "version": "1.07.1",
+      "recipe": "package/bc/bc.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "62adfca89b0a1c0164c2cdca59ca210c1d44c3ffc46daf9931cf4942664cb02a",
+          "filename": "bc-1.07.1.tar.gz"
+        }
+      ]
+    },
+    "bind": {
+      "symbol": "BR2_PACKAGE_BIND",
+      "version": "9.20.26",
+      "recipe": "package/bind/bind.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "55248def0f870c4c46b3de72978ea972615131516663188a4564dca1d20bf350",
+          "filename": "bind-9.20.26.tar.xz"
+        }
+      ]
+    },
+    "binutils": {
+      "symbol": "BR2_PACKAGE_BINUTILS",
+      "version": "2.43.1",
+      "recipe": "package/binutils/binutils.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha512",
+          "digest": "155f3ba14cd220102f4f29a4f1e5cfee3c48aa03b74603460d05afb73c70d6657a9d87eee6eb88bf13203fe6f31177a5c9addc04384e956e7da8069c8ecd20a6",
+          "filename": "binutils-2.42.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "20977ad17729141a2c26d358628f44a0944b84dcfefdec2ba029c2d02f40dfc41cc91c0631044560d2bd6f9a51e1f15846b4b311befbe14f1239f14ff7d57824",
+          "filename": "binutils-2.43.1.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "b85d3bbc0e334cf67a96219d3c7c65fbf3e832b2c98a7417bf131f3645a0307057ec81cd2b29ff2563cec53e3d42f73e2c60cc5708e80d4a730efdcc6ae14ad7",
+          "filename": "binutils-2.44.tar.xz"
+        }
+      ]
+    },
+    "bmon": {
+      "symbol": "BR2_PACKAGE_BMON",
+      "version": "5.0",
+      "recipe": "package/bmon/bmon.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "6016e41fdda9166b86b09a0ac601a0c453c3b35acdf904c97a8a555459ad73c0",
+          "filename": "bmon-5.0.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/Jafaral/bmon/releases/tag/v5.0"
+    },
+    "bridge-utils": {
+      "symbol": "BR2_PACKAGE_BRIDGE_UTILS",
+      "version": "1.7.1",
+      "recipe": "package/bridge-utils/bridge-utils.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "a61d8be4f1a1405c60c8ef38d544f0c18c05b33b9b07e5b4b31033536165e60e",
+          "filename": "bridge-utils-1.7.1.tar.xz"
+        }
+      ],
+      "release_url": "https://www.kernel.org/pub/linux/utils/net/bridge-utils/"
+    },
+    "bzip2": {
+      "symbol": "BR2_PACKAGE_BZIP2",
+      "version": "1.0.8",
+      "recipe": "package/bzip2/bzip2.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha512",
+          "digest": "083f5e675d73f3233c7930ebe20425a533feedeaaa9d8cc86831312a6581cefbe6ed0d08d2fa89be81082f2a5abdabca8b3c080bf97218a1bd59dc118a30b9f3",
+          "filename": "bzip2-1.0.8.tar.gz"
+        }
+      ]
+    },
+    "c-ares": {
+      "symbol": "BR2_PACKAGE_C_ARES",
+      "version": "1.34.9",
+      "recipe": "package/c-ares/c-ares.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "9364b70a12eb59a06830fb488d9357f90100dff0d98b23ea3593a183d43e6f2f",
+          "filename": "c-ares-1.34.9.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/c-ares/c-ares/releases/tag/v1.34.9"
+    },
+    "ca-certificates": {
+      "symbol": "BR2_PACKAGE_CA_CERTIFICATES",
+      "version": "20260223",
+      "recipe": "package/ca-certificates/ca-certificates.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "2fa2b00d4360f0d14ec51640ae8aea9e563956b95ea786e3c3c01c4eead42b56",
+          "filename": "ca-certificates_20260223.tar.xz"
+        }
+      ]
+    },
+    "cifs-utils": {
+      "symbol": "BR2_PACKAGE_CIFS_UTILS",
+      "version": "7.9",
+      "recipe": "package/cifs-utils/cifs-utils.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "9f3750f402520b15c2c8eb52fd485df6ea77e5e66fe5e39ce8ac4386c32c0296",
+          "filename": "cifs-utils-7.9.tar.bz2"
+        }
+      ],
+      "release_url": "https://download.samba.org/pub/linux-cifs/cifs-utils/"
+    },
+    "conntrack-tools": {
+      "symbol": "BR2_PACKAGE_CONNTRACK_TOOLS",
+      "version": "1.4.9",
+      "recipe": "package/conntrack-tools/conntrack-tools.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "c15afe488a8d408c9d6d61e97dbd19f3c591942f62c13df6453a961ca4231cae",
+          "filename": "conntrack-tools-1.4.9.tar.xz"
+        }
+      ],
+      "release_url": "https://www.netfilter.org/pub/conntrack-tools/"
+    },
+    "coreutils": {
+      "symbol": "BR2_PACKAGE_COREUTILS",
+      "version": "9.5",
+      "recipe": "package/coreutils/coreutils.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "cd328edeac92f6a665de9f323c93b712af1858bc2e0d88f3f7100469470a1b8a",
+          "filename": "coreutils-9.5.tar.xz"
+        }
+      ]
+    },
+    "cpio": {
+      "symbol": "BR2_PACKAGE_CPIO",
+      "version": "2.15",
+      "recipe": "package/cpio/cpio.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "937610b97c329a1ec9268553fb780037bcfff0dcffe9725ebc4fd9c1aa9075db",
+          "filename": "cpio-2.15.tar.bz2"
+        }
+      ]
+    },
+    "cpulimit": {
+      "symbol": "BR2_PACKAGE_CPULIMIT",
+      "version": "0.2",
+      "recipe": "package/cpulimit/cpulimit.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "64312f9ac569ddcadb615593cd002c94b76e93a0d4625d3ce1abb49e08e2c2da",
+          "filename": "cpulimit-0.2.tar.gz"
+        }
+      ],
+      "release_url": "https://api.github.com/repos/opsengine/cpulimit/tags"
+    },
+    "dialog": {
+      "symbol": "BR2_PACKAGE_DIALOG",
+      "version": "1.3-20260721",
+      "recipe": "package/dialog/dialog.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "62bdf59057d4f760a1cc2217827f07887b4a3eebf694c25eacd4803d2171cdc6",
+          "filename": "dialog-1.3-20260721.tgz"
+        }
+      ],
+      "release_url": "https://invisible-mirror.net/archives/dialog/"
+    },
+    "diffutils": {
+      "symbol": "BR2_PACKAGE_DIFFUTILS",
+      "version": "3.10",
+      "recipe": "package/diffutils/diffutils.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "90e5e93cc724e4ebe12ede80df1634063c7a855692685919bfe60b556c9bd09e",
+          "filename": "diffutils-3.10.tar.xz"
+        }
+      ]
+    },
+    "dos2unix": {
+      "symbol": "BR2_PACKAGE_DOS2UNIX",
+      "version": "7.5.7",
+      "recipe": "package/dos2unix/dos2unix.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "669ee27120ae71589f638fe3a167d6ea54f8633f5ab1b282551bd7a7c9510dfa",
+          "filename": "dos2unix-7.5.7.tar.gz"
+        }
+      ],
+      "release_url": "https://dos2unix.sourceforge.io/"
+    },
+    "dosfstools": {
+      "symbol": "BR2_PACKAGE_DOSFSTOOLS",
+      "version": "4.2",
+      "recipe": "package/dosfstools/dosfstools.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "64926eebf90092dca21b14259a5301b7b98e7b1943e8a201c7d726084809b527",
+          "filename": "dosfstools-4.2.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/dosfstools/dosfstools/releases/tag/v4.2"
+    },
+    "e2fsprogs": {
+      "symbol": "BR2_PACKAGE_E2FSPROGS",
+      "version": "1.47.4",
+      "recipe": "package/e2fsprogs/e2fsprogs.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "fd5bf388cbdbe006a3d3b318d983b2948382440acc85a87f1e7d108653e8db0b",
+          "filename": "e2fsprogs-1.47.4.tar.xz"
+        }
+      ],
+      "release_url": "https://www.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.4/"
+    },
+    "ed": {
+      "symbol": "BR2_PACKAGE_ED",
+      "version": "1.20.2",
+      "recipe": "package/ed/ed.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "65fec7318f48c2ca17f334ac0f4703defe62037bb13cc23920de077b5fa24523",
+          "filename": "ed-1.20.2.tar.lz"
+        }
+      ]
+    },
+    "eelinux-autoconf": {
+      "symbol": "BR2_PACKAGE_EELINUX_AUTOCONF",
+      "version": "2.72",
+      "recipe": "userland/package/eelinux-autoconf/eelinux-autoconf.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "ba885c1319578d6c94d46e9b0dceb4014caafe2490e437a0dbca3f270a223f5a",
+          "filename": "autoconf-2.72.tar.xz"
+        }
+      ]
+    },
+    "eelinux-automake": {
+      "symbol": "BR2_PACKAGE_EELINUX_AUTOMAKE",
+      "version": "1.16.5",
+      "recipe": "userland/package/eelinux-automake/eelinux-automake.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "f01d58cd6d9d77fbdca9eb4bbd5ead1988228fdb73d6f7a201f5f8d6b118b469",
+          "filename": "automake-1.16.5.tar.xz"
+        }
+      ]
+    },
+    "eelinux-binutils": {
+      "symbol": "BR2_PACKAGE_EELINUX_BINUTILS",
+      "version": "2.47",
+      "recipe": "userland/package/eelinux-binutils/eelinux-binutils.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff",
+          "filename": "binutils-2.47.tar.xz"
+        }
+      ]
+    },
+    "eelinux-bison": {
+      "symbol": "BR2_PACKAGE_EELINUX_BISON",
+      "version": "3.8.2",
+      "recipe": "userland/package/eelinux-bison/eelinux-bison.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "9bba0214ccf7f1079c5d59210045227bcf619519840ebfa80cd3849cff5a5bf2",
+          "filename": "bison-3.8.2.tar.xz"
+        }
+      ]
+    },
+    "eelinux-dhcpcd": {
+      "symbol": "BR2_PACKAGE_EELINUX_DHCPCD",
+      "version": "10.5.2",
+      "recipe": "userland/package/eelinux-dhcpcd/eelinux-dhcpcd.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "3e476657fdb6eeb38b277da3a48d0ac0113ecce5858ebdcddff2b629faed52b4",
+          "filename": "dhcpcd-10.5.2.tar.xz"
+        }
+      ]
+    },
+    "eelinux-gcc": {
+      "symbol": "BR2_PACKAGE_EELINUX_GCC",
+      "version": "16.2.0",
+      "recipe": "userland/package/eelinux-gcc/eelinux-gcc.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha512",
+          "digest": "c51c30ca7422d0cbecf504b2e0f33c3aca31e0f90a76b65217f465163fa6fa17b3f5de39e145c47e5bab90ac0ce7fff3b03c8d553ae36e01faaea5a50f8648d1",
+          "filename": "gcc-16.2.0.tar.xz"
+        },
+        {
+          "algorithm": "sha256",
+          "digest": "e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e",
+          "filename": "gcc-16.2.0.tar.xz"
+        }
+      ]
+    },
+    "eelinux-libtool": {
+      "symbol": "BR2_PACKAGE_EELINUX_LIBTOOL",
+      "version": "2.4.6",
+      "recipe": "userland/package/eelinux-libtool/eelinux-libtool.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "7c87a8c2c8c0fc9cd5019e402bed4292462d00a718a7cd5f11218153bf28b26f",
+          "filename": "libtool-2.4.6.tar.xz"
+        }
+      ]
+    },
+    "eelinux-m4": {
+      "symbol": "BR2_PACKAGE_EELINUX_M4",
+      "version": "1.4.21",
+      "recipe": "userland/package/eelinux-m4/eelinux-m4.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "f25c6ab51548a73a75558742fb031e0625d6485fe5f9155949d6486a2408ab66",
+          "filename": "m4-1.4.21.tar.xz"
+        }
+      ]
+    },
+    "eelinux-openssl3-compat": {
+      "symbol": "BR2_PACKAGE_EELINUX_OPENSSL3_COMPAT",
+      "recipe": "package/eelinux-openssl3-compat/eelinux-openssl3-compat.mk",
+      "version": "3.5.9",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a",
+          "filename": "openssl-3.5.9.tar.gz"
+        }
+      ],
+      "release_url": "https://openssl-library.org/source/"
+    },
+    "eelinux-tcl86-compat": {
+      "symbol": "BR2_PACKAGE_EELINUX_TCL86_COMPAT",
+      "recipe": "package/eelinux-tcl86-compat/eelinux-tcl86-compat.mk",
+      "version": "8.6.18",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e",
+          "filename": "tcl8.6.18-src.tar.gz"
+        }
+      ],
+      "release_url": "https://www.tcl-lang.org/software/tcltk/download.html"
+    },
+    "ethtool": {
+      "symbol": "BR2_PACKAGE_ETHTOOL",
+      "version": "7.2",
+      "recipe": "package/ethtool/ethtool.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "44256ddf4631ed08d816b7b8725f4b2e0f05e96b8c7ca64ee5c81449da2b6507",
+          "filename": "ethtool-7.2.tar.xz"
+        }
+      ],
+      "release_url": "https://www.kernel.org/pub/software/network/ethtool/"
+    },
+    "eudev": {
+      "symbol": "BR2_PACKAGE_EUDEV",
+      "version": "3.2.14",
+      "recipe": "package/eudev/eudev.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "8da4319102f24abbf7fff5ce9c416af848df163b29590e666d334cc1927f006f",
+          "filename": "eudev-3.2.14.tar.gz"
+        }
+      ]
+    },
+    "expect": {
+      "symbol": "BR2_PACKAGE_EXPECT",
+      "version": "5.45.4",
+      "recipe": "package/expect/expect.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "49a7da83b0bdd9f46d04a04deec19c7767bb9a323e40c4781f89caf760b92c34",
+          "filename": "expect5.45.4.tar.gz"
+        }
+      ],
+      "release_url": "https://core.tcl-lang.org/expect/home"
+    },
+    "file": {
+      "symbol": "BR2_PACKAGE_FILE",
+      "version": "5.48",
+      "recipe": "package/file/file.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "ed14656883b23a364b4057c05595d93252da9bc473d30106519519d0da141283",
+          "filename": "file-5.48.tar.gz"
+        }
+      ],
+      "release_url": "https://www.astron.com/pub/file/"
+    },
+    "findutils": {
+      "symbol": "BR2_PACKAGE_FINDUTILS",
+      "version": "4.10.0",
+      "recipe": "package/findutils/findutils.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "1387e0b67ff247d2abde998f90dfbf70c1491391a59ddfecb8ae698789f0a4f5",
+          "filename": "findutils-4.10.0.tar.xz"
+        }
+      ]
+    },
+    "flex": {
+      "symbol": "BR2_PACKAGE_FLEX",
+      "version": "2.6.4",
+      "recipe": "package/flex/flex.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995",
+          "filename": "flex-2.6.4.tar.gz"
+        }
+      ]
+    },
+    "fping": {
+      "symbol": "BR2_PACKAGE_FPING",
+      "version": "5.5",
+      "recipe": "package/fping/fping.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "15c4e32b6c55ff105bafe03e8c91c7ca1b2eda31bf9a7127326bb87887ee18fe",
+          "filename": "fping-5.5.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/schweikert/fping/releases/tag/v5.5"
+    },
+    "gawk": {
+      "symbol": "BR2_PACKAGE_GAWK",
+      "version": "5.3.1",
+      "recipe": "package/gawk/gawk.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "694db764812a6236423d4ff40ceb7b6c4c441301b72ad502bb5c27e00cd56f78",
+          "filename": "gawk-5.3.1.tar.xz"
+        }
+      ]
+    },
+    "gdb": {
+      "symbol": "BR2_PACKAGE_GDB",
+      "version": "$(call qstrip,$(BR2_GDB_VERSION))",
+      "recipe": "package/gdb/gdb.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha512",
+          "digest": "7e07941f1fe661288cc571b4964012ceabc1760624fce20320db2f470c01439b2386f859b5288da13204b758e2e3b22a74c68c012178db93b9529b06f1e22ede",
+          "filename": "gdb-14.2.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "624007deceb5b15ba89c0725883d1a699fa46714ef30887f3d0165e17c5d65d634671740a135aa69e437d916218abb08cfa2a38ed309ff19d48f51da56b2a8ba",
+          "filename": "gdb-15.2.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "fffd6689c3405466a179670b04720dc825e4f210a761f63dd2b33027432f8cd5d1c059c431a5ec9e165eedd1901220b5329d73c522f9a444788888c731b29e9c",
+          "filename": "gdb-16.3.tar.xz"
+        }
+      ]
+    },
+    "grep": {
+      "symbol": "BR2_PACKAGE_GREP",
+      "version": "3.11",
+      "recipe": "package/grep/grep.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "1db2aedde89d0dea42b16d9528f894c8d15dae4e190b59aecc78f5a951276eab",
+          "filename": "grep-3.11.tar.xz"
+        }
+      ]
+    },
+    "gzip": {
+      "symbol": "BR2_PACKAGE_GZIP",
+      "version": "1.13",
+      "recipe": "package/gzip/gzip.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "7454eb6935db17c6655576c2e1b0fabefd38b4d0936e0f87f48cd062ce91a057",
+          "filename": "gzip-1.13.tar.xz"
+        }
+      ]
+    },
+    "htop": {
+      "symbol": "BR2_PACKAGE_HTOP",
+      "version": "3.5.3",
+      "recipe": "package/htop/htop.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "a8b164386494cb85bb255a415a3f5f80afe7a0c4491da5d113b3a0f951087e65",
+          "filename": "htop-3.5.3.tar.xz"
+        }
+      ],
+      "release_url": "https://github.com/htop-dev/htop/releases/latest"
+    },
+    "iftop": {
+      "symbol": "BR2_PACKAGE_IFTOP",
+      "version": "1.0pre4",
+      "recipe": "package/iftop/iftop.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "f733eeea371a7577f8fe353d86dd88d16f5b2a2e702bd96f5ffb2c197d9b4f97",
+          "filename": "iftop-1.0pre4.tar.gz"
+        }
+      ],
+      "release_url": "https://www.ex-parrot.com/pdw/iftop/"
+    },
+    "ipcalc": {
+      "symbol": "BR2_PACKAGE_IPCALC",
+      "version": "1.2.0",
+      "recipe": "package/ipcalc/ipcalc.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "4b8f43dd61f2ce3c18ca0e2def2adc54ade3be4d4d1ff302f22ad0aede4b226a",
+          "filename": "ipcalc-1.2.0.tar.bz2"
+        }
+      ],
+      "release_url": "https://gitlab.com/ipcalc/ipcalc/-/releases"
+    },
+    "iperf": {
+      "symbol": "BR2_PACKAGE_IPERF",
+      "version": "2.2.1",
+      "recipe": "package/iperf/iperf.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "754ab0a7e28033dbea81308ef424bc7df4d6e2fe31b60cc536b61b51fefbd8fb",
+          "filename": "iperf-2.2.1.tar.gz"
+        }
+      ],
+      "release_url": "https://sourceforge.net/projects/iperf2/files/"
+    },
+    "iperf3": {
+      "symbol": "BR2_PACKAGE_IPERF3",
+      "version": "3.22",
+      "recipe": "package/iperf3/iperf3.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "1c0d0fb02c52626111d6e132db80edfbf27bbaff8bd9245df2a371dcb0b35a92",
+          "filename": "iperf-3.22.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/esnet/iperf/releases/tag/3.22"
+    },
+    "iproute2": {
+      "symbol": "BR2_PACKAGE_IPROUTE2",
+      "version": "7.3.0",
+      "recipe": "package/iproute2/iproute2.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "5c1789d290bba048a6135ed1ab81b0402dd0fb528d1f1421765c42b1fc3d6289",
+          "filename": "iproute2-7.3.0.tar.xz"
+        }
+      ],
+      "release_url": "https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/"
+    },
+    "ipset": {
+      "symbol": "BR2_PACKAGE_IPSET",
+      "version": "7.24",
+      "recipe": "package/ipset/ipset.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "fbe3424dff222c1cb5e5c34d38b64524b2217ce80226c14fdcbb13b29ea36112",
+          "filename": "ipset-7.24.tar.bz2"
+        }
+      ],
+      "release_url": "https://www.netfilter.org/pub/ipset/"
+    },
+    "iptables": {
+      "symbol": "BR2_PACKAGE_IPTABLES",
+      "version": "1.8.13",
+      "recipe": "package/iptables/iptables.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "1afcd33da9e8f913ace6a2126788162e207e26f5d5e29c6573c0e581ffc58b99",
+          "filename": "iptables-1.8.13.tar.xz"
+        }
+      ],
+      "release_url": "https://www.netfilter.org/pub/iptables/"
+    },
+    "iptraf-ng": {
+      "symbol": "BR2_PACKAGE_IPTRAF_NG",
+      "version": "1.2.2",
+      "recipe": "package/iptraf-ng/iptraf-ng.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "75fd653745ea0705995c25e6c07b34252ecc2563c6a91b007a3a8c26f29cc252",
+          "filename": "iptraf-ng-1.2.2.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/iptraf-ng/iptraf-ng/releases/tag/v1.2.2"
+    },
+    "iputils": {
+      "symbol": "BR2_PACKAGE_IPUTILS",
+      "version": "20250605",
+      "recipe": "package/iputils/iputils.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "475c643e5f55b302286267b97d3ce0f47ca3489ced8aa0401b1eeb1e68228d6b",
+          "filename": "iputils-20250605.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/iputils/iputils/releases/tag/20250605"
+    },
+    "iw": {
+      "symbol": "BR2_PACKAGE_IW",
+      "version": "6.17",
+      "recipe": "package/iw/iw.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "7d182e498289ab39b257da6780d562e415377107f50358ee5b55b8cfe40b1e33",
+          "filename": "iw-6.17.tar.xz"
+        }
+      ],
+      "release_url": "https://www.kernel.org/pub/software/network/iw/"
+    },
+    "jq": {
+      "symbol": "BR2_PACKAGE_JQ",
+      "version": "1.8.2",
+      "recipe": "package/jq/jq.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "71b8d6e8f5fe81f6c6d0d110e3892251f6ce76ed095abd315e26e6e1193af3af",
+          "filename": "jq-1.8.2.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/jqlang/jq/releases/tag/jq-1.8.2"
+    },
+    "kmod": {
+      "symbol": "BR2_PACKAGE_KMOD",
+      "version": "34.3",
+      "recipe": "package/kmod/kmod.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "985554de49c21a58abd68c6cda2251384e1e5bb08b3b14c7f02b51f4c90c2958",
+          "filename": "kmod-34.3.tar.xz"
+        }
+      ],
+      "release_url": "https://www.kernel.org/pub/linux/utils/kernel/kmod/"
+    },
+    "less": {
+      "symbol": "BR2_PACKAGE_LESS",
+      "version": "710",
+      "recipe": "package/less/less.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "d1008fb78dcae1323ddab664bcb352a61f022b1b131bd8018548e021d975ec7a",
+          "filename": "less-710.tar.gz"
+        }
+      ],
+      "release_url": "https://www.greenwoodsoftware.com/less/index.html"
+    },
+    "lftp": {
+      "symbol": "BR2_PACKAGE_LFTP",
+      "version": "4.9.3",
+      "recipe": "package/lftp/lftp.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "96e7199d7935be33cf6b1161e955b2aab40ab77ecdf2a19cea4fc1193f457edc",
+          "filename": "lftp-4.9.3.tar.xz"
+        }
+      ],
+      "release_url": "https://lftp.yar.ru/ftp/"
+    },
+    "libarchive": {
+      "symbol": "BR2_PACKAGE_LIBARCHIVE",
+      "version": "3.8.11",
+      "recipe": "package/libarchive/libarchive.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "a3dc0872b1b39da34dc18ef1b944f0f11ffd37425d70ae04be679279f1cf43d2",
+          "filename": "libarchive-3.8.11.tar.xz"
+        }
+      ],
+      "release_url": "https://github.com/libarchive/libarchive/releases/latest"
+    },
+    "libcurl": {
+      "symbol": "BR2_PACKAGE_LIBCURL",
+      "version": "8.23.0",
+      "recipe": "package/libcurl/libcurl.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5",
+          "filename": "curl-8.23.0.tar.xz"
+        }
+      ],
+      "release_url": "https://curl.se/download/"
+    },
+    "libidn2": {
+      "symbol": "BR2_PACKAGE_LIBIDN2",
+      "version": "2.3.8",
+      "recipe": "package/libidn2/libidn2.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "f557911bf6171621e1f72ff35f5b1825bb35b52ed45325dcdee931e5d3c0787a",
+          "filename": "libidn2-2.3.8.tar.gz"
+        }
+      ],
+      "release_url": "https://ftp.gnu.org/gnu/libidn/"
+    },
+    "libldns": {
+      "symbol": "BR2_PACKAGE_LIBLDNS",
+      "version": "1.9.2",
+      "recipe": "package/libldns/libldns.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "b524fa21994b6e834200ceb8c27f1b84bda5982fe35706f058196c079db94d5d",
+          "filename": "ldns-1.9.2.tar.gz"
+        }
+      ],
+      "release_url": "https://www.nlnetlabs.nl/downloads/ldns/"
+    },
+    "libmnl": {
+      "symbol": "BR2_PACKAGE_LIBMNL",
+      "recipe": "package/libmnl/libmnl.mk",
+      "version": "1.0.5",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "274b9b919ef3152bfb3da3a13c950dd60d6e2bcd54230ffeca298d03b40d0525",
+          "filename": "libmnl-1.0.5.tar.bz2"
+        }
+      ],
+      "release_url": "https://www.netfilter.org/pub/libmnl/"
+    },
+    "libnetfilter_conntrack": {
+      "symbol": "BR2_PACKAGE_LIBNETFILTER_CONNTRACK",
+      "recipe": "package/libnetfilter_conntrack/libnetfilter_conntrack.mk",
+      "version": "1.1.1",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "769d3eaf57fa4fbdb05dd12873b6cb9a5be7844d8937e222b647381d44284820",
+          "filename": "libnetfilter_conntrack-1.1.1.tar.xz"
+        }
+      ],
+      "release_url": "https://www.netfilter.org/pub/libnetfilter_conntrack/"
+    },
+    "libnftnl": {
+      "symbol": "BR2_PACKAGE_LIBNFTNL",
+      "recipe": "package/libnftnl/libnftnl.mk",
+      "version": "1.3.2",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "c97abc3409f8fa396b4462b2bb7f147a3a47a4ddc97cfa0b2f18890c9cfde8b0",
+          "filename": "libnftnl-1.3.2.tar.xz"
+        }
+      ],
+      "release_url": "https://www.netfilter.org/pub/libnftnl/"
+    },
+    "libnl": {
+      "symbol": "BR2_PACKAGE_LIBNL",
+      "version": "3.12.0",
+      "recipe": "package/libnl/libnl.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "fc51ca7196f1a3f5fdf6ffd3864b50f4f9c02333be28be4eeca057e103c0dd18",
+          "filename": "libnl-3.12.0.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/thom311/libnl/releases/tag/libnl3_12_0"
+    },
+    "libopenssl": {
+      "symbol": "BR2_PACKAGE_LIBOPENSSL",
+      "recipe": "package/libopenssl/libopenssl.mk",
+      "version": "4.1.0",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "50c17baf54cb008f6ce42d50deb4b28050a1aad711636cabd4b241c7e90cc2fd",
+          "filename": "openssl-4.1.0.tar.gz"
+        }
+      ],
+      "release_url": "https://openssl-library.org/source/"
+    },
+    "libpcap": {
+      "symbol": "BR2_PACKAGE_LIBPCAP",
+      "recipe": "package/libpcap/libpcap.mk",
+      "version": "1.11.0",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "05a6a0026d3527f55c8a92e72f9c1656f62f33b639c75cbd7db377543c235407",
+          "filename": "libpcap-1.11.0.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/the-tcpdump-group/libpcap/tags"
+    },
+    "libssh2": {
+      "symbol": "BR2_PACKAGE_LIBSSH2",
+      "version": "1.11.1",
+      "recipe": "package/libssh2/libssh2.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "8ddbd698403a2c3a9987df48f2940c6f6a9bddce28d37eb201938dd7755646f0",
+          "filename": "libssh2-1.11.1.tar.bz2"
+        }
+      ],
+      "release_url": "https://github.com/libssh2/libssh2/releases/tag/libssh2-1.11.1"
+    },
+    "libtalloc": {
+      "symbol": "BR2_PACKAGE_LIBTALLOC",
+      "version": "2.5.0",
+      "recipe": "package/libtalloc/libtalloc.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "912afa237510ae542a7733998eb18a12bcda35ab6729c8e2ddb43e8d0ebab007",
+          "filename": "talloc-2.5.0.tar.gz"
+        }
+      ],
+      "release_url": "https://www.samba.org/ftp/talloc/"
+    },
+    "libusb": {
+      "symbol": "BR2_PACKAGE_LIBUSB",
+      "recipe": "package/libusb/libusb.mk",
+      "version": "1.0.30",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "fea36f34f9156400209595e300840767ab1a385ede1dc7ee893015aea9c6dbaf",
+          "filename": "libusb-1.0.30.tar.bz2"
+        }
+      ],
+      "release_url": "https://github.com/libusb/libusb/releases/tag/v1.0.30"
+    },
+    "lsof": {
+      "symbol": "BR2_PACKAGE_LSOF",
+      "version": "4.99.7",
+      "recipe": "package/lsof/lsof.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "4a10391aab0b8ce1f539e82a1966693b2a6cf225972a6504ebb7ec4fa71675de",
+          "filename": "lsof-4.99.7.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/lsof-org/lsof/releases/tag/4.99.7"
+    },
+    "lynx": {
+      "symbol": "BR2_PACKAGE_LYNX",
+      "version": "2.9.2",
+      "recipe": "package/lynx/lynx.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "7374b89936d991669e101f4e97f2c9592036e1e8cdaa7bafc259a77ab6fb07ce",
+          "filename": "lynx2.9.2.tar.bz2"
+        }
+      ]
+    },
+    "lz4": {
+      "symbol": "BR2_PACKAGE_LZ4",
+      "version": "1.11.0",
+      "recipe": "package/lz4/lz4.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "247e5fa64da5f7b75ee3dd3bed484076396c9ebe8254d9ccf693eb62800c5e26",
+          "filename": "lz4-1.11.0.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/lz4/lz4/releases/latest"
+    },
+    "lzip": {
+      "symbol": "BR2_PACKAGE_LZIP",
+      "version": "1.26",
+      "recipe": "package/lzip/lzip.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "641cf30961525cbe3b340cc883436c8854e9f5032f459f444de4782b621e6572",
+          "filename": "lzip-1.26.tar.gz"
+        }
+      ],
+      "release_url": "https://download-mirror.savannah.nongnu.org/releases/lzip/"
+    },
+    "lzop": {
+      "symbol": "BR2_PACKAGE_LZOP",
+      "version": "1.04",
+      "recipe": "package/lzop/lzop.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "7e72b62a8a60aff5200a047eea0773a8fb205caf7acbe1774d95147f305a2f41",
+          "filename": "lzop-1.04.tar.gz"
+        }
+      ],
+      "release_url": "https://www.lzop.org/download/"
+    },
+    "make": {
+      "symbol": "BR2_PACKAGE_MAKE",
+      "version": "4.4.1",
+      "recipe": "package/make/make.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "8814ba072182b605d156d7589c19a43b89fc58ea479b9355146160946f8cf6e9",
+          "filename": "make-4.4.1.tar.lz"
+        }
+      ]
+    },
+    "mc": {
+      "symbol": "BR2_PACKAGE_MC",
+      "version": "4.8.33",
+      "recipe": "package/mc/mc.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "cae149d42f844e5185d8c81d7db3913a8fa214c65f852200a9d896b468af164c",
+          "filename": "mc-4.8.33.tar.xz"
+        }
+      ],
+      "release_url": "https://ftp.osuosl.org/pub/midnightcommander/"
+    },
+    "mtools": {
+      "symbol": "BR2_PACKAGE_MTOOLS",
+      "version": "4.0.50",
+      "recipe": "package/mtools/mtools.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "f3a58e6cfc2634b03c240442548e3b00103692357afc28e1e7104744dd6478b5",
+          "filename": "mtools-4.0.50.tar.bz2"
+        }
+      ],
+      "release_url": "https://ftp.gnu.org/gnu/mtools/"
+    },
+    "mtr": {
+      "symbol": "BR2_PACKAGE_MTR",
+      "version": "0.96",
+      "recipe": "package/mtr/mtr.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "73e6aef3fb6c8b482acb5b5e2b8fa7794045c4f2420276f035ce76c5beae632d",
+          "filename": "mtr-0.96.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/traviscross/mtr/tags"
+    },
+    "nano": {
+      "symbol": "BR2_PACKAGE_NANO",
+      "version": "8.2",
+      "recipe": "package/nano/nano.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "d5ad07dd862facae03051c54c6535e54c7ed7407318783fcad1ad2d7076fffeb",
+          "filename": "nano-8.2.tar.xz"
+        }
+      ]
+    },
+    "ncdu": {
+      "symbol": "BR2_PACKAGE_NCDU",
+      "version": "1.22",
+      "recipe": "package/ncdu/ncdu.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "0ad6c096dc04d5120581104760c01b8f4e97d4191d6c9ef79654fa3c691a176b",
+          "filename": "ncdu-1.22.tar.gz"
+        }
+      ],
+      "release_url": "https://dev.yorhel.nl/ncdu"
+    },
+    "ncftp": {
+      "symbol": "BR2_PACKAGE_NCFTP",
+      "version": "3.3.0",
+      "recipe": "package/ncftp/ncftp.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "7920f884c2adafc82c8e41c46d6f3d22698785c7b3f56f5677a8d5c866396386",
+          "filename": "ncftp-3.3.0-src.tar.gz"
+        }
+      ],
+      "release_url": "https://www.ncftp.com/download/"
+    },
+    "ncurses": {
+      "symbol": "BR2_PACKAGE_NCURSES",
+      "version": "6.4$(if 20230603,-20230603)",
+      "recipe": "package/ncurses/ncurses.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "b0910671694c2c8377f579eea68477a15d67bd20ddd4b29328cfe15c62c7b3fd",
+          "filename": "ncurses-6.4-20230603.tar.gz"
+        }
+      ]
+    },
+    "net-tools": {
+      "symbol": "BR2_PACKAGE_NET_TOOLS",
+      "version": "2.10",
+      "recipe": "package/net-tools/net-tools.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "b262435a5241e89bfa51c3cabd5133753952f7a7b7b93f32e08cb9d96f580d69",
+          "filename": "net-tools-2.10.tar.xz"
+        }
+      ],
+      "release_url": "https://sourceforge.net/projects/net-tools/files/"
+    },
+    "netcat": {
+      "symbol": "BR2_PACKAGE_NETCAT",
+      "version": "0.7.1",
+      "recipe": "package/netcat/netcat.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "b55af0bbdf5acc02d1eb6ab18da2acd77a400bafd074489003f3df09676332bb",
+          "filename": "netcat-0.7.1.tar.bz2"
+        }
+      ],
+      "release_url": "https://netcat.sourceforge.net/download.php"
+    },
+    "nethogs": {
+      "symbol": "BR2_PACKAGE_NETHOGS",
+      "version": "0.9.0",
+      "recipe": "package/nethogs/nethogs.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "5961bef2155c05695d2fe7e79aa11194981b5afd1cad9bf1f259c7f30d5487c3",
+          "filename": "nethogs-0.9.0.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/raboof/nethogs/releases/tag/v0.9.0"
+    },
+    "nfs-utils": {
+      "symbol": "BR2_PACKAGE_NFS_UTILS",
+      "version": "3.1.1",
+      "recipe": "package/nfs-utils/nfs-utils.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "7dbc05eb8b32828b322872b759a62cb3979cb4118f344dd8616813d1390e84e0",
+          "filename": "nfs-utils-3.1.1.tar.xz"
+        }
+      ],
+      "release_url": "https://www.kernel.org/pub/linux/utils/nfs-utils/3.1.1/"
+    },
+    "nftables": {
+      "symbol": "BR2_PACKAGE_NFTABLES",
+      "version": "1.1.7",
+      "recipe": "package/nftables/nftables.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "a6fbf060d8d4fff001517a2b94f356bb4366bfbf0ba366366f9d27cc38caa58f",
+          "filename": "nftables-1.1.7.tar.xz"
+        }
+      ],
+      "release_url": "https://www.netfilter.org/pub/nftables/"
+    },
+    "ngrep": {
+      "symbol": "BR2_PACKAGE_NGREP",
+      "version": "1.49.0",
+      "recipe": "package/ngrep/ngrep.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "6c94b31681316b7469a3ace92d2aeec7c9f490bd6782453dff2ade0e289a3348",
+          "filename": "ngrep-1.49.0.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/jpr5/ngrep/releases/tag/v1.49.0"
+    },
+    "nload": {
+      "symbol": "BR2_PACKAGE_NLOAD",
+      "version": "0.7.4",
+      "recipe": "package/nload/nload.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "c1c051e7155e26243d569be5d99c744d8620e65fa8a7e05efcf84d01d9d469e5",
+          "filename": "nload-0.7.4.tar.gz"
+        }
+      ],
+      "release_url": "https://www.roland-riegel.de/nload/"
+    },
+    "nmap": {
+      "symbol": "BR2_PACKAGE_NMAP",
+      "version": "7.993",
+      "recipe": "package/nmap/nmap.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "270e55f04915bfcecb5db8feb959d4c5ba86a48c094520a4f1c07571e1c79c59",
+          "filename": "nmap-7.993.tar.bz2"
+        }
+      ],
+      "release_url": "https://nmap.org/download"
+    },
+    "ntp": {
+      "symbol": "BR2_PACKAGE_NTP",
+      "version": "4.2.8p18",
+      "recipe": "package/ntp/ntp.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "cf84c5f3fb1a295284942624d823fffa634144e096cfc4f9969ac98ef5f468e5",
+          "filename": "ntp-4.2.8p18.tar.gz"
+        }
+      ],
+      "release_url": "https://www.ntp.org/downloads/"
+    },
+    "openssh": {
+      "symbol": "BR2_PACKAGE_OPENSSH",
+      "version": "10.6p2",
+      "recipe": "package/openssh/openssh.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "9ae44872090cf2f06b3cf9ff147e7f16f309671340763ed2f99248398ae29d5b",
+          "filename": "openssh-10.6p2.tar.gz"
+        }
+      ],
+      "release_url": "https://www.openssh.org/releasenotes.html"
+    },
+    "openvpn": {
+      "symbol": "BR2_PACKAGE_OPENVPN",
+      "version": "2.7.9",
+      "recipe": "package/openvpn/openvpn.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "c42a6ed892ddfe2d6e3317a5040f19bec5827564affb2fe3f2b3904a94daacb1",
+          "filename": "openvpn-2.7.9.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/OpenVPN/openvpn/releases/tag/v2.7.9"
+    },
+    "patch": {
+      "symbol": "BR2_PACKAGE_PATCH",
+      "version": "2.7.6",
+      "recipe": "package/patch/patch.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "ac610bda97abe0d9f6b7c963255a11dcb196c25e337c61f94e4778d632f1d8fd",
+          "filename": "patch-2.7.6.tar.xz"
+        }
+      ]
+    },
+    "pkgconf": {
+      "symbol": "BR2_PACKAGE_PKGCONF",
+      "version": "2.3.0",
+      "recipe": "package/pkgconf/pkgconf.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "3a9080ac51d03615e7c1910a0a2a8df08424892b5f13b0628a204d3fcce0ea8b",
+          "filename": "pkgconf-2.3.0.tar.xz"
+        }
+      ]
+    },
+    "procps-ng": {
+      "symbol": "BR2_PACKAGE_PROCPS_NG",
+      "version": "4.0.7",
+      "recipe": "package/procps-ng/procps-ng.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "9d2021f47a4501c667862c9942a92d1953694b21d11bcd1702e83eb594e3d67d",
+          "filename": "procps-ng-4.0.7.tar.xz"
+        }
+      ],
+      "release_url": "https://sourceforge.net/projects/procps-ng/rss?path=%2FProduction%2F"
+    },
+    "psmisc": {
+      "symbol": "BR2_PACKAGE_PSMISC",
+      "version": "23.7",
+      "recipe": "package/psmisc/psmisc.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "58c55d9c1402474065adae669511c191de374b0871eec781239ab400b907c327",
+          "filename": "psmisc-23.7.tar.xz"
+        }
+      ],
+      "release_url": "https://sourceforge.net/projects/psmisc/rss?path=%2Fpsmisc%2F"
+    },
+    "pv": {
+      "symbol": "BR2_PACKAGE_PV",
+      "version": "1.12.7",
+      "recipe": "package/pv/pv.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "5326ed7ee95ef18039390c0b17891ac28985ac7c7a4235070fab767c1fe37bd8",
+          "filename": "pv-1.12.7.tar.gz"
+        }
+      ],
+      "release_url": "https://www.ivarch.com/programs/pv.shtml"
+    },
+    "readline": {
+      "symbol": "BR2_PACKAGE_READLINE",
+      "version": "8.2",
+      "recipe": "package/readline/readline.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "3feb7171f16a84ee82ca18a36d7b9be109a52c04f492a053331d7d1095007c35",
+          "filename": "readline-8.2.tar.gz"
+        }
+      ]
+    },
+    "rpcbind": {
+      "symbol": "BR2_PACKAGE_RPCBIND",
+      "version": "1.3.1",
+      "recipe": "package/rpcbind/rpcbind.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "8e551b445f5172f8ef218845af342fb2a2d741b57ce8c777c781a01ea92f92a5",
+          "filename": "rpcbind-1.3.1.tar.bz2"
+        }
+      ],
+      "release_url": "https://sourceforge.net/projects/rpcbind/files/rpcbind/"
+    },
+    "rsync": {
+      "symbol": "BR2_PACKAGE_RSYNC",
+      "version": "3.5.2",
+      "recipe": "package/rsync/rsync.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "a10d591825251e070f74c98df3daad195def4ed81b4a2de16169026aea33f6c8",
+          "filename": "rsync-3.5.2.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/RsyncProject/rsync/releases/tag/v3.5.2"
+    },
+    "s6-dns": {
+      "symbol": "BR2_PACKAGE_S6_DNS",
+      "version": "2.4.1.3",
+      "recipe": "package/s6-dns/s6-dns.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "f9e9deb4648c5507a8485548364bd1c56dabda394bc9ee2d7f1cbb16a036cd76",
+          "filename": "s6-dns-2.4.1.3.tar.gz"
+        }
+      ],
+      "release_url": "https://skarnet.org/software/s6-dns/"
+    },
+    "screen": {
+      "symbol": "BR2_PACKAGE_SCREEN",
+      "version": "5.0.2",
+      "recipe": "package/screen/screen.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "ca9a2c7e240919bc7ac12124593ae4529bb4eb5f7349d8857829b7e3f0b3b332",
+          "filename": "screen-5.0.2.tar.gz"
+        }
+      ],
+      "release_url": "https://ftp.gnu.org/gnu/screen/"
+    },
+    "sed": {
+      "symbol": "BR2_PACKAGE_SED",
+      "version": "4.10",
+      "recipe": "package/sed/sed.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "b8e72182b2ec96a3574e2998c47b7aaa64cc20ce000d8e9ac313cc07cecf28c7",
+          "filename": "sed-4.10.tar.xz"
+        }
+      ]
+    },
+    "shadow": {
+      "symbol": "BR2_PACKAGE_SHADOW",
+      "version": "4.20.3",
+      "recipe": "package/shadow/shadow.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "623be9429f64fa2165bfc5957c6a642ec309c5cf23c0d53855c99f7591922297",
+          "filename": "shadow-4.20.3.tar.xz"
+        }
+      ],
+      "release_url": "https://github.com/shadow-maint/shadow/releases/tag/4.20.3"
+    },
+    "skalibs": {
+      "symbol": "BR2_PACKAGE_SKALIBS",
+      "version": "2.16.0.0",
+      "recipe": "package/skalibs/skalibs.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "90a3deda94a40d7d6a4495fe6feaf91c0185e0428d59cbd150a1a468741269aa",
+          "filename": "skalibs-2.16.0.0.tar.gz"
+        }
+      ],
+      "release_url": "https://skarnet.org/software/skalibs/"
+    },
+    "socat": {
+      "symbol": "BR2_PACKAGE_SOCAT",
+      "version": "1.8.1.3",
+      "recipe": "package/socat/socat.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "06602ffd591e98c75b3dc1d66f0f19136cc666b0b2d95caad987d6ab2cb28097",
+          "filename": "socat-1.8.1.3.tar.gz"
+        }
+      ],
+      "release_url": "http://www.dest-unreach.org/socat/"
+    },
+    "sqlite": {
+      "symbol": "BR2_PACKAGE_SQLITE",
+      "version": "3.54.1",
+      "recipe": "package/sqlite/sqlite.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "926ef8d3eab93fbf6e06011901273eec076b25594a4e1cdadd50c987f4f6d64e",
+          "filename": "sqlite-autoconf-3540100.tar.gz"
+        }
+      ],
+      "release_url": "https://www.sqlite.org/download.html"
+    },
+    "strace": {
+      "symbol": "BR2_PACKAGE_STRACE",
+      "version": "7.3",
+      "recipe": "package/strace/strace.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "529634c40910895a9a1f3c5c1e65da2ca9ed72fb158dfc4bcc89efdf05e39b72",
+          "filename": "strace-7.3.tar.xz"
+        }
+      ],
+      "release_url": "https://github.com/strace/strace/releases/tag/v7.3"
+    },
+    "sysklogd": {
+      "symbol": "BR2_PACKAGE_SYSKLOGD",
+      "version": "2.8.0",
+      "recipe": "package/sysklogd/sysklogd.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "67f49c6b2e9d75ce15202db815112719f4af0db8901032f0c3a0cec1b9f65551",
+          "filename": "sysklogd-2.8.0.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/troglobit/sysklogd/releases/tag/v2.8.0"
+    },
+    "sysvinit": {
+      "symbol": "BR2_PACKAGE_SYSVINIT",
+      "version": "3.18",
+      "recipe": "package/sysvinit/sysvinit.mk + userland/configs/local-sources.mk + userland/external.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "793d7427e219f1ccf122e7c55655cef5f3419adc620ec2ee0ed557e8c94b438f",
+          "filename": "sysvinit-3.18.tar.xz"
+        }
+      ],
+      "source_tree": "userland/sysvinit",
+      "source_manifest": "userland/sysvinit/manifest.json",
+      "release_url": "https://codeberg.org/thejessesmith/sysvinit/releases/tag/3.18"
+    },
+    "tar": {
+      "symbol": "BR2_PACKAGE_TAR",
+      "version": "1.35",
+      "recipe": "package/tar/tar.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "4d62ff37342ec7aed748535323930c7cf94acf71c3591882b26a7ea50f3edc16",
+          "filename": "tar-1.35.tar.xz"
+        }
+      ]
+    },
+    "tcl": {
+      "symbol": "BR2_PACKAGE_TCL",
+      "version": "9.1.0",
+      "recipe": "package/tcl/tcl.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "536c45543f64d6eb11832d97ba3494aacff046fbc5040273bd55258d0e448ff1",
+          "filename": "tcl9.1.0-src.tar.gz"
+        }
+      ],
+      "release_url": "https://www.tcl-lang.org/software/tcltk/download.html"
+    },
+    "tcpdump": {
+      "symbol": "BR2_PACKAGE_TCPDUMP",
+      "version": "4.99.7",
+      "recipe": "package/tcpdump/tcpdump.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "f748d773343f9149723ab76b2025163038137bf6af6780f2fd43d99830547991",
+          "filename": "tcpdump-4.99.7.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/the-tcpdump-group/tcpdump/tags"
+    },
+    "tcping": {
+      "symbol": "BR2_PACKAGE_TCPING",
+      "version": "2.1.0",
+      "recipe": "package/tcping/tcping.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "b8aa427420fe00173b5a2c0013d78e52b010350f5438bf5903c1942cba7c39c9",
+          "filename": "tcping-2.1.0.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/mkirchner/tcping/tags"
+    },
+    "tftpd": {
+      "symbol": "BR2_PACKAGE_TFTPD",
+      "version": "7.2",
+      "recipe": "package/tftpd/tftpd.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "72858bb18cff6207ffc98fe8d21e6a1187e036163ca8d91e9c9f5d4c3fdae22f",
+          "filename": "tftp-hpa-7.2.tar.xz"
+        }
+      ],
+      "release_url": "https://www.kernel.org/pub/software/network/tftp/"
+    },
+    "time": {
+      "symbol": "BR2_PACKAGE_TIME",
+      "version": "1.10",
+      "recipe": "package/time/time.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "706bf7b8444ca9eb9037e9eda18e1d0eb7c2327ae7d8c2ce3a4823c5f80c7b11",
+          "filename": "time-1.10.tar.xz"
+        }
+      ],
+      "release_url": "https://ftp.gnu.org/gnu/time/"
+    },
+    "tmux": {
+      "symbol": "BR2_PACKAGE_TMUX",
+      "version": "3.8",
+      "recipe": "package/tmux/tmux.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "e79c699c7e949dccd0a4a125e17b8d1261e311b16979dbc8eb34542f3966d82e",
+          "filename": "tmux-3.8.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/tmux/tmux/releases/latest"
+    },
+    "traceroute": {
+      "symbol": "BR2_PACKAGE_TRACEROUTE",
+      "version": "2.1.6",
+      "recipe": "package/traceroute/traceroute.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "9ccef9cdb9d7a98ff7fbf93f79ebd0e48881664b525c4b232a0fcec7dcb9db5e",
+          "filename": "traceroute-2.1.6.tar.gz"
+        }
+      ],
+      "release_url": "https://sourceforge.net/projects/traceroute/files/"
+    },
+    "tree": {
+      "symbol": "BR2_PACKAGE_TREE",
+      "version": "2.3.2",
+      "recipe": "package/tree/tree.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "6b941dd6cbecfb4d3250700e4d08d8e0c251488981dd4868b90d744234300e21",
+          "filename": "tree-2.3.2.tgz"
+        }
+      ],
+      "release_url": "https://oldmanprogrammer.net/tar/tree/"
+    },
+    "unbound": {
+      "symbol": "BR2_PACKAGE_UNBOUND",
+      "version": "1.26.2",
+      "recipe": "package/unbound/unbound.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "d8ee7aa6bbb3ff1be7d9e57637d0d0ec2f18273a8efff1a0afe2c665858b96f7",
+          "filename": "unbound-1.26.2.tar.gz"
+        }
+      ],
+      "release_url": "https://nlnetlabs.nl/projects/unbound/download/"
+    },
+    "unzip": {
+      "symbol": "BR2_PACKAGE_UNZIP",
+      "version": "6.0",
+      "recipe": "package/unzip/unzip.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "036d96991646d0449ed0aa952e4fbe21b476ce994abc276e49d30e686708bd37",
+          "filename": "unzip_6.0.orig.tar.gz"
+        },
+        {
+          "algorithm": "sha256",
+          "digest": "67bde7c71d52afd61aa936d4415c8d12fd90ca26e9637a3cd67cae9b71298c12",
+          "filename": "unzip_6.0-27.debian.tar.xz"
+        }
+      ]
+    },
+    "usbutils": {
+      "symbol": "BR2_PACKAGE_USBUTILS",
+      "version": "020",
+      "recipe": "package/usbutils/usbutils.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "20287d68fcd9ebb50a05ba0645a4af7583bd8dfc7307215ba121e4bc6d057aa1",
+          "filename": "usbutils-020.tar.xz"
+        }
+      ],
+      "release_url": "https://www.kernel.org/pub/linux/utils/usb/usbutils/"
+    },
+    "util-linux": {
+      "symbol": "BR2_PACKAGE_UTIL_LINUX",
+      "version": "2.42.4",
+      "recipe": "package/util-linux/util-linux.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "fbd62a100ab7bb8746ba0661255c3c48185b1e9021507c624da01fbc696330ec",
+          "filename": "util-linux-2.42.4.tar.xz"
+        }
+      ],
+      "release_url": "https://www.kernel.org/pub/linux/utils/util-linux/v2.42/"
+    },
+    "vim": {
+      "symbol": "BR2_PACKAGE_VIM",
+      "version": "9.2.0943",
+      "recipe": "package/vim/vim.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "9b90b23241007b20ba89b7b00e6202008f4ff5b5278974d42aa199867c2eada5",
+          "filename": "vim-9.2.0943.tar.gz"
+        }
+      ]
+    },
+    "wget": {
+      "symbol": "BR2_PACKAGE_WGET",
+      "version": "1.25.0",
+      "recipe": "package/wget/wget.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "19225cc756b0a088fc81148dc6a40a0c8f329af7fd8483f1c7b2fe50f4e08a1f",
+          "filename": "wget-1.25.0.tar.lz"
+        }
+      ]
+    },
+    "whois": {
+      "symbol": "BR2_PACKAGE_WHOIS",
+      "version": "5.6.6",
+      "recipe": "package/whois/whois.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "43d3b3cc64c75e8bd10aee6feff3906e9488ed335076d206e70f3b25bf644969",
+          "filename": "whois-5.6.6.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/rfc1036/whois/tags"
+    },
+    "wireguard-tools": {
+      "symbol": "BR2_PACKAGE_WIREGUARD_TOOLS",
+      "version": "1.0.20260223",
+      "recipe": "package/wireguard-tools/wireguard-tools.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "af459827b80bfd31b83b08077f4b5843acb7d18ad9a33a2ef532d3090f291fbf",
+          "filename": "wireguard-tools-1.0.20260223.tar.xz"
+        }
+      ],
+      "release_url": "https://git.zx2c4.com/wireguard-tools/refs/tags"
+    },
+    "wireless-regdb": {
+      "symbol": "BR2_PACKAGE_WIRELESS_REGDB",
+      "version": "2026.09.03",
+      "recipe": "package/wireless-regdb/wireless-regdb.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "b22e0901227b820cd1c280abe681a15b773a5103a5e10dc442e94ebb34cbf58d",
+          "filename": "wireless-regdb-2026.09.03.tar.xz"
+        }
+      ],
+      "release_url": "https://www.kernel.org/pub/software/network/wireless-regdb/"
+    },
+    "wireless_tools": {
+      "symbol": "BR2_PACKAGE_WIRELESS_TOOLS",
+      "version": "30.pre9",
+      "recipe": "package/wireless_tools/wireless_tools.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "abd9c5c98abf1fdd11892ac2f8a56737544fe101e1be27c6241a564948f34c63",
+          "filename": "wireless_tools.30.pre9.tar.gz"
+        }
+      ],
+      "release_url": "https://hewlettpackard.github.io/wireless-tools/"
+    },
+    "wpa_supplicant": {
+      "symbol": "BR2_PACKAGE_WPA_SUPPLICANT",
+      "version": "2.12",
+      "recipe": "package/wpa_supplicant/wpa_supplicant.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "08e23937e16d0155e55cab2b51f51fbe10d80a1aa91c4e15442645059b737ef6",
+          "filename": "wpa_supplicant-2.12.tar.gz"
+        }
+      ],
+      "release_url": "https://w1.fi/releases/"
+    },
+    "x11r7/xapp_twm": {
+      "symbol": "BR2_PACKAGE_XAPP_TWM",
+      "version": "1.0.12",
+      "recipe": "package/x11r7/xapp_twm/xapp_twm.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "aaf201d4de04c1bb11eed93de4bee0147217b7bdf61b7b761a56b2fdc276afe4",
+          "filename": "twm-1.0.12.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "f3d68df7e06516f6b74f19181efcfd9db2479c8ea0c72c3a6ed0dc1b222405b40d81a2dea17b662955e0c1783e87d0d3eb067c3b6e7c6eed8c0d38d03d362260",
+          "filename": "twm-1.0.12.tar.xz"
+        }
+      ]
+    },
+    "x11r7/xapp_xauth": {
+      "symbol": "BR2_PACKAGE_XAPP_XAUTH",
+      "version": "1.1.2",
+      "recipe": "package/x11r7/xapp_xauth/xapp_xauth.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "78ba6afd19536ced1dddb3276cba6e9555a211b468a06f95f6a97c62ff8ee200",
+          "filename": "xauth-1.1.2.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "ac23fcd166b45abf7b030994ff3332c9906023dc1ddfa9b9d3000e6a914dc5e0213c4a2aa409cb3ddb93e1f9f4f6374376109241a95ef8c36af842de1f6f76e8",
+          "filename": "xauth-1.1.2.tar.xz"
+        }
+      ]
+    },
+    "x11r7/xapp_xinit": {
+      "symbol": "BR2_PACKAGE_XAPP_XINIT",
+      "version": "1.4.2",
+      "recipe": "package/x11r7/xapp_xinit/xapp_xinit.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "b7d8dc8d22ef9f15985a10b606ee4f2aad6828befa437359934647e88d331f23",
+          "filename": "xinit-1.4.2.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "4b62c2edd97b40133577cbba88b3f31b36c5634b4eb667ef0c302e8358dc1c55a255abe42aaadc910d8aa9ea0e3add157a12a301382f1cdbe091df4e1215fae0",
+          "filename": "xinit-1.4.2.tar.xz"
+        }
+      ]
+    },
+    "x11r7/xapp_xkbcomp": {
+      "symbol": "BR2_PACKAGE_XAPP_XKBCOMP",
+      "version": "1.4.6",
+      "recipe": "package/x11r7/xapp_xkbcomp/xapp_xkbcomp.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "fa50d611ef41e034487af7bd8d8c718df53dd18002f591cca16b0384afc58e98",
+          "filename": "xkbcomp-1.4.6.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "90e69dd1c78c28f77a5acc7821b43afec1b9ac4895bc6f3462b4902baaadc26f3869da69e3bd023b4bc74adb5f1be0c43ca24b3dab37ac9a479c5622684baa81",
+          "filename": "xkbcomp-1.4.6.tar.xz"
+        }
+      ]
+    },
+    "x11r7/xapp_xrdb": {
+      "symbol": "BR2_PACKAGE_XAPP_XRDB",
+      "version": "1.2.2",
+      "recipe": "package/x11r7/xapp_xrdb/xapp_xrdb.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "31f5fcab231b38f255b00b066cf7ea3b496df712c9eb2d0d50c670b63e5033f4",
+          "filename": "xrdb-1.2.2.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "c8a6fc94e270e9cb5602e055150553de103d545298285157ecd8924f163a10ebeb9acfff56d1fafbf48d339809c76340213792478cdf3270012d3cd05486001c",
+          "filename": "xrdb-1.2.2.tar.xz"
+        }
+      ]
+    },
+    "x11r7/xapp_xset": {
+      "symbol": "BR2_PACKAGE_XAPP_XSET",
+      "version": "1.2.5",
+      "recipe": "package/x11r7/xapp_xset/xapp_xset.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "9f692d55635b3862cd63633b1222a87680ec283c7a8e8ed6dd698a3147f75e2f",
+          "filename": "xset-1.2.5.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "12b53d7cd6b7ccf6515c03f68151490fce6b2629e99b8d85ac5d760f4ed93394a457213c3947533809fbbb04acd1ed260aeea1256099a10397660eef3088150d",
+          "filename": "xset-1.2.5.tar.xz"
+        }
+      ]
+    },
+    "x11r7/xdriver_xf86-input-evdev": {
+      "symbol": "BR2_PACKAGE_XDRIVER_XF86_INPUT_EVDEV",
+      "version": "2.10.6",
+      "recipe": "package/x11r7/xdriver_xf86-input-evdev/xdriver_xf86-input-evdev.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "8726073e81861bc7b2321e76272cbdbd33c7e1a121535a9827977265b9033ec0",
+          "filename": "xf86-input-evdev-2.10.6.tar.bz2"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "560b0a6491d50a46913a5890a35c0367e59f550670993493bd9712d712a9747ddaa6fe5086daabf2fcafa24b0159383787eb273da4a2a60c089bfc0a77ad2ad1",
+          "filename": "xf86-input-evdev-2.10.6.tar.bz2"
+        }
+      ]
+    },
+    "x11r7/xdriver_xf86-input-mouse": {
+      "symbol": "BR2_PACKAGE_XDRIVER_XF86_INPUT_MOUSE",
+      "version": "1.9.5",
+      "recipe": "package/x11r7/xdriver_xf86-input-mouse/xdriver_xf86-input-mouse.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "4fde8ae9b44352e2a208584c36528ee3ed13cf5fe4417208a9785daccefd9968",
+          "filename": "xf86-input-mouse-1.9.5.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "ed9bd9cb9a05dac0ff1bfb4e4704cb2e94117afb400aa9e0b7ccdbb102bc6db1b0d3af7cb6f99d0892f8fc306f1643286291c0fa7114af8e65864412bd6c1afa",
+          "filename": "xf86-input-mouse-1.9.5.tar.xz"
+        }
+      ]
+    },
+    "x11r7/xdriver_xf86-video-fbdev": {
+      "symbol": "BR2_PACKAGE_XDRIVER_XF86_VIDEO_FBDEV",
+      "version": "0.5.0",
+      "recipe": "package/x11r7/xdriver_xf86-video-fbdev/xdriver_xf86-video-fbdev.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "dcc3d85f378022180e437a9ec00a59b6cb7680ff79c40394d695060af2374699",
+          "filename": "xf86-video-fbdev-0.5.0.tar.bz2"
+        }
+      ]
+    },
+    "x11r7/xfont_font-alias": {
+      "symbol": "BR2_PACKAGE_XFONT_FONT_ALIAS",
+      "version": "1.0.5",
+      "recipe": "package/x11r7/xfont_font-alias/xfont_font-alias.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "9f89e217bb73e0e3636a0a493fbf8b7c995156e0c53d9a0476d201b67c2d6b6e",
+          "filename": "font-alias-1.0.5.tar.xz"
+        }
+      ]
+    },
+    "x11r7/xfont_font-cursor-misc": {
+      "symbol": "BR2_PACKAGE_XFONT_FONT_CURSOR_MISC",
+      "version": "1.0.4",
+      "recipe": "package/x11r7/xfont_font-cursor-misc/xfont_font-cursor-misc.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "25d9c9595013cb8ca08420509993a6434c917e53ca1fec3f63acd45a19d4f982",
+          "filename": "font-cursor-misc-1.0.4.tar.xz"
+        }
+      ]
+    },
+    "x11r7/xfont_font-misc-misc": {
+      "symbol": "BR2_PACKAGE_XFONT_FONT_MISC_MISC",
+      "version": "1.1.3",
+      "recipe": "package/x11r7/xfont_font-misc-misc/xfont_font-misc-misc.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "79abe361f58bb21ade9f565898e486300ce1cc621d5285bec26e14b6a8618fed",
+          "filename": "font-misc-misc-1.1.3.tar.xz"
+        }
+      ]
+    },
+    "x11r7/xserver_xorg-server": {
+      "symbol": "BR2_PACKAGE_XSERVER_XORG_SERVER",
+      "version": "21.1.24",
+      "recipe": "package/x11r7/xserver_xorg-server/xserver_xorg-server.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "1a4eb36ca65cc3b1b936566d677a9786e13c11cd5806e951ac55f3f5ce3984af",
+          "filename": "xorg-server-21.1.24.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "f51372b04fe21632fc778ff240705161ed2dccc0114dbe3ee25156d8ac85ec945e2ac05d8638bc7d8d54bad4dfc89cb26b6bd2058b7804d54ab7179e1ac2eb13",
+          "filename": "xorg-server-21.1.24.tar.xz"
+        }
+      ]
+    },
+    "xterm": {
+      "symbol": "BR2_PACKAGE_XTERM",
+      "version": "389",
+      "recipe": "package/xterm/xterm.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "1cd5763d94d9370fed10d804e831a089b2ace0e7a74b6f56ef5a16a766bde7be",
+          "filename": "xterm-389.tgz"
+        }
+      ]
+    },
+    "xz": {
+      "symbol": "BR2_PACKAGE_XZ",
+      "version": "5.6.4",
+      "recipe": "package/xz/xz.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "176d510c30d80a23b8050bbc048f2ecaacb823ae48b6821727ed6591f0df9200",
+          "filename": "xz-5.6.4.tar.bz2"
+        }
+      ]
+    },
+    "zip": {
+      "symbol": "BR2_PACKAGE_ZIP",
+      "version": "3.0",
+      "recipe": "package/zip/zip.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "f0e8bb1f9b7eb0b01285495a2699df3a4b766784c1765a8f1aeedf63c0806369",
+          "filename": "zip30.tar.gz"
+        }
+      ]
+    },
+    "zstd": {
+      "symbol": "BR2_PACKAGE_ZSTD",
+      "version": "1.5.7",
+      "recipe": "package/zstd/zstd.mk",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3",
+          "filename": "zstd-1.5.7.tar.gz"
+        }
+      ],
+      "release_url": "https://github.com/meta/zstd/releases/latest"
+    }
+  },
+  "dependency_lock": "All recursive package versions, source hashes and patches are pinned inside the SHA256-locked Buildroot release. packages-resolved.json is produced after building.",
+  "backend_extensions": {
+    "external_gcc16_patch": "userland/patches/buildroot-external-gcc16.patch",
+    "scope": "External GCC16 version selection and capability chain only; backend host compiler and all stock recipes remain pinned",
+    "native_compiler": "16.2.0",
+    "native_binutils": "2.47"
+  }
+}

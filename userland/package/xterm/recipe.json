@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "name": "xterm",
+  "engine": "Buildroot 2025.02.18 external tree",
+  "manifest_entry": "configs/packages.json:packages.xterm",
+  "symbol": "BR2_PACKAGE_XTERM",
+  "version": "389",
+  "recipe": "package/xterm/xterm.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "1cd5763d94d9370fed10d804e831a089b2ace0e7a74b6f56ef5a16a766bde7be",
+      "filename": "xterm-389.tgz"
+    }
+  ]
+}

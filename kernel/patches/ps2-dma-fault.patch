@@ -1,0 +1,132 @@
+--- a/drivers/ps2/sif.c
++++ b/drivers/ps2/sif.c
+@@ -392,6 +392,7 @@
+ 	if (sif0_busy())
+ 		return IRQ_NONE;
+ 
++	dma_rmb();
+ 	dma_cache_inv((unsigned long)sif0_buffer, SIF_CMD_PACKET_MAX);
+ 
+ 	if (header->data_size)
+@@ -441,6 +442,9 @@
+ 	client->client_buffer = (void *)__get_free_page(GFP_DMA);
+ 	if (client->client_buffer == NULL)
+ 		return -ENOMEM;
++	dma_cache_wback_inv((unsigned long)client->client_buffer,
++		client->client_size_max);
++	dma_wmb();
+ 
+ 	err = sif_cmd(SIF_CMD_RPC_BIND, &bind, sizeof(bind));
+ 	if (err) {
+@@ -489,6 +493,13 @@
+ 	if (recv_size > client->client_size_max)
+ 		return -EINVAL;
+ 
++	/* A reused receive page may still be dirty in the EE cache.
++	 * Preparing it after DMA has finished is too late. The whole
++	 * dedicated page is ours; no unrelated data shares its lines.
++	 */
++	dma_cache_wback_inv((unsigned long)client->client_buffer,
++		client->client_size_max);
++	dma_wmb();
+ 	reinit_completion(&client->done);
+ 
+ 	err = sif_cmd_data(SIF_CMD_RPC_CALL, &call, sizeof(call),
+@@ -507,6 +518,7 @@
+ 			rpc_id, client->server, inl(DMAC_STAT_MASK));
+ 	}
+ 
++	dma_rmb();
+ 	if (recv_size > 0)
+ 		dma_cache_inv((unsigned long)client->client_buffer, recv_size);
+ 
+@@ -701,6 +713,11 @@
+ 		return -ENOMEM;
+ 	}
+ 
++	/* Allocator reuse can leave dirty EE cache lines in this page.
++	 * Publish it to the IOP only after relinquishing CPU ownership.
++	 */
++	dma_cache_wback_inv((unsigned long)sif0_buffer, SIF0_BUFFER_SIZE);
++	dma_wmb();
+ 	return 0;
+ }
+ 
+--- a/init/main.c
++++ b/init/main.c
+@@ -1363,6 +1363,11 @@
+ }
+ #endif /* !TRACEPOINTS_ENABLED */
+ 
++#ifdef CONFIG_CPU_R5900
++/* Keep the address, not init-only text, for the final Oops summary. */
++unsigned long ps2_last_initcall;
++#endif
++
+ int __init_or_module do_one_initcall(initcall_t fn)
+ {
+ 	int count = preempt_count();
+@@ -1372,6 +1377,9 @@
+ 	if (initcall_blacklisted(fn))
+ 		return -EPERM;
+ 
++#ifdef CONFIG_CPU_R5900
++	WRITE_ONCE(ps2_last_initcall, (unsigned long)fn);
++#endif
+ 	do_trace_initcall_start(fn);
+ 	ret = fn();
+ 	do_trace_initcall_finish(fn, ret);
+@@ -1466,6 +1474,9 @@
+  */
+ static void __init do_basic_setup(void)
+ {
++#ifdef CONFIG_CPU_R5900
++	pr_info("ps2: DMA handoff and fault summary kernel\n");
++#endif
+ 	cpuset_init_smp();
+ 	ksysfs_init();
+ 	driver_init();
+--- a/arch/mips/kernel/traps.c
++++ b/arch/mips/kernel/traps.c
+@@ -369,6 +369,31 @@
+ 	dump_stack();
+ }
+ 
++#ifdef CONFIG_CPU_R5900
++extern unsigned long ps2_last_initcall;
++
++static void ps2_fault_summary(const struct pt_regs *regs)
++{
++	/* Print after the long trace, so these lines survive console scrolling.
++	 * Never dereference suspect pointers while reporting an exception.
++	 */
++	pr_emerg("ps2 fault : task=%s pid=%d\n",
++		 current->comm, task_pid_nr(current));
++	pr_emerg("ps2 fault: epc=%08lx ra=%08lx\n",
++		 regs->cp0_epc, regs->regs[31]);
++	pr_emerg("ps2 fault: bad=%08lx cause=%08lx\n",
++		 regs->cp0_badvaddr, regs->cp0_cause);
++	pr_emerg("ps2 fault: a0=%08lx a1=%08lx\n",
++		 regs->regs[4], regs->regs[5]);
++	pr_emerg("ps2 fault: a2=%08lx sp=%08lx\n",
++		 regs->regs[6], regs->regs[29]);
++	pr_emerg("ps2 fault: EPC %pS\n", (void *)regs->cp0_epc);
++	pr_emerg("ps2 fault: RA %pS\n", (void *)regs->regs[31]);
++	pr_emerg("ps2 fault: last init %pS\n",
++		 (void *)READ_ONCE(ps2_last_initcall));
++}
++#endif
++
+ void show_registers(struct pt_regs *regs)
+ {
+ 	const int field = 2 * sizeof(unsigned long);
+@@ -389,6 +414,9 @@
+ 	show_stacktrace(current, regs, KERN_DEFAULT, user_mode(regs));
+ 	show_code((void *)regs->cp0_epc, user_mode(regs));
+ 	printk("\n");
++#ifdef CONFIG_CPU_R5900
++	ps2_fault_summary(regs);
++#endif
+ }
+ 
+ static DEFINE_RAW_SPINLOCK(die_lock);

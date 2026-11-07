@@ -1,0 +1,47 @@
+XTerm*font: 6x13
+XTerm*boldFont: 6x13bold
+XTerm*renderFont: false
+XTerm*foreground: #dbeaff
+XTerm*background: #070f25
+XTerm*cursorColor: #62d6ff
+XTerm*color0: #070f25
+XTerm*color1: #ff6e8a
+XTerm*color2: #70dcba
+XTerm*color3: #eed785
+XTerm*color4: #639bff
+XTerm*color5: #c596ef
+XTerm*color6: #62d6ff
+XTerm*color7: #dbeaff
+XTerm*color8: #62789c
+XTerm*color9: #ff91a6
+XTerm*color10: #9ce9ca
+XTerm*color11: #ffe6aa
+XTerm*color12: #98bdff
+XTerm*color13: #dabaff
+XTerm*color14: #a2eaff
+XTerm*color15: #ffffff
+XTerm*saveLines: 120
+XTerm*scrollBar: false
+XTerm*jumpScroll: true
+XTerm*scrollTtyOutput: false
+XTerm*scrollKey: true
+XTerm*allowWindowOps: false
+XTerm*loginShell: true
+XTerm*internalBorder: 8
+XTerm*bellIsUrgent: true
+! Classic analogue clock using the accelerated core drawing operations.
+XClock*render: false
+! Scientific controls use readable labels with the installed core font.
+! The upstream calculator uses an Adobe Symbol font outside this small desktop.
+XCalc*ti.button3.font: 9x15
+XCalc*ti.button3.label: sqrt
+XCalc*ti.button21.font: 9x15
+XCalc*ti.button21.label: pi
+XCalc*ti.button35.font: 9x15
+XCalc*ti.button35.label: /
+XCalc*hp.button1.font: 9x15
+XCalc*hp.button1.label: sqrt
+XCalc*hp.button10.font: 9x15
+XCalc*hp.button10.label: /
+XCalc*hp.button12.font: 9x15
+XCalc*hp.button12.label: pi

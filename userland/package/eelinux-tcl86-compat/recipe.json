@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "name": "eelinux-tcl86-compat",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "symbol": "BR2_PACKAGE_EELINUX_TCL86_COMPAT",
+  "version": "8.6.18",
+  "recipe": "package/eelinux-tcl86-compat/eelinux-tcl86-compat.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e",
+      "filename": "tcl8.6.18-src.tar.gz"
+    }
+  ],
+  "purpose": "Stable Expect compatibility ABI alongside current Tcl, with distinct interpreter, headers and pkgconfig name",
+  "release_url": "https://www.tcl-lang.org/software/tcltk/download.html",
+  "manifest_entry": "configs/packages.json:packages.eelinux-tcl86-compat"
+}

@@ -1,0 +1,10 @@
+{
+  "S": {"S10devices": "devices", "S15keyboard": "keyboard", "S18video": "video", "S20swap": "swap"},
+  "0": {"K20network": "network", "K40devices": "devices", "K70processes": "processes", "K80swap": "swap", "K90umount": "umount", "S99halt": "halt"},
+  "1": {"K20network": "network"},
+  "2": {"S20network": "network"},
+  "3": {"S20network": "network"},
+  "4": {"S20network": "network"},
+  "5": {"S20network": "network"},
+  "6": {"K20network": "network", "K40devices": "devices", "K70processes": "processes", "K80swap": "swap", "K90umount": "umount", "S99halt": "halt"}
+}

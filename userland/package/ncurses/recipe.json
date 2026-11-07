@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "name": "ncurses",
+  "engine": "Buildroot 2025.02.18 external tree",
+  "manifest_entry": "configs/packages.json:packages.ncurses",
+  "symbol": "BR2_PACKAGE_NCURSES",
+  "version": "6.4$(if 20230603,-20230603)",
+  "recipe": "package/ncurses/ncurses.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "b0910671694c2c8377f579eea68477a15d67bd20ddd4b29328cfe15c62c7b3fd",
+      "filename": "ncurses-6.4-20230603.tar.gz"
+    }
+  ]
+}

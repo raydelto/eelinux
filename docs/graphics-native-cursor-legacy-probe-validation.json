@@ -1,0 +1,102 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "date": "2026-10-05",
+  "sanitizers": [
+    "address",
+    "undefined"
+  ],
+  "cases": 45,
+  "groups": [
+    {
+      "suite": "test_ps2_solid_probe.py",
+      "cases": 3,
+      "result": "passed",
+      "log": {
+        "sha256": "cf5279f41e90408f6194bb452f98d9c4dc84eca7448881bfd4afecd16a219f42"
+      }
+    },
+    {
+      "suite": "test_ps2_copy_probe.py",
+      "cases": 3,
+      "result": "passed",
+      "log": {
+        "sha256": "cf0a8f5c58e4a2307d4260e3f539dafab04874d94219ce78f26c0a3e70a963f4"
+      }
+    },
+    {
+      "suite": "test_ps2_fill_probe.py",
+      "cases": 5,
+      "result": "passed",
+      "log": {
+        "sha256": "cf38a5476a49bf859859e7e3cc6b7de22f9955b9414e3c9835ee41ae90752799"
+      }
+    },
+    {
+      "suite": "test_ps2_stipple_probe.py",
+      "cases": 5,
+      "result": "passed",
+      "log": {
+        "sha256": "152948dd1eeb0b2871eb956cf75fa1a8463d6f8717e036a6b773511eddbc8593"
+      }
+    },
+    {
+      "suite": "test_ps2_mono_probe.py",
+      "cases": 5,
+      "result": "passed",
+      "log": {
+        "sha256": "b9f2db588db804ea6d0d2cef0b93f25fc097324049341681563062db9822cd94"
+      }
+    },
+    {
+      "suite": "test_ps2_transparent_probe.py",
+      "cases": 6,
+      "result": "passed",
+      "log": {
+        "sha256": "0fea97d42e8da604b4c16c99c8f91951504e22dc60f197b316de1e7d8c020071"
+      }
+    },
+    {
+      "suite": "test_ps2_opaque_probe.py",
+      "cases": 6,
+      "result": "passed",
+      "log": {
+        "sha256": "34b5c4ec8668b26f39101a66f4f7deab1e232d30cc7666c3b7dbc467722ec2f2"
+      }
+    },
+    {
+      "suite": "test_ps2_line_probe.py",
+      "cases": 6,
+      "result": "passed",
+      "log": {
+        "sha256": "2a31847ae9f676bf436d5326096f5bad956a32e62d1c6453cd95e3572dc5f74c"
+      }
+    },
+    {
+      "suite": "test_ps2_dash_probe.py",
+      "cases": 6,
+      "result": "passed",
+      "log": {
+        "sha256": "782e363bfdf9a5c36936dfa6705dcc77e1b93f27575ec68c8e12d352c6bc6f26"
+      }
+    }
+  ],
+  "compiled_current_production_sources_match_component_build": true,
+  "component_build_sha256": "3f8531d59b02a2766ae44122841da59ae5f4a72929420ad5b84ab8f4cb24d87e",
+  "updated_legacy_fixture_sources": {
+    "tests/graphics/ps2-solid-probe.c": "ae710a59e59e6648634f13694d5ea264c2cb36a4f14f796550dc555b7784d6b1",
+    "tests/graphics/ps2-copy-probe.c": "845e05eb83a790c37ec3722fb2529bb0a6d97c7f35abdb22f2ed854b010e909c",
+    "tests/graphics/ps2-fill-probe.c": "656583ab3d57932cf5817bce3d5d76181e544b619fd08566b24bc73cfa4e352f",
+    "tests/graphics/ps2-stipple-probe.c": "0337b9e963a9e4e5e1ab32adddca0dc524d633374c914c5c6b9eab6bd6eea48a",
+    "tests/graphics/ps2-mono-probe.c": "d8f73a7b50fd812316edfb69c0791c8523cdbc26793c5b5f7aece884ab5fb6f3",
+    "tests/graphics/ps2-transparent-probe.c": "34ca51c7fa03d966a4bdc7728c5782cea6dc6dbacaf6d1d3ea4168dbe5ca23eb",
+    "tests/graphics/ps2-opaque-probe.c": "abf28647e85b5bc5fd17305ac7358badd22673937990ccd785780efa118ccea0",
+    "tests/graphics/ps2-line-probe.c": "f10553450158abc4d8e854fb49759fff6e955d84040ef2d429e6fbf15dba3468",
+    "tests/graphics/ps2-dash-probe.c": "f62b1f6f2b648ff119cc8c545126b4496bc63bf98ee055ed51f3082048e0b49c",
+    "tests/graphics/ps2-line-bias-stub.h": "97748429226843eca8a5e28cca99b4c1ca6482f6269c1768b17d2372536ac5ee"
+  },
+  "scope": "earlier standalone diagnostic harnesses with shared native front access guards; all saved binaries/images/evidence unchanged",
+  "physical_pixels_tested": false,
+  "GPU_pixel_readback": false,
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

@@ -1,0 +1,77 @@
+{
+  "status": "immutable reference sources for the separate eeLinux native SMAP implementation; hardware packet acceptance pending",
+  "files": [
+    {
+      "path": "legacy-linux/smap.c",
+      "repository": "https://github.com/frno7/linux",
+      "commit": "f3285c0c4bbfb4b6c97d0d0a261dab92148e1d35",
+      "upstream_path": "drivers/ps2/smap.c",
+      "url": "https://raw.githubusercontent.com/frno7/linux/f3285c0c4bbfb4b6c97d0d0a261dab92148e1d35/drivers/ps2/smap.c",
+      "sha256": "9b321c7971e8e268d53c5207622102d156d197e35e4e562db96c99e806ee1fd6"
+    },
+    {
+      "path": "legacy-linux/smap.h",
+      "repository": "https://github.com/frno7/linux",
+      "commit": "f3285c0c4bbfb4b6c97d0d0a261dab92148e1d35",
+      "upstream_path": "drivers/ps2/smap.h",
+      "url": "https://raw.githubusercontent.com/frno7/linux/f3285c0c4bbfb4b6c97d0d0a261dab92148e1d35/drivers/ps2/smap.h",
+      "sha256": "1652d9904f873704100516254ccd01781a9b137c57ec5552fd1c276d72c8c29f"
+    },
+    {
+      "path": "ps2eth/README",
+      "repository": "https://github.com/ps2dev/ps2eth",
+      "commit": "791126fccff396518ed17d67122868e8f01f59bb",
+      "upstream_path": "README",
+      "url": "https://raw.githubusercontent.com/ps2dev/ps2eth/791126fccff396518ed17d67122868e8f01f59bb/README",
+      "sha256": "1ab7600793ea8ea60931a8c0dd635ad5eee0cd0aa4ad388d8eb19dd93d5b9dd7"
+    },
+    {
+      "path": "ps2eth/smap-linux/smap.c",
+      "repository": "https://github.com/ps2dev/ps2eth",
+      "commit": "791126fccff396518ed17d67122868e8f01f59bb",
+      "upstream_path": "smap-linux/smap.c",
+      "url": "https://raw.githubusercontent.com/ps2dev/ps2eth/791126fccff396518ed17d67122868e8f01f59bb/smap-linux/smap.c",
+      "sha256": "b9026c8f2a0a896b48bd92d401d57e34cee9c006cb8e3d390031a2c8dc4917ff"
+    },
+    {
+      "path": "ps2eth/smap-linux/smap.h",
+      "repository": "https://github.com/ps2dev/ps2eth",
+      "commit": "791126fccff396518ed17d67122868e8f01f59bb",
+      "upstream_path": "smap-linux/smap.h",
+      "url": "https://raw.githubusercontent.com/ps2dev/ps2eth/791126fccff396518ed17d67122868e8f01f59bb/smap-linux/smap.h",
+      "sha256": "2d246c8cfbe28d1b4c17a11100f17e2cb17c9ef84750787fc83c2ed26bdcf554"
+    },
+    {
+      "path": "registers/smapregs.h",
+      "repository": "https://github.com/ps2dev/ps2sdk",
+      "commit": "c318b136294ed225863b580e115988b05751cf59",
+      "upstream_path": "common/include/smapregs.h",
+      "url": "https://raw.githubusercontent.com/ps2dev/ps2sdk/c318b136294ed225863b580e115988b05751cf59/common/include/smapregs.h",
+      "sha256": "76b05f5dade7f588a9829b280187b6abe23903c3a9d29ab06878aac44c36fce5"
+    },
+    {
+      "path": "registers/dev9regs.h",
+      "repository": "https://github.com/ps2dev/ps2sdk",
+      "commit": "c318b136294ed225863b580e115988b05751cf59",
+      "upstream_path": "common/include/dev9regs.h",
+      "url": "https://raw.githubusercontent.com/ps2dev/ps2sdk/c318b136294ed225863b580e115988b05751cf59/common/include/dev9regs.h",
+      "sha256": "642ea46abcd17a34458ac6eb4aed7241c582bb9d0abd6792d87697ac22f46f59"
+    },
+    {
+      "path": "registers/speedregs.h",
+      "repository": "https://github.com/ps2dev/ps2sdk",
+      "commit": "c318b136294ed225863b580e115988b05751cf59",
+      "upstream_path": "common/include/speedregs.h",
+      "url": "https://raw.githubusercontent.com/ps2dev/ps2sdk/c318b136294ed225863b580e115988b05751cf59/common/include/speedregs.h",
+      "sha256": "8ab04fae0fa3c503f52feac7d9eb3be08664f3ceb0780421a3ac508ad1419f72"
+    },
+    {
+      "path": "registers/LICENSE",
+      "repository": "https://github.com/ps2dev/ps2sdk",
+      "commit": "c318b136294ed225863b580e115988b05751cf59",
+      "upstream_path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/ps2dev/ps2sdk/c318b136294ed225863b580e115988b05751cf59/LICENSE",
+      "sha256": "1ecee940922a6886baccddd9133d17f1ce677d32c5a954fac8e48224f2766fe8"
+    }
+  ]
+}

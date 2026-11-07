@@ -1,0 +1,34 @@
+diff --git a/common/RedtapeWilCom.h b/common/RedtapeWilCom.h
+index 1b5c103..383b04a 100644
+--- a/common/RedtapeWilCom.h
++++ b/common/RedtapeWilCom.h
+@@ -7,6 +7,9 @@
+ 
+ #include "common/RedtapeWindows.h"
+ 
++// New MSVC headers advertise bit_cast even when WIL_USE_STL is disabled.
++#include <bit>
++
+ // warning : variable 's_hrErrorLast' set but not used [-Wunused-but-set-variable]
+ #ifdef __clang__
+ #pragma clang diagnostic push
+@@ -19,4 +22,4 @@
+ #pragma clang diagnostic pop
+ #endif
+ 
+-#endif
+\ No newline at end of file
++#endif
+diff --git a/pcsx2/GS/Renderers/DX11/D3D.cpp b/pcsx2/GS/Renderers/DX11/D3D.cpp
+index dcdac87..6b2c4c7 100644
+--- a/pcsx2/GS/Renderers/DX11/D3D.cpp
++++ b/pcsx2/GS/Renderers/DX11/D3D.cpp
+@@ -7,7 +7,7 @@
+ #include "GS/GSExtra.h"
+ #include "Host.h"
+ 
+-#ifdef _M_X86
++#if defined(_M_X86) && defined(ENABLE_VULKAN)
+ #include "GS/Renderers/Vulkan/GSDeviceVK.h"
+ #endif
+ 

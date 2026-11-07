@@ -1,0 +1,90 @@
+{
+  "schema": 1,
+  "implementation": "Experimental PCSX2 v2.6.3 interpreter MMU port",
+  "source_repository": "https://github.com/PCSX2/pcsx2",
+  "source_revision": "bc8151d2a46d4aba039ea5580afbfc7bfcf6d730",
+  "mmu_patch": "emulator/patches/pcsx2-2.6.3-mmu.patch",
+  "mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85",
+  "additional_patches": [
+    {
+      "name": "USB mass-storage READ CAPACITY(10) last-LBA correction",
+      "path": "emulator/patches/pcsx2-2.6.3-usb-capacity.patch",
+      "sha256": "7aa4bf5b3e72faceec3fc74ba7a4495ef7d124fdafc17ea0ddc949e74a7389fd",
+      "source_files": [
+        "pcsx2/USB/usb-msd/usb-msd.cpp"
+      ]
+    }
+  ],
+  "modified_source_files": [
+    "pcsx2/COP0.cpp",
+    "pcsx2/Cache.cpp",
+    "pcsx2/Cache.h",
+    "pcsx2/Config.h",
+    "pcsx2/Interpreter.cpp",
+    "pcsx2/IopIrq.cpp",
+    "pcsx2/Pcsx2Config.cpp",
+    "pcsx2/R5900.cpp",
+    "pcsx2/R5900.h",
+    "pcsx2/R5900MMU.h",
+    "pcsx2/R5900OpcodeImpl.cpp",
+    "pcsx2/USB/USB.cpp",
+    "pcsx2/USB/USB.h",
+    "pcsx2/vtlb.cpp",
+    "pcsx2/vtlb.h"
+  ],
+  "qt": {
+    "version": "6.10.1",
+    "architecture": "linux_gcc_64",
+    "aqt_version": "3.3.0",
+    "official_repository": "https://download.qt.io/online/qtsdkrepository/linux_x64/desktop/qt6_6101/qt6_6101/",
+    "archives_sha256": {
+      "icu-linux-Rhel8.6-x86_64.7z": "8f6f04d648c85283d9a03b157e842bb12951011453b1969e2860cd4477f32b52",
+      "qtbase-Linux-RHEL_9_4-GCC-Linux-RHEL_9_4-X86_64.7z": "3a7b9976cda8d56a0ff224d4cddbe623ef522f60cb1a631d4790b03bfa280690",
+      "qtsvg-Linux-RHEL_9_4-GCC-Linux-RHEL_9_4-X86_64.7z": "712d7ca10a32aa36b447340abbc9ac4263f3cb7f4ead54e54706693edf9091e8",
+      "qttools-Linux-RHEL_9_4-GCC-Linux-RHEL_9_4-X86_64.7z": "8a064bad8183ba9664ef144fccdb4b254d42c336d495df7810222cbfcec18889"
+    }
+  },
+  "dependency_checksum_provenance": "Exact v2.6.3 .github/workflows/scripts/linux/build-dependencies-qt.sh locks",
+  "small_dependencies": [
+    {
+      "name": "plutovg",
+      "version": "1.3.2",
+      "url": "https://github.com/sammycage/plutovg/archive/v1.3.2.tar.gz",
+      "sha256": "7bd4e79ce18b1d47517e7e91fbb7cf19d4f01942804a519bc7c0bf32b6325dd5"
+    },
+    {
+      "name": "plutosvg",
+      "version": "0.0.7",
+      "url": "https://github.com/sammycage/plutosvg/archive/v0.0.7.tar.gz",
+      "sha256": "78561b571ac224030cdc450ca2986b4de915c2ba7616004a6d71a379bffd15f3"
+    },
+    {
+      "name": "KDDockWidgets",
+      "version": "2.4.0",
+      "url": "https://github.com/KDAB/KDDockWidgets/archive/v2.4.0.tar.gz",
+      "sha256": "51dbf24fe72e43dd7cb9a289d3cab47112010f1a2ed69b6fc8ac0dff31991ed2"
+    }
+  ],
+  "cmake_options": [
+    "-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF",
+    "-DLTO_PCSX2_CORE=OFF",
+    "-DENABLE_TESTS=OFF",
+    "-DENABLE_SETCAP=OFF",
+    "-DUSE_BACKTRACE=OFF",
+    "-DUSE_VULKAN=OFF",
+    "-DUSE_OPENGL=ON",
+    "-DWAYLAND_API=OFF",
+    "-DX11_API=ON",
+    "-DUSE_LINKED_FFMPEG=OFF",
+    "-DDISABLE_ADVANCE_SIMD=ON",
+    "-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON",
+    "-DCMAKE_EXE_LINKER_FLAGS_INIT=-fuse-ld=lld-19",
+    "-DCMAKE_MODULE_LINKER_FLAGS_INIT=-fuse-ld=lld-19"
+  ],
+  "limitations": [
+    "Interpreter mode is required; recompilers retain upstream game assumptions.",
+    "This patch is a bounded Linux boot investigation, not full Linux MMU qualification.",
+    "No BIOS HLE implementation or BIOS distribution is included.",
+    "Native console hardware, Ethernet and complete userspace acceptance require separate tests."
+  ]
+}

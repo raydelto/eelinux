@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "name": "gawk",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "5.4.1",
+    "url": "https://ftp.gnu.org/gnu/gawk/gawk-5.4.1.tar.xz",
+    "gnu": true,
+    "filename": "gawk-5.4.1.tar.xz",
+    "sha256": "07f6f7342b7febe4313fc2c2542ad93d64fe20ad8717200109f105a826f5fd37",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Thu 09 Jul 2026 05:56:28 PM WEST\ngpgv:                using RSA key D1967C63788713177D861ED7DF597815937EC0D2\ngpgv: Good signature from \"Arnold Robbins <arnold@skeeve.com>\"\n"
+  },
+  "source_archive": "../../sources/gawk-5.4.1.tar.xz",
+  "configure_options": [
+    "--without-mpfr"
+  ],
+  "configure_environment": {},
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false
+}

@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "name": "python3",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "3.15.2",
+    "url": "https://www.python.org/ftp/python/3.15.2/Python-3.15.2.tar.xz",
+    "filename": "Python-3.15.2.tar.xz",
+    "sha256": "8b5536d280142ecf6cdfe15d12a21ba1c65e300bbf7b28a8d0cdb849575797de",
+    "checked": "2026-11-06",
+    "verification": "SHA256 calculated from actual primary upstream HTTPS archive"
+  },
+  "source_archive": "../../sources/Python-3.15.2.tar.xz",
+  "configure_options": [],
+  "configure_environment": {},
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "python3",
+  "build_dependency_only": false
+}

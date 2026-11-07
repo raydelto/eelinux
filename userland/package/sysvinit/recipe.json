@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "name": "sysvinit",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.sysvinit",
+  "symbol": "BR2_PACKAGE_SYSVINIT",
+  "version": "3.18",
+  "recipe": "package/sysvinit/sysvinit.mk + userland/configs/local-sources.mk + userland/external.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "793d7427e219f1ccf122e7c55655cef5f3419adc620ec2ee0ed557e8c94b438f",
+      "filename": "sysvinit-3.18.tar.xz"
+    }
+  ],
+  "source_tree": "userland/sysvinit",
+  "source_manifest": "userland/sysvinit/manifest.json",
+  "release_url": "https://codeberg.org/thejessesmith/sysvinit/releases/tag/3.18"
+}

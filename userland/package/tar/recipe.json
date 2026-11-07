@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "name": "tar",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "1.35",
+    "url": "https://ftp.gnu.org/gnu/tar/tar-1.35.tar.xz",
+    "gnu": true,
+    "filename": "tar-1.35.tar.xz",
+    "sha256": "4d62ff37342ec7aed748535323930c7cf94acf71c3591882b26a7ea50f3edc16",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Tue 18 Jul 2023 08:16:59 AM WEST\ngpgv:                using DSA key 325F650C4C2B6AD58807327A3602B07F55D0C732\ngpgv: Good signature from \"Sergey Poznyakoff <gray@gnu.org>\"\ngpgv:                 aka \"Sergey Poznyakoff (Gray) <gray@mirddin.farlep.net>\"\ngpgv:                 aka \"Sergey Poznyakoff <gray@gnu.org.ua>\"\n"
+  },
+  "source_archive": "../../sources/tar-1.35.tar.xz",
+  "configure_options": [
+    "--without-selinux"
+  ],
+  "configure_environment": {},
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false
+}

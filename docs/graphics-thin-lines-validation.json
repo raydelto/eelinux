@@ -1,0 +1,187 @@
+{
+  "schema": 1,
+  "updated": "2026-10-05",
+  "milestone": "native zero-width solid lines in all octants",
+  "implementation": [
+    "desktop/xorg/ps2_solid.c",
+    "desktop/xorg/ps2_solid.h",
+    "mesa/ps2/ps2_solid_batch.c",
+    "mesa/ps2/ps2_solid_batch.h"
+  ],
+  "build": {
+    "sha256": "76dac84161bb36c5df6826300f541d6760c2b831a65416c2f8b57c592fbc08e4"
+  },
+  "host": {
+    "sha256": "834b89e06b61d83436061b7bd7b0f13425c87a3efdd17583567bbaf9329354f9"
+  },
+  "build_log": {
+    "sha256": "286328a520eb3e2772c5b05770854a49abac6f6e3f717b53f9b23d001dbd9a70"
+  },
+  "archives": {
+    "libps2-gallium-lines.a": "75c7fdcc8be0aaabe2ad3f1ec847e21977b5df41b0f6feee6a0a7202ba6cbbce",
+    "libps2-xorg-lines.a": "1e63257f5341aaf073ac11a64e7d7c92933fb82d210273ea6e06d9f3a430ddd3"
+  },
+  "patches": [
+    {
+      "patch": "userland/patches/xorg-ps2-thin-lines.patch",
+      "sha256": "e85605750c30a835c299215830d58257a9b943e5a959edf9b26882b3e39c350e",
+      "after": "xorg-ps2-opaque-stipple-logic.patch",
+      "prerequisite_patches": [
+        "xorg-ps2-raster.patch",
+        "xorg-ps2-surfaces.patch",
+        "xorg-ps2-rendering.patch",
+        "xorg-ps2-textures.patch",
+        "xorg-ps2-contexts.patch",
+        "xorg-ps2-glyphs.patch",
+        "xorg-ps2-gc.patch",
+        "xorg-ps2-logic.patch",
+        "xorg-ps2-solid-gc.patch",
+        "xorg-ps2-copy.patch",
+        "xorg-ps2-exa-copy.patch",
+        "xorg-ps2-blit.patch",
+        "xorg-ps2-copy-window.patch",
+        "xorg-ps2-paint-window.patch",
+        "xorg-ps2-tiled-paint.patch",
+        "xorg-ps2-tiled-gc.patch",
+        "xorg-ps2-stippled-gc.patch",
+        "xorg-ps2-monochrome.patch",
+        "xorg-ps2-transparent-stipple.patch",
+        "xorg-ps2-opaque-stipple-logic.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    },
+    {
+      "patch": "userland/patches/mesa-ps2-thin-lines.patch",
+      "sha256": "ce2b3b808a755b084a9a6f7e235bbfc3c81e2327b829a97b75bf2686c345d7a0",
+      "after": "mesa-ps2-opaque-stipple-logic.patch",
+      "prerequisite_patches": [
+        "mesa-ps2-raster.patch",
+        "mesa-ps2-surfaces.patch",
+        "mesa-ps2-rendering.patch",
+        "mesa-ps2-textures.patch",
+        "mesa-ps2-contexts.patch",
+        "mesa-ps2-logic.patch",
+        "mesa-ps2-solid-batch.patch",
+        "mesa-ps2-copy-batch.patch",
+        "mesa-ps2-resource-copy.patch",
+        "mesa-ps2-blit.patch",
+        "mesa-ps2-tile.patch",
+        "mesa-ps2-stipple.patch",
+        "mesa-ps2-transparent-stipple.patch",
+        "mesa-ps2-opaque-stipple-logic.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    }
+  ],
+  "host_sanitizer_cases": 142,
+  "R5900_cases": 142,
+  "new_cases_per_environment": 12,
+  "regression_cases_per_environment": 130,
+  "checks": [
+    "octants",
+    "ties",
+    "clipping",
+    "caps",
+    "joins",
+    "fillstyle",
+    "owned",
+    "random",
+    "extreme",
+    "budget",
+    "allocation",
+    "failure"
+  ],
+  "upstream_reference_zero_line": {
+    "sha256": "c09315fe2f38a159e55bb5f6beb29ea8755cac781be7e3d17cc1c63dea16393a"
+  },
+  "upstream_reference_zero_clip": {
+    "sha256": "c3be8bc9acba695191351cc4704c03e71e066383c53fe50eb6fb672875fa6aed"
+  },
+  "actual_upstream_reference_raster_executed": true,
+  "all_256_screen_biases_tested": true,
+  "native_path": "CPU geometry-only closed-form line coverage -> complete clipped run plan -> shared Mesa fence -> native GS Boolean rectangles",
+  "CPU_colour_destination_renderer": false,
+  "colour_destination_CPU_access": "fatal; remains unavailable",
+  "all_8_octants": true,
+  "all_16_Boolean_ALUs": true,
+  "partial_RGB_masks": true,
+  "redirected_RGBX_RGB555": true,
+  "original_raster_phase_preserved_when_clipped": true,
+  "cap_endpoints_and_polyline_join_rules_match_Xorg": true,
+  "line_foreground_independent_of_fillStyle": true,
+  "full_signed32_endpoints_supported_by_geometry_adapter": true,
+  "geometry_iteration_bounded_by_visible_major_axis_extent": true,
+  "request_preflight_before_original_queue_fence": true,
+  "work_and_allocation_failure_leave_pending_queue_unchanged": true,
+  "later_device_failure_is_sticky_without_Damage_or_replay": true,
+  "limits": {
+    "max_inputs": 4096,
+    "max_composite_clip_boxes": 256,
+    "max_clipped_runs": 16384,
+    "max_heap_plan_bytes": 262144,
+    "compiled_R5900_geometry_planner_stack_bytes": 168,
+    "compiled_R5900_GC_Polylines_stack_bytes": 4288,
+    "compiled_R5900_GC_PolySegment_stack_bytes": 4272,
+    "full_desktop_peak_RAM_measured": false
+  },
+  "new_Gallium_capabilities_advertised": false,
+  "actual_full_EXA_fb_server_executed": false,
+  "actual_Damage_subsystem_executed": false,
+  "GPU_pixel_readback": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL_GLX": false,
+  "shader_caps": 0,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "prior_qualified_opaque_Boolean_evidence": {
+    "path": "docs/graphics-opaque-stipple-logic-validation.json",
+    "sha256": "6c9d16b1637097c2b0bcadae3890a296a966702846c56c0457fb13b7d6a1bf1b"
+  },
+  "new_USB_image_packaged": true,
+  "new_PCSX2_pixels_verified": true,
+  "new_physical_PS2_pixels_verified": false,
+  "limitations": [
+    "thin-line coverage runs use native Boolean rectangles; direct GS line primitives are not used",
+    "wide/dashed lines, arcs, further tile/copy/composite states remain unfinished",
+    "actual EXA/fb bitmap editing and X server/Damage lifecycle require complete DDX integration",
+    "Mesa shaders/vertex/draw_vbo/GLX, TWM session and desktop RAM remain unfinished"
+  ],
+  "legacy_probe_compatibility": {
+    "path": "docs/graphics-thin-lines-legacy-probe-validation.json",
+    "sha256": "068d522b294b928ad20f932900e362d77849fff43d11617792c3692210b2422c"
+  },
+  "additional_host_legacy_probe_cases": 33,
+  "qualified_component_snapshot_unchanged": true,
+  "runtime_validation": {
+    "path": "docs/graphics-thin-lines-runtime-validation.json",
+    "sha256": "80284b1e9f2cf8b7f17d7ac81610d8005c48860720b0692a53519d2d0511c8c4"
+  },
+  "probe_build": {
+    "sha256": "e6d5b323a20a79f69ec9f005219acc365a0d2bce7cb0e4c1570c271264c0b2da"
+  },
+  "probe_host_checks": {
+    "schema": 1,
+    "result": "passed",
+    "cases": 6,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "log_sha256": "441765684f30f644c37c0c3476203dbcd2efade5b3c3c4022dcf69449b9bdc5f",
+    "probe_source_sha256": "95bb38b9052e764356f2d9444d8766d48be7f30f0d874e8783e86eb8d5e906a0",
+    "pixel_qualification": false
+  },
+  "PCSX2_command_fence_exit": 0,
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "iperf",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.iperf",
+  "symbol": "BR2_PACKAGE_IPERF",
+  "version": "2.2.1",
+  "recipe": "package/iperf/iperf.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "754ab0a7e28033dbea81308ef424bc7df4d6e2fe31b60cc536b61b51fefbd8fb",
+      "filename": "iperf-2.2.1.tar.gz"
+    }
+  ],
+  "release_url": "https://sourceforge.net/projects/iperf2/files/"
+}

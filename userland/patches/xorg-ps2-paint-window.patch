@@ -1,0 +1,186 @@
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_paint_window.c
+@@ -0,0 +1,153 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_paint_window.h"
++#include "ps2_solid_batch.h"
++#include "ps2_gs_logic.h"
++#include "ps2_gs_render.h"
++#include "windowstr.h"
++#include "regionstr.h"
++#include "damage.h"
++#include "os.h"
++#include <errno.h>
++#include <limits.h>
++#include <stdlib.h>
++#include <string.h>
++
++static DevPrivateKeyRec key;
++static Bool close_screen(ScreenPtr);
++static void fail(const char *reason)
++{ FatalError("PS2 GS: native PaintWindow failed: %s\n", reason); }
++static struct ps2_paint_window *owner(ScreenPtr s)
++{ return dixLookupPrivate(&s->devPrivates, &key); }
++static Bool valid_region(RegionPtr r)
++{
++    if (!r || RegionBroken(r)) return FALSE;
++    int n = RegionNumRects(r);
++    if (n < 0 || n > (int)PS2_PAINT_MAX_BOXES) return FALSE;
++    BoxPtr boxes = RegionRects(r);
++    for (int i = 0; i < n; ++i)
++        if (boxes[i].x1 >= boxes[i].x2 || boxes[i].y1 >= boxes[i].y2) return FALSE;
++    return TRUE;
++}
++static WindowPtr background(WindowPtr w, ScreenPtr screen)
++{
++    WindowPtr slow = w, fast = w;
++    while (w->backgroundState == ParentRelative) {
++        w = w->parent;
++        if (!w || w->drawable.pScreen != screen) fail("invalid background ancestor");
++        /* Reject a corrupt parent cycle without bounding valid tree depth. */
++        slow = slow ? slow->parent : NULL;
++        fast = fast && fast->parent ? fast->parent->parent : NULL;
++        if (slow && slow == fast) fail("background ancestor cycle");
++    }
++    return w;
++}
++static void paint_window(WindowPtr window, RegionPtr region, int what)
++{
++    ScreenPtr screen = window ? window->drawable.pScreen : NULL;
++    struct ps2_paint_window *b = screen ? owner(screen) : NULL;
++    if (!b || !b->installed || b->screen != screen ||
++        (what != PW_BACKGROUND && what != PW_BORDER)) fail("invalid screen or paint selector");
++    uint32_t color;
++    if (what == PW_BACKGROUND) {
++        WindowPtr ancestor = background(window, screen);
++#ifdef COMPOSITE
++        if (ancestor->inhibitBGPaint) return;
++#endif
++        if (ancestor->backgroundState == None) return;
++        if (ancestor->backgroundState != BackgroundPixel) fail("tiled background is not implemented");
++        color = ancestor->background.pixel;
++    } else {
++        if (!window->borderIsPixel) fail("tiled border is not implemented");
++        color = window->border.pixel;
++    }
++    if (!valid_region(region) || (what == PW_BACKGROUND && !valid_region(&window->clipList)))
++        fail("invalid or excessive paint region");
++    struct ps2_render_client *render = ps2_pipe_context_render(b->context);
++    if (!render || b->exa->gs != render->gs || ps2_pipe_context_acquire(b->context))
++        fail("context is closed, failed or foreign");
++    ps2_pipe_context_release(b->context);
++    PixmapPtr pixmap = screen->GetWindowPixmap(window);
++    if (!pixmap || pixmap->drawable.pScreen != screen) fail("missing window storage");
++    uint32_t handle = 0;
++    if (pixmap != screen->GetScreenPixmap(screen)) {
++        const void *private = exaGetPixmapDriverPrivate(pixmap);
++        if (!private) fail("missing owned pixmap");
++        memcpy(&handle, private, sizeof(handle));
++        if (!handle) fail("unallocated pixmap");
++    }
++    const struct ps2_surface *s = ps2_surface_lookup(b->exa->gs, handle);
++    if (!s || (s->bits_per_pixel != 16 && s->bits_per_pixel != 32) ||
++        pixmap->drawable.width != s->width || pixmap->drawable.height != s->height ||
++        pixmap->drawable.bitsPerPixel != s->bits_per_pixel ||
++        pixmap->drawable.depth != (s->bits_per_pixel == 16 ? 15 : 24) ||
++        window->drawable.depth != pixmap->drawable.depth || window->drawable.bitsPerPixel != s->bits_per_pixel)
++        fail("incompatible native storage");
++    int ox = 0, oy = 0;
++#ifdef COMPOSITE
++    ox = pixmap->screen_x; oy = pixmap->screen_y;
++#endif
++    if (ox < SHRT_MIN || oy < SHRT_MIN || ox + (int)s->width > SHRT_MAX || oy + (int)s->height > SHRT_MAX)
++        fail("backing pixmap bounds overflow");
++    BoxRec box = {ox, oy, ox + s->width, oy + s->height};
++    RegionRec bounds, clipped;
++    RegionInit(&bounds, &box, 1); RegionNull(&clipped);
++    const char *error = NULL;
++    struct ps2_pipe_solid_box *jobs = NULL;
++    if (!RegionIntersect(&clipped, region, &bounds) ||
++        (what == PW_BACKGROUND && !RegionIntersect(&clipped, &clipped, &window->clipList))) {
++        error = "paint region allocation"; goto out;
++    }
++    if (!valid_region(&clipped)) { error = "clipped region exceeds native limit"; goto out; }
++    int n = RegionNumRects(&clipped);
++    if (!n) goto out;
++    jobs = calloc(n, sizeof(*jobs));
++    if (!jobs) { error = "paint plan allocation"; goto out; }
++    BoxPtr boxes = RegionRects(&clipped);
++    for (int i = 0; i < n; ++i)
++        jobs[i] = (struct ps2_pipe_solid_box){boxes[i].x1-ox, boxes[i].y1-oy,
++            boxes[i].x2-ox, boxes[i].y2-oy};
++    uint32_t mask = s->bits_per_pixel == 16 ? 0x7fff : 0xffffff;
++    if (ps2_pipe_solid_rectangles(b->context, handle, jobs, n, color & mask, mask, GXcopy)) {
++        error = strerror(errno); goto out;
++    }
++    exaMarkSync(screen);
++    DrawablePtr drawable = &window->drawable;
++    if (what == PW_BORDER) {
++        /* Damage takes pixmap-local coordinates for a redirected border. */
++        RegionTranslate(&clipped, -ox, -oy); drawable = &pixmap->drawable;
++    }
++    DamageRegionAppend(drawable, &clipped); DamageRegionProcessPending(drawable);
++out:
++    free(jobs); RegionUninit(&clipped); RegionUninit(&bounds);
++    if (error) fail(error);
++}
++Bool ps2_paint_window_prepare(ScreenPtr screen, struct ps2_paint_window *b,
++    struct ps2_surface_exa *exa, struct pipe_context *context)
++{
++    struct ps2_render_client *r = ps2_pipe_context_render(context);
++    if (!screen || !b || b->installed || !exa || !r || r->gs != exa->gs ||
++        !(r->gs->caps.features & PS2GS_HW_SOLID_LOGIC) || !screen->GetWindowPixmap || !screen->GetScreenPixmap ||
++        !screen->PaintWindow || screen->PaintWindow == paint_window || !screen->CloseScreen ||
++        !dixRegisterPrivateKey(&key, PRIVATE_SCREEN, 0) || owner(screen) || ps2_pipe_context_acquire(context)) return FALSE;
++    *b = (struct ps2_paint_window){.screen = screen, .exa = exa, .context = context,
++        .PaintWindow = screen->PaintWindow, .CloseScreen = screen->CloseScreen, .installed = TRUE};
++    dixSetPrivate(&screen->devPrivates, &key, b);
++    screen->PaintWindow = paint_window; screen->CloseScreen = close_screen; return TRUE;
++}
++void ps2_paint_window_cleanup(struct ps2_paint_window *b)
++{
++    if (!b || !b->installed) return;
++    if (owner(b->screen) != b || b->screen->PaintWindow != paint_window || b->screen->CloseScreen != close_screen)
++        fail("callback cleanup order");
++    b->screen->PaintWindow = b->PaintWindow; b->screen->CloseScreen = b->CloseScreen;
++    dixSetPrivate(&b->screen->devPrivates, &key, NULL);
++    struct pipe_context *context = b->context;
++    memset(b, 0, sizeof(*b)); ps2_pipe_context_release(context);
++}
++static Bool close_screen(ScreenPtr screen)
++{
++    struct ps2_paint_window *b = owner(screen);
++    if (!b || !b->installed) fail("missing screen at close");
++    CloseScreenProcPtr lower = b->CloseScreen;
++    ps2_paint_window_cleanup(b); return lower(screen);
++}
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_paint_window.h
+@@ -0,0 +1,27 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_PAINT_WINDOW_H
++#define PS2_PAINT_WINDOW_H
++#include "ps2_surface_exa.h"
++#include "ps2_context_link.h"
++
++#define PS2_PAINT_MAX_BOXES 256U
++struct ps2_paint_window {
++    ScreenPtr screen;
++    struct ps2_surface_exa *exa;
++    struct pipe_context *context;
++    PaintWindowProcPtr PaintWindow;
++    CloseScreenProcPtr CloseScreen;
++    Bool installed;
++};
++/* Zero-initialize screen-owned state. Install after EXA, before later screen
++ * wrappers; remove those wrappers before cleanup. The retained context lease
++ * outlives both callbacks. Regions arrive in screen coordinates. Backgrounds
++ * are clipped to the child's clipList even when inherited from an ancestor;
++ * borders use the backing pixmap bounds. Native solid pixels only: None and
++ * inhibited backgrounds are no-ops, tiled backgrounds/borders are rejected.
++ * Damage must be initialized before drawing. No scratch GC or CPU rasterizer.
++ */
++Bool ps2_paint_window_prepare(ScreenPtr, struct ps2_paint_window *,
++    struct ps2_surface_exa *, struct pipe_context *);
++void ps2_paint_window_cleanup(struct ps2_paint_window *);
++#endif

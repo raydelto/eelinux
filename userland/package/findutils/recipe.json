@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "name": "findutils",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "4.11.0",
+    "url": "https://ftp.gnu.org/gnu/findutils/findutils-4.11.0.tar.xz",
+    "gnu": true,
+    "filename": "findutils-4.11.0.tar.xz",
+    "sha256": "bfd19cb06cc71f3352d567e90284d8cdac02ac89774bbeadf0b533b0c11432fd",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Sat 11 Jul 2026 10:23:59 AM WEST\ngpgv:                using RSA key 0CF4E8D871593224842832B888DD9E08C5DDACB9\ngpgv: Good signature from \"James Youngman <james@youngman.org>\"\ngpgv:                 aka \"James Youngman <jay@gnu.org>\"\n"
+  },
+  "source_archive": "../../sources/findutils-4.11.0.tar.xz",
+  "configure_options": [],
+  "configure_environment": {},
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false
+}

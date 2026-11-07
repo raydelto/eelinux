@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "shadow",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.shadow",
+  "symbol": "BR2_PACKAGE_SHADOW",
+  "version": "4.20.3",
+  "recipe": "package/shadow/shadow.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "623be9429f64fa2165bfc5957c6a642ec309c5cf23c0d53855c99f7591922297",
+      "filename": "shadow-4.20.3.tar.xz"
+    }
+  ],
+  "release_url": "https://github.com/shadow-maint/shadow/releases/tag/4.20.3"
+}

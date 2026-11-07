@@ -1,0 +1,779 @@
+--- a/common/RedtapeWilCom.h
++++ b/common/RedtapeWilCom.h
+@@ -6,6 +6,9 @@
+ #ifdef _WIN32
+ 
+ #include "common/RedtapeWindows.h"
++
++// New MSVC headers advertise bit_cast even when WIL_USE_STL is disabled.
++#include <bit>
+ 
+ // warning : variable 's_hrErrorLast' set but not used [-Wunused-but-set-variable]
+ #ifdef __clang__
+@@ -19,4 +22,4 @@
+ #pragma clang diagnostic pop
+ #endif
+ 
+-#endif
+\ No newline at end of file
++#endif
+--- a/pcsx2/GS/Renderers/DX11/D3D.cpp
++++ b/pcsx2/GS/Renderers/DX11/D3D.cpp
+@@ -7,7 +7,7 @@
+ #include "GS/GSExtra.h"
+ #include "Host.h"
+ 
+-#ifdef _M_X86
++#if defined(_M_X86) && defined(ENABLE_VULKAN)
+ #include "GS/Renderers/Vulkan/GSDeviceVK.h"
+ #endif
+ 
+--- a/pcsx2-qt/QtKeyCodes.cpp
++++ b/pcsx2-qt/QtKeyCodes.cpp
+@@ -566,6 +566,33 @@
+ 
+ u32 QtUtils::KeyEventToCode(const QKeyEvent* ev)
+ {
++#ifdef _WIN32
++	// USB keyboards carry physical keys. Shifted host text is layout-dependent:
++	// mapping a UK double quote to the US apostrophe key corrupts the guest map.
++	// Windows native scan codes retain positions on both press and release.
++	if (!(ev->modifiers() & Qt::KeypadModifier))
++	{
++		const u32 scan = ev->nativeScanCode();
++		if (scan >= 0x02 && scan <= 0x0b)
++			return (scan == 0x0b) ? Qt::Key_0 : Qt::Key_1 + scan - 0x02;
++		switch (scan)
++		{
++			case 0x0c: return Qt::Key_Minus;
++			case 0x0d: return Qt::Key_Equal;
++			case 0x1a: return Qt::Key_BracketLeft;
++			case 0x1b: return Qt::Key_BracketRight;
++			case 0x27: return Qt::Key_Semicolon;
++			case 0x28: return Qt::Key_Apostrophe;
++			case 0x29: return Qt::Key_Agrave;
++			case 0x2b: return Qt::Key_Backslash;
++			case 0x33: return Qt::Key_Comma;
++			case 0x34: return Qt::Key_Period;
++			case 0x35: return Qt::Key_Slash;
++			case 0x56: return Qt::Key_Less; // ISO key, HID usage 0x64.
++			default: break; // Extended keypad/navigation keys keep upstream handling.
++		}
++	}
++#endif
+ 	Qt::KeyboardModifiers modifiers = ev->modifiers();
+ 	const QString text = ev->text();
+ 	// Map special text symbols to keycodes if we're using Shift modifier.
+--- a/pcsx2/DEV9/smap.cpp
++++ b/pcsx2/DEV9/smap.cpp
+@@ -145,7 +145,7 @@
+ 		else
+ 		{
+ 			const u32 base = (pbd->pointer - 0x1000) & 16383;
+-			DevCon.WriteLn("DEV9: Sending Packet from base %x, size %d", base, pbd->length);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: Sending Packet from base %x, size %d", base, pbd->length);
+ 
+ 			pk.size = pbd->length;
+ 
+@@ -217,7 +217,7 @@
+ 				u32 was = 16384 - base;
+ 				memcpy(pk.buffer, dev9.txfifo + base, was);
+ 				memcpy(pk.buffer + was, dev9.txfifo, pbd->length - was);
+-				DevCon.WriteLn("DEV9: Warped read, was=%u, sz=%u, sz-was=%u", was, pbd->length, pbd->length - was);
++				Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: Warped read, was=%u, sz=%u, sz-was=%u", was, pbd->length, pbd->length - was);
+ 			}
+ 			else
+ 			{
+@@ -227,7 +227,10 @@
+ 		}
+ 
+ 
+-		pbd->ctrl_stat &= ~SMAP_BD_TX_READY;
++		// GENFCS/GENPAD become BADFCS/BADPKT in a retired descriptor.
++		// Successful emulated transmission must overwrite command bits with
++		// completion status, as the MAC does, rather than report false errors.
++		pbd->ctrl_stat = (pbd->length > 1514) ? SMAP_BD_TX_BADPKT : 0;
+ 
+ 		//increase TXBD
+ 		dev9.txbdi++;
+@@ -317,7 +320,7 @@
+ 			}
+ 			break;
+ 		default:
+-			DevCon.WriteLn("DEV9: SMAP: emac3 write  %x=%x", addr, value);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP: emac3 write  %x=%x", addr, value);
+ 			break;
+ 	}
+ 	dev9Ru32(addr) = wswap(value);
+@@ -328,21 +331,21 @@
+ 	switch (addr)
+ 	{
+ 		case SMAP_R_TXFIFO_FRAME_CNT:
+-			DevCon.WriteLn("DEV9: SMAP_R_TXFIFO_FRAME_CNT read 8");
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_TXFIFO_FRAME_CNT read 8");
+ 			break;
+ 		case SMAP_R_RXFIFO_FRAME_CNT:
+-			DevCon.WriteLn("DEV9: SMAP_R_RXFIFO_FRAME_CNT read 8");
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_RXFIFO_FRAME_CNT read 8");
+ 			break;
+ 
+ 		case SMAP_R_BD_MODE:
+ 			return dev9.bd_swap;
+ 
+ 		default:
+-			DevCon.WriteLn("DEV9: SMAP : Unknown 8 bit read @ %X,v=%X", addr, dev9Ru8(addr));
++			Console.Warning("DEV9: SMAP : Unknown 8 bit read @ %X,v=%X", addr, dev9Ru8(addr));
+ 			return dev9Ru8(addr);
+ 	}
+ 
+-	DevCon.WriteLn("DEV9: SMAP : error , 8 bit read @ %X,v=%X", addr, dev9Ru8(addr));
++	Console.Warning("DEV9: SMAP : error , 8 bit read @ %X,v=%X", addr, dev9Ru8(addr));
+ 	return dev9Ru8(addr);
+ }
+ 
+@@ -371,13 +374,13 @@
+ 			return hard;
+ 		case 4: // length
+ 			hard = dev9Ru16(addr);
+-			DevCon.WriteLn("DEV9: TX_LENGTH[%d]: read %x", (addr - SMAP_BD_TX_BASE) / 8, hard);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: TX_LENGTH[%d]: read %x", (addr - SMAP_BD_TX_BASE) / 8, hard);
+ 			if(dev9.bd_swap)
+ 				return (hard<<8)|(hard>>8);
+ 			return hard;
+ 		case 6: // pointer
+ 			hard = dev9Ru16(addr);
+-			DevCon.WriteLn("DEV9: TX_POINTER[%d]: read %x", (addr - SMAP_BD_TX_BASE) / 8, hard);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: TX_POINTER[%d]: read %x", (addr - SMAP_BD_TX_BASE) / 8, hard);
+ 			if(dev9.bd_swap)
+ 				return (hard<<8)|(hard>>8);
+ 			return hard;
+@@ -406,13 +409,13 @@
+ 			return hard;
+ 		case 4: // length
+ 			hard = dev9Ru16(addr);
+-			DevCon.WriteLn("DEV9: RX_LENGTH[%d]: read %x", (addr - SMAP_BD_RX_BASE) / 8, hard);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: RX_LENGTH[%d]: read %x", (addr - SMAP_BD_RX_BASE) / 8, hard);
+ 			if(dev9.bd_swap)
+ 				return (hard<<8)|(hard>>8);
+ 			return hard;
+ 		case 6: // pointer
+ 			hard = dev9Ru16(addr);
+-			DevCon.WriteLn("DEV9: RX_POINTER[%d]: read %x", (addr - SMAP_BD_RX_BASE) / 8, hard);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: RX_POINTER[%d]: read %x", (addr - SMAP_BD_RX_BASE) / 8, hard);
+ 			if(dev9.bd_swap)
+ 				return (hard<<8)|(hard>>8);
+ 			return hard;
+@@ -423,76 +426,76 @@
+ 	switch (addr)
+ 	{
+ 		case SMAP_R_TXFIFO_FRAME_CNT:
+-			DevCon.WriteLn("DEV9: SMAP_R_TXFIFO_FRAME_CNT read 16");
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_TXFIFO_FRAME_CNT read 16");
+ 			return dev9Ru16(addr);
+ 		case SMAP_R_RXFIFO_FRAME_CNT:
+-			DevCon.WriteLn("DEV9: SMAP_R_RXFIFO_FRAME_CNT read 16");
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_RXFIFO_FRAME_CNT read 16");
+ 			return dev9Ru16(addr);
+ 		case SMAP_R_EMAC3_MODE0_L:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_MODE0_L 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_MODE0_L 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 
+ 		case SMAP_R_EMAC3_MODE0_H:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_MODE0_H 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_MODE0_H 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 
+ 		case SMAP_R_EMAC3_MODE1_L:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_MODE1_L 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_MODE1_L 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 
+ 		case SMAP_R_EMAC3_MODE1_H:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_MODE1_H 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_MODE1_H 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 
+ 		case SMAP_R_EMAC3_RxMODE_L:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_RxMODE_L 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_RxMODE_L 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 
+ 		case SMAP_R_EMAC3_RxMODE_H:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_RxMODE_H 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_RxMODE_H 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 
+ 		case SMAP_R_EMAC3_INTR_STAT_L:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_INTR_STAT_L 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_INTR_STAT_L 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 
+ 		case SMAP_R_EMAC3_INTR_STAT_H:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_INTR_STAT_H 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_INTR_STAT_H 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 
+ 		case SMAP_R_EMAC3_INTR_ENABLE_L:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_INTR_ENABLE_L 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_INTR_ENABLE_L 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 
+ 		case SMAP_R_EMAC3_INTR_ENABLE_H:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_INTR_ENABLE_H 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_INTR_ENABLE_H 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 
+ 		case SMAP_R_EMAC3_TxMODE0_L:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_TxMODE0_L 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_TxMODE0_L 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 
+ 		case SMAP_R_EMAC3_TxMODE0_H:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_TxMODE0_H 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_TxMODE0_H 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 
+ 		case SMAP_R_EMAC3_TxMODE1_L:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_TxMODE1_L 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_TxMODE1_L 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 
+ 		case SMAP_R_EMAC3_TxMODE1_H:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_TxMODE1_H 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_TxMODE1_H 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 
+ 		case SMAP_R_EMAC3_STA_CTRL_L:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_STA_CTRL_L 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_STA_CTRL_L 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 
+ 		case SMAP_R_EMAC3_STA_CTRL_H:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_STA_CTRL_H 16bit read %x", dev9Ru16(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_STA_CTRL_H 16bit read %x", dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 		default:
+-			DevCon.WriteLn("DEV9: SMAP : Unknown 16 bit read @ %X,v=%X", addr, dev9Ru16(addr));
++			Console.Warning("DEV9: SMAP : Unknown 16 bit read @ %X,v=%X", addr, dev9Ru16(addr));
+ 			return dev9Ru16(addr);
+ 	}
+ #endif
+@@ -510,13 +513,13 @@
+ 	switch (addr)
+ 	{
+ 		case SMAP_R_TXFIFO_FRAME_CNT:
+-			DevCon.WriteLn("DEV9: SMAP_R_TXFIFO_FRAME_CNT read 32");
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_TXFIFO_FRAME_CNT read 32");
+ 			return dev9Ru32(addr);
+ 		case SMAP_R_RXFIFO_FRAME_CNT:
+-			DevCon.WriteLn("DEV9: SMAP_R_RXFIFO_FRAME_CNT read 32");
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_RXFIFO_FRAME_CNT read 32");
+ 			return dev9Ru32(addr);
+ 		case SMAP_R_EMAC3_STA_CTRL_L:
+-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_STA_CTRL_L 32bit read value %x", dev9Ru32(addr));
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_EMAC3_STA_CTRL_L 32bit read value %x", dev9Ru32(addr));
+ 			return dev9Ru32(addr);
+ 
+ 		case SMAP_R_RXFIFO_DATA:
+@@ -531,7 +534,7 @@
+ 			return rv;
+ 		}
+ 		default:
+-			DevCon.WriteLn("DEV9: SMAP : Unknown 32 bit read @ %X,v=%X", addr, dev9Ru32(addr));
++			Console.Warning("DEV9: SMAP : Unknown 32 bit read @ %X,v=%X", addr, dev9Ru32(addr));
+ 			return dev9Ru32(addr);
+ 	}
+ }
+@@ -591,17 +594,17 @@
+ 		case SMAP_R_BD_MODE:
+ 			if (value & SMAP_BD_SWAP)
+ 			{
+-				DevCon.WriteLn("DEV9: SMAP_R_BD_MODE: Byteswapping enabled.");
++				Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_BD_MODE: Byteswapping enabled.");
+ 				dev9.bd_swap = 1;
+ 			}
+ 			else
+ 			{
+-				DevCon.WriteLn("DEV9: SMAP_R_BD_MODE: Byteswapping disabled.");
++				Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP_R_BD_MODE: Byteswapping disabled.");
+ 				dev9.bd_swap = 0;
+ 			}
+ 			return;
+ 		default:
+-			DevCon.WriteLn("DEV9: SMAP : Unknown 8 bit write @ %X,v=%X", addr, value);
++			Console.Warning("DEV9: SMAP : Unknown 8 bit write @ %X,v=%X", addr, value);
+ 			dev9Ru8(addr) = value;
+ 			return;
+ 	}
+@@ -618,7 +621,7 @@
+ 		switch (addr & 0x7)
+ 		{
+ 		case 0: // ctrl_stat
+-			DevCon.WriteLn("DEV9: TX_CTRL_STAT[%d]: write %x", (addr - SMAP_BD_TX_BASE) / 8, value);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: TX_CTRL_STAT[%d]: write %x", (addr - SMAP_BD_TX_BASE) / 8, value);
+ 			//hacky
+ 			dev9Ru16(addr) = value;
+ 			return;
+@@ -627,11 +630,11 @@
+ 			dev9Ru16(addr) = value;
+ 			return;
+ 		case 4: // length
+-			DevCon.WriteLn("DEV9: TX_LENGTH[%d]: write %x", (addr - SMAP_BD_TX_BASE) / 8, value);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: TX_LENGTH[%d]: write %x", (addr - SMAP_BD_TX_BASE) / 8, value);
+ 			dev9Ru16(addr) = value;
+ 			return;
+ 		case 6: // pointer
+-			DevCon.WriteLn("DEV9: TX_POINTER[%d]: write %x", (addr - SMAP_BD_TX_BASE) / 8, value);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: TX_POINTER[%d]: write %x", (addr - SMAP_BD_TX_BASE) / 8, value);
+ 			dev9Ru16(addr) = value;
+ 			return;
+ 		}
+@@ -648,11 +651,11 @@
+ 		switch (addr & 0x7)
+ 		{
+ 		case 0: // ctrl_stat
+-			DevCon.WriteLn("DEV9: RX_CTRL_STAT[%d]: write %x", rx_index, value);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: RX_CTRL_STAT[%d]: write %x", rx_index, value);
+ 			dev9Ru16(addr) = value;
+ 			if(value&0x8000)
+ 			{
+-				DevCon.WriteLn("DEV9:  * * PACKET READ COMPLETE:   rd_ptr=%d, wr_ptr=%d", dev9Ru32(SMAP_R_RXFIFO_RD_PTR), dev9.rxfifo_wr_ptr);
++				Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9:  * * PACKET READ COMPLETE:   rd_ptr=%d, wr_ptr=%d", dev9Ru32(SMAP_R_RXFIFO_RD_PTR), dev9.rxfifo_wr_ptr);
+ 			}
+ 			return;
+ 		case 2: // unknown
+@@ -660,11 +663,11 @@
+ 			dev9Ru16(addr) = value;
+ 			return;
+ 		case 4: // length
+-			DevCon.WriteLn("DEV9: RX_LENGTH[%d]: write %x", rx_index, value);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: RX_LENGTH[%d]: write %x", rx_index, value);
+ 			dev9Ru16(addr) = value;
+ 			return;
+ 		case 6: // pointer
+-			DevCon.WriteLn("DEV9: RX_POINTER[%d]: write %x", rx_index, value);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: RX_POINTER[%d]: write %x", rx_index, value);
+ 			dev9Ru16(addr) = value;
+ 			return;
+ 		}
+@@ -679,13 +682,18 @@
+ 			dev9.irqcause &= ~value;
+ 			return;
+ 
++		case SMAP_R_RXFIFO_RD_PTR:
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP: SMAP_R_RXFIFO_RD_PTR 16bit write %x", value);
++			dev9Ru16(addr) = value;
++			return;
++
+ 		case SMAP_R_TXFIFO_WR_PTR:
+-			DevCon.WriteLn("DEV9: SMAP: SMAP_R_TXFIFO_WR_PTR 16bit write %x", value);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP: SMAP_R_TXFIFO_WR_PTR 16bit write %x", value);
+ 			dev9Ru16(addr) = value;
+ 			return;
+ #define EMAC3_L_WRITE(name)                                   \
+ 	case name:                                                \
+-		/* DevCon.WriteLn("DEV9: SMAP: " #name " 16 bit write %x", value);*/ \
++		/* Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP: " #name " 16 bit write %x", value);*/ \
+ 		dev9Ru16(addr) = value;                               \
+ 		return;
+ 	// clang-format off
+@@ -722,7 +730,7 @@
+ 
+ #define EMAC3_H_WRITE(name)                                   \
+ 	case name:                                                \
+-		/* DevCon.WriteLn("DEV9: SMAP: " #name " 16 bit write %x", value);*/ \
++		/* Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP: " #name " 16 bit write %x", value);*/ \
+ 		dev9Ru16(addr) = value;                               \
+ 		emac3_write(addr - 2);                                \
+ 		return;
+@@ -759,11 +767,11 @@
+ 	// clang-format on
+ 			/*
+ 	case SMAP_R_EMAC3_MODE0_L:
+-		DevCon.WriteLn("DEV9: SMAP: SMAP_R_EMAC3_MODE0 write %x", value);
++		Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP: SMAP_R_EMAC3_MODE0 write %x", value);
+ 		dev9Ru16(addr) = value;
+ 		return;
+ 	case SMAP_R_EMAC3_TxMODE0_L:
+-		DevCon.WriteLn("DEV9: SMAP: SMAP_R_EMAC3_TxMODE0_L 16bit write %x", value);
++		Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP: SMAP_R_EMAC3_TxMODE0_L 16bit write %x", value);
+ 		dev9Ru16(addr) = value;
+ 		return;
+ 	case SMAP_R_EMAC3_TxMODE1_L:
+@@ -781,13 +789,13 @@
+ 		dev9Ru16(addr) = value;
+ 		return;
+ 	case SMAP_R_EMAC3_STA_CTRL_H:
+-		DevCon.WriteLn("DEV9: SMAP: SMAP_R_EMAC3_STA_CTRL_H 16bit write %x", value);
++		Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SMAP: SMAP_R_EMAC3_STA_CTRL_H 16bit write %x", value);
+ 		dev9Ru16(addr) = value;
+ 		return;
+ 		*/
+ 
+ 		default:
+-			DevCon.WriteLn("DEV9: SMAP : Unknown 16 bit write @ %X,v=%X", addr, value);
++			Console.Warning("DEV9: SMAP : Unknown 16 bit write @ %X,v=%X", addr, value);
+ 			dev9Ru16(addr) = value;
+ 			return;
+ 	}
+@@ -809,7 +817,7 @@
+ 			dev9Ru32(SMAP_R_TXFIFO_WR_PTR) = (dev9Ru32(SMAP_R_TXFIFO_WR_PTR) + 4) & 16383;
+ 			return;
+ 		default:
+-			DevCon.WriteLn("DEV9: SMAP : Unknown 32 bit write @ %X,v=%X", addr, value);
++			Console.Warning("DEV9: SMAP : Unknown 32 bit write @ %X,v=%X", addr, value);
+ 			dev9Ru32(addr) = value;
+ 			return;
+ 	}
+@@ -821,7 +829,7 @@
+ 	{
+ 		dev9Ru32(SMAP_R_RXFIFO_RD_PTR) &= 16383;
+ 
+-		DevCon.WriteLn("DEV9:  * * SMAP DMA READ START: rd_ptr=%d, wr_ptr=%d", dev9Ru32(SMAP_R_RXFIFO_RD_PTR), dev9.rxfifo_wr_ptr);
++		Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9:  * * SMAP DMA READ START: rd_ptr=%d, wr_ptr=%d", dev9Ru32(SMAP_R_RXFIFO_RD_PTR), dev9.rxfifo_wr_ptr);
+ 		while (size > 0)
+ 		{
+ 			*pMem = *((u32*)(dev9.rxfifo + dev9Ru32(SMAP_R_RXFIFO_RD_PTR)));
+@@ -830,7 +838,7 @@
+ 
+ 			size -= 4;
+ 		}
+-		DevCon.WriteLn("DEV9:  * * SMAP DMA READ END:   rd_ptr=%d, wr_ptr=%d", dev9Ru32(SMAP_R_RXFIFO_RD_PTR), dev9.rxfifo_wr_ptr);
++		Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9:  * * SMAP DMA READ END:   rd_ptr=%d, wr_ptr=%d", dev9Ru32(SMAP_R_RXFIFO_RD_PTR), dev9.rxfifo_wr_ptr);
+ 
+ 		dev9Ru16(SMAP_R_RXFIFO_CTRL) &= ~SMAP_RXFIFO_DMAEN;
+ 	}
+@@ -842,7 +850,7 @@
+ 	{
+ 		dev9Ru32(SMAP_R_TXFIFO_WR_PTR) &= 16383;
+ 
+-		DevCon.WriteLn("DEV9:  * * SMAP DMA WRITE START: wr_ptr=%d, rd_ptr=%d", dev9Ru32(SMAP_R_TXFIFO_WR_PTR), dev9.txfifo_rd_ptr);
++		Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9:  * * SMAP DMA WRITE START: wr_ptr=%d, rd_ptr=%d", dev9Ru32(SMAP_R_TXFIFO_WR_PTR), dev9.txfifo_rd_ptr);
+ 		while (size > 0)
+ 		{
+ 			int value = *pMem;
+@@ -853,7 +861,7 @@
+ 			dev9Ru32(SMAP_R_TXFIFO_WR_PTR) = (dev9Ru32(SMAP_R_TXFIFO_WR_PTR) + 4) & 16383;
+ 			size -= 4;
+ 		}
+-		DevCon.WriteLn("DEV9:  * * SMAP DMA WRITE END:   wr_ptr=%d, rd_ptr=%d", dev9Ru32(SMAP_R_TXFIFO_WR_PTR), dev9.txfifo_rd_ptr);
++		Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9:  * * SMAP DMA WRITE END:   wr_ptr=%d, rd_ptr=%d", dev9Ru32(SMAP_R_TXFIFO_WR_PTR), dev9.txfifo_rd_ptr);
+ 
+ 		dev9Ru16(SMAP_R_TXFIFO_CTRL) &= ~SMAP_TXFIFO_DMAEN;
+ 	}
+--- a/pcsx2/DEV9/DEV9.cpp
++++ b/pcsx2/DEV9/DEV9.cpp
+@@ -497,10 +497,10 @@
+ 
+ 		case SPD_R_0e:
+ 			hard = 0x0002; // Have HDD module inserted
+-			DevCon.WriteLn("DEV9: SPD_R_0e %dbit read %x", width, hard);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SPD_R_0e %dbit read %x", width, hard);
+ 			return hard;
+ 		case SPD_R_XFR_CTRL:
+-			DevCon.WriteLn("DEV9: SPD_R_XFR_CTRL %dbit read %x", width, dev9.xfr_ctrl);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SPD_R_XFR_CTRL %dbit read %x", width, dev9.xfr_ctrl);
+ 			return dev9.xfr_ctrl;
+ 		case SPD_R_DBUF_STAT:
+ 		{
+@@ -560,7 +560,7 @@
+ 			return;
+ 
+ 		case SPD_R_PIO_DIR:
+-			DevCon.WriteLn("DEV9: SPD_R_PIO_DIR %dbit write %x", width, value);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SPD_R_PIO_DIR %dbit write %x", width, value);
+ 
+ 			if ((value & 0xc0) != 0xc0)
+ 				return;
+@@ -800,7 +800,7 @@
+ 			}
+ 			break;
+ 		case SPD_R_MDMA_MODE:
+-			DevCon.WriteLn("DEV9: SPD_R_MDMA_MODE 16bit write %dbit write %x", width, value);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SPD_R_MDMA_MODE 16bit write %dbit write %x", width, value);
+ 			dev9.mdma_mode = value;
+ 
+ 			switch (value)
+@@ -821,7 +821,7 @@
+ 
+ 			break;
+ 		case SPD_R_UDMA_MODE:
+-			DevCon.WriteLn("DEV9: SPD_R_UDMA_MODE 16bit write %dbit write %x", width, value);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: SPD_R_UDMA_MODE 16bit write %dbit write %x", width, value);
+ 			dev9.udma_mode = value;
+ 
+ 			switch (value)
+@@ -1070,7 +1070,7 @@
+ 
+ 	size >>= 1;
+ 
+-	DevCon.WriteLn("DEV9: *DEV9readDMA8Mem: size %x", size);
++	Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: *DEV9readDMA8Mem: size %x", size);
+ 
+ 	if (dev9.dma_ctrl & SPD_DMA_TO_SMAP)
+ 	{
+@@ -1100,7 +1100,7 @@
+ 
+ 	size >>= 1;
+ 
+-	DevCon.WriteLn("DEV9: *DEV9writeDMA8Mem: size %x", size);
++	Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9: *DEV9writeDMA8Mem: size %x", size);
+ 
+ 	if (dev9.dma_ctrl & SPD_DMA_TO_SMAP)
+ 	{
+--- a/pcsx2/Memory.cpp
++++ b/pcsx2/Memory.cpp
+@@ -584,7 +584,7 @@
+ 		case 7: // dev9
+ 		{
+ 			mem8_t retval = DEV9read8(mem & ~0xa4000000);
+-			Console.WriteLn("DEV9 read8 %8.8lx: %2.2lx", mem & ~0xa4000000, retval);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9 read8 %8.8lx: %2.2lx", mem & ~0xa4000000, retval);
+ 			return retval;
+ 		}
+ 		case 9:
+@@ -614,7 +614,7 @@
+ 		case 7: // dev9
+ 		{
+ 			mem16_t retval = DEV9read16(mem & ~0xa4000000);
+-			Console.WriteLn("DEV9 read16 %8.8lx: %4.4lx", mem & ~0xa4000000, retval);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9 read16 %8.8lx: %4.4lx", mem & ~0xa4000000, retval);
+ 			return retval;
+ 		}
+ 
+@@ -640,7 +640,7 @@
+ 		case 7: // dev9
+ 		{
+ 			mem32_t retval = DEV9read32(mem & ~0xa4000000);
+-			Console.WriteLn("DEV9 read32 %8.8lx: %8.8lx", mem & ~0xa4000000, retval);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9 read32 %8.8lx: %8.8lx", mem & ~0xa4000000, retval);
+ 			return retval;
+ 		}
+ 		case 9:
+@@ -711,7 +711,7 @@
+ 			gsWrite8(mem, value); return;
+ 		case 7: // dev9
+ 			DEV9write8(mem & ~0xa4000000, value);
+-			Console.WriteLn("DEV9 write8 %8.8lx: %2.2lx", mem & ~0xa4000000, value);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9 write8 %8.8lx: %2.2lx", mem & ~0xa4000000, value);
+ 			return;
+ 		case 9:
+ 			iopMemWrite8(mem & ~0x1c000000, value);
+@@ -735,7 +735,7 @@
+ 			gsWrite16(mem, value); return;
+ 		case 7: // dev9
+ 			DEV9write16(mem & ~0xa4000000, value);
+-			Console.WriteLn("DEV9 write16 %8.8lx: %4.4lx", mem & ~0xa4000000, value);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9 write16 %8.8lx: %4.4lx", mem & ~0xa4000000, value);
+ 			return;
+ 		case 8: // spu2
+ 			SPU2write(mem, value); return;
+@@ -756,7 +756,7 @@
+ 			gsWrite32(mem, value); return;
+ 		case 7: // dev9
+ 			DEV9write32(mem & ~0xa4000000, value);
+-			Console.WriteLn("DEV9 write32 %8.8lx: %8.8lx", mem & ~0xa4000000, value);
++			Log::Write(LOGLEVEL_DEBUG, Color_Gray, "DEV9 write32 %8.8lx: %8.8lx", mem & ~0xa4000000, value);
+ 			return;
+ 		case 9:
+ 			iopMemWrite32(mem & ~0x1c000000, value);
+--- a/pcsx2/DEV9/PacketReader/IP/UDP/DHCP/DHCP_Packet.cpp
++++ b/pcsx2/DEV9/PacketReader/IP/UDP/DHCP/DHCP_Packet.cpp
+@@ -49,6 +49,12 @@
+ 
+ 		do
+ 		{
++			if (offset >= bufferSize)
++			{
++				Console.Error("DEV9: DHCP_Packet: Unexpected end of packet");
++				options.push_back(new DHCPopEND());
++				break;
++			}
+ 			const u8 opKind = buffer[offset];
+ 			if (opKind == 255)
+ 			{
+@@ -57,6 +63,12 @@
+ 				offset += 1;
+ 				continue;
+ 			}
++			if (opKind == 0)
++			{
++				options.push_back(new DHCPopNOP());
++				offset++;
++				continue;
++			}
+ 			if ((offset + 1) >= bufferSize)
+ 			{
+ 				Console.Error("DEV9: DHCP_Packet: Unexpected end of packet");
+@@ -65,12 +77,14 @@
+ 				continue;
+ 			}
+ 			const u8 opLen = buffer[offset + 1];
++			if (opLen > bufferSize - offset - 2)
++			{
++				Console.Error("DEV9: DHCP_Packet: Truncated option %d", opKind);
++				options.push_back(new DHCPopEND());
++				break;
++			}
+ 			switch (opKind)
+ 			{
+-				case 0:
+-					options.push_back(new DHCPopNOP());
+-					offset += 1;
+-					continue;
+ 				case 1:
+ 					options.push_back(new DHCPopSubnet(buffer, offset));
+ 					break;
+@@ -126,6 +140,12 @@
+ 				case 61:
+ 					//Do we actully care about this?
+ 					options.push_back(new DHCPopClientID(buffer, offset));
++					break;
++				case 119:
++					options.push_back(new DHCPopDomainSearch(buffer, offset));
++					break;
++				case 145:
++					// RFC 6704: servers without authenticated FORCERENEW ignore this capability.
+ 					break;
+ 				default:
+ 					Console.Error("DEV9: DHCP_Packet: Got Unknown Option %d with len %d", opKind, opLen);
+--- a/pcsx2/DEV9/PacketReader/IP/UDP/DHCP/DHCP_Options.h
++++ b/pcsx2/DEV9/PacketReader/IP/UDP/DHCP/DHCP_Options.h
+@@ -386,6 +386,19 @@
+ 		}
+ 	};
+ 
++	// RFC 3397 uses DNS wire names, including their terminating zero bytes.
++	// The inherited byte serializer calls the virtual option code.
++	class DHCPopDomainSearch final : public DHCPopDnsName
++	{
++	public:
++		explicit DHCPopDomainSearch(const std::string& encodedNames)
++			: DHCPopDnsName(encodedNames) {}
++		DHCPopDomainSearch(const u8* data, int offset)
++			: DHCPopDnsName(data, offset) {}
++		u8 GetCode() const override { return 119; }
++		DHCPopDomainSearch* Clone() const override { return new DHCPopDomainSearch(*this); }
++	};
++
+ 	class DHCPopEND : public BaseOption
+ 	{
+ 	public:
+--- a/pcsx2/DEV9/InternalServers/DHCP_Server.cpp
++++ b/pcsx2/DEV9/InternalServers/DHCP_Server.cpp
+@@ -267,6 +267,7 @@
+ 				case 57:
+ 					maxMs = ((DHCPopMMSGS*)(dhcp.options[i]))->maxMessageSize;
+ 					break;
++				case 119: // Optional client search list; the server supplies its own.
+ 				case 60: //ClassID
+ 				case 61: //ClientID
+ 				case 255: //End
+@@ -330,6 +331,10 @@
+ 					case 50:
+ 						retPay->options.push_back(new DHCPopREQIP(ps2IP));
+ 						break;
++					case 119:
++						// Match option 15, using an uncompressed RFC 3397 DNS name.
++						retPay->options.push_back(new DHCPopDomainSearch(std::string("\x05PCSX2\0", 7)));
++						break;
+ 					case 53: //Msg (Already added)
+ 					case 54: //Server Identifier (Already Added)
+ 						break;
+--- a/pcsx2/GS/GS.h
++++ b/pcsx2/GS/GS.h
+@@ -31,7 +31,8 @@
+ 	VESA,
+ 	SDTV_480P,
+ 	HDTV_720P,
+-	HDTV_1080I
++	HDTV_1080I,
++	SDTV_576P
+ };
+ 
+ enum class GSDisplayAlignment
+--- a/pcsx2/GS/GSState.cpp
++++ b/pcsx2/GS/GSState.cpp
+@@ -361,7 +361,8 @@
+ 			else if (!isinterlaced() && PLL_Divider == 22)
+ 				return GSVideoMode::HDTV_720P;
+ 			else if (!isinterlaced() && PLL_Divider == 32)
+-				return GSVideoMode::SDTV_480P; // TODO: 576P will also be reported as 480P, find some way to differeniate.
++				// Vertical active lines distinguish the two 27 MHz SDTV timings.
++				return m_regs->SYNCV.VDP == 576 ? GSVideoMode::SDTV_576P : GSVideoMode::SDTV_480P;
+ 			else
+ 				return GSVideoMode::VESA;
+ 		case 2:
+@@ -387,6 +388,7 @@
+ 		case GSVideoMode::SDTV_480P:
+ 			return (60 / 1.001f);
+ 		case GSVideoMode::PAL:
++		case GSVideoMode::SDTV_576P:
+ 			return 50;
+ 		case GSVideoMode::HDTV_720P:
+ 		case GSVideoMode::HDTV_1080I:
+@@ -5641,31 +5643,34 @@
+ // these values leave a small black line on the right in a bunch of games, but it's not so bad.
+ // The only conclusion I can come to is there is horizontal overscan expected so there would normally
+ // be black borders either side anyway, or both sides slightly covered.
+-static inline constexpr GSVector4i VideoModeOffsets[6] = {
++static inline constexpr GSVector4i VideoModeOffsets[7] = {
+ 	GSVector4i::cxpr(640, 224, 642, 25),
+ 	GSVector4i::cxpr(640, 256, 676, 36),
+ 	GSVector4i::cxpr(640, 480, 276, 34),
+ 	GSVector4i::cxpr(720, 480, 232, 35),
+ 	GSVector4i::cxpr(1280, 720, 302, 24),
+-	GSVector4i::cxpr(1920, 540, 238, 40)
++	GSVector4i::cxpr(1920, 540, 238, 40),
++	GSVector4i::cxpr(720, 576, 264, 43)
+ };
+ 
+-static inline constexpr GSVector4i VideoModeOffsetsOverscan[6] = {
++static inline constexpr GSVector4i VideoModeOffsetsOverscan[7] = {
+ 	GSVector4i::cxpr(711, 240, 498, 17),
+ 	GSVector4i::cxpr(711, 288, 532, 21),
+ 	GSVector4i::cxpr(640, 480, 276, 34),
+ 	GSVector4i::cxpr(720, 480, 232, 35),
+ 	GSVector4i::cxpr(1280, 720, 302, 24),
+-	GSVector4i::cxpr(1920, 540, 238, 40)
++	GSVector4i::cxpr(1920, 540, 238, 40),
++	GSVector4i::cxpr(720, 576, 264, 43)
+ };
+ 
+-static inline constexpr GSVector4i VideoModeDividers[6] = {
++static inline constexpr GSVector4i VideoModeDividers[7] = {
+ 	GSVector4i::cxpr(3, 0, 2559, 239),
+ 	GSVector4i::cxpr(3, 0, 2559, 287),
+ 	GSVector4i::cxpr(1, 0, 1279, 479),
+ 	GSVector4i::cxpr(1, 0, 1439, 479),
+ 	GSVector4i::cxpr(0, 0, 1279, 719),
+-	GSVector4i::cxpr(0, 0, 1919, 1079)
++	GSVector4i::cxpr(0, 0, 1919, 1079),
++	GSVector4i::cxpr(1, 0, 1439, 575)
+ };
+ 
+ bool GSState::GSPCRTCRegs::IsAnalogue()
+--- a/pcsx2/USB/usb-msd/usb-msd.cpp
++++ b/pcsx2/USB/usb-msd/usb-msd.cpp
+@@ -662,9 +662,9 @@
+ 			case READ_CAPACITY_10:
+ 				memset(s->f.buf, 0, sizeof(s->f.buf));
+ 
+-				if (s->file_size == 0) //TODO
++				if (s->file_size < LBA_BLOCK_SIZE)
+ 				{
+ 					s->f.result = COMMAND_FAILED;
+ 					set_sense(s, SENSE_CODE(UNKNOWN_ERROR));
+ 					break;
+ 				}
+@@ -674,7 +674,8 @@
+ 				//right?
+ 				*blk_len = LBA_BLOCK_SIZE; //descriptor is currently max 64 bytes for bulk though
+ 
+-				lbas = s->file_size / LBA_BLOCK_SIZE;
++				// READ CAPACITY reports the last address, not the block count.
++				lbas = s->file_size / LBA_BLOCK_SIZE - 1;
+ 				if (lbas > 0xFFFFFFFF)
+ 				{
+ 					s->f.result = COMMAND_FAILED;

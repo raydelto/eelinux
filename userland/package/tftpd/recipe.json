@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "tftpd",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.tftpd",
+  "symbol": "BR2_PACKAGE_TFTPD",
+  "version": "7.2",
+  "recipe": "package/tftpd/tftpd.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "72858bb18cff6207ffc98fe8d21e6a1187e036163ca8d91e9c9f5d4c3fdae22f",
+      "filename": "tftp-hpa-7.2.tar.xz"
+    }
+  ],
+  "release_url": "https://www.kernel.org/pub/software/network/tftp/"
+}

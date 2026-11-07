@@ -1,0 +1,111 @@
+{
+  "schema": 1,
+  "validation_date": "2026-10-01",
+  "status": "configuration and Null-audio startup checks passed; early Linux output observed",
+  "session_directory": "build/emulator/pcsx2-validated",
+  "host": "Windows Python / PCSX2 2.6.3 installed",
+  "source_reference": "81526d4dc7cc70e4ae75abb35a789417456c6d43",
+  "kernel": {
+    "kind": "audit with placeholder initramfs",
+    "bytes": 1915656,
+    "sha256": "cf384bf2005b4ddd875803ccd0c80ff7cccd5f8577141ef40b2d7b7a35b095a6",
+    "copied_bytes_equal_source": true,
+    "elf_entry_hex": "0x800000"
+  },
+  "rootfs_source": {
+    "bytes": 67108864,
+    "sha256": "8173fda391cb50f6c6512f3d885cf025526dab7575f2192748aa570eb8897dcf"
+  },
+  "disposable_disk": {
+    "bytes": 68157440,
+    "sha256": "7f68269cea1da8bd75773c7d8fa68e1e2ad55c26cde4274b3a69a61f0de49407",
+    "partition": {
+      "index": 1,
+      "offset_bytes": 1048576,
+      "sectors": 131072,
+      "start_lba": 2048,
+      "type": "0x83"
+    },
+    "payload_sha256": "8173fda391cb50f6c6512f3d885cf025526dab7575f2192748aa570eb8897dcf",
+    "payload_equal_source": true
+  },
+  "preset_sha256": "7d2ad0f309456dc88f5292dabdc479debf2ee3ef9d0b527224781b989a342d3c",
+  "main_ram_mib": 32,
+  "milestones": {
+    "elf_loaded": "observed: log shows ELF loading/execution at 0x00800000",
+    "kernel_started": "observed: Linux 7.2.8 banner and early memory/clock/console initialization",
+    "early_root_started": "not performed",
+    "disk_root_mounted": "not performed",
+    "gnu_sysvinit_started": "not performed",
+    "authenticated_shell": "not performed"
+  },
+  "linux_boot_pass": null,
+  "bios_downloaded_or_distributed": false,
+  "native_ethernet_and_gs_acceptance": false,
+  "stock_pcsx2_linux_mmu_qualified": false,
+  "cli_compatibility": {
+    "status": "passed",
+    "reported_version": "PCSX2 v2.6.3",
+    "capability_probe": "actual installed executable -help, including its supported exit code 1",
+    "advertised_options": [
+      "-batch",
+      "-bigpicture",
+      "-bios",
+      "-debugger",
+      "-disc",
+      "-earlyconsolelog",
+      "-elf",
+      "-fastboot",
+      "-fullscreen",
+      "-gameargs",
+      "-help",
+      "-logfile",
+      "-nofullscreen",
+      "-nogui",
+      "-portable",
+      "-raintegration",
+      "-setupwizard",
+      "-slowboot",
+      "-state",
+      "-statefile",
+      "-testconfig",
+      "-version"
+    ],
+    "source_reference": "https://github.com/PCSX2/pcsx2/blob/v2.6.3/pcsx2-qt/QtHost.cpp",
+    "configuration_method": "portable runtime copy",
+    "configuration_file": "build/emulator/pcsx2-validated/pcsx2-profile/PCSX2/inis/PCSX2.ini",
+    "configuration_sha256_before_check": "4ee05fc55afd74a355956cd70058e8c3b043d87196ab06d1936d3f2fb3874f88",
+    "testconfig_exit_code": 0,
+    "session_profile_path_confirmed_by_log": true,
+    "bios_configured_in_ignored_local_profile": true,
+    "memorycards_disabled": true,
+    "installed_executable_sha256": "474dc24acf00ee398183235a15c97934bf099c2fa458dcc0cb174750aebe3cff",
+    "root_source_sha256_after_check": "8173fda391cb50f6c6512f3d885cf025526dab7575f2192748aa570eb8897dcf",
+    "disposable_disk_sha256_after_check": "7f68269cea1da8bd75773c7d8fa68e1e2ad55c26cde4274b3a69a61f0de49407",
+    "kernel_boot_attempted": true
+  },
+  "startup_observation": {
+    "reported_version": "PCSX2 v2.6.3",
+    "audio_backend": "Null",
+    "host_audio_initialization_error": false,
+    "elf_entry_hex": "0x00800000",
+    "kernel_banner": "Linux version 7.2.8-eelinux-ps2",
+    "reported_total_pages": 8192,
+    "log_file": "build/emulator/pcsx2-validated/pcsx2-null-audio-check.log",
+    "log_sha256": "41316d83d2173b53f85e23a7519b8558eb487808b07a6adc4054e68805eaa892",
+    "log_excerpt": [
+      "[    0.7583] Creating Null audio stream, sample rate = 48000, expansion = Disabled, buffer = 50, latency = 20, stretching enabled, driver = , device = ",
+      "[    0.9506] ELF Loading: host:<SESSION>\\kernel-audit.elf, Game CRC = CE183842, EntryPoint = 0x00800000",
+      "[    1.0333] ELF host:<SESSION>\\kernel-audit.elf with entry point at 0x00800000 is executing.",
+      "[    1.5955] Linux version 7.2.8-eelinux-ps2 (machaddr@A2000) (mipsel-linux-gnu-gcc (Debian 14.2.0-13) 14.2.0, GNU ld (GNU Binutils for Debian) 2.44) #1 Thu Oct  1 21:01:53 WEST 2026",
+      "[    1.9250] Built 1 zonelists, mobility grouping on.  Total pages: 8192",
+      "[    2.0980] Console: colour dummy device 80x25",
+      "[    2.1304] printk: legacy bootconsole [early0] disabled"
+    ],
+    "test_control": "separate process: -portable -nogui -elf -logfile; requested close after eight seconds, stopped only that test PID after three more seconds",
+    "last_observed_stage": "dummy tty0 enabled, early bootconsole disabled",
+    "unsupported_cop0_and_cache_messages_present": true,
+    "gnu_sysvinit_or_login_observed": false,
+    "source_and_disposable_disk_hashes_unchanged": true
+  }
+}

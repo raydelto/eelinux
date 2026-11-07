@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "attr",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.attr",
+  "symbol": "BR2_PACKAGE_ATTR",
+  "version": "2.6.0",
+  "recipe": "package/attr/attr.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "6c8a2148a7b85043b68492bce43316b0e2e214fc4e628c7ede078e76e216330b",
+      "filename": "attr-2.6.0.tar.xz"
+    }
+  ],
+  "release_url": "https://download-mirror.savannah.nongnu.org/releases/attr/"
+}

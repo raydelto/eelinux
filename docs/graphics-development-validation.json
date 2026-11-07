@@ -1,0 +1,204 @@
+{
+  "schema": 1,
+  "date": "2026-10-03",
+  "scope": "native drawing/image transfer components and explicit progressive boot; complete accelerated desktop unfinished",
+  "references": [
+    "https://psi-rockin.github.io/ps2tek/",
+    "https://docs.mesa3d.org/gallium/context.html",
+    "https://docs.mesa3d.org/gallium/screen.html"
+  ],
+  "native_build": {
+    "sha256": "73f78e1c2c05d57f7c7ec72c6f002b916377674c875bcf83e31d7b1497574d9b"
+  },
+  "native_build_log": {
+    "sha256": "e4a6c23543aa4955b3476349f97e14de0084136983c0c1bba853d83bcfcb1412"
+  },
+  "source_sha256": {
+    "graphics/ps2_gs_client.c": "28335120a075b84246981763d3e5bd285e7d8d3af619bdeeef1017749eb10de2",
+    "desktop/xorg/ps2_exa.c": "d79baea894ede61c5ff118e06e856fe2c3dbc89df92c73a72650bf35ddd728b7",
+    "mesa/ps2/ps2_raster.c": "b5cf5568742874002280c9b80610072f9982d53705ddc82154fe1475a17aae4a",
+    "mesa/ps2/ps2_draw.c": "277d01e9f2646e0bfadba91c656caf9e02959b8cc6e4920680aa022cf2dacedc",
+    "graphics/ps2_gs_client.h": "b11d17f721b51dd81165015abe9c639a3049b333cbaab7da80aa824a10e7e448",
+    "kernel/new-drivers/ps2-gs.h": "5e7e0e97021db4d90b164a56dcbbef599f8d7d37ff694d61a95c88b890ae2cd7",
+    "desktop/xorg/ps2_exa.h": "bf43bd794b91c95be9b7a273eeb83f468704a857403d8e461d67e9e50b21c09a",
+    "mesa/ps2/ps2_raster.h": "f91436248e86cfc47a78bedaba17bd374e01ee6c7fc194bf94b872f7cea4538c",
+    "mesa/ps2/ps2_draw.h": "fae4e95f2c217d6460fcca314f0cffa31b55e042c6799658429ce7ec5db483b6"
+  },
+  "target_tests": {
+    "result": "passed",
+    "cases": 17,
+    "scope": "transport and callback tests with wrapped ioctl; no GPU/OpenGL runtime qualification",
+    "programs": {
+      "ps2-gs-client-test": "bc4a47dd6048dbaf4a8e2444157b8769cc4d1762651b06707ffc356c3be3a6ca",
+      "ps2-gallium-test": "59e108bcf9a1fcd7ff3710a206094d986ece38c72bd37c25977fdeef0867c988",
+      "ps2-exa-test": "3e717c6fdae2fd3fe6fb41074f4cf1aeae02515743ae3904b24d46973e8ba4ec",
+      "ps2-gs-image-test": "5e5a5003473d3851a8546f7fc4dfc1ea5fdddf6e0e4a88a0f29203c030f2234b"
+    },
+    "QEMU_sha256": "4d0fb1ebf2bc18bf7bd92f329ab070d6d2b032f3ad5c05167325740fec1b31a6"
+  },
+  "host_tests": [
+    {
+      "suite": "test_ps2_gs_client.py",
+      "cases": 7,
+      "result": "passed",
+      "sanitizers": "ASan, UBSan",
+      "evidence_kind": "transcription of successful tool output; not an additional run",
+      "test_source": {
+        "path": "tests/test_ps2_gs_client.py",
+        "sha256": "a8b8eaef3166628e4aed970d009a969538596466d993a03f14fcfcc659996227"
+      }
+    },
+    {
+      "suite": "test_ps2_gallium.py",
+      "cases": 4,
+      "result": "passed",
+      "sanitizers": "ASan, UBSan",
+      "evidence_kind": "transcription of successful tool output; not an additional run",
+      "test_source": {
+        "path": "tests/test_ps2_gallium.py",
+        "sha256": "6afdb2c7ca8c8b87b635722e698c8f9a0bf1863527be0d1f5b6c2bea32a1b955"
+      }
+    },
+    {
+      "suite": "test_ps2_exa.py",
+      "cases": 4,
+      "result": "passed",
+      "sanitizers": "ASan, UBSan",
+      "evidence_kind": "transcription of successful tool output; not an additional run",
+      "test_source": {
+        "path": "tests/test_ps2_exa.py",
+        "sha256": "b167bdac02b56504952cb538f91ebf4b7e341cb7f68ebf65083af54f1c3de0bb"
+      }
+    },
+    {
+      "suite": "test_ps2_gs_image.py",
+      "cases": 2,
+      "result": "passed",
+      "sanitizers": "ASan, UBSan",
+      "evidence_kind": "transcription of successful tool output; not an additional run",
+      "test_source": {
+        "path": "tests/test_ps2_gs_image.py",
+        "sha256": "6c951aa542830680bf749f689c8ee8cc98ed20cff4a899506d725e28ce9af824"
+      }
+    },
+    {
+      "suite": "test_ps2_gs_probe.py",
+      "cases": 3,
+      "result": "passed",
+      "sanitizers": "ASan, UBSan",
+      "evidence_kind": "transcription of successful tool output; not an additional run",
+      "test_source": {
+        "path": "tests/test_ps2_gs_probe.py",
+        "sha256": "f2ec259017f5a83841144a4cecb7f62690b7ab49bb0db52e06bb1850526d565f"
+      }
+    },
+    {
+      "suite": "test_ps2_gs.py",
+      "cases": 1,
+      "result": "passed",
+      "sanitizers": "ASan, UBSan",
+      "evidence_kind": "transcription of successful tool output; not an additional run",
+      "test_source": {
+        "path": "tests/test_ps2_gs.py",
+        "sha256": "8b33c1e66d66c7c66e5b810d33fe59a602d8d86b1a56d9c7d5d389377018eeec"
+      }
+    }
+  ],
+  "patches": [
+    {
+      "patch": "userland/patches/mesa-ps2-raster.patch",
+      "sha256": "21d138a3ed1da664531cff778fa1679e6f69f6f72ad89c37ecfc38739bca6171",
+      "upstream_source": "/home/machaddr/.cache/eelinux/mesa-xlib/mesa-24.0.9/mesa-24.0.9",
+      "source_release_dry_run": "passed",
+      "fresh_directory_apply_and_source_equality": "passed",
+      "files": [
+        "src/gallium/drivers/ps2/ps2_gs_client.c",
+        "src/gallium/drivers/ps2/ps2_gs_client.h",
+        "src/gallium/drivers/ps2/ps2-gs.h",
+        "src/gallium/drivers/ps2/ps2_raster.c",
+        "src/gallium/drivers/ps2/ps2_raster.h",
+        "src/gallium/drivers/ps2/ps2_draw.c",
+        "src/gallium/drivers/ps2/ps2_draw.h"
+      ],
+      "scope": "source-only drawing components, not a complete enabled desktop driver"
+    },
+    {
+      "patch": "userland/patches/xorg-ps2-raster.patch",
+      "sha256": "a99e78808618a27563ff740e12ace475df7a792c533d060c2928e238c77da25e",
+      "source_release_dry_run": "passed",
+      "fresh_directory_apply_and_source_equality": "passed",
+      "files": [
+        "hw/xfree86/drivers/ps2/ps2_gs_client.c",
+        "hw/xfree86/drivers/ps2/ps2_gs_client.h",
+        "hw/xfree86/drivers/ps2/ps2-gs.h",
+        "hw/xfree86/drivers/ps2/ps2_exa.c",
+        "hw/xfree86/drivers/ps2/ps2_exa.h"
+      ],
+      "scope": "source-only drawing components, not a complete enabled desktop driver"
+    }
+  ],
+  "physical_evidence": {
+    "progressive_boot": "user confirms stable from boot using the requested updated kernel",
+    "boot_kernel_sha256": "a764786d4886e5f4ef1b3861009beabee2668317022418a8a418b309bb252b8f",
+    "boot_kernel_hash_read_back_on_console": false,
+    "corrected_GS_scene": "user photo shows continuous cyan triangle over farther red triangle and two cyan rectangles",
+    "complete_Xorg_or_Mesa_session_tested": false,
+    "reports": [
+      "docs/hardware-display-validation.json",
+      "docs/hardware-gs-validation.json"
+    ]
+  },
+  "PCSX2_progressive_output": {
+    "standalone_patch": {
+      "path": "emulator/patches/ps2-progressive-display.patch",
+      "sha256": "3468dc95c172c9ed10b55b490409579395a4186fff4dab3839c10648a333252f"
+    },
+    "source_revision": "bc8151d2a46d4aba039ea5580afbfc7bfcf6d730",
+    "runtime_sha256": "4d2a4d9c0db3cb2e9760e2d34bcd29150b53d56a1a87ae8e6fb4556796b40f58",
+    "compiled_windows_runtime": true,
+    "controlled_guest_run_log": {
+      "sha256": "23ebe8b79d18aed31b8ba855a1b054f3ea8f067f1600f8f5cd777db57e4ff7b1"
+    },
+    "guest_milestones": [
+      "ext4 root handoff",
+      "720x576 32bpp GS probe PASSED",
+      "SMAP link up"
+    ],
+    "run_stop": "120-second controlled timeout",
+    "user_report": "Now it is better the emulator",
+    "qualification": "mode selection/tables, boot log and user report; not exhaustive game/display/MMU coverage"
+  },
+  "desktop_enabled_in_USB_image": false,
+  "GS_image_upload_evidence": {
+    "path": "docs/graphics-upload-validation.json",
+    "sha256": "7a75ebfa0c450c1d938fbc947a60902bcbbbee5f08c362af30f7af91273a8222"
+  },
+  "remaining": [
+    "DDX screen/VT setup",
+    "GS drawable/surface ownership",
+    "offscreen memory",
+    "glyphs/texture resources and cache invalidation",
+    "window clipping",
+    "Gallium screen/context/resources and verified state capabilities",
+    "GLX integration",
+    "existing OpenGL applications and physical TWM session"
+  ],
+  "physical_hardware_followup": {
+    "date": "2026-10-04",
+    "evidence": "docs/graphics-hardware-validation.json",
+    "evidence_sha256": "ef10249c0b5c23f171d1bc7390788c271086b4caaeff929984f5f6c0fe42e1f3",
+    "diagnostics": [
+      "ps2-gs-test",
+      "ps2-gs-upload-test"
+    ],
+    "diagnostic_scenes_tested_on_physical_hardware": true,
+    "result": "passed according to the user on real PlayStation 2 hardware",
+    "evidence_kind": "explicit user verification report; device logs not captured",
+    "earlier_fields_preserved": true,
+    "scope": "normal diagnostic scenes on the user's PS2; not all host/mock cases or a complete desktop",
+    "artifact_hash_read_back_on_console": false,
+    "GPU_pixel_readback": false,
+    "complete_Xorg_TWM_or_OpenGL_session_tested": false
+  },
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

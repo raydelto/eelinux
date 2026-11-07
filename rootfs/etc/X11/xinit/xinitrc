@@ -1,0 +1,86 @@
+#!/bin/bash
+# The window manager owns the session. Exiting TWM returns to the login console.
+set -u
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+umask 077
+session_dir=$(mktemp -d "${TMPDIR:-/tmp}/ps2-session.XXXXXXXX") || exit 1
+cleanup() {
+    trap - EXIT HUP INT TERM
+    # Only running jobs owned by this session, including a wallpaper helper
+    # interrupted at logout. Completed child PIDs may already have been reused.
+    local running
+    running=$(jobs -pr)
+    [[ -z $running ]] || kill -- $running 2>/dev/null || true
+    wait 2>/dev/null || true
+    rm -rf -- "$session_dir"
+}
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+# The supplied resources are literal settings: do not load GCC's cc1 on a
+# 32 MiB machine just to parse them.
+[[ ! -r /etc/X11/ps2.Xresources ]] || xrdb -nocpp -merge /etc/X11/ps2.Xresources
+if [[ -r "$HOME/.Xresources" ]]; then
+    # The supplied personal file is just a comment. Only files with actual
+    # preprocessor directives need cpp; ordinary overrides load directly.
+    resource_options=(-nocpp)
+    resource_active=0
+    while IFS= read -r resource_line || [[ -n $resource_line ]]; do
+        [[ $resource_line =~ ^[[:space:]]*(!|$) ]] && continue
+        resource_active=1
+        if [[ $resource_line =~ ^[[:space:]]*# ]]; then
+            resource_options=()
+            break
+        fi
+    done < "$HOME/.Xresources"
+    # The shipped personal file is only a comment, so it needs no X client.
+    (( ! resource_active )) || xrdb "${resource_options[@]}" -merge "$HOME/.Xresources"
+fi
+export XDG_CURRENT_DESKTOP=PS2:TWM
+# An immutable DVD can reuse its prepared menu without reading dozens of files.
+# User entries, a custom search path or a different locale use the live parser.
+template=/etc/skel/.twmrc
+if [[ -r "$HOME/.twmrc" ]]; then
+    template="$HOME/.twmrc"
+    # Upgrade the previous unmodified stock controls while retaining every
+    # personal configuration. Select the new template without rewriting HOME.
+    case $(sha256sum -- "$template") in
+        bf3b7f4de69edda90ac0c371a813649564e9bbc71c3c673a6c6592a6af1b789c\ *|\
+        4a711fa927a949e35320edf25de1f2544c043cea9c0675f0e5197a2e07c6fd68\ *)
+            template=/etc/skel/.twmrc ;;
+    esac
+fi
+cat "$template" > "$session_dir/twmrc" || exit 1
+if [[ -r /.dvd/session && -r /usr/share/eelinux/twm-applications.menu &&
+      -z ${XDG_DATA_DIRS:-} && -z ${XDG_DATA_HOME:-} &&
+      ! -d "$HOME/.local/share/applications" &&
+      ! -d /usr/local/share/applications &&
+      ! -d /.dvd/rw/upper/usr/share/applications &&
+      ${LC_ALL:-${LC_MESSAGES:-${LANG:-C}}} == C ]]; then
+    cat /usr/share/eelinux/twm-applications.menu >> "$session_dir/twmrc" || exit 1
+else
+    case ${XDG_CACHE_HOME:-} in
+        /*) menu_cache=$XDG_CACHE_HOME/eelinux ;;
+        *) menu_cache=$HOME/.cache/eelinux ;;
+    esac
+    if mkdir -p -m 700 -- "$menu_cache" 2>/dev/null; then
+        /usr/bin/ps2-xdg-menu --cache "$menu_cache/applications.menu-cache" >> "$session_dir/twmrc" || exit 1
+    else
+        /usr/bin/ps2-xdg-menu >> "$session_dir/twmrc" || exit 1
+    fi
+fi
+# The manager can accept input while independent display setup and artwork run.
+# No delays, feature probes or test clients stand between it and the user.
+twm -f "$session_dir/twmrc" &
+wm_pid=$!
+{
+    xset s off -dpms 2>/dev/null || xset s off
+} &
+/usr/bin/ps2-desktop &
+xclock -name ps2-clock -title "Clock" -analog -update 60 \
+    -fg black -bg white -hd black -hl black -bd '#479ee8' \
+    -bw 2 -geometry 144x144-12+12 &
+xterm -name ps2-terminal -title "Emotion Engine | Terminal" -geometry 66x18+26+62 &
+wait "$wm_pid"
+exit $?

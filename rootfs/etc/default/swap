@@ -1,0 +1,3 @@
+# An existing, initialized swap partition/file may be enabled here.
+# No partitioning or mkswap is performed by the boot scripts.
+SWAP_DEVICE=

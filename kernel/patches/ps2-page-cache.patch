@@ -1,0 +1,61 @@
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
+@@ -165,7 +165,7 @@
+ 
+ 	if (folio_test_dcache_dirty(folio)) {
+ 		for (i = 0; i < folio_nr_pages(folio); i++) {
+-			addr = (unsigned long)kmap_local_folio(folio, i);
++			addr = (unsigned long)kmap_local_folio(folio, (size_t)i * PAGE_SIZE);
+ 
+ 			if (exec || pages_do_alias(addr, address))
+ 				flush_data_cache_page(addr);
+@@ -173,6 +173,16 @@
+ 			address += PAGE_SIZE;
+ 		}
+ 		folio_clear_dcache_dirty(folio);
++	} else if (IS_ENABLED(CONFIG_CPU_R5900) && !cpu_has_ic_fills_f_dc) {
++		/* R5900 kernel writes need writeback even without PG_dcache_dirty.
++		 * Retain the original PS2 port's clean-page path: executable and
++		 * read-only pages can have been copied through a kernel mapping.
++		 * Flush the PTE's page; unlike the dirty path this has no folio-wide
++		 * flag to clear. Other CPU families retain their existing policy.
++		 */
++		addr = (unsigned long)kmap_local_page(pfn_to_page(pfn));
++		flush_data_cache_page(addr);
++		kunmap_local((void *)addr);
+ 	}
+ }
+ 
+--- a/arch/mips/kernel/genex.S
++++ b/arch/mips/kernel/genex.S
+@@ -163,6 +163,9 @@
+ 	FEXPORT(skipover_\handler)
+ 	.set	push
+ 	.set	noat
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	MFC0	k0, CP0_EPC
+ 	/* Subtract/add 2 to let the ISA bit propagate through the mask.  */
+ 	PTR_LA	k1, r4k_wait_insn - 2
+@@ -172,6 +175,9 @@
+ 	 PTR_ADDIU	k0, r4k_wait_exit - r4k_wait_insn + 2
+ 	.set	reorder
+ 	MTC0	k0, CP0_EPC
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	.set pop
+ 	.endm
+ 
+--- a/init/main.c
++++ b/init/main.c
+@@ -1475,7 +1475,7 @@
+ static void __init do_basic_setup(void)
+ {
+ #ifdef CONFIG_CPU_R5900
+-	pr_info("ps2: exception guards and video modes kernel\n");
++	pr_info("ps2: page-cache writeback kernel\n");
+ #endif
+ 	cpuset_init_smp();
+ 	ksysfs_init();

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Keyboard Layout
+Exec=ps2-keyboard
+TryExec=ps2-keyboard
+Terminal=true
+Categories=Settings;
+X-PS2-Menu=Tools

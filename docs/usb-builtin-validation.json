@@ -1,0 +1,208 @@
+{
+  "date": "2026-10-02",
+  "kernel": {
+    "scope": "PAL/ext4/GNU/UK/native-SMAP; built-in USB; R5900 exception guards; v8 cache/CP0/VM guards retained; cold MDIO, FIFO-first reset and probe-phase reporting; video selector",
+    "image_sha256": "1a1d01b0488b47279de30606c9069260dbf33cc51e20dcb5c04e9eddcdadc284",
+    "image_bytes": 2861928,
+    "config_sha256": "f1708a1bfa116d9da72e339e8e31f98e0ad4b8c7e3dd1f620b957a9041d1d172",
+    "layout": {
+      "ram_bytes": 33554432,
+      "kernel_physical_ranges": [
+        [
+          65536,
+          5656320
+        ]
+      ],
+      "compressed_physical_ranges": [
+        [
+          8388608,
+          16435568
+        ]
+      ],
+      "decompressor_overlap_check": "passed"
+    },
+    "api_patch_sha256": "938d14893ed72828e47398321a12094f92055e8245761e67ab8ba885103ef5e6",
+    "output": "/home/machaddr/.cache/eelinux/kernel-usb-relay-v9-7.2.8",
+    "source": "/home/machaddr/.cache/eelinux/sources/linux-7.2.8-usb-relay-v9",
+    "kernel_release": "7.2.8-eelinux-ps2",
+    "modules_root": "/home/machaddr/.cache/eelinux/modules-usb-relay-v9-7.2.8",
+    "early_modules": [],
+    "initramfs_archive_bytes": 736768,
+    "built_in_root_drivers": [
+      "USB",
+      "USB_COMMON",
+      "USB_OHCI_HCD",
+      "USB_OHCI_HCD_PS2",
+      "USB_STORAGE",
+      "BLK_DEV_SD",
+      "HID",
+      "HID_GENERIC",
+      "USB_HID",
+      "INPUT_EVDEV",
+      "INPUT_MOUSEDEV",
+      "iop-registers"
+    ],
+    "patches_sha256": {
+      "7.2.8-r5900-cp0.patch": "f3414004ae9540786772e20d1cfefd5b9739ea822130e73bc21abfc91aefffa2",
+      "ps2-intc-mask.patch": "5676221d28b72b23a5fab4273f45cd942a1c7fc103d7f3af39d433ed938e8789",
+      "ps2-usb-builtin.patch": "b986b7f3a17e6bc3165f1a19362b36c95090eb3476ba928339fa735465b3de3b",
+      "ps2-sif-usb-order-v2.patch": "b832f87507c31017ddd03b0856fab746d9a7f05df8ce475b52fa944284a6cd7f",
+      "ps2-dma-fault.patch": "f823057e78a9eeeb41990b2b5bb45b238c7c48c8a4c123a1b2919a405a28d0ff",
+      "ps2-iop-upload.patch": "725178cdfc50545cb3d10b45eddf80b1dc49e499706dede467def2b968df1c4d",
+      "ps2-user-vm.patch": "37da0fe6a9c3892b412a974824a64791c0e9fca0d76cbe7b69e285f10d4f5ab5",
+      "ps2-video-memory.patch": "5d45306cca45cdb89a6f2b7da36eec247f73a78fdb6f499e0b7c0305fd065196",
+      "ps2-page-cache.patch": "a61accaa4ed33ea440e07710a67d19dc1d57d99c8f74b2f8c829c2d2116cb630",
+      "ps2-smap-startup.patch": "e87533834119029ef8e58c47d1254388cedf61beeee0ab9fcee92ff2312447ea"
+    },
+    "log_sha256": "9f828976c5b9c05e30168c5ec97b1d772a801a4bcc4b4e965bc6ba47b787a8ee",
+    "previous_kernel_preserved": "d4f30e03f2e8201691014fa4a45c7279f5f2007d9e5015c2a3d81a5d3128b3fa",
+    "physical_CP0_boot_user_confirmed": true,
+    "physical_USB_root_tested": false,
+    "linux_boot_pass": null,
+    "root_device": "/dev/sda2",
+    "root_filesystem": "ext4",
+    "video_mode": "pal",
+    "initramfs_unpacked_bytes": 736768,
+    "physical_USB_previous_stop": "relay-v5 mounts SanDisk USB /dev/sda2; dynamic init faults in ld.so.1+0xb614, address 0x268",
+    "firmware_manifest_sha256": "f22b78500cc2a8607d0973d061cf843bff0fdd662d96d39e66c704b6207898ae",
+    "initramfs_bytes": 736768,
+    "initramfs_sha256": "1b34d64ff6b79dff48e4f3ca11ad5dfdcb887e37f6e1b9e46c363f2237bbdbf1",
+    "IOP_layout": {
+      "load_file_and_memory_alignment": 16,
+      "rodata_in_text": true,
+      "module_sizes_cover_alignment_gaps": true,
+      "all_six_firmware_checked": true
+    },
+    "r5900_user_vm": {
+      "TLB_refill_FLX05_padding": true,
+      "TLB_refill_32_slot_limit": true,
+      "TLBR_hazards_restored": true,
+      "interrupt_vector_FLX05_padding": true,
+      "PID_1_user_fault_summary": true,
+      "physical_userland_retest": "pending"
+    },
+    "user_cache_binary_checks": {
+      "r4k_blast_dcache_page_dc64": {
+        "cache_operations": 32,
+        "opcode": "0x18",
+        "sync_encoding": "0xf",
+        "sync_count": 33,
+        "non_EVA_user_page_alias": true,
+        "existing_synchronization_verified": true
+      },
+      "blast_icache64_page": {
+        "cache_operations": 32,
+        "opcode": "0xb",
+        "sync_encoding": "0x40f",
+        "sync_count": 2,
+        "non_EVA_user_page_alias": true,
+        "existing_synchronization_verified": true
+      }
+    },
+    "physical_USB_mount_user_confirmed": false,
+    "physical_userland_tested": false,
+    "previous_candidate_physical_USB_mount_user_confirmed": true,
+    "previous_candidate": "relay-v5: user photo confirms SanDisk and ext4 /dev/sda2; init crashes in ld.so.1",
+    "GS_mode_allocation": {
+      "padded_GS_allocation_checked": true,
+      "prospective_font_and_palette_checked": true,
+      "virtual_geometry_bounded": true,
+      "VESA_RGB_output": true,
+      "physical_modes_tested": false
+    },
+    "physical_modes_tested": false,
+    "r5900_page_cache": {
+      "clean_PTE_page_writeback_restored": true,
+      "folio_mapping_uses_byte_offsets": true,
+      "interrupt_skipover_CP0_guards_restored": true,
+      "physical_loader_fix_confirmed": false,
+      "reference": "frno7/linux 77174dd4c8958a91aa5b76fb064a60eb68119e70 arch/mips/mm/cache.c and arch/mips/kernel/genex.S"
+    },
+    "native_smap_startup": {
+      "before_sha256": "356f1a53e82aa919c5186ae0597b090e62aa2d9626a29575373069fa390d33f4",
+      "driver_sha256": "7bad0366e613a82d9592be6f824deba20af149463b4eba94f424488f5d30bf14",
+      "patch_sha256": "e87533834119029ef8e58c47d1254388cedf61beeee0ab9fcee92ff2312447ea",
+      "cold_MDIO_initial_DONE_not_required": true,
+      "timeout_transaction_ownership_preserved": true,
+      "FIFO_reset_before_EMAC": true,
+      "probe_phase_diagnostics": true,
+      "physical_network_result": "pending"
+    }
+  },
+  "packaging_checks": {
+    "diagnostic_fat_readback_byte_exact": {},
+    "fat32_bpb_and_cluster_count": "passed",
+    "fsck_fat_read_only": "passed",
+    "kernel_fat_readback_byte_exact": true,
+    "readme_fat_readback_byte_exact": true,
+    "root_payload_byte_exact": true,
+    "source_inputs_unchanged": true
+  },
+  "release_USB_sha256": "31dfda2805cc3d57eb57447dbe12ccdee65909fc354e24204410b7b5ebbbff42",
+  "release_rootfs_sha256": "aefee83622f7eff72f1b8dc17d5615ac6e575dd7389fe71ba83e36de96fa5b1e",
+  "guest_checks": {
+    "OHCI: IRQ relay firmware ready": true,
+    "OHCI: controller running": true,
+    "USB hub found": true,
+    "sda: sda1 sda2": true,
+    "EXT4-fs (sda2): mounted filesystem": true,
+    "EXT4-fs (sda2): re-mounted": true,
+    "keyboard probe: overall=PASS": true,
+    "automatic_IPv4": true,
+    "default via 192.0.2.1": true,
+    "eth0: leased 192.0.2.100": true,
+    "DNS search PCSX2": true,
+    "manual_default_config_rebind_result=0": true,
+    "2 packets transmitted, 2 received, 0% packet loss": true,
+    "external_ping_result=0": true,
+    "DNS_lookup_result=0": true,
+    "final_rx_errors=0": true,
+    "final_tx_errors=0": true,
+    "eeLinux CP0 probe: complete": true,
+    "eeLinux user VM probe: overall=PASS": true,
+    "dynamic_loader_stress=PASS executions=32": true
+  },
+  "early_Linux_module_manifest": [],
+  "initramfs_bytes": 736768,
+  "IOP_IRX_required": true,
+  "user_hardware_result_previous_candidate": "IOP USB: loading IRQ relay",
+  "latest_physical_retest": "pending",
+  "host_checks": {
+    "date": "2026-10-02",
+    "command": "make check",
+    "exit_code": 0,
+    "suite_counts": [
+      207,
+      31
+    ],
+    "total_tests": 238,
+    "imported_files": 437
+  },
+  "outstanding_RPC_policy": "Keep DMA/client memory owned; periodically identify the stalled operation rather than unsafe timeout/free",
+  "previous_candidate_physical_observation": {
+    "date": "2026-10-02",
+    "source": "user report and two real-console photographs",
+    "machine": "SCPH-90001; Tuna/LaunchELF; PAL; PS2-to-HDMI",
+    "candidate": "relay-v8 retest following delivery; kernel/image hashes not measured on console",
+    "boot_and_authenticated_root_shell_user_confirmed": true,
+    "GNU_commands_observed": [
+      "ls",
+      "ip",
+      "dhcpcd",
+      "dmesg"
+    ],
+    "network_interfaces_observed": [
+      "lo"
+    ],
+    "physical_Ethernet_packets_confirmed": false,
+    "SMAP_probe_error": -145,
+    "MIPS_errno": "ETIMEDOUT",
+    "probe_error_timestamp_seconds": "3.131847",
+    "dhcpcd_result": "no valid interfaces found; no interfaces have a carrier",
+    "UK_keyboard_user_report": "physical UK keyboard; backslash and pipe incorrect",
+    "limitation": "The old generic probe error does not identify DEV9, MAC/FIFO reset or MDIO timeout"
+  },
+  "current_physical_v9_result": "pending",
+  "native_smap_startup_audit": "docs/native-smap-startup-validation.json",
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

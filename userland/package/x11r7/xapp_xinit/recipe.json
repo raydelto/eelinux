@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xinit",
+  "kind": "application",
+  "program": "xinit",
+  "version": "1.4.4",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xinit-1.4.4.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xinit-1.4.4.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "40a47c7a164c7f981ce3787b4b37f7e411fb43231dcde543d70094075dacfef9",
+      "filename": "xinit-1.4.4.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "387285c952bbe074d2ed2dbbf745d1634763bb71f7f7edb22b3306b9e96ae4e28e59ecd6c48cc646b12dbdbcc68d42036bd127da75ef3c16fabdae87794ad6d1",
+      "filename": "xinit-1.4.4.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

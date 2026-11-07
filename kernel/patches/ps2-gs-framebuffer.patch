@@ -1,0 +1,321 @@
+--- a/drivers/video/fbdev/ps2fb.c
++++ b/drivers/video/fbdev/ps2fb.c
+@@ -40,6 +40,8 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/mm.h>
++#include <linux/highmem.h>
++#include <asm/cacheflush.h>
+ #include <linux/module.h>
+ #include <linux/of_device.h>
+ #include <linux/platform_device.h>
+@@ -145,6 +147,11 @@
+  */
+ struct ps2fb_par {
+ 	spinlock_t lock;
++	struct page *shadow_pages[GS_MEMORY_SIZE / PAGE_SIZE];
++	struct fb_deferred_io shadow_io;
++	atomic_t shadow_maps;
++	const struct vm_operations_struct *shadow_vm_original;
++	struct vm_operations_struct shadow_vm_wrapped;
+ 
+ 	struct fb_videomode mode;
+ 	struct gs_rgba32 pseudo_palette[PALETTE_SIZE];
+@@ -1676,22 +1683,23 @@
+ 	/* Bound virtual geometry before GS allocation arithmetic. */
+ 	if (var->xres_virtual > 2048 || var->yres_virtual > 2048)
+ 		return -EINVAL;
++	var->xres_virtual = ALIGN(var->xres_virtual, 8);
+ 	var->xoffset = 0;
+ 	var->yoffset = 0;
+ 
+         /* Check bits per pixel. */
+         if (!var->bits_per_pixel)
+ 		var->bits_per_pixel = default_bits_per_pixel(
+-		     var->xres_virtual, var->yres_virtual, info->fix.smem_len);
++		     var->xres_virtual, var->yres_virtual, GS_MEMORY_SIZE);
+ 	else if (var->bits_per_pixel != 16 &&
+ 		 var->bits_per_pixel != 32)
+ 		return -EINVAL;
+         if (!bits_per_pixel_fits(var->xres_virtual, var->yres_virtual,
+-			var->bits_per_pixel, info->fix.smem_len))
++			var->bits_per_pixel, GS_MEMORY_SIZE))
+ 		var->bits_per_pixel = default_bits_per_pixel(
+-		     var->xres_virtual, var->yres_virtual, info->fix.smem_len);
++		     var->xres_virtual, var->yres_virtual, GS_MEMORY_SIZE);
+         if (!bits_per_pixel_fits(var->xres_virtual, var->yres_virtual,
+-			var->bits_per_pixel, info->fix.smem_len))
++			var->bits_per_pixel, GS_MEMORY_SIZE))
+ 		return -ENOMEM;
+ 	if (var->bits_per_pixel == 16) {
+ 		var->red    = (struct fb_bitfield){ .offset =  0, .length = 5 };
+@@ -2118,6 +2126,7 @@
+ 	info->fix.ypanstep = var->yres_virtual > var->yres ? 1 : 0;
+ 	info->fix.ywrapstep = 1;
+ 	info->fix.line_length = var->xres_virtual * var->bits_per_pixel / 8;
++	info->fix.smem_len = info->fix.line_length * var->yres_virtual;
+ 
+ 	gs_write_smode1(smode1);
+ 	gs_write_smode2(sp.smode2);
+@@ -2234,11 +2243,14 @@
+ 			dev_err(dev, "fb_add_videomode failed\n");
+ }
+ 
++#include "ps2fb-shadow.h"
++
+ static int init_console_buffer(struct platform_device *pdev,
+ 	struct fb_info *info)
+ {
+ 	static struct fb_ops fbops = {
+ 		.owner		= THIS_MODULE,
++		.fb_mmap	= ps2fb_shadow_mmap,
+ 		.fb_blank	= ps2fb_blank,
+ 		.fb_setcolreg	= ps2fb_setcolreg,
+ 		.fb_set_par	= ps2fb_cb_set_par,
+@@ -2264,6 +2276,12 @@
+ 
+ 	info->fix.smem_start = 0;	/* GS frame buffer is local memory */
+ 	info->fix.smem_len = GS_MEMORY_SIZE;
++	par->shadow_io = (struct fb_deferred_io) {
++		.delay = max_t(unsigned long, 1, HZ / 30),
++		.get_page = ps2fb_shadow_get_page,
++		.deferred_io = ps2fb_shadow_deferred,
++	};
++	info->fbdefio = &par->shadow_io;
+ 
+ 	info->fbops = &fbops;
+ 	info->flags =
+@@ -2276,7 +2294,7 @@
+ 		      FBINFO_PARTIAL_PAN_OK |
+ 		      FBINFO_READS_FAST;
+ 
+-	info->flags |= FBINFO_MISC_TILEBLITTING;
++	info->flags |= FBINFO_MISC_TILEBLITTING | FBINFO_VIRTFB;
+ 	info->tileops = &tileops;
+ 
+ 	/*
+@@ -2354,7 +2372,14 @@
+ 	 */
+ 	disable_irq(IRQ_DMAC_GIF);
+ 
++	/* Track every possible GS page; allocate RAM only on fault. */
++	info->fix.smem_len = GS_MEMORY_SIZE;
++	err = fb_deferred_io_init(info);
++	info->fix.smem_len = info->fix.line_length * info->var.yres_virtual;
++	if (err)
++		goto err_register_framebuffer;
+ 	if (register_framebuffer(info) < 0) {
++		ps2fb_shadow_cleanup(info);
+ 		fb_err(info, "register_framebuffer failed\n");
+ 		err = -EINVAL;
+ 		goto err_register_framebuffer;
+@@ -2383,26 +2408,23 @@
+ static void ps2fb_remove(struct platform_device *pdev)
+ {
+ 	struct fb_info *info = platform_get_drvdata(pdev);
+-	struct ps2fb_par *par;
+-
+-	if (!info)
++	struct ps2fb_par *par = info->par;
++
++	unregister_framebuffer(info);
++	if (atomic_read(&par->shadow_maps)) {
++		fb_err(info, "Framebuffer mappings remain during removal\n");
+ 		return;
+-	par = info->par;
+-	unregister_framebuffer(info);
+-
+-	/* info->par and the log device remain valid until DMA has drained. */
++	}
++	ps2fb_shadow_cleanup(info);
+ 	if (!gif_wait()) {
+-		dev_err(&pdev->dev, "Failed to complete GIF DMA transfer\n");
+-		/* DMAC still owns this page: retain it rather than free live DMA. */
+-	} else {
+-		free_page((unsigned long)par->package.buffer);
++		/* Do not free an in-flight DMA packet. */
++		fb_err(info, "GIF DMA still active during removal\n");
++		return;
+ 	}
+ 	enable_irq(IRQ_DMAC_GIF);
+ 	fb_dealloc_cmap(&info->cmap);
+-	platform_set_drvdata(pdev, NULL);
++	free_page((unsigned long)par->package.buffer);
+ 	framebuffer_release(info);
+-
+-	return;
+ }
+ 
+ static struct platform_driver ps2fb_driver = {
+--- a/drivers/video/fbdev/Kconfig
++++ b/drivers/video/fbdev/Kconfig
+@@ -1609,6 +1609,7 @@
+ 	depends on FB && SONY_PS2
+ 	select PS2_GS
+ 	select FB_TILEBLITTING
++	select FB_DEFERRED_IO
+ 	default y
+ 	help
+ 	  Frame buffer driver for the Sony Playstation 2 Graphics Synthesizer.
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-shadow.h
+@@ -0,0 +1,159 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/* CPU-visible, demand-paged GS framebuffer. Included by ps2fb.c after the
++ * existing GIF helpers. GS local memory is never mapped into userspace.
++ */
++#define PS2FB_SHADOW_PAGES (GS_MEMORY_SIZE / PAGE_SIZE)
++
++static struct page *ps2fb_shadow_get_page(struct fb_info *info,
++					unsigned long offset)
++{
++	struct ps2fb_par *par = info->par;
++	struct page *page, *new;
++	u32 index = offset >> PAGE_SHIFT;
++
++	if (offset >= info->fix.smem_len || index >= PS2FB_SHADOW_PAGES)
++		return NULL;
++	page = READ_ONCE(par->shadow_pages[index]);
++	if (!page) {
++		new = alloc_page(GFP_KERNEL | __GFP_ZERO);
++		if (!new)
++			return NULL;
++		page = cmpxchg(&par->shadow_pages[index], NULL, new);
++		if (page)
++			__free_page(new);
++		else
++			page = new;
++	}
++	get_page(page);
++	return page;
++}
++
++/* Flush one dirty page as bounded host-to-local IMAGE transfers. Each DMA
++ * packet fits the driver's existing single page. Never hold interrupts off
++ * across a full frame, and never reuse the packet before DMA completion.
++ */
++static void ps2fb_shadow_upload(struct fb_info *info, struct page *page,
++				unsigned long offset)
++{
++	struct ps2fb_par *par = info->par;
++	u32 cpp = info->var.bits_per_pixel / 8;
++	u32 stride = info->fix.line_length;
++	u32 left = min_t(unsigned long, PAGE_SIZE, info->fix.smem_len - offset);
++	u32 consumed = 0;
++	u32 limit = round_down((par->package.capacity - 6) * 16 / cpp, 8);
++	const u8 *pixels;
++
++	flush_dcache_page(page);
++	pixels = kmap_local_page(page);
++	while (consumed < left) {
++		u32 pos = offset + consumed;
++		u32 y = pos / stride, x = (pos % stride) / cpp;
++		u32 width = min3((left - consumed) / cpp,
++				info->var.xres_virtual - x, limit);
++		u32 bytes = width * cpp;
++		unsigned long flags;
++		union package *base, *p;
++
++		if (!width || y >= info->var.yres_virtual)
++			break;
++		spin_lock_irqsave(&par->lock, flags);
++		if (!gif_wait()) {
++			spin_unlock_irqrestore(&par->lock, flags);
++			pr_err_ratelimited("ps2fb: GS shadow upload timed out\n");
++			break;
++		}
++		base = par->package.buffer;
++		p = base;
++		GIF_PACKAGE_TAG(p) { .flg = gif_packed_mode,
++			.reg0 = gif_reg_ad, .nreg = 1, .nloop = 4 };
++		GIF_PACKAGE_AD(p) { .addr = gs_addr_bitbltbuf,
++			.data.bitbltbuf = { .dpsm = var_to_psm(&info->var, info),
++				.dbw = var_to_fbw(&info->var) } };
++		GIF_PACKAGE_AD(p) { .addr = gs_addr_trxpos,
++			.data.trxpos = { .dsax = x, .dsay = y } };
++		GIF_PACKAGE_AD(p) { .addr = gs_addr_trxreg,
++			.data.trxreg = { .rrw = width, .rrh = 1 } };
++		GIF_PACKAGE_AD(p) { .addr = gs_addr_trxdir,
++			.data.trxdir = { .xdir = gs_trxdir_host_to_local } };
++		GIF_PACKAGE_TAG(p) { .flg = gif_image_mode,
++			.nloop = DIV_ROUND_UP(bytes, 16), .eop = 1 };
++		memset(p, 0, DIV_ROUND_UP(bytes, 16) * 16);
++		memcpy(p, pixels + consumed, bytes);
++		p += DIV_ROUND_UP(bytes, 16);
++		gif_write(&base->gif, p - base);
++		spin_unlock_irqrestore(&par->lock, flags);
++		consumed += bytes;
++		cond_resched();
++	}
++	kunmap_local(pixels);
++}
++
++static void ps2fb_shadow_deferred(struct fb_info *info, struct list_head *pages)
++{
++	struct fb_deferred_io_pageref *ref;
++
++	list_for_each_entry(ref, pages, list)
++		if (ref->offset < info->fix.smem_len)
++			ps2fb_shadow_upload(info, ref->page, ref->offset);
++}
++
++static void ps2fb_shadow_vm_open(struct vm_area_struct *vma)
++{
++	struct fb_info *info = vma->vm_file->private_data;
++	struct ps2fb_par *par = info->par;
++
++	atomic_inc(&par->shadow_maps);
++	if (par->shadow_vm_original->open)
++		par->shadow_vm_original->open(vma);
++}
++
++static void ps2fb_shadow_vm_close(struct vm_area_struct *vma)
++{
++	struct fb_info *info = vma->vm_file->private_data;
++	struct ps2fb_par *par = info->par;
++
++	if (par->shadow_vm_original->close)
++		par->shadow_vm_original->close(vma);
++	atomic_dec(&par->shadow_maps);
++}
++
++static int ps2fb_shadow_mmap(struct fb_info *info, struct vm_area_struct *vma)
++{
++	struct ps2fb_par *par = info->par;
++	unsigned long length = vma->vm_end - vma->vm_start;
++	unsigned long size = PAGE_ALIGN(info->fix.smem_len);
++	unsigned long offset;
++	int ret;
++
++	if (vma->vm_pgoff > (size >> PAGE_SHIFT))
++		return -EINVAL;
++	offset = vma->vm_pgoff << PAGE_SHIFT;
++	if (length > size - offset || !(vma->vm_flags & VM_SHARED))
++		return -EINVAL;
++	ret = fb_deferred_io_mmap(info, vma);
++	if (ret)
++		return ret;
++	/* Preserve deferred-IO private data and every original fault callback.
++	 * Count VMAs before their first fault, including forked mappings.
++	 */
++	if (!par->shadow_vm_original) {
++		par->shadow_vm_original = vma->vm_ops;
++		par->shadow_vm_wrapped = *vma->vm_ops;
++		par->shadow_vm_wrapped.open = ps2fb_shadow_vm_open;
++		par->shadow_vm_wrapped.close = ps2fb_shadow_vm_close;
++	}
++	vma->vm_ops = &par->shadow_vm_wrapped;
++	atomic_inc(&par->shadow_maps);
++	return 0;
++}
++
++static void ps2fb_shadow_cleanup(struct fb_info *info)
++{
++	struct ps2fb_par *par = info->par;
++	u32 i;
++
++	fb_deferred_io_cleanup(info);
++	for (i = 0; i < PS2FB_SHADOW_PAGES; ++i)
++		if (par->shadow_pages[i])
++			put_page(par->shadow_pages[i]);
++}

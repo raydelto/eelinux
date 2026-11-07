@@ -1,0 +1,189 @@
+{
+  "schema": 1,
+  "date": "2026-10-04",
+  "recorded_at": "2026-10-04T15:12:58.006673+00:00",
+  "scope": "native Xorg CopyArea and explicit Mesa region adapter; full DDX/OpenGL unfinished",
+  "compiled_components": {
+    "sha256": "48eaed2362922892774ff2a48337c0b20efd96eddfb6aba407d7ca57763dd0a0"
+  },
+  "native_test_log": {
+    "sha256": "dc3ca310a145ab13bee485748e66bdb81dc2019907e32dcc743eacc5443dc198"
+  },
+  "preserved_source_inputs": {
+    "sha256": "96c8b67771be1a10278794357269f4b34300aff5b85d3d05b853dc024dbe93a8"
+  },
+  "patches": {
+    "sha256": "49aa3c5b0e0a4efad1bb3a64f50dcb480e944d34a629a0b1c640863d4f496879"
+  },
+  "probe": {
+    "sha256": "ebe2013cead8b1b630a2c77c392d918d5673b31c21ff08d82b3b9a4387ce52eb"
+  },
+  "probe_source": {
+    "sha256": "ea0a3290a33f0da93afb06816709dd2a6bed3b786c9767e94b7d98d027aab84c"
+  },
+  "image": {
+    "sha256": "d1e48f620013bc7a524fb34d8d546b09fc861f5797de7c05c9a084b219f97dac"
+  },
+  "image_assembly": {
+    "sha256": "2b84940c5b2cccda90fb95f6cc6e4e955f12bb56b4a57020cc1f461024ab2f5e"
+  },
+  "image_checks": {
+    "diagnostic_fat_readback_byte_exact": {},
+    "fat32_bpb_and_cluster_count": "passed",
+    "fsck_fat_read_only": "passed",
+    "kernel_fat_readback_byte_exact": true,
+    "readme_fat_readback_byte_exact": true,
+    "root_payload_byte_exact": true,
+    "source_inputs_unchanged": true
+  },
+  "unchanged_kernel_sha256": "7f772a831aeea887efbe08338cace4c7eeb7f1b505f34bd33fb5ab64fbf44147",
+  "preserved_startup_binaries": {
+    "ps2-gs-test": "1356d7a73a58f09eaa95298092de779cd461615d3f6eb0ac7966cff52a1434cd",
+    "ps2-gs-upload-test": "1ed84bd7c47a1d29b80942bc20a2116f6177c3d4b54a4ddb7aa7175d6f65ef07",
+    "ps2-gs-surface-test": "18674bec98afa5a847649c89bf2231f861e864222faee9bef7fbcff4c3364497",
+    "ps2-gs-render-test": "7616a090815c5759a2f628efcd1e0bac2c88b6e2153b1bc750ea6ca05f33676f",
+    "ps2-gs-texture-test": "fb6dd812b8d73465ec88f93ef3afded6bf09b9b42e8b7b92ed59dd0569b6f102",
+    "ps2-gs-context-test": "cb5e60a9dcf284e64df44846ec11f0b2f16d0f57562ad7909227a34e88b2813b",
+    "ps2-gs-glyph-test": "fdabce9c1f5bbfa6b9cffef0126bd18e834971261b765a48cc51a3f40b38ff34",
+    "ps2-gs-gc-test": "ded18eef24e0f2597ed07bfec72356a667ed9fb90035e6ee600c9649ed3735f9",
+    "ps2-gs-logic-test": "b7d374c1c5c681e8bd03239c3db17ec03d8e504e1e3163276a27df14f8d4158c",
+    "ps2-gs-solid-test": "e7828b6ca61d02b8b2ac1cf065ba3e7b1a5bb8ca7b211e22d9135492108d39d2"
+  },
+  "host_checks": {
+    "cases": 12,
+    "result": "passed",
+    "sanitizers": [
+      "ASan",
+      "UBSan"
+    ],
+    "evidence_kind": "transcription of successful tool output",
+    "copy_cases": [
+      "widths",
+      "overlap",
+      "preflight",
+      "clipping",
+      "exposures",
+      "rewrap",
+      "lifetime",
+      "failure",
+      "random"
+    ],
+    "probe_cases": [
+      "success",
+      "failure",
+      "interrupt"
+    ],
+    "randomized_copies": 256,
+    "independent_snapshot_pixel_reference": true,
+    "actual_upstream_miDoCopy": {
+      "sha256": "f067938461b3543cbce3901990e3224f9af4aa638d63e19652c7c080272d7cb0"
+    },
+    "actual_pixman_regions": true,
+    "mock_pixel_reference_is_production": false
+  },
+  "R5900_Linux_user_checks": {
+    "cases": 30,
+    "new_cases": 12,
+    "solid_regression_cases": 10,
+    "GC_regression_cases": 8,
+    "result": "passed",
+    "actual_GNU_atomics": true,
+    "library_NDEBUG": true,
+    "test_assertions_enabled": true,
+    "GPU_pixels_tested": false
+  },
+  "PCSX2_run": {
+    "session": {
+      "sha256": "09c905b0b2c60409a0264bfb6336d7b77221fbc13b53bf5aa80262006f8cfcbd"
+    },
+    "process_result": {
+      "sha256": "cb051efcb14641a78473a7c3d395fe1c50b31c630d10c34fcb0bdf8e74dfc9e7"
+    },
+    "timed_out": true,
+    "automatic_timeout_seconds": 300,
+    "timeout_is_a_boot_result": false,
+    "runtime": {
+      "requested_program": "C:\\Program Files\\PCSX2\\pcsx2-qt.exe",
+      "executable_sha256": "4d2a4d9c0db3cb2e9760e2d34bcd29150b53d56a1a87ae8e6fb4556796b40f58",
+      "runtime_manifest_sha256": "b7bf008375c55020bfb3287e0a100d1ff001323706bc2e18b3bf2d0e183ed478",
+      "mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85"
+    },
+    "log_snapshot": {
+      "sha256": "6dc997ada1f4e20609a86f32a6a887270b3597029fa6c07af57948dc1a523365"
+    },
+    "milestones": [
+      "EXT4-fs (sda2): mounted filesystem",
+      "ps2-gs: command/fence test PASSED",
+      "ps2-gs: image transfer/fence PASSED",
+      "ps2-gs: offscreen transfer/fence PASSED",
+      "ps2-gs: owned Mesa transfer/fence PASSED",
+      "ps2-gs: texture sampling/fence PASSED",
+      "ps2-gs: screen/context transfer/fence PASSED",
+      "ps2-gs: native glyph command/fence PASSED",
+      "ps2-gs: GC text/lifetime command/fence PASSED",
+      "ps2-gs: solid logic command/fence PASSED",
+      "ps2-gs: solid GC command/fence PASSED",
+      "ps2-gs: CopyArea command/fence PASSED",
+      "ps2-gs: native Xorg CopyArea probe exit=0",
+      "ps2-smap ps2-smap eth0: Link is Up"
+    ],
+    "startup_command_checks_passed": 11,
+    "copy_probe_exit": 0,
+    "copy_probe_exit_guest_seconds": 105.6865,
+    "kernel_panic_or_user_segfault_in_saved_log": false,
+    "authenticated_login_tested": false,
+    "earlier_controlled_session": "stopped before copy test when user requested pcsx2-console",
+    "session_may_remain_interactive": false,
+    "process_exit_is_a_boot_result": false
+  },
+  "visual_observation": {
+    "platform": "PCSX2",
+    "user_initial_panels_match_expected_scene": true,
+    "user_confirmation": "Yes, all three steps appeared",
+    "move_clip_gap_and_console_return_confirmed": true,
+    "GPU_pixel_readback": false,
+    "physical_pixels_tested": false,
+    "qualified_scene": "CT32 720x576 initial panels, overlapping down/right move, split clipping and console restoration in PCSX2"
+  },
+  "request_limits": {
+    "max_clip_boxes": 256,
+    "max_copied_pixels": 1048576,
+    "scratch_GS_bytes": 8192,
+    "Xorg_callback_stack_frame_bytes": 6192,
+    "Mesa_batch_stack_frame_bytes": 6320,
+    "texture_helper_stack_frame_bytes": 6000,
+    "stack_frames_can_be_nested": true,
+    "complete_desktop_memory_measured": false
+  },
+  "supported_copy_ALUs": [
+    "GXcopy/full RGB plane mask",
+    "GXcopy/zero RGB mask",
+    "GXnoop"
+  ],
+  "formats": [
+    "RGBX depth24/CT32",
+    "RGB555 depth15/CT16"
+  ],
+  "bindings_and_references_preserved": true,
+  "all_request_preflight_before_fence": true,
+  "software_pixel_renderer": false,
+  "GPU_pixel_readback": false,
+  "physical_devices_written": false,
+  "new_diagnostic_physical_hardware_verified": false,
+  "earlier_ten_diagnostics_hardware_report": "docs/graphics-hardware-validation.json",
+  "earlier_report_qualifies_this_new_test": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL_GLX": false,
+  "shader_caps": 0,
+  "Gallium_resource_copy_region_uses_new_adapter": false,
+  "remaining": [
+    "new physical CopyArea scene",
+    "further copy ALUs/partial masks and RGB555 hardware",
+    "general Gallium resource_copy_region integration",
+    "diagonal/wide/dashed lines and tiled fills",
+    "Render alpha glyphs and cursor/VT/input/presentation",
+    "Mesa shader/state draw_vbo and GLX",
+    "real TWM/OpenGL RAM measurements"
+  ],
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

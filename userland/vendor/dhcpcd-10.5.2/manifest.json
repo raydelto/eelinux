@@ -1,0 +1,22 @@
+{
+  "version": "10.5.2",
+  "archive": {
+    "name": "dhcpcd-10.5.2.tar.xz",
+    "root": "dhcpcd-10.5.2",
+    "url": "https://github.com/NetworkConfiguration/dhcpcd/releases/download/v10.5.2/dhcpcd-10.5.2.tar.xz",
+    "sha256": "3e476657fdb6eeb38b277da3a48d0ac0113ecce5858ebdcddff2b629faed52b4",
+    "bytes": 289084
+  },
+  "license": "BSD-2-Clause",
+  "files": {
+    "src/if-linux.c": {
+      "sha256": "d5d84cc9e2140e7aed6ba0211876bbe505ba542331e071a60ff1a24784c37122",
+      "bytes": 52766
+    },
+    "LICENSE": {
+      "sha256": "3aeab006b01c1573b42d4440d7edad0adfe61ad05848ca82e02e745424a2b4fa",
+      "bytes": 1302
+    }
+  },
+  "purpose": "Unmodified release parser source for actual-function regression checks"
+}

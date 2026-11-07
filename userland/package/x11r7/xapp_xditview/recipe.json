@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xditview",
+  "kind": "application",
+  "program": "xditview",
+  "version": "1.0.7",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xditview-1.0.7.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xditview-1.0.7.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "039e2d447fa409d4bb25c4e87cf09b4d4b3eff2d3af5aee8e7e52165a3259fd7",
+      "filename": "xditview-1.0.7.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "da7e80cd9fbb5da0ec4949c6fed0bad135a2490767f030e60f1c51a9f5a62379572bf8b4dd6dec2fe824152d090470e62fce12c9144aaa1be1b48ddbc3b2910b",
+      "filename": "xditview-1.0.7.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

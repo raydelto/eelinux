@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "mc",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.mc",
+  "symbol": "BR2_PACKAGE_MC",
+  "version": "4.8.33",
+  "recipe": "package/mc/mc.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "cae149d42f844e5185d8c81d7db3913a8fa214c65f852200a9d896b468af164c",
+      "filename": "mc-4.8.33.tar.xz"
+    }
+  ],
+  "release_url": "https://ftp.osuosl.org/pub/midnightcommander/"
+}

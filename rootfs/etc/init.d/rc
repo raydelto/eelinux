@@ -1,0 +1,42 @@
+#!/bin/bash
+# Invoked by real SysVinit wait/sysinit actions, not a PID 1 replacement.
+set -u
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export LC_ALL=C
+level=${1:-}
+case $level in S|0|1|2|3|4|5|6) ;; *) printf 'Usage: rc {S|0|1|2|3|4|5|6}\n' >&2; exit 2 ;; esac
+root=${EELINUX_RC_DIR:-/etc/rc.d}
+directory=$root/rc$level.d
+[[ -d $directory ]] || { printf 'eeLinux: missing runlevel directory %s\n' "$directory" >&2; exit 1; }
+export RUNLEVEL=$level
+previous=${PREVLEVEL:-N}
+failed=0
+shopt -s nullglob
+for script in "$directory"/K[0-9][0-9]*; do
+    if [[ -x $script ]]; then
+        "$script" stop || { printf 'eeLinux: service stop failed: %s\n' "$script" >&2; failed=1; }
+    else
+        printf 'eeLinux: unusable service link: %s\n' "$script" >&2; failed=1
+    fi
+done
+for script in "$directory"/S[0-9][0-9]*; do
+    if [[ ! -x $script ]]; then
+        printf 'eeLinux: unusable service link: %s\n' "$script" >&2; failed=1; continue
+    fi
+    # Keep a shared service alive between equivalent multiuser runlevels.
+    service=${script##*/}; service=${service:3}
+    running=no restart=no
+    for old in "$directory"/K[0-9][0-9]*; do
+        name=${old##*/}
+        [[ ${name:3} == "$service" ]] && restart=yes
+    done
+    if [[ $previous =~ ^[0-6]$ && $restart == no ]]; then
+        for old in "$root/rc$previous.d"/S[0-9][0-9]*; do
+            name=${old##*/}
+            [[ ${name:3} == "$service" && -x $old && $old -ef $script ]] && running=yes
+        done
+    fi
+    [[ $running == yes ]] && continue
+    "$script" start || { printf 'eeLinux: service start failed: %s\n' "$script" >&2; failed=1; }
+done
+exit "$failed"

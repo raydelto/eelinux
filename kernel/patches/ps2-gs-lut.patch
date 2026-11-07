@@ -1,0 +1,214 @@
+--- a/drivers/video/fbdev/ps2fb-gs-device.h
++++ b/drivers/video/fbdev/ps2fb-gs-device.h
+@@ -12,6 +12,7 @@
+ #include "ps2fb-gs-logic-packet.h"
+ #include "ps2fb-gs-transfer-packet.h"
+ #include "ps2fb-gs-batch-packet.h"
++#include "ps2fb-gs-lut-packet.h"
+ #include "ps2fb-gs-readback-packet.h"
+ 
+ struct ps2gs_session;
+@@ -153,7 +154,9 @@
+ 		goto out;
+ 	}
+ 	gs_write_csr((struct gs_csr) { .finish = 1 });
+-	if (operation == PS2GS_INTERNAL_BATCH) {
++	if (operation == PS2GS_CHANNEL_LUT) {
++		count = ps2gs_package_lut(par->package.buffer, destination, request);
++	} else if (operation == PS2GS_INTERNAL_BATCH) {
+ 		count = ps2gs_package_batch(par->package.buffer, destination, source, request);
+ 	} else if (operation == PS2GS_SURFACE_FILL) {
+ 		count = ps2gs_package_surface_fill(par->package.buffer, destination, request);
+@@ -270,6 +273,7 @@
+ #include "ps2fb-gs-batch-device.h"
+ #include "ps2fb-gs-render-device.h"
+ #include "ps2fb-gs-texture-device.h"
++#include "ps2fb-gs-lut-device.h"
+ #include "ps2fb-gs-logic-device.h"
+ #include "ps2fb-gs-transfer-device.h"
+ #include "ps2fb-gs-readback-device.h"
+@@ -286,7 +290,7 @@
+ 		ps2gs_caps(info, &caps);
+ 		/* Explicitly allocated Z16/Z16S depth and bounded owned rendering. */
+ 		caps.features = PS2GS_HW_FILL | PS2GS_HW_COPY | PS2GS_HW_UPLOAD |
+-			PS2GS_HW_SURFACES | PS2GS_HW_TRIANGLE | PS2GS_HW_DEPTH16 | PS2GS_HW_OWNED_RENDER | PS2GS_HW_TEXTURE | PS2GS_HW_SOLID_LOGIC | PS2GS_HW_TEXTURE_TRANSFER | PS2GS_HW_READBACK | PS2GS_HW_SOLID_BATCH;
++			PS2GS_HW_SURFACES | PS2GS_HW_TRIANGLE | PS2GS_HW_DEPTH16 | PS2GS_HW_OWNED_RENDER | PS2GS_HW_TEXTURE | PS2GS_HW_SOLID_LOGIC | PS2GS_HW_TEXTURE_TRANSFER | PS2GS_HW_READBACK | PS2GS_HW_SOLID_BATCH | PS2GS_HW_CHANNEL_LUT;
+ 		return copy_to_user(arg, &caps, sizeof(caps)) ? -EFAULT : 0;
+ 	}
+ 	if (session->epoch != ((struct ps2fb_par *)info->par)->gs_epoch)
+@@ -296,6 +300,8 @@
+ 	if (!vc_cons[fg_console].d || vc_cons[fg_console].d->vc_mode != KD_GRAPHICS)
+ 		return -EBUSY;
+ 	switch (cmd) {
++	case PS2GS_CHANNEL_LUT:
++		return ps2gs_lut_locked(session, info, arg);
+ 	case PS2GS_SOLID_BATCH:
+ 		return ps2gs_solid_batch_locked(session, info, arg);
+ 	case PS2GS_SURFACE_DOWNLOAD:
+--- a/drivers/video/fbdev/ps2fb.c
++++ b/drivers/video/fbdev/ps2fb.c
+@@ -50,6 +50,7 @@
+ #include <linux/ps2-gs-transfer.h>
+ #include <linux/ps2-gs-readback.h>
+ #include <linux/ps2-gs-batch.h>
++#include <linux/ps2-gs-lut.h>
+ #include <linux/miscdevice.h>
+ #include <linux/kref.h>
+ #include <linux/kd.h>
+--- a/drivers/video/fbdev/ps2fb-gs-transfer-device.h
++++ b/drivers/video/fbdev/ps2fb-gs-transfer-device.h
+@@ -12,7 +12,7 @@
+ 		return -EFAULT;
+ 	if (r->abi != PS2GS_ABI_VERSION || !r->count ||
+ 	    r->count > PS2GS_MAX_COMMANDS || r->depth ||
+-	    request.mode > PS2GS_TRANSFER_SUBTRACT)
++	    request.mode > PS2GS_TRANSFER_ADD_CLAMP)
+ 		return -EINVAL;
+ 	color = ps2gs_session_buffer(session, info, r->target, &front);
+ 	texture = ps2gs_arena_lookup(&session->arena, r->texture);
+--- a/include/uapi/linux/ps2-gs-transfer.h
++++ b/include/uapi/linux/ps2-gs-transfer.h
+@@ -6,6 +6,7 @@
+ #define PS2GS_TRANSFER_REPLACE 0U
+ #define PS2GS_TRANSFER_ADD 1U
+ #define PS2GS_TRANSFER_SUBTRACT 2U
++#define PS2GS_TRANSFER_ADD_CLAMP 3U /* Requires the channel-LUT kernel extension. */
+ /* Typed fixed-function texture operation. ADD wraps each eight-bit channel;
+  * SUBTRACT clamps. FRAME masks preserve every other RGB bit and spare/alpha
+  * bit. No arbitrary register programming, shaders or CPU destination access.
+--- /dev/null
++++ b/include/uapi/linux/ps2-gs-lut.h
+@@ -0,0 +1,17 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_LUT_H
++#define _UAPI_PS2_GS_LUT_H
++#include "ps2-gs-surface.h"
++#define PS2GS_HW_CHANNEL_LUT (1U << 12)
++/* Apply an owned 256-entry CT32 CSM1 palette independently to RGB bytes.
++ * Source and destination are separate 64x32 CT32 scratch surfaces; palette
++ * is a separate 16x16 CT32 surface. No address or register is user supplied.
++ * Coordinates cover the origin rectangle, at most one GS page. Alpha and
++ * unselected RGB bits are preserved. The palette is uploaded using the
++ * existing owned image interface. This is a GS lookup, never CPU rendering. */
++struct ps2gs_channel_lut {
++	__u32 abi, source, destination, palette;
++	__u32 width, height, plane_mask, reserved;
++};
++#define PS2GS_CHANNEL_LUT _IOW('G', 0x7f, struct ps2gs_channel_lut)
++#endif
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-lut-packet.h
+@@ -0,0 +1,65 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/* CT32 and T8 share block ordering. Within a block, CT32's byte address
++ * bits are {channel[1:0],x0,y0,x1,x2,y1,y2}. T8 rearranges these as
++ * {v1,u3,u0,v0,u1,u2 XOR v1 XOR v2,v2,v3}. This mapping is derived from
++ * Sony's 2001-2004 "32bit Colour Channel Shifting" column diagrams.
++ * Four-wide, two-high strips are contiguous in both layouts. */
++struct ps2gs_lut_operation {
++	const struct ps2gs_buffer *texture, *palette;
++	u32 width, height, mask, channel, first, count;
++};
++static size_t ps2gs_package_lut(union package *base,
++		const struct ps2gs_buffer *color, const struct ps2gs_lut_operation *op)
++{
++	union package *p = base + 1;
++	u32 i, columns = DIV_ROUND_UP(op->width, 4);
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_frame_2,
++		.data.frame_1 = { .fbp = color->base / 8192, .fbw = 1,
++			.psm = gs_psm_ct32, .fbmsk = ~op->mask } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_xyoffset_2 };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_scissor_2,
++		.data.scissor_1 = { .scax1 = op->width - 1, .scay1 = op->height - 1 } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_zbuf_2,
++		.data.zbuf = { .psm = 0xa, .zmsk = gs_zbuf_off } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_test_2,
++		.data.test_1 = { .zte = gs_depth_test_on, .ztst = gs_depth_pass } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_texflush };
++	/* T8 reinterprets precisely the source's one 8192-byte CT32 page.
++	 * CSM1 needs a physical 16x16 palette and swaps index bits 3 and 4. */
++	p = ps2gs_texture_raw(p, gs_addr_tex0_2,
++		(u64)(op->texture->base / 256) | (2ULL << 14) | (0x13ULL << 20) |
++		(7ULL << 26) | (6ULL << 30) | (1ULL << 35) |
++		((u64)(op->palette->base / 256) << 37) | (1ULL << 61));
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_tex1_2,
++		.data.tex1 = { .lcm = gs_lcm_fixed, .mmin = gs_lod_nearest, .mmag = gs_lod_nearest } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_clamp_2,
++		.data.clamp_2 = { .wms = gs_clamp_region_clamp, .wmt = gs_clamp_region_clamp,
++			.maxu = 127, .maxv = 63 } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_prmodecont, .data.prmodecont = { .ac = 1 } };
++	p = ps2gs_texture_raw(p, gs_addr_colclamp, 1);
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_dthe };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_pabe };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_fba_2 };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_prim,
++		.data.prim = { .prim = gs_sprite, .ctxt = gs_context_2,
++			.tme = gs_texturing_on, .fst = gs_texturing_uv } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_rgbaq,
++		.data.rgbaq = { .r = 128, .g = 128, .b = 128, .a = 128, .q = 0x3f800000 } };
++	for (i = op->first; i < op->first + op->count; ++i) {
++		u32 x = i % columns * 4, y = i / columns * 2;
++		u32 w = min_t(u32, 4, op->width - x), h = min_t(u32, 2, op->height - y);
++		u32 u = x / 8 * 16 + (x & 3) +
++			(((x >> 2) ^ op->channel ^ (y >> 1)) & 1) * 4 + (op->channel >> 1) * 8;
++		u32 v = y / 8 * 16 + (y & 1) + (op->channel & 1) * 2 + (y & 6) * 2;
++		p = ps2gs_texture_raw(p, gs_addr_uv, (u64)(u * 16 + 8) | (u64)(v * 16 + 8) << 16);
++		GIF_PACKAGE_AD(p) { .addr = gs_addr_xyz2, .data.xyz2 = { .x = x * 16, .y = y * 16 } };
++		p = ps2gs_texture_raw(p, gs_addr_uv, (u64)((u + w) * 16 + 8) | (u64)((v + h) * 16 + 8) << 16);
++		GIF_PACKAGE_AD(p) { .addr = gs_addr_xyz2, .data.xyz2 = { .x = (x + w) * 16, .y = (y + h) * 16 } };
++	}
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_frame_2,
++		.data.frame_1 = { .fbp = color->base / 8192, .fbw = 1, .psm = gs_psm_ct32 } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_finish };
++	base->gif.tag = (struct gif_tag) { .flg = gif_packed_mode, .reg0 = gif_reg_ad,
++		.nreg = 1, .nloop = p - base - 1, .eop = 1 };
++	return p - base;
++}
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-lut-device.h
+@@ -0,0 +1,45 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++static int ps2gs_lut_locked(struct ps2gs_session *session,
++		struct fb_info *info, void __user *arg)
++{
++	struct ps2gs_channel_lut r;
++	struct ps2gs_buffer *source, *destination, *palette;
++	u32 channel, first, total;
++	int ret;
++	if (copy_from_user(&r, arg, sizeof(r)))
++		return -EFAULT;
++	if (r.abi != PS2GS_ABI_VERSION || r.reserved || !r.width || !r.height ||
++	    r.width > 64 || r.height > 32 || (r.plane_mask & ~0xffffffU) ||
++	    !r.source || !r.destination || !r.palette || r.source == r.destination ||
++	    r.source == r.palette || r.destination == r.palette)
++		return -EINVAL;
++	source = ps2gs_arena_lookup(&session->arena, r.source);
++	destination = ps2gs_arena_lookup(&session->arena, r.destination);
++	palette = ps2gs_arena_lookup(&session->arena, r.palette);
++	if (!source || !destination || !palette)
++		return -ENOENT;
++	if (ps2gs_depth_role(session, r.source) || ps2gs_depth_role(session, r.destination) ||
++	    ps2gs_depth_role(session, r.palette) || source->bits_per_pixel != 32 ||
++	    destination->bits_per_pixel != 32 || palette->bits_per_pixel != 32 ||
++	    source->width != 64 || source->height != 32 || destination->width != 64 ||
++	    destination->height != 32 || palette->width != 16 || palette->height != 16 ||
++	    source->buffer_width != 64 || destination->buffer_width != 64 || palette->buffer_width != 64)
++		return -EOPNOTSUPP;
++	total = DIV_ROUND_UP(r.width, 4) * DIV_ROUND_UP(r.height, 2);
++	for (channel = 0; channel < 3; ++channel) {
++		u32 mask = r.plane_mask & (255U << (channel * 8));
++		if (!mask)
++			continue;
++		for (first = 0; first < total; first += 48) {
++			struct ps2gs_lut_operation op = { .texture = source, .palette = palette,
++				.width = r.width, .height = r.height, .mask = mask, .channel = channel,
++				.first = first, .count = min_t(u32, total - first, 48) };
++			ret = ps2gs_surface_execute(info, PS2GS_CHANNEL_LUT, NULL, destination, &op, NULL);
++			if (ret) {
++				session->failed = ret;
++				return ret;
++			}
++		}
++	}
++	return 0;
++}

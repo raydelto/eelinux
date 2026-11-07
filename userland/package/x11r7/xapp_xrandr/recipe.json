@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xrandr",
+  "kind": "application",
+  "program": "xrandr",
+  "version": "1.5.4",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xrandr-1.5.4.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xrandr-1.5.4.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "2cafccb2aaf2491a4068676117a0d4f90ab307724b96fffc54cd1da953779400",
+      "filename": "xrandr-1.5.4.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "2758615a3d212cc53540cd76199d7a03580702a7b776c430984db33c5368a19620cf54b7ac8e193a4c4036bc40373a933c01473d2f2ce982ce2c6b48379da5e5",
+      "filename": "xrandr-1.5.4.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": true,
+  "runtime_qualification": {
+    "scope": "emulator application smoke checks; not exhaustive feature qualification",
+    "record": "docs/desktop-applications-r41-validation.json"
+  }
+}

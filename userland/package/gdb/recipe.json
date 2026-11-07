@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "name": "gdb",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "18.1",
+    "url": "https://sourceware.org/pub/gdb/releases/gdb-18.1.tar.xz",
+    "checksum_url": "https://sourceware.org/pub/gdb/releases/sha512.sum",
+    "filename": "gdb-18.1.tar.xz",
+    "sha256": "cd9fc3fe2b47743840e42c1592d3d87f8302eb18639c0b8b4ba0898002e2348f",
+    "checked": "2026-10-05",
+    "verification": "SHA256 pinned from upstream HTTPS archive; no signature claim",
+    "publisher_sha512_verified": "e7079ad31e6176391a4d278c85a668cc92c13c8dc1f4937f3d4438f9dc7afdbb12083af7f86e17e854b3d23c3ceff80c63bdbbc8e18b0cf9962656f75ab8b5a0"
+  },
+  "source_archive": "../../sources/gdb-18.1.tar.xz",
+  "configure_options": [
+    "--target=mipsr5900el-unknown-linux-gnu",
+    "--disable-binutils",
+    "--disable-ld",
+    "--disable-gas",
+    "--disable-gprof",
+    "--disable-gprofng",
+    "--disable-sim",
+    "--disable-gdbserver",
+    "--disable-werror",
+    "--without-python",
+    "--without-guile",
+    "--without-debuginfod",
+    "--without-babeltrace",
+    "--with-gmp={sysroot}/usr",
+    "--with-mpfr={sysroot}/usr"
+  ],
+  "configure_environment": {},
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false,
+  "patches": [
+    {
+      "path": "userland/package/gdb/gdb-curses-bool.patch",
+      "sha256": "d82f057cab4d58bd243807f0066460b0c76a1e63d8c543f65a959d20849a7760"
+    }
+  ]
+}

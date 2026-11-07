@@ -1,0 +1,13 @@
+#!/bin/bash
+set -u
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+case ${1:-} in
+    start)
+        if [[ -x /etc/init.d/S10udev ]]; then /etc/init.d/S10udev start || exit 1; fi
+        /bin/chmod 0660 /dev/fb0 2>/dev/null || true
+        /bin/chown root:video /dev/fb0 2>/dev/null || true
+        ;;
+    stop) if [[ -x /etc/init.d/S10udev ]]; then /etc/init.d/S10udev stop; fi ;;
+    status) /bin/mountpoint -q /dev ;;
+    *) printf 'Usage: devices {start|stop|status}\n' >&2; exit 2 ;;
+esac

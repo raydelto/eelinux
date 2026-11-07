@@ -1,0 +1,46 @@
+{
+  "result": "passed emulator smoke qualification; final image ready for physical PS2 testing",
+  "applications": {
+    "bdftopcf": "1.1",
+    "fonttosfnt": "1.2.5",
+    "rendercheck": "1.5",
+    "sessreg": "1.1.4",
+    "x11perf": "1.6.1",
+    "xcursorgen": "1.0.9",
+    "xgc": "1.0.7",
+    "xrandr": "1.5.4",
+    "xvinfo": "1.1.6"
+  },
+  "library_dependencies": {
+    "libXv": "1.0.13",
+    "libpng": "1.6.59"
+  },
+  "total_locked_applications": 70,
+  "staging": "/home/machaddr/.cache/eelinux/xorg-applications-additions-20261018/staging",
+  "GS_only_guest_driver": true,
+  "software_raster_renderer_added": false,
+  "updated_applications": {
+    "xterm": {
+      "before": "411",
+      "after": "412"
+    }
+  },
+  "xterm_version": "412",
+  "native_QA": "build/graphics-hardware-2d-desktop-complete-r41-20261018/desktop-result.json",
+  "upstream_rendercheck_fill_tests": {
+    "passed": 30,
+    "total": 30,
+    "full_rendercheck_suite_executed": false
+  },
+  "application_menu_entries": 68,
+  "program_inventory": 74,
+  "fixed_display_mode": "720x57650Hz; xrandr query passes and reports no output gamma capability",
+  "XVideo": "xvinfo query passes; no adaptors advertised",
+  "software_raster_fallback_added": false,
+  "physical_PS2_tested": false,
+  "image": "build/eelinux-images/eelinux-pal-desktop-gs2d-r41-20261018-2gb-usb.img",
+  "upstream_catalog": "https://xorg.freedesktop.org/archive/individual/app/",
+  "xterm_release_notes": "https://invisible-island.net/xterm/xterm.log.html",
+  "physical_followup": "build/graphics-hardware-2d-validation-20261018-r41/physical-test-report.json",
+  "physical_responsiveness_user_report": "substantially improved; qualitative observation"
+}

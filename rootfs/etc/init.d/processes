@@ -1,0 +1,11 @@
+#!/bin/bash
+set -u
+case ${1:-} in
+    start|status) exit 0 ;;
+    stop)
+        /sbin/killall5 -15 || true
+        /usr/bin/sleep 2
+        /sbin/killall5 -9 || true
+        ;;
+    *) printf 'Usage: processes {start|stop|status}\n' >&2; exit 2 ;;
+esac

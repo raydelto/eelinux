@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "libldns",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.libldns",
+  "symbol": "BR2_PACKAGE_LIBLDNS",
+  "version": "1.9.2",
+  "recipe": "package/libldns/libldns.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "b524fa21994b6e834200ceb8c27f1b84bda5982fe35706f058196c079db94d5d",
+      "filename": "ldns-1.9.2.tar.gz"
+    }
+  ],
+  "release_url": "https://www.nlnetlabs.nl/downloads/ldns/"
+}

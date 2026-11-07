@@ -1,0 +1,821 @@
+--- a/hw/xfree86/drivers/ps2/ps2_blit_exa.c
++++ b/hw/xfree86/drivers/ps2/ps2_blit_exa.c
+@@ -1,6 +1,8 @@
+ /* SPDX-License-Identifier: MIT */
+ #include "ps2_blit_exa.h"
+ #include "os.h"
++#include "servermd.h"
++#include "ps2_tile.h"
+ #include <errno.h>
+ #include <string.h>
+ static DevPrivateKeyRec key;
+@@ -27,17 +29,40 @@
+     return a && a->handle == b->handle && a->width == b->width && a->height == b->height &&
+         a->bits_per_pixel == b->bits_per_pixel && a->buffer_width == b->buffer_width && a->bytes == b->bytes;
+ }
+-static Bool picture(PicturePtr p)
++static Bool picture(PicturePtr p, Bool source)
+ {
+-    return p && p->pDrawable && !p->alphaMap && !p->transform && !p->repeat &&
++    return p && p->pDrawable && !p->alphaMap &&
++        (!p->transform || (!p->transform->matrix[2][0] && !p->transform->matrix[2][1] &&
++                          p->transform->matrix[2][2]==65536)) &&
++        (source ? (!p->transform && !p->repeat) ||
++            (p->pDrawable->type==DRAWABLE_PIXMAP && !p->pDrawable->x && !p->pDrawable->y &&
++             p->repeatType<=RepeatReflect && p->pDrawable->width<=1024 && p->pDrawable->height<=1024) :
++            !p->transform && !p->repeat) &&
+         p->filter == PictFilterNearest && !p->filter_nparams &&
+         ((p->format == PICT_x8b8g8r8 && p->pDrawable->bitsPerPixel == 32 && p->pDrawable->depth == 24) ||
+          (p->format == PICT_x1b5g5r5 && p->pDrawable->bitsPerPixel == 16 && p->pDrawable->depth == 15));
+ }
++static Bool bitmap_picture(PicturePtr p)
++{
++    return p && p->pDrawable && p->pDrawable->type==DRAWABLE_PIXMAP &&
++        (!p->transform || (!p->transform->matrix[2][0] && !p->transform->matrix[2][1] &&
++                          p->transform->matrix[2][2]==65536)) &&
++        !p->pDrawable->x && !p->pDrawable->y && p->pDrawable->depth==1 && p->pDrawable->bitsPerPixel==1 &&
++        p->format==PICT_a1 && !p->alphaMap && !p->componentAlpha &&
++        p->repeatType<=RepeatReflect && p->filter==PictFilterNearest && !p->filter_nparams;
++}
++static struct ps2_picture_sample sample(PicturePtr p)
++{
++    struct ps2_picture_sample s={.transformed=!!p->transform,.repeat=p->repeat?p->repeatType:RepeatNone};
++    if(p->transform)memcpy(s.matrix,p->transform->matrix,sizeof(s.matrix));
++    return s;
++}
+ static Bool check(int op, PicturePtr source, PicturePtr mask, PicturePtr destination)
+ {
+-    if (op != PictOpSrc || mask || !picture(source) || !picture(destination) ||
++    if ((op != PictOpSrc && op != PictOpOver) || (mask && !bitmap_picture(mask)) ||
++        !picture(source,TRUE) || !picture(destination,FALSE) ||
+         !destination->pDrawable->pScreen || source->pDrawable->pScreen != destination->pDrawable->pScreen ||
++        (mask && mask->pDrawable->pScreen!=destination->pDrawable->pScreen) ||
+         source->format != destination->format) return FALSE;
+     struct ps2_blit_exa *b = backend(destination->pDrawable->pScreen);
+     return b && b->attached;
+@@ -51,20 +76,25 @@
+ static Bool prepare(int op, PicturePtr source, PicturePtr mask, PicturePtr destination,
+     PixmapPtr source_pixmap, PixmapPtr mask_pixmap, PixmapPtr destination_pixmap)
+ {
+-    if (!check(op, source, mask, destination) || mask_pixmap || !destination_pixmap) return FALSE;
++    if (!check(op, source, mask, destination) || (!!mask!=!!mask_pixmap) || !destination_pixmap) return FALSE;
+     struct ps2_blit_exa *b = backend(destination->pDrawable->pScreen);
+     const struct ps2_surface *s = storage(source_pixmap, b), *d = storage(destination_pixmap, b);
+     if (b->prepared || !s || !d || s->bits_per_pixel != d->bits_per_pixel ||
+         source_pixmap->drawable.depth != source->pDrawable->depth ||
+         destination_pixmap->drawable.depth != destination->pDrawable->depth) return FALSE;
+     live(b);
++    struct ps2_mono_source mono={0};
++    if(mask && ps2_surface_exa_mono_source(mask_pixmap,&mono)!=1)return FALSE;
+     b->source_pixmap = source_pixmap; b->destination_pixmap = destination_pixmap;
+     b->source = *s; b->destination = *d; b->prepared = TRUE;
++    b->sample=sample(source);b->over=op==PictOpOver;b->masked=!!mask;
++    b->mask=mask?(struct ps2_picture_bitmap){.bits=mono.bits,.bytes=mono.bytes,.stride=mono.stride,
++        .width=mono.width,.height=mono.height,.msb_first=BITMAP_BIT_ORDER==MSBFirst,.sample=sample(mask)}:
++        (struct ps2_picture_bitmap){0};
+     return TRUE;
+ }
+ static void composite(PixmapPtr destination, int sx, int sy, int mx, int my, int dx, int dy, int width, int height)
+ {
+-    (void)mx; (void)my;
+     struct ps2_blit_exa *b = destination && destination->drawable.pScreen ? backend(destination->drawable.pScreen) : NULL;
+     if (!b || !b->attached || !b->prepared || destination != b->destination_pixmap ||
+         !same_storage(storage(b->source_pixmap, b), &b->source) ||
+@@ -72,7 +102,21 @@
+         FatalError("PS2 GS: invalid prepared composite storage\n");
+     const struct ps2_pipe_blit_rect box = {.sx = sx, .sy = sy, .sw = width, .sh = height,
+         .dx = dx, .dy = dy, .dw = width, .dh = height};
+-    if (ps2_pipe_blit_rect(b->context, b->source.handle, b->destination.handle, &box))
++    int status;
++    if(!b->sample.transformed && !b->sample.repeat && !b->masked && sx>=0 && sy>=0 &&
++       (int64_t)sx+width<=b->source.width && (int64_t)sy+height<=b->source.height)
++        status=ps2_pipe_blit_rect(b->context,b->source.handle,b->destination.handle,&box);
++    else if(!b->sample.transformed && b->sample.repeat==PS2_REPEAT_NORMAL && !b->masked &&
++        b->source.handle && b->source.handle!=b->destination.handle){
++        const struct ps2_pipe_solid_box tile={dx,dy,dx+width,dy+height};
++        status=ps2_pipe_tile_rectangles(b->context,b->source.handle,b->destination.handle,&tile,1,dx-sx,dy-sy);
++    }else{
++        struct ps2_pipe_copy_box rect={sx,sy,dx,dy,width,height};
++        struct ps2_picture_bitmap mask=b->mask;mask.x=mx;mask.y=my;
++        status=ps2_pipe_composite_rect(b->context,b->source.handle,b->destination.handle,&rect,
++            &b->sample,b->masked?&mask:NULL,b->over);
++    }
++    if (status)
+         FatalError("PS2 GS: native composite failed: %s\n", strerror(errno));
+ }
+ static void done(PixmapPtr destination)
+@@ -81,6 +125,7 @@
+     if (!b || !b->attached || !b->prepared || destination != b->destination_pixmap)
+         FatalError("PS2 GS: composite completion order\n");
+     b->prepared = FALSE; b->source_pixmap = NULL; b->destination_pixmap = NULL;
++    b->masked=FALSE;memset(&b->mask,0,sizeof(b->mask));
+ }
+ Bool ps2_blit_exa_prepare(ScreenPtr screen, struct ps2_blit_exa *b,
+     struct ps2_surface_exa *exa, struct pipe_context *context)
+--- a/hw/xfree86/drivers/ps2/ps2_blit_exa.h
++++ b/hw/xfree86/drivers/ps2/ps2_blit_exa.h
+@@ -3,6 +3,7 @@
+ #define PS2_BLIT_EXA_H
+ #include "ps2_texture_exa.h"
+ #include "ps2_blit.h"
++#include "ps2_composite.h"
+ struct ps2_blit_exa {
+     ScreenPtr screen;
+     struct ps2_surface_exa *exa;
+@@ -14,10 +15,16 @@
+     void (*DoneComposite)(PixmapPtr);
+     PixmapPtr source_pixmap, destination_pixmap;
+     struct ps2_surface source, destination;
++    struct ps2_picture_sample sample;
++    struct ps2_picture_bitmap mask;
++    unsigned over;
++    Bool masked;
+     Bool attached, prepared;
+ };
+ /* Install after the context/texture EXA bridge, before exaDriverInit. Opaque
+- * PictOpSrc, native same RGB layouts, nearest, no masks/repeat/transforms.
++ * PictOpSrc/Over, native same RGB layouts, nearest affine transforms and
++ * none/normal/pad/reflect repeat, optional owned A1 mask. General source/mask
++ * alpha, component alpha, projective transforms and bilinear are unsupported.
+  * Restore these callbacks before the outer context bridge. One submission
+  * thread; retain screen state and prepared pixmaps through DoneComposite. */
+ Bool ps2_blit_exa_prepare(ScreenPtr, struct ps2_blit_exa *, struct ps2_surface_exa *, struct pipe_context *);
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_composite.c
+@@ -0,0 +1,156 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_composite.h"
++#include "ps2_pipe.h"
++#include "ps2_gs_logic.h"
++#include <errno.h>
++#include <limits.h>
++#include <stdlib.h>
++#include <string.h>
++
++struct texel { uint16_t x, y; };
++static int sum(int64_t a, int64_t b, int64_t *out)
++{
++    if ((b > 0 && a > INT64_MAX - b) || (b < 0 && a < INT64_MIN - b)) return -1;
++    *out = a + b; return 0;
++}
++static int coordinate(int64_t value, unsigned size, unsigned repeat, unsigned *out)
++{
++    if (repeat == PS2_REPEAT_NONE && (value < 0 || value >= size)) return 0;
++    if (repeat == PS2_REPEAT_PAD) value = value < 0 ? 0 : value >= size ? size - 1 : value;
++    if (repeat == PS2_REPEAT_NORMAL || repeat == PS2_REPEAT_REFLECT) {
++        int64_t period = repeat == PS2_REPEAT_REFLECT ? size * 2 : size;
++        value %= period; if (value < 0) value += period;
++        if (value >= size) value = period - 1 - value;
++    }
++    *out = value; return 1;
++}
++static int point(const struct ps2_picture_sample *s, int64_t x, int64_t y,
++    unsigned width, unsigned height, struct texel *out)
++{
++    out->x = out->y = UINT16_MAX;
++    if (s->transformed) {
++        if (x < -32768 || x > 32767 || y < -32768 || y > 32767) return -1;
++        int64_t fx = x * 65536 + 32768, fy = y * 65536 + 32768, v[3];
++        for (unsigned i = 0; i < 3; ++i)
++            if (sum((int64_t)s->matrix[i][0] * fx, (int64_t)s->matrix[i][1] * fy, v + i) ||
++                sum(v[i], (int64_t)s->matrix[i][2] * 65536, v + i)) return -1;
++        /* Pinned pixman/Xorg nearest uses rounded 16.16 coordinates minus
++         * one fixed-point epsilon: exact texel boundaries choose the texel
++         * on their left. The affine denominator is exactly 2^32. */
++        if (sum(v[0], -32768, v) || sum(v[1], -32768, v + 1)) return -1;
++        x = v[0] / v[2]; y = v[1] / v[2];
++        if (v[0] % v[2] && ((v[0] < 0) != (v[2] < 0))) --x;
++        if (v[1] % v[2] && ((v[1] < 0) != (v[2] < 0))) --y;
++    }
++    unsigned u, v;
++    if (coordinate(x, width, s->repeat, &u) && coordinate(y, height, s->repeat, &v)) {
++        out->x = u; out->y = v;
++    }
++    return 0;
++}
++static uint32_t float_bits(float f) { uint32_t v; memcpy(&v, &f, 4); return v; }
++static unsigned padded(unsigned n) { unsigned p = 1; while (p < n) p *= 2; return p; }
++static int draw_run(struct ps2_surface_client *gs, uint32_t source, uint32_t destination,
++    const struct ps2_surface *s, unsigned x, unsigned y, unsigned width,
++    const struct texel *t, int step, unsigned over)
++{
++    if (t->x == UINT16_MAX) return over ? 0 :
++        ps2_surface_solid_logic(gs, destination, x, y, width, 1, 0,
++            s->bits_per_pixel == 16 ? 0x7fff : 0xffffff, 0);
++    float left = step < 0 ? t->x + 1 : t->x;
++    float right = step < 0 ? left - width : step > 0 ? left + width : left + 1;
++    unsigned xx[4] = {x, x + width, x + width, x}, yy[4] = {y, y, y + 1, y + 1};
++    float u[4] = {left, right, right, left}, v[4] = {t->y, t->y, t->y + 1, t->y + 1};
++    static const unsigned indices[2][3] = {{0,1,2},{0,2,3}};
++    struct ps2gs_texture_triangle triangles[2] = {0};
++    for (unsigned i = 0; i < 2; ++i) for (unsigned j = 0; j < 3; ++j) {
++        unsigned k = indices[i][j];
++        triangles[i].v[j] = (struct ps2gs_texture_vertex){
++            .position = {.x = xx[k] * 16, .y = yy[k] * 16, .rgba = 0x80808080},
++            .s = float_bits(u[k] / padded(s->width)), .t = float_bits(v[k] / padded(s->height)),
++            .q = 0x3f800000};
++    }
++    struct ps2_render_client temporary = {.gs = gs, .target = destination};
++    return ps2_texture_triangles(&temporary, source, triangles, 2);
++}
++int ps2_pipe_composite_rect(struct pipe_context *ctx, uint32_t source, uint32_t destination,
++    const struct ps2_pipe_copy_box *input, const struct ps2_picture_sample *input_sample,
++    const struct ps2_picture_bitmap *input_mask, unsigned over)
++{
++    if (!ctx || !input || !input_sample || over > 1 || input_sample->transformed > 1 ||
++        input_sample->repeat > PS2_REPEAT_REFLECT) { errno = EINVAL; return -1; }
++    if (input_sample->transformed && (input_sample->matrix[2][0] || input_sample->matrix[2][1] ||
++        input_sample->matrix[2][2] != 65536)) { errno = ENOTSUP; return -1; }
++    if (input_mask && input_mask->sample.transformed && (input_mask->sample.matrix[2][0] ||
++        input_mask->sample.matrix[2][1] || input_mask->sample.matrix[2][2] != 65536)) {
++        errno = ENOTSUP; return -1;
++    }
++    if (ps2_pipe_context_acquire(ctx)) return -1;
++    struct ps2_render_client *r = ps2_pipe_context_render(ctx);
++    struct ps2_surface_client *gs = r->gs;
++    const struct ps2_surface *s = ps2_surface_lookup(gs, source), *d = ps2_surface_lookup(gs, destination);
++    struct ps2_pipe_copy_box box = *input;
++    struct ps2_picture_sample sample = *input_sample;
++    struct ps2_picture_bitmap mask = input_mask ? *input_mask : (struct ps2_picture_bitmap){0};
++    struct texel *plan = NULL;
++    uint32_t snapshot = 0;
++    int status = -1, error = EINVAL;
++    if (!s || !d || s->bits_per_pixel != d->bits_per_pixel || s->width > 1024 || s->height > 1024 ||
++        box.dx < 0 || box.dy < 0 || box.width < 0 || box.height < 0 ||
++        (int64_t)box.dx + box.width > d->width || (int64_t)box.dy + box.height > d->height) goto out;
++    if ((uint64_t)box.width * box.height > PS2_PIPE_MAX_COPY_PIXELS) { error = E2BIG; goto out; }
++    if (input_mask && (!mask.width || !mask.height || mask.width > 2048 || mask.height > 2048 ||
++        mask.msb_first > 1 || mask.sample.transformed > 1 || mask.sample.repeat > PS2_REPEAT_REFLECT ||
++        !mask.bits || mask.stride < (mask.width + 7) / 8 || mask.bytes > 1024 * 1024 ||
++        mask.bytes < (mask.width + 7) / 8 ||
++        mask.height - 1 > (mask.bytes - (mask.width + 7) / 8) / mask.stride ||
++        (uintptr_t)mask.bits > UINTPTR_MAX - (mask.bytes - 1))) goto out;
++    if (!box.width || !box.height) { status = 0; goto out; }
++    if (!(gs->caps.features & PS2GS_HW_TEXTURE) || !(gs->caps.features & PS2GS_HW_SOLID_LOGIC)) {
++        error = ENOTSUP; goto out;
++    }
++    plan = malloc((size_t)box.width * box.height * sizeof(*plan));
++    if (!plan) { error = ENOMEM; goto out; }
++    for (int y = 0; y < box.height; ++y) for (int x = 0; x < box.width; ++x) {
++        struct texel *t = plan + y * box.width + x;
++        if (point(&sample, (int64_t)box.sx + x, (int64_t)box.sy + y, s->width, s->height, t)) goto out;
++        if (input_mask) {
++            struct texel m;
++            if (point(&mask.sample, (int64_t)mask.x + x, (int64_t)mask.y + y, mask.width, mask.height, &m)) goto out;
++            if (m.x == UINT16_MAX || !(mask.bits[m.y * mask.stride + m.x / 8] &
++                (mask.msb_first ? 0x80U >> (m.x % 8) : 1U << (m.x % 8)))) t->x = t->y = UINT16_MAX;
++        }
++    }
++    /* Front storage cannot be sampled directly; aliasing must not overwrite
++     * source texels needed by later fragments. Keep this snapshot on GS. */
++    if ((!source || source == destination) &&
++        ps2_surface_create(gs, s->width, s->height, s->bits_per_pixel, &snapshot)) { error = errno; goto out; }
++    status = ps2_render_flush(r);
++    if (!status && snapshot) {
++        const struct ps2_pipe_copy_box copy = {0,0,0,0,s->width,s->height};
++        status = ps2_pipe_copy_boxes(ctx, source, snapshot, &copy, 1);
++        source = snapshot; s = ps2_surface_lookup(gs, source);
++    }
++    for (int y = 0; !status && y < box.height; ++y) for (int x = 0; !status && x < box.width;) {
++        const struct texel *t = plan + y * box.width + x;
++        unsigned width = 1; int step = 0;
++        if (x + 1 < box.width && t->x != UINT16_MAX && t[1].y == t->y) {
++            step = (int)t[1].x - t->x;
++            if (step < -1 || step > 1) step = 2;
++        }
++        while (x + width < (unsigned)box.width) {
++            const struct texel *next = t + width;
++            if (t->x == UINT16_MAX ? next->x != UINT16_MAX :
++                step == 2 || next->y != t->y || (int)next->x != (int)t->x + step * (int)width) break;
++            ++width;
++        }
++        status = draw_run(gs, source, destination, s, box.dx + x, box.dy + y, width, t, step, over);
++        x += width;
++    }
++    error = errno;
++out:
++    if (snapshot && !gs->error && ps2_surface_destroy(gs, snapshot) && !status) { status = -1; error = errno; }
++    free(plan); ps2_pipe_context_release(ctx);
++    if (status) errno = error;
++    return status;
++}
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_composite.h
+@@ -0,0 +1,25 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_PIPE_COMPOSITE_H
++#define PS2_PIPE_COMPOSITE_H
++#include "ps2_copy_batch.h"
++#include <stddef.h>
++enum ps2_picture_repeat { PS2_REPEAT_NONE, PS2_REPEAT_NORMAL, PS2_REPEAT_PAD, PS2_REPEAT_REFLECT };
++struct ps2_picture_sample {
++    int32_t matrix[3][3]; /* 16.16 source transform, evaluated at pixel centres. */
++    unsigned transformed, repeat;
++};
++struct ps2_picture_bitmap {
++    const unsigned char *bits;
++    size_t bytes, stride;
++    unsigned width, height, msb_first;
++    int32_t x, y;
++    struct ps2_picture_sample sample;
++};
++/* Opaque Src/Over, nearest affine transforms/repeat, optional binary alpha mask.
++ * Geometry only on CPU; source and destination colour pixels remain on GS.
++ * Missing Src samples clear; missing Over samples preserve destination RGB.
++ * Alias/front sources are snapshotted in VRAM before drawing. */
++int ps2_pipe_composite_rect(struct pipe_context *, uint32_t source, uint32_t destination,
++    const struct ps2_pipe_copy_box *, const struct ps2_picture_sample *,
++    const struct ps2_picture_bitmap *, unsigned over);
++#endif
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_draw.c
+@@ -0,0 +1,95 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_draw.h"
++#include "ps2_raster.h"
++#include <errno.h>
++#include <stdlib.h>
++#include <string.h>
++
++struct ps2_draw_stage {
++    struct draw_stage base;
++    struct ps2_gs_client *gs;
++    unsigned outputs, position, color;
++    int depth;
++};
++
++static void reject(struct ps2_draw_stage *stage, int error)
++{
++    if (!stage->gs->error) stage->gs->error = error;
++    stage->gs->count = 0;
++}
++
++static void triangle(struct draw_stage *base, struct prim_header *primitive)
++{
++    struct ps2_draw_stage *stage = (struct ps2_draw_stage *)base;
++    if (stage->gs->error) return;
++    if (!stage->outputs || !primitive) { reject(stage, EINVAL); return; }
++    float positions[3][4], colors[3][4];
++    for (unsigned i = 0; i < 3; ++i) {
++        if (!primitive->v[i] || primitive->v[i]->clipmask) {
++            reject(stage, ENOTSUP); return;
++        }
++        memcpy(positions[i], primitive->v[i]->data[stage->position], sizeof(positions[i]));
++        memcpy(colors[i], primitive->v[i]->data[stage->color], sizeof(colors[i]));
++    }
++    ps2_gallium_triangle(stage->gs, positions, colors, stage->depth);
++}
++
++static void unsupported(struct draw_stage *base, struct prim_header *primitive)
++{
++    (void)primitive;
++    reject((struct ps2_draw_stage *)base, ENOTSUP);
++}
++
++static void flush(struct draw_stage *base, unsigned flags)
++{
++    (void)flags;
++    ps2_gs_flush(((struct ps2_draw_stage *)base)->gs);
++}
++
++static void reset_stipple(struct draw_stage *base)
++{
++    (void)base; /* No stippled primitive is accepted by this stage. */
++}
++
++static void destroy(struct draw_stage *base)
++{
++    /* draw_context/pipe_context must fence before destruction. Destruction
++     * itself must never replay or submit commands after a failed flush. */
++    free(base);
++}
++
++struct draw_stage *ps2_draw_stage_create(struct draw_context *draw, struct ps2_gs_client *gs)
++{
++    if (!draw || !gs || gs->fd < 0 || gs->error) { errno = EINVAL; return NULL; }
++    struct ps2_draw_stage *stage = calloc(1, sizeof(*stage));
++    if (!stage) return NULL;
++    stage->gs = gs;
++    stage->base.draw = draw;
++    stage->base.name = "ps2-gs";
++    stage->base.tri = triangle;
++    stage->base.point = unsupported;
++    stage->base.line = unsupported;
++    stage->base.flush = flush;
++    stage->base.reset_stipple_counter = reset_stipple;
++    stage->base.destroy = destroy;
++    return &stage->base;
++}
++
++int ps2_draw_stage_outputs(struct draw_stage *base, unsigned outputs,
++                           unsigned position, unsigned color, int depth)
++{
++    if (!base) { errno = EINVAL; return -1; }
++    struct ps2_draw_stage *stage = (struct ps2_draw_stage *)base;
++    if (!outputs || outputs > PIPE_MAX_SHADER_OUTPUTS || position >= outputs ||
++        color >= outputs || position == color || (depth != 0 && depth != 1)) {
++        reject(stage, EINVAL); errno = stage->gs->error; return -1;
++    }
++    if (depth && !(stage->gs->caps.features & PS2GS_HW_DEPTH16)) {
++        reject(stage, ENOTSUP); errno = stage->gs->error; return -1;
++    }
++    /* A state change must not reinterpret commands queued under prior state. */
++    if (ps2_gs_flush(stage->gs)) return -1;
++    stage->outputs = outputs; stage->position = position;
++    stage->color = color; stage->depth = depth;
++    return 0;
++}
+--- a/hw/xfree86/drivers/ps2/ps2_gc.c
++++ b/hw/xfree86/drivers/ps2/ps2_gc.c
+@@ -168,9 +168,20 @@
+ }
+ FORWARD_REGION(CopyArea, (DrawablePtr source, DrawablePtr d, GCPtr gc, int x, int y, int w, int h, int dx, int dy),
+                (source, d, gc, x, y, w, h, dx, dy))
+-FORWARD_REGION(CopyPlane, (DrawablePtr source, DrawablePtr d, GCPtr gc, int x, int y, int w, int h, int dx, int dy, unsigned long plane),
+-               (source, d, gc, x, y, w, h, dx, dy, plane))
+ #undef FORWARD_REGION
++static RegionPtr forward_CopyPlane(DrawablePtr source, DrawablePtr d, GCPtr gc,
++    int x, int y, int w, int h, int dx, int dy, unsigned long plane)
++{
++    struct ps2_gc_private *p = lookup(gc); live(p);
++    /* Colour-to-bitmap extraction must also avoid EXA's colour mapping. The
++     * bitmap remains source-only CPU storage, as for ordinary depth-1 GCs. */
++    if (gc->depth == 1 && source && source->depth != 1 && p->owner->plane_ops)
++        return p->owner->plane_ops->CopyPlane(source,d,gc,x,y,w,h,dx,dy,plane);
++    p = begin(gc);
++    if (!gc->ops->CopyPlane) fail("missing CopyPlane");
++    RegionPtr result = gc->ops->CopyPlane(source,d,gc,x,y,w,h,dx,dy,plane);
++    finish(gc,p,TRUE); return result;
++}
+ 
+ static int text(DrawablePtr d, GCPtr gc, int x, int y, int count,
+                 unsigned char *chars, Bool wide, Bool image)
+--- a/hw/xfree86/drivers/ps2/ps2_image_gc.c
++++ b/hw/xfree86/drivers/ps2/ps2_image_gc.c
+@@ -2,6 +2,9 @@
+ #include "ps2_image_gc.h"
+ #include "ps2_image.h"
+ #include "ps2_planar.h"
++#include "ps2_plane.h"
++#include "ps2_cursor_screen.h"
++#include "ps2_readback.h"
+ #include "ps2_gs_logic.h"
+ #include "windowstr.h"
+ #include "regionstr.h"
+@@ -143,13 +146,81 @@
+     }
+     finish(&p,source,bytes);
+ }
+-struct plane_request {struct plan plan;int sx,sy;const unsigned char *bits;size_t bytes;};
++struct plane_request {struct plan plan;int sx,sy;const unsigned char *bits;size_t bytes;uint32_t source;Bool colour;};
++struct mono_plane_request {
++    struct ps2_image_screen *owner;
++    struct ps2_mono_source destination;
++    unsigned char *packed;
++    size_t capacity;
++};
++static void mono_plane_region(DrawablePtr source,DrawablePtr d,GCPtr gc,BoxPtr boxes,int n,
++    int dx,int dy,Bool reverse,Bool upside,Pixel plane,void *closure)
++{
++    (void)reverse;(void)upside;
++    struct mono_plane_request *r=closure;
++    if(n<0 || n>(int)PS2_PIPE_MAX_COPY_BOXES || (n && !boxes))FatalError("PS2 GS: bitmap CopyPlane clip complexity\n");
++    for(int i=0;i<n;++i){
++        int x=boxes[i].x1-d->x,y=boxes[i].y1-d->y,w=boxes[i].x2-boxes[i].x1,h=boxes[i].y2-boxes[i].y1;
++        if(x<0 || y<0 || w<=0 || h<=0 || (unsigned)(x+w)>r->destination.width ||
++           (unsigned)(y+h)>r->destination.height || (size_t)BitmapBytePad(w)*h>r->capacity)
++            FatalError("PS2 GS: bitmap CopyPlane geometry\n");
++    }
++    if(!(gc->planemask&1) || gc->alu==GXnoop)return;
++    for(int i=0;i<n;++i){
++        int x=boxes[i].x1-d->x,y=boxes[i].y1-d->y,w=boxes[i].x2-boxes[i].x1,h=boxes[i].y2-boxes[i].y1;
++        size_t stride=BitmapBytePad(w);
++        ps2_readback_image(r->owner->context,source,boxes[i].x1+dx-source->x,
++            boxes[i].y1+dy-source->y,w,h,XYPixmap,plane,(char*)r->packed);
++        for(int row=0;row<h;++row)for(int column=0;column<w;++column){
++            unsigned sm=BITMAP_BIT_ORDER==MSBFirst?0x80U>>(column%8):1U<<(column%8);
++            unsigned dm=BITMAP_BIT_ORDER==MSBFirst?0x80U>>((x+column)%8):1U<<((x+column)%8);
++            unsigned s=r->packed[row*stride+column/8]&sm?gc->fgPixel&1:gc->bgPixel&1;
++            unsigned char *out=(unsigned char*)r->destination.bits+(y+row)*r->destination.stride+(x+column)/8;
++            unsigned bit=(gc->alu>>((s?0:2)+((*out&dm)?0:1)))&1;
++            *out=(*out&~dm)|(bit?dm:0);
++        }
++    }
++    DamageRegionAppend(d,gc->pCompositeClip);DamageRegionProcessPending(d);
++}
++static RegionPtr copy_plane_to_mono(DrawablePtr source,DrawablePtr d,GCPtr gc,
++    int x,int y,int w,int h,int dx,int dy,unsigned long plane)
++{
++    struct mono_plane_request r={0};
++    r.owner=dixLookupPrivate(&d->pScreen->devPrivates,&key);
++    if(!r.owner || !r.owner->installed || !r.owner->gc->installed ||
++       r.owner->gc->plane_ops!=&operations || d->type!=DRAWABLE_PIXMAP || d->bitsPerPixel!=1 ||
++       !gc->pCompositeClip || RegionBroken(gc->pCompositeClip) || gc->alu>GXset ||
++       ps2_pipe_context_acquire(r.owner->context))FatalError("PS2 GS: invalid bitmap CopyPlane owner\n");
++    ps2_pipe_context_release(r.owner->context);
++    PixmapPtr pixmap=(PixmapPtr)d;
++    if(ps2_surface_exa_mono_source(pixmap,&r.destination)!=1)FatalError("PS2 GS: bitmap CopyPlane requires owned source bits\n");
++    r.capacity=(size_t)BitmapBytePad(w)*h;
++    if(r.capacity && !(r.packed=malloc(r.capacity)))FatalError("PS2 GS: bitmap CopyPlane snapshot allocation\n");
++    RegionPtr exposure=miDoCopy(source,d,gc,x,y,w,h,dx,dy,mono_plane_region,plane,&r);
++    free(r.packed);ps2_cursor_screen_refresh(d->pScreen);return exposure;
++}
+ static void plane_region(DrawablePtr source,DrawablePtr d,GCPtr gc,BoxPtr boxes,int n,
+     int dx,int dy,Bool reverse,Bool upside,Pixel plane,void *closure)
+ {
+-    (void)source;(void)d;(void)gc;(void)reverse;(void)upside;(void)plane;
++    (void)source;(void)reverse;(void)upside;
+     struct plane_request *r=closure;struct plan *p=&r->plan;
+     if(n<0 || n>(int)PS2_PIPE_MAX_PLANAR_BOXES || (n && !boxes))fail(p,"CopyPlane clip complexity");
++    if(r->colour){
++        if(n>(int)PS2_PIPE_MAX_COPY_BOXES)fail(p,"colour CopyPlane clip complexity");
++        struct ps2_pipe_copy_box *jobs=n?malloc(n*sizeof(*jobs)):NULL;
++        if(n && !jobs)fail(p,"colour CopyPlane allocation");
++        for(int i=0;i<n;++i)jobs[i]=(struct ps2_pipe_copy_box){
++            boxes[i].x1+dx-r->sx,boxes[i].y1+dy-r->sy,
++            boxes[i].x1-p->ox,boxes[i].y1-p->oy,boxes[i].x2-boxes[i].x1,boxes[i].y2-boxes[i].y1};
++        int status=ps2_pipe_plane_copy_boxes(p->owner->context,r->source,p->destination,jobs,n,
++            plane,gc->fgPixel,gc->bgPixel,p->mask,gc->alu);
++        free(jobs);
++        if(status)fail(p,strerror(errno));
++        if(n && p->mask && gc->alu!=GXnoop){exaMarkSync(d->pScreen);
++            DamageRegionAppend(d,gc->pCompositeClip);DamageRegionProcessPending(d);}
++        if(!r->source || !p->destination)ps2_cursor_screen_refresh(d->pScreen);
++        return;
++    }
+     p->planar_boxes=n?calloc(n,sizeof(*p->planar_boxes)):NULL;if(n && !p->planar_boxes)fail(p,"CopyPlane allocation");
+     for(int i=0;i<n;++i)p->planar_boxes[i]=(struct ps2_pipe_planar_box){
+         .source_x=(int)boxes[i].x1+dx-r->sx,.source_y=(int)boxes[i].y1+dy-r->sy,
+@@ -159,14 +230,38 @@
+ }
+ static RegionPtr copy_plane(DrawablePtr source,DrawablePtr d,GCPtr gc,int x,int y,int w,int h,int dx,int dy,unsigned long plane)
+ {
+-    struct plane_request r={0};begin(&r.plan,d,gc);
++    struct plane_request r={0};
+     int64_t sx=source?(int64_t)source->x+x:0,sy=source?(int64_t)source->y+y:0;
+-    int64_t tx=(int64_t)d->x+dx,ty=(int64_t)d->y+dy;
+-    if(!source || !d->pScreen->SourceValidate || source->pScreen!=d->pScreen || source->type!=DRAWABLE_PIXMAP ||
+-       source->depth!=1 || source->bitsPerPixel!=1 || plane!=1 || w<0 || h<0 || w>2048 || h>2048 ||
++    int64_t tx=d?(int64_t)d->x+dx:0,ty=d?(int64_t)d->y+dy:0;
++    if(!source || !d || !gc || !d->pScreen || d->pScreen!=gc->pScreen ||
++       !d->pScreen->SourceValidate || source->pScreen!=d->pScreen || source->depth>24 ||
++       !plane || (plane&(plane-1)) || plane>=(1UL<<source->depth) || w<0 || h<0 || w>2048 || h>2048 ||
+        sx<INT16_MIN || sy<INT16_MIN || sx+w>INT16_MAX || sy+h>INT16_MAX ||
+        tx<INT16_MIN || ty<INT16_MIN || tx+w>INT16_MAX || ty+h>INT16_MAX)
+-        fail(&r.plan,"CopyPlane requires a bounded source bitmap");
++        fail(&r.plan,"invalid CopyPlane source or geometry");
++    if(d->depth==1)return copy_plane_to_mono(source,d,gc,x,y,w,h,dx,dy,plane);
++    begin(&r.plan,d,gc);
++    if(source->depth!=1){
++        ScreenPtr screen=d->pScreen;
++        PixmapPtr pixmap=source->type==DRAWABLE_PIXMAP?(PixmapPtr)source:
++            source->type==DRAWABLE_WINDOW && screen->GetWindowPixmap?screen->GetWindowPixmap((WindowPtr)source):NULL;
++        if(!pixmap || pixmap->devPrivate.ptr || !screen->GetScreenPixmap)fail(&r.plan,"missing colour CopyPlane storage");
++        if(pixmap!=screen->GetScreenPixmap(screen)){
++            const void *private=exaGetPixmapDriverPrivate(pixmap);
++            if(!private)fail(&r.plan,"missing colour CopyPlane source");
++            memcpy(&r.source,private,4);if(!r.source)fail(&r.plan,"unallocated colour CopyPlane source");
++        }
++        const struct ps2_surface *s=ps2_surface_lookup(ps2_pipe_context_render(r.plan.owner->context)->gs,r.source);
++        if(!s || pixmap->drawable.width!=s->width || pixmap->drawable.height!=s->height ||
++           pixmap->drawable.bitsPerPixel!=s->bits_per_pixel || source->bitsPerPixel!=s->bits_per_pixel ||
++           source->depth!=(s->bits_per_pixel==16?15:24))fail(&r.plan,"incompatible colour CopyPlane source");
++#ifdef COMPOSITE
++        if(source->type==DRAWABLE_WINDOW){r.sx=pixmap->screen_x;r.sy=pixmap->screen_y;}
++#endif
++        r.colour=TRUE;
++        return miDoCopy(source,d,gc,x,y,w,h,dx,dy,plane_region,plane,&r);
++    }
++    if(source->type!=DRAWABLE_PIXMAP || source->bitsPerPixel!=1)fail(&r.plan,"invalid monochrome CopyPlane source");
+     PixmapPtr pixmap=(PixmapPtr)source;struct ps2_mono_source mono={0};
+     int owned=ps2_surface_exa_mono_source(pixmap,&mono);if(owned<0)fail(&r.plan,"invalid owned bitmap");
+     if(!owned){if(!pixmap->devPrivate.ptr || pixmap->devKind<BitmapBytePad(source->width))fail(&r.plan,"invalid source bitmap");
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_plane.c
+@@ -0,0 +1,109 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_plane.h"
++#include "ps2_pipe.h"
++#include "ps2_rop.h"
++#include "ps2_gs_logic.h"
++#include "ps2_solid_batch.h"
++#include <errno.h>
++#include <stdlib.h>
++#include <string.h>
++
++#define RUNS 256U
++int ps2_pipe_plane_copy_boxes(struct pipe_context *ctx, uint32_t source,
++    uint32_t destination, const struct ps2_pipe_copy_box *input, unsigned count,
++    uint32_t plane, uint32_t foreground, uint32_t background,
++    uint32_t mask, unsigned alu)
++{
++    if (!ctx || count > PS2_PIPE_MAX_COPY_BOXES || (count && !input) || alu > 15) {
++        errno = EINVAL; return -1;
++    }
++    if (ps2_pipe_context_acquire(ctx)) return -1;
++    struct ps2_render_client *render = ps2_pipe_context_render(ctx);
++    struct ps2_surface_client *gs = render->gs;
++    const struct ps2_surface *s = ps2_surface_lookup(gs, source);
++    const struct ps2_surface *d = ps2_surface_lookup(gs, destination);
++    struct ps2_rop_workspace work = {0};
++    struct ps2_pipe_copy_box *boxes = NULL;
++    struct ps2_pipe_solid_run *runs = NULL;
++    unsigned char *snapshot = NULL, *packed = NULL;
++    int result = -1, error = EINVAL;
++    uint64_t area = 0;
++    if (!s || !d || !plane || (plane & (plane - 1)) ||
++        (plane & ~(s->bits_per_pixel == 16 ? 0x7fffU : 0xffffffU))) goto out;
++    uint32_t bits = d->bits_per_pixel == 16 ? 0x7fffU : 0xffffffU;
++    if (mask & ~bits) goto out;
++    for (unsigned i = 0; i < count; ++i) {
++        const struct ps2_pipe_copy_box *b = input + i;
++        if (b->sx < 0 || b->sy < 0 || b->dx < 0 || b->dy < 0 ||
++            b->width <= 0 || b->height <= 0 ||
++            (int64_t)b->sx + b->width > s->width || (int64_t)b->sy + b->height > s->height ||
++            (int64_t)b->dx + b->width > d->width || (int64_t)b->dy + b->height > d->height) goto out;
++        area += (uint64_t)b->width * b->height;
++        if (area > PS2_PIPE_MAX_COPY_PIXELS) { error = E2BIG; goto out; }
++    }
++    if (!count || !mask || alu == 5) { result = 0; goto out; }
++    if (!(gs->caps.features & PS2GS_HW_READBACK) || !(gs->caps.features & PS2GS_HW_SOLID_LOGIC)) {
++        error = ENOTSUP; goto out;
++    }
++    size_t stride = (s->width + 7) / 8, bytes = stride * s->height;
++    /* All host and VRAM allocations precede the shared queue fence. A source
++     * bitmap, bounded packet rows and bounded run batch are the only pixels
++     * retained in main RAM. No destination readback occurs, even for XOR. */
++    boxes = malloc(count * sizeof(*boxes));
++    snapshot = calloc(1, bytes);
++    packed = malloc(8192);
++    runs = malloc(RUNS * sizeof(*runs));
++    if (!boxes || !snapshot || !packed || !runs) { error = ENOMEM; goto out; }
++    memcpy(boxes, input, count * sizeof(*boxes));
++    if (ps2_rop_reserve(&work, gs, s->bits_per_pixel)) { error = errno; goto out; }
++    result = ps2_render_flush(render);
++    unsigned cpp = s->bits_per_pixel / 8;
++    /* Capture every clipped source before emitting any destination run. This
++     * makes self-copy and disjoint/overlapping clip rectangles deterministic. */
++    for (unsigned i = 0; !result && i < count; ++i) {
++        const struct ps2_pipe_copy_box *b = boxes + i;
++        for (unsigned y = 0; !result && y < (unsigned)b->height; y += 32)
++            for (unsigned x = 0; !result && x < (unsigned)b->width; x += 64) {
++                unsigned w = b->width - x, h = b->height - y;
++                if (w > 64) w = 64;
++                if (h > 32) h = 32;
++                result = ps2_surface_solid_logic(gs, work.destination, 0, 0, 64, 32, 0,
++                    s->bits_per_pixel == 16 ? 0x7fffU : 0xffffffU, 0);
++                if (!result) result = ps2_rop_rectangle(&work, source, work.destination,
++                    b->sx + x, b->sy + y, 0, 0, w, h, plane, 3);
++                if (!result) result = ps2_surface_download(gs, work.destination, 0, 0, 64, 32,
++                    packed, 64 * 32 * cpp);
++                if (!result) for (unsigned yy = 0; yy < h; ++yy) for (unsigned xx = 0; xx < w; ++xx) {
++                    uint32_t pixel = 0;
++                    memcpy(&pixel, packed + (yy * 64 + xx) * cpp, cpp);
++                    unsigned sx = b->sx + x + xx, sy = b->sy + y + yy;
++                    if (pixel) snapshot[sy * stride + sx / 8] |= 1U << (sx % 8);
++                }
++            }
++    }
++    foreground &= bits; background &= bits;
++    unsigned n = 0;
++    for (unsigned i = 0; !result && i < count; ++i) {
++        const struct ps2_pipe_copy_box *b = boxes + i;
++        for (unsigned y = 0; !result && y < (unsigned)b->height; ++y)
++            for (unsigned x = 0; !result && x < (unsigned)b->width;) {
++                unsigned start = x, sx = b->sx + x, sy = b->sy + y;
++                unsigned set = (snapshot[sy * stride + sx / 8] >> (sx % 8)) & 1;
++                uint32_t colour = set ? foreground : background;
++                do { ++x; sx = b->sx + x; }
++                while (x < (unsigned)b->width &&
++                    (((snapshot[sy * stride + sx / 8] >> (sx % 8)) & 1) ? foreground : background) == colour);
++                runs[n++] = (struct ps2_pipe_solid_run){
++                    .box = {b->dx + start, b->dy + y, b->dx + x, b->dy + y + 1}, .color = colour};
++                if (n == RUNS) { result = ps2_pipe_solid_runs(ctx, destination, runs, n, mask, alu); n = 0; }
++            }
++    }
++    if (!result && n) result = ps2_pipe_solid_runs(ctx, destination, runs, n, mask, alu);
++    error = errno;
++out:
++    if (work.gs && ps2_rop_release(&work) && !result) { result = -1; error = errno; }
++    free(runs); free(packed); free(snapshot); free(boxes);
++    ps2_pipe_context_release(ctx);
++    if (result) errno = error;
++    return result;
++}
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_plane.h
+@@ -0,0 +1,12 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_PIPE_PLANE_H
++#define PS2_PIPE_PLANE_H
++#include "ps2_copy_batch.h"
++/* Snapshot one native source plane before any destination writes. The CPU
++ * serializes source bits only; all destination ALUs/masks execute on GS.
++ * Source and destination may have different native depths or alias. */
++int ps2_pipe_plane_copy_boxes(struct pipe_context *, uint32_t source,
++    uint32_t destination, const struct ps2_pipe_copy_box *, unsigned count,
++    uint32_t plane, uint32_t foreground, uint32_t background,
++    uint32_t plane_mask, unsigned alu);
++#endif
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_raster.c
+@@ -0,0 +1,78 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_raster.h"
++#include <errno.h>
++#include <math.h>
++
++static int reject(struct ps2_gs_client *gs)
++{
++    if (!gs->error) gs->error = ENOTSUP;
++    gs->count = 0;
++    errno = gs->error;
++    return -1;
++}
++
++static unsigned channel(float value, unsigned max)
++{
++    if (value <= 0) return 0;
++    if (value >= 1) return max;
++    return value * max + 0.5f;
++}
++
++static int rgba(const float color[4], uint32_t *packed)
++{
++    for (unsigned i = 0; i < 4; ++i) if (!isfinite(color[i])) return -1;
++    *packed = channel(color[0],255) | (channel(color[1],255)<<8) |
++        (channel(color[2],255)<<16) | (channel(color[3],128)<<24);
++    return 0;
++}
++
++int ps2_gallium_clear_color(struct ps2_gs_client *gs, const struct pipe_scissor_state *scissor,
++                            const union pipe_color_union *color)
++{
++    uint32_t packed;
++    if (gs->error) return reject(gs);
++    if (!color || rgba(color->f, &packed)) return reject(gs);
++    unsigned x = scissor ? scissor->minx : 0, y = scissor ? scissor->miny : 0;
++    unsigned right = scissor ? scissor->maxx : gs->caps.width;
++    unsigned bottom = scissor ? scissor->maxy : gs->caps.height;
++    /* Gallium's max bounds are exclusive. Empty clears draw nothing. */
++    if (right <= x || bottom <= y) return 0;
++    return ps2_gs_fill(gs, x, y, right-x, bottom-y, packed);
++}
++
++int ps2_gallium_triangle(struct ps2_gs_client *gs, const float position[3][4],
++                        const float color[3][4], int depth_test)
++{
++    struct ps2gs_vertex vertices[3];
++    if (!position || !color) return reject(gs);
++    for (unsigned i = 0; i < 3; ++i) {
++        for (unsigned j = 0; j < 4; ++j) if (!isfinite(position[i][j])) return reject(gs);
++        /* Clipping/viewport conversion belongs upstream of this raster stage.
++         * Never clamp an out-of-range triangle into a different polygon. */
++        if (position[i][0] < 0 || position[i][0] > gs->caps.width ||
++            position[i][1] < 0 || position[i][1] > gs->caps.height ||
++            position[i][2] < 0 || position[i][2] > 1) return reject(gs);
++        vertices[i].x = position[i][0] * 16.0f + 0.5f;
++        vertices[i].y = position[i][1] * 16.0f + 0.5f;
++        /* GS depth grows towards the viewer; Gallium near depth is zero. */
++        vertices[i].z = (1.0f-position[i][2]) * 65535.0f + 0.5f;
++        if (rgba(color[i], &vertices[i].rgba)) return reject(gs);
++    }
++    return ps2_gs_triangle(gs, vertices, depth_test);
++}
++
++int ps2_gallium_upload_color(struct ps2_gs_client *gs, enum pipe_format format,
++                             const struct pipe_box *box, const void *pixels,
++                             size_t source_bytes, size_t stride)
++{
++    if (gs->error) return reject(gs);
++    if (!box || box->x < 0 || box->y < 0 || box->z || box->depth != 1 ||
++        box->width <= 0 || box->height <= 0) return reject(gs);
++    /* No hidden CPU format conversion, alpha rescaling or pixel rendering.
++     * Independent textures and alpha-bearing formats need a resource API. */
++    if ((gs->caps.bits_per_pixel == 32 && format != PIPE_FORMAT_R8G8B8X8_UNORM) ||
++        (gs->caps.bits_per_pixel == 16 && format != PIPE_FORMAT_R5G5B5X1_UNORM))
++        return reject(gs);
++    return ps2_gs_upload(gs, box->x, box->y, box->width, box->height,
++                         pixels, source_bytes, stride);
++}
+--- a/hw/xfree86/drivers/ps2/ps2_surface_exa.c
++++ b/hw/xfree86/drivers/ps2/ps2_surface_exa.c
+@@ -151,7 +151,17 @@
+     pixmap->devPrivate.ptr = NULL;
+     return TRUE;
+ }
+-static Bool is_offscreen(PixmapPtr pixmap) { return storage(pixmap) != NULL; }
++static Bool is_offscreen(PixmapPtr pixmap)
++{
++    struct ps2_mono_source mono;
++    /* EXA_HANDLES_PIXMAPS asks whether driver callbacks can consume this
++     * storage. Owned A1 bits are valid native composite sources, even though
++     * they have no GS handle. Returning false makes EXA reject the mask before
++     * PrepareComposite and attempt CPU access to the colour destination.
++     * Colour callbacks still validate GS storage; bitmap editing alone may
++     * enter PrepareAccess and expose the owned monochrome allocation. */
++    return storage(pixmap) != NULL || ps2_surface_exa_mono_source(pixmap, &mono) == 1;
++}
+ static Bool prepare_solid(PixmapPtr pixmap, int alu, Pixel mask, Pixel color)
+ {
+     const struct ps2_surface *buffer = storage(pixmap);

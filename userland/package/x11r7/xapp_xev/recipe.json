@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xev",
+  "kind": "application",
+  "program": "xev",
+  "version": "1.2.7",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xev-1.2.7.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xev-1.2.7.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "95167895924de58e34b1013b2b0c8476e90d0888c6c39e7ae9bc35e3a19dba04",
+      "filename": "xev-1.2.7.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "e6537827972b80bd58af4569054d44028cbb8a86e94445e9e99c7a6299500454da7b7dad0783bd49e937ca43e39cde1bf564762576ae3f2c52dc4a5c7c68b333",
+      "filename": "xev-1.2.7.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

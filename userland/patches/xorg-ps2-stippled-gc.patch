@@ -1,0 +1,122 @@
+--- a/hw/xfree86/drivers/ps2/ps2_fill.c
++++ b/hw/xfree86/drivers/ps2/ps2_fill.c
+@@ -6,12 +6,18 @@
+ #include "regionstr.h"
+ #include "damage.h"
+ #include "os.h"
++#include "servermd.h"
+ #include <errno.h>
+ #include <limits.h>
+ #include <stdlib.h>
+ #include <string.h>
+ 
+ #define MAX_INPUTS 4096
++#if BITMAP_BIT_ORDER == MSBFirst
++#define SERVER_MSB_FIRST 1
++#else
++#define SERVER_MSB_FIRST 0
++#endif
+ static DevPrivateKeyRec key;
+ static const GCOps operations;
+ static Bool close_screen(ScreenPtr);
+@@ -22,6 +28,8 @@
+     struct ps2_pipe_solid_box *boxes;
+     unsigned count, width, height;
+     uint32_t source, destination, mask, color;
++    uint32_t background;
++    struct ps2_pipe_mono_pattern mono;
+     int64_t tx, ty, ox, oy, pattern_x, pattern_y;
+ };
+ static void fail(struct plan *p, const char *reason)
+@@ -41,7 +49,8 @@
+ {
+     *p = (struct plan){.owner=owner(d,gc),.drawable=d,.gc=gc};
+     if (count<0 || count>MAX_INPUTS || (count && !input) || !gc->pCompositeClip ||
+-        RegionBroken(gc->pCompositeClip) || gc->fillStyle != FillTiled || gc->alu>GXset)
++        RegionBroken(gc->pCompositeClip) ||
++        (gc->fillStyle != FillTiled && gc->fillStyle != FillOpaqueStippled) || gc->alu>GXset)
+         fail(p,"invalid tiled fill request");
+     if (ps2_pipe_context_acquire(p->owner->context)) fail(p,"context is closed or failed");
+     ps2_pipe_context_release(p->owner->context);
+@@ -67,7 +76,24 @@
+     p->width=s->width; p->height=s->height;
+     uint32_t bits=s->bits_per_pixel==16?0x7fff:0xffffff;
+     p->mask=gc->planemask&bits; p->color=gc->tile.pixel&bits;
+-    if (!gc->tileIsPixel) {
++    if (gc->fillStyle==FillOpaqueStippled) {
++        if (p->mask && gc->alu!=GXnoop && (gc->alu!=GXcopy || p->mask!=bits))
++            fail(p,"unsupported opaque stipple ALU or RGB mask");
++        PixmapPtr mono=gc->stipple;
++        if (!mono || mono->drawable.pScreen!=screen || mono->drawable.type!=DRAWABLE_PIXMAP ||
++            mono->drawable.depth!=1 || mono->drawable.bitsPerPixel!=1 || !mono->devPrivate.ptr ||
++            !mono->drawable.width || !mono->drawable.height || mono->drawable.width>256 ||
++            mono->drawable.height>256 || mono->devKind<=0 || mono->devKind<(mono->drawable.width+7)/8)
++            fail(p,"invalid server monochrome stipple");
++        size_t row=(mono->drawable.width+7)/8, stride=mono->devKind;
++        if ((size_t)mono->drawable.height-1>(SIZE_MAX-row)/stride) fail(p,"stipple stride overflow");
++        size_t bytes=(mono->drawable.height-1)*stride+row;
++        if ((uintptr_t)mono->devPrivate.ptr>UINTPTR_MAX-(bytes-1)) fail(p,"stipple address overflow");
++        p->mono=(struct ps2_pipe_mono_pattern){.bits=mono->devPrivate.ptr,
++            .stride=stride,.bytes=bytes,
++            .width=mono->drawable.width,.height=mono->drawable.height,.msb_first=SERVER_MSB_FIRST};
++        p->color=gc->fgPixel&bits; p->background=gc->bgPixel&bits;
++    } else if (!gc->tileIsPixel) {
+         if (p->mask && gc->alu!=GXnoop && (gc->alu!=GXcopy || p->mask!=bits))
+             fail(p,"unsupported tile ALU or RGB mask");
+         PixmapPtr tile=gc->tile.pixmap;
+@@ -117,7 +143,10 @@
+ static void finish(struct plan *p)
+ {
+     if (!p->count || !p->mask || p->gc->alu==GXnoop) { free(p->boxes); return; }
+-    int status=p->gc->tileIsPixel ? ps2_pipe_solid_rectangles(p->owner->context,p->destination,
++    int status=p->gc->fillStyle==FillOpaqueStippled ?
++        ps2_pipe_opaque_stipple_rectangles(p->owner->context,p->destination,&p->mono,p->boxes,p->count,
++            p->pattern_x,p->pattern_y,p->color,p->background) :
++        p->gc->tileIsPixel ? ps2_pipe_solid_rectangles(p->owner->context,p->destination,
+         p->boxes,p->count,p->color,p->mask,p->gc->alu) :
+         ps2_pipe_tile_rectangles(p->owner->context,p->source,p->destination,p->boxes,p->count,
+             p->pattern_x,p->pattern_y);
+--- a/hw/xfree86/drivers/ps2/ps2_fill.h
++++ b/hw/xfree86/drivers/ps2/ps2_fill.h
+@@ -14,6 +14,9 @@
+  * Distinct owned RGBX/RGB555 tiles use Mesa's native repeat adapter for GXcopy
+  * with full RGB masks; GXnoop/zero masks preserve pending work. tileIsPixel
+  * uses native Boolean solid drawing with all sixteen ALUs and RGB masks.
++ * FillOpaqueStippled reads an existing server-format 1bpp bitmap <=256x256;
++ * GXcopy/full RGB masks construct its foreground/background pattern on GS.
++ * Transparent stipples and opaque stipple ALUs/partial masks are unsupported.
+  * Pattern origin is drawable origin + patOrg, independent of miTranslate;
+  * FillSpans coordinates are already translated. Redirected origins are removed.
+  * At most 4096 inputs, 256 clip/paint boxes and a 4096-byte heap plan.
+--- a/hw/xfree86/drivers/ps2/ps2_tile.h
++++ b/hw/xfree86/drivers/ps2/ps2_tile.h
+@@ -2,6 +2,8 @@
+ #ifndef PS2_PIPE_TILE_H
+ #define PS2_PIPE_TILE_H
+ #include "ps2_solid_batch.h"
++#include <stddef.h>
++#include <stdint.h>
+ #define PS2_PIPE_MAX_TILE_BOXES 256U
+ #define PS2_PIPE_MAX_TILE_PIECES 65536U
+ #define PS2_PIPE_MAX_TILE_PIXELS 1048576U
+@@ -13,4 +15,20 @@
+  */
+ int ps2_pipe_tile_rectangles(struct pipe_context *, uint32_t source, uint32_t destination,
+     const struct ps2_pipe_solid_box *, unsigned count, int32_t origin_x, int32_t origin_y);
++struct ps2_pipe_mono_pattern {
++    const unsigned char *bits;
++    size_t bytes, stride;
++    unsigned width, height;
++    int msb_first;
++};
++/* Read an existing monochrome source bitmap (<=256x256), snapshot at most
++ * 8192 source bytes, and construct a temporary color pattern using GS fills.
++ * Repeat it through the native tile path; GXcopy/full RGB masks only.
++ * All boxes and source metadata, heap/GS reservations precede queue flush.
++ * No CPU color-pixel expansion or destination rasterization. Temporary GS
++ * resources are released on success or reclaimed on failed-session closure.
++ */
++int ps2_pipe_opaque_stipple_rectangles(struct pipe_context *, uint32_t destination,
++    const struct ps2_pipe_mono_pattern *, const struct ps2_pipe_solid_box *, unsigned count,
++    int32_t origin_x, int32_t origin_y, uint32_t foreground, uint32_t background);
+ #endif

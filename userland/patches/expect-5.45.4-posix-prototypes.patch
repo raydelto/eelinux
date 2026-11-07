@@ -1,0 +1,16 @@
+Subject: [PATCH] C library: include the POSIX process and wait interfaces
+
+Use the real declarations for waitpid, setsid, execvp, alarm and the other
+POSIX functions used here rather than relying on implicit declarations.
+
+--- a/exp_clib.c
++++ b/exp_clib.c
+@@ -15,6 +15,8 @@
+ #endif
+ #include <sys/types.h>
+ #include <sys/ioctl.h>
++#include <unistd.h>
++#include <sys/wait.h>
+ 
+ #ifdef TIME_WITH_SYS_TIME
+ # include <sys/time.h>

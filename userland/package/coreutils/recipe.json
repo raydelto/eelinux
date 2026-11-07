@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "name": "coreutils",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "9.12",
+    "url": "https://ftp.gnu.org/gnu/coreutils/coreutils-9.12.tar.xz",
+    "gnu": true,
+    "filename": "coreutils-9.12.tar.xz",
+    "sha256": "a480198559733e9b3da999e90543ac6f888a2caa544d8d664c5a1f17e528e210",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Mon 14 Sep 2026 04:37:50 PM WEST\ngpgv:                using RSA key 6C37DC12121A5006BC1DB804DF6FD971306037D9\ngpgv: Good signature from \"P\u00e1draig Brady <P@draigBrady.com>\"\ngpgv:                 aka \"P\u00e1draig Brady <pbrady@redhat.com>\"\ngpgv:                 aka \"P\u00e1draig Brady <pixelbeat@gnu.org>\"\n"
+  },
+  "source_archive": "../../sources/coreutils-9.12.tar.xz",
+  "configure_options": [
+    "--enable-single-binary=symlinks",
+    "--enable-install-program=hostname",
+    "--without-gmp"
+  ],
+  "configure_environment": {},
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false
+}

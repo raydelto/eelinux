@@ -1,0 +1,196 @@
+--- a/drivers/video/fbdev/ps2fb-gs-device.h
++++ b/drivers/video/fbdev/ps2fb-gs-device.h
+@@ -9,6 +9,7 @@
+ #include "ps2fb-gs-surface-packet.h"
+ #include "ps2fb-gs-render-packet.h"
+ #include "ps2fb-gs-texture-packet.h"
++#include "ps2fb-gs-logic-packet.h"
+ 
+ struct ps2gs_session;
+ struct ps2gs_device {
+@@ -153,6 +154,8 @@
+ 		count = ps2gs_package_surface_fill(par->package.buffer, destination, request);
+ 	} else if (operation == PS2GS_SURFACE_COPY) {
+ 		count = ps2gs_package_surface_copy(par->package.buffer, source, destination, request);
++	} else if (operation == PS2GS_SOLID_LOGIC) {
++		count = ps2gs_package_solid_logic(par->package.buffer, destination, request);
+ 	} else if (operation == PS2GS_TEXTURE_SUBMIT) {
+ 		const struct ps2gs_texture_operation *t = request;
+ 		count = ps2gs_package_texture(par->package.buffer, destination, source, t->texture, t->triangle);
+@@ -182,7 +185,7 @@
+ 		ret = -ETIMEDOUT;
+ 	else {
+ 		++par->gs_stats.completed_batches;
+-		if (operation == PS2GS_SURFACE_FILL)
++		if (operation == PS2GS_SURFACE_FILL || operation == PS2GS_SOLID_LOGIC)
+ 			++par->gs_stats.fills;
+ 		if (operation == PS2GS_SURFACE_COPY)
+ 			++par->gs_stats.copies;
+@@ -242,6 +245,7 @@
+ 
+ #include "ps2fb-gs-render-device.h"
+ #include "ps2fb-gs-texture-device.h"
++#include "ps2fb-gs-logic-device.h"
+ 
+ static int ps2gs_surface_ioctl_locked(struct ps2gs_session *session,
+ 		struct fb_info *info, unsigned int cmd, void __user *arg)
+@@ -255,7 +259,7 @@
+ 		ps2gs_caps(info, &caps);
+ 		/* Explicitly allocated Z16/Z16S depth and bounded owned rendering. */
+ 		caps.features = PS2GS_HW_FILL | PS2GS_HW_COPY | PS2GS_HW_UPLOAD |
+-			PS2GS_HW_SURFACES | PS2GS_HW_TRIANGLE | PS2GS_HW_DEPTH16 | PS2GS_HW_OWNED_RENDER | PS2GS_HW_TEXTURE;
++			PS2GS_HW_SURFACES | PS2GS_HW_TRIANGLE | PS2GS_HW_DEPTH16 | PS2GS_HW_OWNED_RENDER | PS2GS_HW_TEXTURE | PS2GS_HW_SOLID_LOGIC;
+ 		return copy_to_user(arg, &caps, sizeof(caps)) ? -EFAULT : 0;
+ 	}
+ 	if (session->epoch != ((struct ps2fb_par *)info->par)->gs_epoch)
+@@ -265,6 +269,8 @@
+ 	if (!vc_cons[fg_console].d || vc_cons[fg_console].d->vc_mode != KD_GRAPHICS)
+ 		return -EBUSY;
+ 	switch (cmd) {
++	case PS2GS_SOLID_LOGIC:
++		return ps2gs_solid_logic_locked(session, info, arg);
+ 	case PS2GS_TEXTURE_SUBMIT:
+ 		return ps2gs_texture_locked(session, info, arg);
+ 	case PS2GS_DEPTH_CREATE:
+--- a/drivers/video/fbdev/ps2fb.c
++++ b/drivers/video/fbdev/ps2fb.c
+@@ -46,6 +46,7 @@
+ #include <linux/ps2-gs-surface.h>
+ #include <linux/ps2-gs-render.h>
+ #include <linux/ps2-gs-texture.h>
++#include <linux/ps2-gs-logic.h>
+ #include <linux/miscdevice.h>
+ #include <linux/kref.h>
+ #include <linux/kd.h>
+--- /dev/null
++++ b/include/uapi/linux/ps2-gs-logic.h
+@@ -0,0 +1,20 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_LOGIC_H
++#define _UAPI_PS2_GS_LOGIC_H
++#include "ps2-gs-texture.h"
++
++#define PS2GS_HW_SOLID_LOGIC (1U << 8)
++/* Constant-source Boolean raster operations, numbered as X11 GXclear..GXset.
++ * color/plane_mask are native RGB555 (CT16) or RGB888 (CT32) pixel bits.
++ * Alpha is always preserved. The kernel uses at most two masked GS sprites:
++ * constant bits are copied; inverted bits use (255 - destination RGB).
++ * No readback, CPU destination pixels, user VRAM addresses or shaders.
++ * Ownership, KD_GRAPHICS, epoch invalidation and sticky failure rules match
++ * the surface interface. Each request is validated before any drawing.
++ */
++struct ps2gs_solid_logic {
++	__u32 abi, handle, x, y, width, height;
++	__u32 color, plane_mask, alu, reserved;
++};
++#define PS2GS_SOLID_LOGIC _IOW('G', 0x7b, struct ps2gs_solid_logic)
++#endif
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-logic-packet.h
+@@ -0,0 +1,87 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++static u32 ps2gs_logic_result(u32 alu, u32 source, u32 destination)
++{
++	/* X11's four-bit truth table: bit index is (!source)*2 + !destination. */
++	u32 result = 0;
++	if (alu & 1) result |= source & destination;
++	if (alu & 2) result |= source & ~destination;
++	if (alu & 4) result |= ~source & destination;
++	if (alu & 8) result |= ~source & ~destination;
++	return result;
++}
++
++static u32 ps2gs_logic_rgb(u32 native, u32 bpp)
++{
++	/* FRAME.FBMSK acts before RGB555 conversion. RGB555 significance starts
++	 * at bit 3 in each eight-bit channel; bit 31 is the stored alpha bit.
++	 * Use exact bit placement for masks, not scaled color expansion. */
++	return bpp == 32 ? native :
++		((native & 31) << 3) | (((native >> 5) & 31) << 11) |
++		(((native >> 10) & 31) << 19);
++}
++
++static int ps2gs_validate_solid_logic(const struct ps2gs_buffer *buffer,
++		const struct ps2gs_solid_logic *r)
++{
++	u32 bits = buffer->bits_per_pixel == 16 ? 0x7fff : 0xffffff;
++	if (r->abi != PS2GS_ABI_VERSION || r->reserved || r->alu > 15 ||
++	    (r->color & ~bits) || (r->plane_mask & ~bits) ||
++	    !ps2gs_buffer_rect(buffer, r->x, r->y, r->width, r->height))
++		return -EINVAL;
++	return 0;
++}
++
++static union package *ps2gs_logic_sprite(union package *p,
++		const struct ps2gs_buffer *buffer, const struct ps2gs_solid_logic *r,
++		u32 write_bits, u32 color, bool invert)
++{
++	struct ps2gs_vertex v = { .x = r->x * 16, .y = r->y * 16,
++		.rgba = 0x80000000 | color };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_frame_2,
++		.data.frame_1 = { .fbp = buffer->base / 8192,
++			.fbw = buffer->buffer_width / 64, .psm = ps2gs_buffer_psm(buffer),
++			.fbmsk = ~ps2gs_logic_rgb(write_bits, buffer->bits_per_pixel) } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_prim,
++		.data.prim = { .prim = gs_sprite, .abe = invert, .ctxt = gs_context_2 } };
++	p = ps2gs_vertex(p, v);
++	v.x += r->width * 16; v.y += r->height * 16;
++	return ps2gs_vertex(p, v);
++}
++
++static size_t ps2gs_package_solid_logic(union package *base,
++		const struct ps2gs_buffer *buffer, const struct ps2gs_solid_logic *r)
++{
++	union package *p = base + 1;
++	u32 zero = ps2gs_logic_result(r->alu, r->color, 0);
++	u32 one = ps2gs_logic_result(r->alu, r->color, ~0U);
++	u32 copy = ~(zero ^ one) & r->plane_mask;
++	u32 invert = zero & ~one & r->plane_mask;
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_xyoffset_2, .data.xyoffset_1 = { } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_scissor_2,
++		.data.scissor_1 = { .scax1 = buffer->width - 1, .scay1 = buffer->height - 1 } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_zbuf_2,
++		.data.zbuf = { .psm = buffer->bits_per_pixel == 16 ? 2 : 0xa, .zmsk = gs_zbuf_off } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_test_2,
++		.data.test_1 = { .zte = gs_depth_test_on, .ztst = gs_depth_pass } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_prmodecont, .data.prmodecont = { .ac = 1 } };
++	/* (white - destination) * 128/128 + zero: exact RGB complement. */
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_alpha_2,
++		.data.alpha_1 = { .a = gs_alpha_a_cs, .b = gs_alpha_b_cd,
++			.c = gs_alpha_c_fix, .d = gs_alpha_d_0, .fix = 128 } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_dthe, .data.dthe = { .dthe = gs_dthe_off } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_pabe };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_fba_2 };
++	/* The upstream GIF union has no COLCLAMP member. Encode its single bit. */
++	p->gif.doubleword[0] = 1; p->gif.doubleword[1] = gs_addr_colclamp; ++p;
++	if (copy) p = ps2gs_logic_sprite(p, buffer, r, copy,
++		ps2gs_logic_rgb(zero & copy, buffer->bits_per_pixel), false);
++	if (invert) p = ps2gs_logic_sprite(p, buffer, r, invert, 0xffffff, true);
++	/* Following context-2 operations cannot inherit a restrictive write mask. */
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_frame_2,
++		.data.frame_1 = { .fbp = buffer->base / 8192,
++			.fbw = buffer->buffer_width / 64, .psm = ps2gs_buffer_psm(buffer) } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_finish };
++	base->gif.tag = (struct gif_tag) { .flg = gif_packed_mode,
++		.reg0 = gif_reg_ad, .nreg = 1, .nloop = p - base - 1, .eop = 1 };
++	return p - base;
++}
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-logic-device.h
+@@ -0,0 +1,16 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++static int ps2gs_solid_logic_locked(struct ps2gs_session *session,
++		struct fb_info *info, void __user *arg)
++{
++	struct ps2gs_solid_logic request;
++	struct ps2gs_buffer front, *buffer;
++	int ret;
++	if (copy_from_user(&request, arg, sizeof(request))) return -EFAULT;
++	buffer = ps2gs_session_buffer(session, info, request.handle, &front);
++	if (!buffer) return -ENOENT;
++	ret = ps2gs_validate_solid_logic(buffer, &request);
++	if (ret) return ret;
++	ret = ps2gs_surface_execute(info, PS2GS_SOLID_LOGIC, NULL, buffer, &request, NULL);
++	if (ret) session->failed = ret;
++	return ret;
++}

@@ -1,0 +1,149 @@
+{
+  "schema": 1,
+  "date": "2026-10-04",
+  "recorded_at": "2026-10-04T16:05:13.359873+00:00",
+  "scope": "visible actual Gallium blit/resource_copy_region and EXA Composite diagnostic, not a full X server or OpenGL application",
+  "image": {
+    "sha256": "d358028995605f82153bfc0394171d833652819229fca170feb206ed62122460"
+  },
+  "image_assembly": {
+    "sha256": "1b99b4d8f0de750420bc7acfff722aa6762badaa69af48a6254fc05bd9803622"
+  },
+  "image_checks": {
+    "diagnostic_fat_readback_byte_exact": {},
+    "fat32_bpb_and_cluster_count": "passed",
+    "fsck_fat_read_only": "passed",
+    "kernel_fat_readback_byte_exact": true,
+    "readme_fat_readback_byte_exact": true,
+    "root_payload_byte_exact": true,
+    "source_inputs_unchanged": true
+  },
+  "package": {
+    "sha256": "17c2c6cac8d397c9d24bd06cbd68c0aeebf88cb3ba5a62660a7fff25c3bee35c"
+  },
+  "probe": {
+    "sha256": "700d03530dd03340a8f1fb17a26e73bd3da781b9478767904f99c3f7c8b19af2"
+  },
+  "source": {
+    "path": "desktop/ps2-gs-blit-test.c",
+    "sha256": "2fab97a3ad9004be1afb337e11195a62b4d69fa881af7acaa27ecb2759e4efe1"
+  },
+  "build": {
+    "sha256": "ccd03b65ab273898d0e63a4085db8ae738e9c9ab57cbec3b274fad5748ac94fa"
+  },
+  "native_test_log": {
+    "sha256": "edd348870813ce2526537cd6c000c8a0675f3d97b619d909af4ea7720e59e1f4"
+  },
+  "host_checks": {
+    "schema": 1,
+    "result": "passed",
+    "cases": 4,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "log_sha256": "4fc4194540596b68e40888e2d9e2c4475649c7777d6786b17ed02abe48c13070",
+    "probe_source_sha256": "2fab97a3ad9004be1afb337e11195a62b4d69fa881af7acaa27ecb2759e4efe1",
+    "pixel_qualification": false
+  },
+  "host_test_log": {
+    "sha256": "4fc4194540596b68e40888e2d9e2c4475649c7777d6786b17ed02abe48c13070"
+  },
+  "lifecycle_cases": [
+    "success",
+    "blit-failure",
+    "composite-failure",
+    "interrupt"
+  ],
+  "host_sanitizer_cases": 4,
+  "R5900_Linux_user_cases": 4,
+  "preceding_component_cases_per_environment": 41,
+  "PCSX2_run": {
+    "session": {
+      "sha256": "4d74452a653390d5e4ee9a3cbcd729d35220d276317d738df2babeda9208147f"
+    },
+    "log_snapshot": {
+      "sha256": "8dbc42be590907542975ba5ef3374ef968742571721fe64f1c051acf1254e1b6"
+    },
+    "running_process_at_snapshot": {
+      "sha256": "d63d0e6c5c5a8a4d2d47d6df31aea7c8265bf7dd1320a8882e02e83fbede5f36"
+    },
+    "milestones": [
+      "EXT4-fs (sda2): mounted filesystem",
+      "ps2-gs: starting Gallium blit / EXA composite probe",
+      "ps2-gs: Gallium blit / EXA composite 720x576 features=1ff",
+      "ps2-gs: blit scene 1/4:",
+      "ps2-gs: blit scene 2/4:",
+      "ps2-gs: blit scene 3/4:",
+      "ps2-gs: blit scene 4/4:",
+      "ps2-gs: blit/composite command/fence PASSED; visual pixels require qualification; console restored",
+      "ps2-gs: Gallium blit / EXA composite probe exit=0"
+    ],
+    "runtime": {
+      "requested_program": "C:\\Program Files\\PCSX2\\pcsx2-qt.exe",
+      "executable_sha256": "4d2a4d9c0db3cb2e9760e2d34bcd29150b53d56a1a87ae8e6fb4556796b40f58",
+      "runtime_manifest_sha256": "b7bf008375c55020bfb3287e0a100d1ff001323706bc2e18b3bf2d0e183ed478",
+      "mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85"
+    },
+    "guest_main_ram_mib": 32,
+    "probe_exit": 0,
+    "probe_exit_guest_seconds": 80.2027,
+    "console_restoration_command_passed": true,
+    "process_exit_is_boot_result": false,
+    "session_left_interactive": true,
+    "authenticated_login_tested": false
+  },
+  "expected_scenes": [
+    "large/medium/original nearest copies",
+    "normal/X/Y/both flipped four panels",
+    "full left panel and central crop of matching right panel",
+    "identical odd-width copies, then right overlapping move"
+  ],
+  "pauses": 5,
+  "manual_command": "ps2-gs-blit-test",
+  "diagnostic_format": "RGBX/CT32",
+  "RGB555_runtime_pixels_verified": false,
+  "visual_observation": {
+    "platform": "PCSX2",
+    "evidence_kind": "five user-supplied screenshots reviewed against the exact diagnostic sequence",
+    "reviewed_probe_sha256": "700d03530dd03340a8f1fb17a26e73bd3da781b9478767904f99c3f7c8b19af2",
+    "all_scene_panels_match_expected": true,
+    "nearest_sizes": true,
+    "normal_horizontal_vertical_both_flips": true,
+    "central_scissor_crop_retains_mapping": true,
+    "identical_odd_width_copy": true,
+    "overlapping_move_and_retained_original_edges": true,
+    "console_return_user_confirmed": false,
+    "console_restoration_command_passed": true,
+    "scope": "qualitative scene panels; no pixel-by-pixel readback or whole-screen artifact qualification",
+    "physical_hardware_verified": false,
+    "GPU_pixel_readback": false,
+    "repository_images_added": false
+  },
+  "physical_hardware_verified": false,
+  "GPU_pixel_readback": false,
+  "software_pixel_renderer": false,
+  "kernel_ABI_changed": false,
+  "native_probe_is_X_server": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL_GLX": false,
+  "shader_caps": 0,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "physical_devices_written": false,
+  "preserved_diagnostic_binaries": {
+    "ps2-gs-test": "1356d7a73a58f09eaa95298092de779cd461615d3f6eb0ac7966cff52a1434cd",
+    "ps2-gs-upload-test": "1ed84bd7c47a1d29b80942bc20a2116f6177c3d4b54a4ddb7aa7175d6f65ef07",
+    "ps2-gs-surface-test": "18674bec98afa5a847649c89bf2231f861e864222faee9bef7fbcff4c3364497",
+    "ps2-gs-render-test": "7616a090815c5759a2f628efcd1e0bac2c88b6e2153b1bc750ea6ca05f33676f",
+    "ps2-gs-texture-test": "fb6dd812b8d73465ec88f93ef3afded6bf09b9b42e8b7b92ed59dd0569b6f102",
+    "ps2-gs-context-test": "cb5e60a9dcf284e64df44846ec11f0b2f16d0f57562ad7909227a34e88b2813b",
+    "ps2-gs-glyph-test": "fdabce9c1f5bbfa6b9cffef0126bd18e834971261b765a48cc51a3f40b38ff34",
+    "ps2-gs-gc-test": "ded18eef24e0f2597ed07bfec72356a667ed9fb90035e6ee600c9649ed3735f9",
+    "ps2-gs-logic-test": "b7d374c1c5c681e8bd03239c3db17ec03d8e504e1e3163276a27df14f8d4158c",
+    "ps2-gs-solid-test": "e7828b6ca61d02b8b2ac1cf065ba3e7b1a5bb8ca7b211e22d9135492108d39d2",
+    "ps2-gs-copy-test": "5c6178bee0a4b483379e107bbfbaed27500b3a1696ae48d1d1687bc3b14c5782"
+  },
+  "earlier_physical_report": "docs/graphics-hardware-validation.json",
+  "earlier_report_qualifies_this_new_test": false,
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

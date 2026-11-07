@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "validation_date": "2026-10-02",
+  "status": "Linux GS text console visually observed; root disk not mounted",
+  "session_directory": "build/emulator/pcsx2-console",
+  "host": "Windows / PCSX2 2.6.3",
+  "kernel": {
+    "kind": "canonical-source audit with empty initramfs and built-in framebuffer",
+    "artifact": "build/verification/kernel-console-7.2.8.elf",
+    "bytes": 1925320,
+    "sha256": "bd763e86bb595774ff8906ee40ebc377add845b8e4468f534835cdca61550f39",
+    "vmlinux_sha256": "bb3ddb7f346b8cc8a104269079d2ab0b6acf84818a83b4b90305d8f5bd5526f8",
+    "config_file": "build/verification/kernel-console-7.2.8.config",
+    "config_sha256": "bcdbe7082137c40ac29ee1e7ce3aca4422a3a86ded4a093ae0c577a2e134e0e5",
+    "config_flags": [
+      "CONFIG_INITRAMFS_SOURCE=\"\"",
+      "CONFIG_PS2_GS=y",
+      "CONFIG_SERIAL_PS2_UART=y",
+      "CONFIG_SERIAL_PS2_UART_CONSOLE=y",
+      "CONFIG_FB_PS2=y",
+      "CONFIG_FB_DEVICE=y",
+      "CONFIG_FRAMEBUFFER_CONSOLE=y",
+      "CONFIG_EARLY_PRINTK=y",
+      "CONFIG_CMDLINE=\"console=ttyS0,115200 console=tty0 root=/dev/sda1 rootfstype=ext2 rw rootwait\""
+    ],
+    "api_patch_sha256": "91e48c6ecee9b7edf7244c9b7e463796440321bc31e56996636846a558e883ca",
+    "source_compressed_head_sha256": "896cfb0d04c35821a06f29612259c4bdcf3298bd1d1805b9342d79ff36f16cae",
+    "source_init_main_sha256": "5763d7f5c9b0d526714e8becd61aa73fbbf8b89563a8f2fc640f0233eb3861d0",
+    "r5900_status_initialization_opcodes": [
+      "3c1a3001",
+      "409a6000",
+      "0000040f"
+    ],
+    "head_disassembly_sha256": "dadbcaf8423c228b34e63d2ebf74b79d952459acdd0c772aeaa018fecc0ea100",
+    "build_log_sha256": "105412b11d54937e5be94e7978432760a399d674814aa3d6d3eb3c935b8d4d90",
+    "layout": {
+      "ram_bytes": 33554432,
+      "kernel_physical_ranges": [
+        [
+          65536,
+          4210496
+        ]
+      ],
+      "compressed_physical_ranges": [
+        [
+          8388608,
+          15498960
+        ]
+      ],
+      "decompressor_overlap_check": "passed"
+    },
+    "boot_trace_included": false,
+    "fixed_lpj_shortcut_used": false
+  },
+  "configuration_check": {
+    "exit_code": 0,
+    "configuration_method": "portable runtime copy",
+    "profile_sha256_before_check": "3ca6b079d61e49dc2c0a13533910ec663ee3385b212e0db3b923883e065efd13",
+    "log_file": "build/emulator/pcsx2-console/pcsx2-config-check.log",
+    "log_sha256": "8de3d0733692aefa89f0063c051d624e8b181f9e3820fbe9a958af801ce23896",
+    "runtime_executable_sha256": "474dc24acf00ee398183235a15c97934bf099c2fa458dcc0cb174750aebe3cff",
+    "audio_backend": "Null",
+    "main_ram_mib": 32
+  },
+  "startup_observation": {
+    "log_file": "build/emulator/pcsx2-console/pcsx2-boot.log",
+    "log_sha256": "42e6892a586b64f8d4ecee416940ef62d347fde36b5917f60b5643b73542b412",
+    "log_excerpt": [
+      "[    3.5147] Linux version 7.2.8-eelinux-ps2 (machaddr@A2000) (mipsel-linux-gnu-gcc (Debian 14.2.0-13) 14.2.0, GNU ld (GNU Binutils for Debian) 2.44) #2 Fri Oct  2 09:04:37 WEST 2026",
+      "[    3.5152] Kernel command line: console=ttyS0,115200 console=tty0 root=/dev/sda1 rootfstype=ext2 rw rootwait",
+      "[    3.5154] Built 1 zonelists, mobility grouping on.  Total pages: 8192",
+      "[    3.5159] printk: legacy console [ttyS0] enabled",
+      "[    3.6308] Calibrating delay loop... 162.20 BogoMIPS (lpj=811008)",
+      "[    3.6407] Memory: 27652K/32768K available (3174K kernel code, 165K rwdata, 424K rodata, 196K init, 79K bss, 4372K reserved, 0K cma-reserved)",
+      "[    3.7325] fb0: Graphics Synthesizer console frame buffer device",
+      "[    3.7329] fb0: Mode option is \"576x460i@50\"",
+      "[    3.7977] fb0: 48828 tiles maximum for 8x16 font",
+      "[    3.7980] Console: switching to colour frame buffer device 72x28",
+      "[    3.8914] Waiting for root device /dev/sda1..."
+    ],
+    "bounded_test_seconds": 45,
+    "test_ended_by_timeout": true,
+    "last_observed_stage": "Waiting for root device /dev/sda1",
+    "display_mode": "576x460i@50 PAL",
+    "console_columns": 72,
+    "console_rows": 28,
+    "screenshot_observed": true,
+    "visual_evidence": "Root agent inspected the live PCSX2 window using Sky capture and confirmed readable Linux GS text at rootwait; no saved screenshot artifact is claimed"
+  },
+  "bootstrap_comparison": {
+    "before": {
+      "kernel_sha256": "40657af49961fcbe46b7aef1b02974edde507bfb6cfa55f4d0b443fb7f30be23",
+      "log_file": "build/emulator/pcsx2-display-trace/pcsx2-boot.log",
+      "log_sha256": "f33086401ced562ac4ec6ba57759088c631a2970a4209dcd889a7bfbcf6ed29f",
+      "register_excerpt": "[    4.0434] eeLinux boot trace: status=10020c01 cause=00800020 count=122c5306 T0mode=000005c2 T0count=000005d7 T0comp=00001680 INTCstat=0000020c INTCmask=00000200 jiffies=4294937296",
+      "status_eie_bit16": false,
+      "calibration_completed": false,
+      "framebuffer_console_observed": false,
+      "rootwait_observed": false
+    },
+    "after": {
+      "kernel_sha256": "73e2e0cc74f2606e209320c77ef58fd4980b95ebeb68f96d888cfa361d888cc2",
+      "log_file": "build/emulator/pcsx2-bootstrap/pcsx2-boot.log",
+      "log_sha256": "39abb78b4967bac779c4346743fb322d8f3709302d93da4304b03601fb4246e9",
+      "register_excerpt": "[    2.7255] eeLinux boot trace: status=10010c01 cause=00000400 count=122d6bb4 T0mode=000001c2 T0count=00000663 T0comp=00001680 INTCstat=00000000 INTCmask=0000020c jiffies=4294937310",
+      "status_eie_bit16": true,
+      "calibration_completed": true,
+      "framebuffer_console_observed": true,
+      "rootwait_observed": true
+    },
+    "trace_patch_sha256": "fc5e92a524192d849d04d63e72de444527f0b87a8dd92f2bef335ce71222a94c",
+    "bootstrap_probe_patch_sha256": "1c626bdcc4fc14f632380fb419b00502da7b855c83d4ced10b7798976357c23a"
+  },
+  "rootfs_source": {
+    "bytes": 67108864,
+    "sha256_after_test": "8173fda391cb50f6c6512f3d885cf025526dab7575f2192748aa570eb8897dcf",
+    "unchanged": true
+  },
+  "disposable_disk": {
+    "bytes": 68157440,
+    "sha256_after_test": "7f68269cea1da8bd75773c7d8fa68e1e2ad55c26cde4274b3a69a61f0de49407",
+    "unchanged": true
+  },
+  "framebuffer_text_observed": true,
+  "root_disk_mounted": false,
+  "gnu_sysvinit_started": false,
+  "authenticated_shell_observed": false,
+  "linux_boot_pass": null,
+  "real_hardware_tested": false,
+  "full_graphics_desktop": false,
+  "ethernet_validated": false,
+  "stock_pcsx2_linux_mmu_qualified": false,
+  "source_gate_passed": false,
+  "bios_downloaded_or_distributed": false,
+  "remaining_rejected_port_files": 64
+}

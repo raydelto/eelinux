@@ -1,0 +1,162 @@
+{
+  "schema": 1,
+  "date_utc": "2026-10-02T09:05:04.884581+00:00",
+  "purpose": "bounded IOP-only recompiler performance comparison",
+  "host": "native Windows",
+  "fixed_inputs": {
+    "kernel_sha256": "84fba95ad532ccc51c0d993cd9f032fab4bf5c58f32670a7027ad26733946b3a",
+    "rootfs_sha256": "8173fda391cb50f6c6512f3d885cf025526dab7575f2192748aa570eb8897dcf",
+    "installed_emulator_sha256": "474dc24acf00ee398183235a15c97934bf099c2fa458dcc0cb174750aebe3cff",
+    "bios_files_compared_privately": true
+  },
+  "sessions": [
+    {
+      "session": "build/emulator/pcsx2-iop-interpreter-45s-b",
+      "ee_cpu_mode": "interpreter",
+      "iop_cpu_mode": "interpreter",
+      "before": {
+        "kernel_sha256": "84fba95ad532ccc51c0d993cd9f032fab4bf5c58f32670a7027ad26733946b3a",
+        "disposable_disk_sha256": "7f68269cea1da8bd75773c7d8fa68e1e2ad55c26cde4274b3a69a61f0de49407",
+        "bios_files_compared_privately": true
+      },
+      "logging": "normal INFO file and guest consoles; no -logfile",
+      "timeout_seconds": 45,
+      "linux_boot_pass": null,
+      "preparation_permission_retries": 0,
+      "configuration_sha256_before_launch": "39db25ed3e6cda2a974f9781f3f66569872802bee0625bb35bb964397ce36060",
+      "emulator_version": "PCSX2 v2.6.3",
+      "arguments": [
+        "-portable",
+        "-batch",
+        "-elf",
+        "C:\\Users\\sedzc\\Documents\\EEOS-Linux\\build\\emulator\\pcsx2-iop-interpreter-45s-b\\kernel-audit.elf"
+      ],
+      "owned_pid": 31004,
+      "cpu_time": {
+        "kernel_seconds": 4.390625,
+        "user_seconds": 42.515625,
+        "total_seconds": 46.90625
+      },
+      "measured_wall_seconds": 45.015361300029326,
+      "exit_code": 1,
+      "final_cpu_time": {
+        "kernel_seconds": 4.484375,
+        "user_seconds": 42.5625,
+        "total_seconds": 47.046875
+      },
+      "timed_out": true,
+      "stop_method": "exact owned process handle TerminateProcess after timeout",
+      "mean_cpu_percent_one_core_basis": 104.20054098281655,
+      "mean_cpu_percent_all_logical_cpus": 5.210027049140828,
+      "run_init_first_log_line": "[    4.7124] Run /init as init process",
+      "run_init_first_log_timestamp_seconds": 4.7124,
+      "timestamp_basis": "PCSX2 elapsed log timestamp; not a guest CPU clock measurement",
+      "log_file": "build/emulator/pcsx2-iop-interpreter-45s-b/pcsx2-profile/PCSX2/logs/emulog.txt",
+      "log_bytes": 18341,
+      "log_sha256": "02f9b3b6aa7765b0dc32325535f4d7b98c457fc66a229aeb3955d05d5731ecd5",
+      "cop0_tlbwr_lines": 0,
+      "unknown_cop0_lines": 98,
+      "early_root_message_seen": false,
+      "sysvinit_started_seen": false,
+      "last_log_lines": [
+        "[    4.5017] rtc-ps2 rtc-ps2: setting system clock to 2026-10-02T09:03:35 UTC (1790931815)",
+        "[    4.5300] NET: Registered PF_PACKET protocol family",
+        "[    4.6939] branch delay!!",
+        "[    4.7018] Freeing unused kernel image (initmem) memory: 708K",
+        "[    4.7071] This architecture does not have kernel memory protection.",
+        "[    4.7124] Run /init as init process"
+      ],
+      "source_kernel_unchanged": true,
+      "source_rootfs_unchanged": true
+    },
+    {
+      "session": "build/emulator/pcsx2-iop-recompiler-45s-b",
+      "ee_cpu_mode": "interpreter",
+      "iop_cpu_mode": "recompiler",
+      "before": {
+        "kernel_sha256": "84fba95ad532ccc51c0d993cd9f032fab4bf5c58f32670a7027ad26733946b3a",
+        "disposable_disk_sha256": "7f68269cea1da8bd75773c7d8fa68e1e2ad55c26cde4274b3a69a61f0de49407",
+        "bios_files_compared_privately": true
+      },
+      "logging": "normal INFO file and guest consoles; no -logfile",
+      "timeout_seconds": 45,
+      "linux_boot_pass": null,
+      "preparation_permission_retries": 0,
+      "configuration_sha256_before_launch": "d865897a4a2394c5d574009b6e4abe612a44f60f16a4658d7a1e248484a44071",
+      "emulator_version": "PCSX2 v2.6.3",
+      "arguments": [
+        "-portable",
+        "-batch",
+        "-elf",
+        "C:\\Users\\sedzc\\Documents\\EEOS-Linux\\build\\emulator\\pcsx2-iop-recompiler-45s-b\\kernel-audit.elf"
+      ],
+      "owned_pid": 27612,
+      "cpu_time": {
+        "kernel_seconds": 4.3125,
+        "user_seconds": 41.90625,
+        "total_seconds": 46.21875
+      },
+      "measured_wall_seconds": 45.01291529997252,
+      "exit_code": 1,
+      "final_cpu_time": {
+        "kernel_seconds": 4.421875,
+        "user_seconds": 41.9375,
+        "total_seconds": 46.359375
+      },
+      "timed_out": true,
+      "stop_method": "exact owned process handle TerminateProcess after timeout",
+      "mean_cpu_percent_one_core_basis": 102.67886381495539,
+      "mean_cpu_percent_all_logical_cpus": 5.13394319074777,
+      "run_init_first_log_line": "[    4.4296] Run /init as init process",
+      "run_init_first_log_timestamp_seconds": 4.4296,
+      "timestamp_basis": "PCSX2 elapsed log timestamp; not a guest CPU clock measurement",
+      "log_file": "build/emulator/pcsx2-iop-recompiler-45s-b/pcsx2-profile/PCSX2/logs/emulog.txt",
+      "log_bytes": 18088,
+      "log_sha256": "f09e7b6a60f2e4e77e9e00e3757c475824ea8161c2ab41e36b9962ea95f1cac3",
+      "cop0_tlbwr_lines": 0,
+      "unknown_cop0_lines": 98,
+      "early_root_message_seen": false,
+      "sysvinit_started_seen": false,
+      "last_log_lines": [
+        "[    4.2359] rtc-ps2 rtc-ps2: setting system clock to 2026-10-02T09:04:22 UTC (1790931862)",
+        "[    4.2625] NET: Registered PF_PACKET protocol family",
+        "[    4.4123] branch delay!!",
+        "[    4.4200] Freeing unused kernel image (initmem) memory: 708K",
+        "[    4.4249] This architecture does not have kernel memory protection.",
+        "[    4.4296] Run /init as init process"
+      ],
+      "source_kernel_unchanged": true,
+      "source_rootfs_unchanged": true
+    }
+  ],
+  "profile_differences_before_launch": [
+    {
+      "section": "EmuCore/CPU/Recompiler",
+      "key": "EnableIOP",
+      "values": [
+        "false",
+        "true"
+      ]
+    },
+    {
+      "section": "USB1",
+      "key": "Msd_ImagePathMsd",
+      "values": [
+        "C:\\Users\\sedzc\\Documents\\EEOS-Linux\\build\\emulator\\pcsx2-iop-interpreter-45s-b\\rootfs-usb.img",
+        "C:\\Users\\sedzc\\Documents\\EEOS-Linux\\build\\emulator\\pcsx2-iop-recompiler-45s-b\\rootfs-usb.img"
+      ]
+    }
+  ],
+  "same_kernel": true,
+  "same_prepared_disk": true,
+  "same_initial_bios_state": true,
+  "ui_fps_vps": "not measured; no UI automation used",
+  "linux_boot_pass": null,
+  "limitations": [
+    "stock EE MMU still does not deliver matching-invalid TLB exceptions correctly",
+    "a separate WSL native dependency build ran with two jobs in the background; this is an indicative comparison, not a controlled benchmark",
+    "no paging/process isolation, root boot, physical PS2, USB or Ethernet qualification",
+    "single run per setting; timings include cold startup and do not prove sustained speed"
+  ],
+  "bios_provenance": "Local BIOS files compared privately; ROM/NVM hashes and payloads remain under ignored build/."
+}

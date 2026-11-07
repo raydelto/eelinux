@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "date": "2026-10-05",
+  "scope": "actual native Xorg/TWM, CopyPlane, cursor, managed window resize, xterm scrolling and shutdown",
+  "component_host_cases": 271,
+  "component_R5900_cases": 271,
+  "emulator": {
+    "schema": 1,
+    "result": "passed; full visual confirmation pending",
+    "scope": "actual native Xorg/TWM, CopyPlane, cursor, managed window resize, xterm scrolling and shutdown",
+    "all_four_scenes_protocol_errors": 0,
+    "additional_checks": [
+      "monochrome CopyPlane synchronized",
+      "cursor warp and edge checks",
+      "managed window move/resize",
+      "xterm core-font scrolling completed"
+    ],
+    "additional_check_errors": 0,
+    "client_completed_errors": 0,
+    "Xorg_exit_code": 0,
+    "session_exit_code": 0,
+    "emulator_main_RAM_MiB": 32,
+    "MemAvailable_after_xterm_kB": 15052,
+    "physical_hardware": false,
+    "complete_2D": false,
+    "user_visual_confirmation": "user did not see the whole test",
+    "serial_sha256": "10dd0f2dab6a6d478a66bcbad2027a03fc3ef5104e746d27c26501294cddcafc"
+  },
+  "hardware_image_sha256": "4bb592e4c9ee14904cdd379d5156a78fbe11d6b7813816d447bbbc0b827a37be",
+  "native_driver_sha256": "c61fea76dec902b48fb31d3142f8949ba094f864207b37720973fd553a17f34e",
+  "test_client_sha256": "efade4b229be4d59b0522f57250c9fd2524c0c2b3ae9a789d714c8d5058a8c6f",
+  "physical_hardware_tested": false,
+  "CPU_colour_destination_renderer": false,
+  "complete_2D": false,
+  "remaining": [
+    "native colour readback",
+    "colour-source CopyPlane",
+    "arbitrary colour-source Boolean copies and tile masks",
+    "XRender alpha, masks and transforms",
+    "physical desktop input and visual qualification",
+    "kernel inotify support"
+  ],
+  "preserved_kernel_sha256": "7f772a831aeea887efbe08338cace4c7eeb7f1b505f34bd33fb5ab64fbf44147",
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

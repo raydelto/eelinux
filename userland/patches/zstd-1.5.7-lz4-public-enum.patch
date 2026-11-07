@@ -1,0 +1,11 @@
+--- a/programs/fileio.c
++++ b/programs/fileio.c
+@@ -1421,7 +1421,7 @@
+     prefs.compressionLevel = compressionLevel;
+     prefs.frameInfo.blockMode = LZ4F_blockLinked;
+     prefs.frameInfo.blockSizeID = LZ4F_max64KB;
+-    prefs.frameInfo.contentChecksumFlag = (contentChecksum_t)checksumFlag;
++    prefs.frameInfo.contentChecksumFlag = checksumFlag ? LZ4F_contentChecksumEnabled : LZ4F_noContentChecksum;
+ #if LZ4_VERSION_NUMBER >= 10600
+     prefs.frameInfo.contentSize = (srcFileSize==UTIL_FILESIZE_UNKNOWN) ? 0 : srcFileSize;
+ #endif

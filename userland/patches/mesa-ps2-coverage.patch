@@ -1,0 +1,12 @@
+--- a/src/gallium/drivers/ps2/ps2_rop.h
++++ b/src/gallium/drivers/ps2/ps2_rop.h
+@@ -3,7 +3,8 @@
+ #define PS2_PIPE_ROP_H
+ #include "ps2_copy_batch.h"
+ #include "ps2_gs_transfer.h"
+-/* At most 56 KiB of GS VRAM: two native snapshots and three CT32 bit planes.
++/* 56 KiB of GS VRAM, or 80 KiB with the optional raw32 alpha planes/palette:
++ * two native snapshots and three CT32 bit planes.
+  * No CPU pixel storage. Reserve once before fencing the original queue. */
+ struct ps2_rop_workspace {
+     struct ps2_surface_client *gs;

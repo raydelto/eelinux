@@ -1,0 +1,143 @@
+/* SPDX-License-Identifier: MIT */
+#include "ps2_pipe.h"
+#include "ps2_copy_batch.h"
+#include <errno.h>
+#include <string.h>
+
+static uint32_t bits(float v) { uint32_t r; memcpy(&r,&v,4); return r; }
+static unsigned padded(unsigned v) { unsigned r=1; while(r<v) r*=2; return r; }
+static int texture_copy(struct ps2_surface_client *gs,uint32_t source,uint32_t destination,
+    unsigned sx,unsigned sy,unsigned dx,unsigned dy,unsigned width,unsigned height)
+{
+    const struct ps2_surface *s=ps2_surface_lookup(gs,source);
+    /* Isolated submission state shares the file/error, but never mutates the
+     * live Mesa render client's target, depth or queued commands. */
+    struct ps2_render_client r={.gs=gs,.target=destination};
+    /* Match the existing RGBA nearest path: a quarter texel stays within
+     * the same source texel under GS interpolation rounding. Split padded
+     * trailing edges so the typed S/T coordinates never exceed Q. */
+    if(!s){errno=EINVAL;return -1;}
+    if(width>1 && sx+width==padded(s->width))
+        return texture_copy(gs,source,destination,sx,sy,dx,dy,width-1,height) ||
+            texture_copy(gs,source,destination,sx+width-1,sy,dx+width-1,dy,1,height)?-1:0;
+    if(height>1 && sy+height==padded(s->height))
+        return texture_copy(gs,source,destination,sx,sy,dx,dy,width,height-1) ||
+            texture_copy(gs,source,destination,sx,sy+height-1,dx,dy+height-1,width,1)?-1:0;
+    unsigned x[4]={dx,dx+width,dx+width,dx},y[4]={dy,dy,dy+height,dy+height};
+    float left=sx+.25f,right=left+(width==1?.5f:width),top=sy+.25f,bottom=top+(height==1?.5f:height);
+    float u[4]={left,right,right,left},v[4]={top,top,bottom,bottom};
+    static const unsigned indices[2][3]={{0,1,2},{0,2,3}};
+    struct ps2gs_texture_triangle triangles[2]={0};
+    for(unsigned i=0;i<2;++i) for(unsigned j=0;j<3;++j) {
+        unsigned k=indices[i][j];
+        triangles[i].v[j]=(struct ps2gs_texture_vertex){
+            .position={.x=x[k]*16,.y=y[k]*16,.rgba=0x80808080},
+            .s=bits((float)u[k]/padded(s->width)),.t=bits((float)v[k]/padded(s->height)),.q=0x3f800000};
+    }
+    return ps2_texture_triangles(&r,source,triangles,2);
+}
+static int before(const struct ps2_pipe_copy_box *a,const struct ps2_pipe_copy_box *b)
+{ return a->dy<b->dy || (a->dy==b->dy && a->dx<b->dx); }
+
+int ps2_pipe_copy_boxes(struct pipe_context *ctx,uint32_t source,uint32_t destination,
+    const struct ps2_pipe_copy_box *input,unsigned count)
+{
+    if(!ctx || count>PS2_PIPE_MAX_COPY_BOXES || (count && !input)) { errno=EINVAL;return -1; }
+    if(ps2_pipe_context_acquire(ctx)) return -1;
+    struct ps2_render_client *render=ps2_pipe_context_render(ctx);
+    struct ps2_surface_client *gs=render ? render->gs : NULL;
+    const struct ps2_surface *s=gs ? ps2_surface_lookup(gs,source) : NULL;
+    const struct ps2_surface *d=gs ? ps2_surface_lookup(gs,destination) : NULL;
+    int status=-1,error=EINVAL;
+    uint32_t scratch=0;
+    struct ps2_pipe_copy_box boxes[PS2_PIPE_MAX_COPY_BOXES];
+    if(!s || !d || s->bits_per_pixel!=d->bits_per_pixel) goto out;
+    unsigned unit=s->bits_per_pixel==16 ? 4 : 2;
+    uint64_t pixels=0;
+    int need_scratch=0;
+    int64_t shift_x=count ? (int64_t)input[0].dx-input[0].sx : 0;
+    int64_t shift_y=count ? (int64_t)input[0].dy-input[0].sy : 0;
+    for(unsigned i=0;i<count;++i) {
+        struct ps2_pipe_copy_box b=input[i];
+        if(b.sx<0 || b.sy<0 || b.dx<0 || b.dy<0 || b.width<=0 || b.height<=0 ||
+            (int64_t)b.sx+b.width>s->width || (int64_t)b.sy+b.height>s->height ||
+            (int64_t)b.dx+b.width>d->width || (int64_t)b.dy+b.height>d->height ||
+            (int64_t)b.dx-b.sx!=shift_x || (int64_t)b.dy-b.sy!=shift_y) goto out;
+        pixels+=(uint64_t)b.width*b.height;
+        if(pixels>PS2_PIPE_MAX_COPY_PIXELS) { error=E2BIG;goto out; }
+        need_scratch|=b.width%unit!=0;
+        unsigned j=i;
+        while(j && before(&b,&boxes[j-1])) { boxes[j]=boxes[j-1];--j; }
+        boxes[j]=b;
+    }
+    /* Canonical bands make inter-box memmove ordering well-defined. */
+    int64_t band_end=0;
+    for(unsigned i=0;i<count;++i) {
+        const struct ps2_pipe_copy_box *b=boxes+i;
+        if(!i || b->dy!=boxes[i-1].dy) {
+            if(i && b->dy<band_end) goto out;
+            band_end=(int64_t)b->dy+b->height;
+        } else if((int64_t)b->dy+b->height!=band_end ||
+            b->dx<(int64_t)boxes[i-1].dx+boxes[i-1].width) goto out;
+    }
+    if(!count || (source==destination && !shift_x && !shift_y)) { status=0;goto out; }
+    if(need_scratch && (!(gs->caps.features&PS2GS_HW_TEXTURE) ||
+        (s->width<unit && (!source || s->height>1024)))) { error=ENOTSUP;goto out; }
+    /* Allocate before flushing pending Mesa work, so capacity failures do not
+     * partially execute this request or the previously queued drawing. */
+    if(need_scratch && ps2_surface_create(gs,64,32,s->bits_per_pixel,&scratch)) { error=errno;goto out; }
+    status=ps2_render_flush(render);
+    unsigned band=count;
+    while(!status && band) {
+        unsigned first,last;
+        if(source==destination && shift_y>0) {
+            last=band;first=last-1;
+            while(first && boxes[first-1].dy==boxes[last-1].dy) --first;
+            band=first;
+        } else {
+            first=count-band;last=first+1;
+            while(last<count && boxes[last].dy==boxes[first].dy) ++last;
+            band=count-last;
+        }
+        for(unsigned k=first;!status && k<last;++k) {
+            unsigned index=source==destination && shift_x>0 ? last-1-(k-first) : k;
+            const struct ps2_pipe_copy_box *b=boxes+index;
+            if(!(b->width%unit)) {
+                status=ps2_surface_copy(gs,source,destination,b->sx,b->sy,b->dx,b->dy,b->width,b->height);
+                continue;
+            }
+            /* Copy the aligned majority as one native local transfer. Only
+             * the final 1..3 pixels require scratch sampling. Treat both
+             * pieces as one band and reverse X for overlapping right moves. */
+            unsigned bulk=b->width&~(unit-1),tail=b->width-bulk;
+            int backwards=source==destination && shift_x>0;
+            if(bulk && !backwards)
+                status=ps2_surface_copy(gs,source,destination,b->sx,b->sy,b->dx,b->dy,bulk,b->height);
+            for(unsigned rows=b->height;!status && rows;) {
+                unsigned h=rows>32 ? 32 : rows;
+                unsigned y=source==destination && shift_y>0 ? rows-h : b->height-rows;
+                rows-=h;
+                unsigned sx=b->sx+bulk,sy=b->sy+y,offset=0;
+                if(s->width<unit) {
+                    status=texture_copy(gs,source,scratch,sx,sy,0,0,tail,h);
+                } else {
+                    if(sx+unit>s->width) { offset=sx+unit-s->width;sx-=offset; }
+                    status=ps2_surface_copy(gs,source,scratch,sx,sy,0,0,unit,h);
+                }
+                if(!status) status=texture_copy(gs,scratch,destination,offset,0,b->dx+bulk,b->dy+y,tail,h);
+            }
+            if(!status && bulk && backwards)
+                status=ps2_surface_copy(gs,source,destination,b->sx,b->sy,b->dx,b->dy,bulk,b->height);
+        }
+    }
+    error=errno;
+    if(scratch && !gs->error) {
+        int cleanup=ps2_surface_destroy(gs,scratch);
+        if(!status && cleanup) { status=-1;error=errno; }
+    }
+    /* On sticky device failure, file teardown reclaims the owned scratch. */
+out:
+    ps2_pipe_context_release(ctx);
+    if(status) errno=error;
+    return status;
+}

@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_x11perf",
+  "kind": "application",
+  "program": "x11perf",
+  "version": "1.6.1",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/x11perf-1.6.1.tar.bz2",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/x11perf-1.6.1.tar.bz2",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "1c7e0b8ffc2794b4ccf11e04d551823abe0ea47b4f7db0637390db6fbe817c34",
+      "filename": "x11perf-1.6.1.tar.bz2"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "b386151bfe3d7c04ab9953ae1882f3c5b627d6d1afb9a8cfe87c58236a88883fc11bbadb2226b9aa61df84b4fce625a1c9e3d146a124ac17e8d7d605b35d9c0b",
+      "filename": "x11perf-1.6.1.tar.bz2"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": true,
+  "runtime_qualification": {
+    "scope": "emulator application smoke checks; not exhaustive feature qualification",
+    "record": "docs/desktop-applications-r41-validation.json"
+  }
+}

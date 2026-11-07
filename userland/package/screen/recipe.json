@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "name": "screen",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "source": {
+    "version": "5.0.2",
+    "url": "https://ftp.gnu.org/gnu/screen/screen-5.0.2.tar.gz",
+    "gnu": true,
+    "filename": "screen-5.0.2.tar.gz",
+    "sha256": "ca9a2c7e240919bc7ac12124593ae4529bb4eb5f7349d8857829b7e3f0b3b332",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Sat 11 Jul 2026 09:56:33 PM WEST\ngpgv:                using RSA key 7832918905C6D316DFB54313898D726C87C5AFE3\ngpgv: Good signature from \"Alexander Naumov <alexander_naumov@opensuse.org>\"\n"
+  },
+  "source_archive": "../../sources/screen-5.0.2.tar.gz",
+  "configure_options": [
+    "--disable-pam",
+    "--enable-socket-dir",
+    "--enable-colors256"
+  ],
+  "configure_environment": {
+    "LIBS": "-lncursesw"
+  },
+  "source_subdirectory": "",
+  "in_source_build": true,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false,
+  "symbol": "BR2_PACKAGE_SCREEN",
+  "version": "5.0.2",
+  "recipe": "package/screen/screen.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "ca9a2c7e240919bc7ac12124593ae4529bb4eb5f7349d8857829b7e3f0b3b332",
+      "filename": "screen-5.0.2.tar.gz"
+    }
+  ],
+  "release_url": "https://ftp.gnu.org/gnu/screen/",
+  "manifest_entry": "configs/packages.json:packages.screen"
+}

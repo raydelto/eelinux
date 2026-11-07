@@ -1,0 +1,232 @@
+{
+  "schema": 1,
+  "date": "2026-10-03",
+  "recorded_at": "2026-10-03T19:00:45.994214+00:00",
+  "scope": "owned native GS triangles/depth, real Mesa resources/raster adapter and Xorg ordering; full desktop unfinished",
+  "reference": "https://psi-rockin.github.io/ps2tek/",
+  "source_inputs": [
+    {
+      "path": "graphics/ps2_gs_client.c",
+      "sha256": "28335120a075b84246981763d3e5bd285e7d8d3af619bdeeef1017749eb10de2"
+    },
+    {
+      "path": "graphics/ps2_gs_surface.c",
+      "sha256": "d3c7400b23829073e2e58985360a73113ca3f649bb8f71fdba3df48e3237b47f"
+    },
+    {
+      "path": "desktop/xorg/ps2_surface_exa.c",
+      "sha256": "f046d71036f9a7fea4beb4d0e6f3b16644fd3c64335dd800daf288670f070e27"
+    },
+    {
+      "path": "mesa/ps2/ps2_resource.c",
+      "sha256": "281d834abab2d0b3d26ce2e557ec3b087975280e7736aaa405f1e26e3b3a384f"
+    },
+    {
+      "path": "graphics/ps2_gs_render.c",
+      "sha256": "8873092f3cf8bcdf1fa78b24a15e33ae537bb4effd15bf7bfd16f10aa294f700"
+    },
+    {
+      "path": "desktop/xorg/ps2_render_bridge.c",
+      "sha256": "f4bf7606a21e83a538b78fe246ef1b0e91687258a02cbad9f63685602da2c4f5"
+    },
+    {
+      "path": "mesa/ps2/ps2_render_target.c",
+      "sha256": "0a3d30b1f5047c74aa10836dd0d5ab6315cb165245655d5e2923f9f43a92f94d"
+    },
+    {
+      "path": "mesa/ps2/ps2_owned_draw.c",
+      "sha256": "be45433bc6c359b53dca02f517014e67027ece53b7df8a3dd3514c3f6a4a9223"
+    },
+    {
+      "path": "kernel/new-drivers/ps2-gs-render.h",
+      "sha256": "313b938b8da76e21c7aa0461bc308534ff1d0cf337c08e4a5c501eaa835b341c"
+    },
+    {
+      "path": "kernel/new-drivers/ps2fb-gs-render-device.h",
+      "sha256": "b8c3c721b039fa9259112e2a7a38e3003cd039d6343784e03887ea2227114eaf"
+    },
+    {
+      "path": "kernel/new-drivers/ps2fb-gs-render-packet.h",
+      "sha256": "9415a7b9fd18bf8bc3a1d22a529f5867b3a1569efc636eedb1435b3d21804dec"
+    },
+    {
+      "path": "graphics/ps2_gs_render.h",
+      "sha256": "f1711ec4a5dbc037ae3ec34a80cdfdaaa1d3d69a73b76075ea66cfa1d5de203c"
+    },
+    {
+      "path": "desktop/xorg/ps2_render_bridge.h",
+      "sha256": "c43c37fee2ea6fa2cb1bda1e572ab00d9f693dfe42681ddc446d048d092cb973"
+    },
+    {
+      "path": "mesa/ps2/ps2_render_target.h",
+      "sha256": "3b1958ea1c49d230ce04a3e1fb6e4af6a4ce3f5df7ffcfbcaa0e2cb63ccd0ca4"
+    },
+    {
+      "path": "desktop/ps2-gs-render-test.c",
+      "sha256": "40bb079b8858f0d2930a77d7859ae770b440b842b2102f3136d4d4044c49c486"
+    },
+    {
+      "path": "scripts/kernel_gs_render_port.py",
+      "sha256": "c4593dcdbdc17143ed76b7bedd8bc5d2568078168ae7d7065b5535bb5a68658d"
+    },
+    {
+      "path": "tests/test_ps2_gs_render.py",
+      "sha256": "e54a167a6bcee5ac13e1ff756bcdfd37891c6f4249470f71ab657b0787fc4bcf"
+    },
+    {
+      "path": "tests/test_ps2_render_backends.py",
+      "sha256": "8ccdd8439ea32029b2ca72ae99f0775f6f20afeaee7ebc75fe5a408f446beaff"
+    },
+    {
+      "path": "tests/test_ps2_render_probe.py",
+      "sha256": "e7fa1753d72d0b0c6203cc5b2dbf25b628cbdbb61bcb6f1668664d7012d8a7b2"
+    },
+    {
+      "path": "tests/graphics/ps2-gs-render.c",
+      "sha256": "14b97251c71fa2b4e293b36b8f82401b01d10c1013e45ed6ddd16f0c7d9ae4c0"
+    },
+    {
+      "path": "tests/graphics/ps2-render-backends.c",
+      "sha256": "16da3fcf06b052ad8c21be3c709d022b16e72c096cc1eeb7c19cbd87cab1d9ae"
+    },
+    {
+      "path": "tests/graphics/ps2-render-probe.c",
+      "sha256": "7fba8055d0313c06b3b65d5c47f039df6aee3d4b7529a97500d7291b0116aa4d"
+    }
+  ],
+  "kernel": {
+    "sha256": "fbdf5ac64bc4f819901d7b615809c700ae2a54ac77d144fc7958cb14dbea910a"
+  },
+  "kernel_build_log": {
+    "sha256": "77ad33e598087a8294eabff1ba7a4bc0e44c04fe9b96ece818725d1944e0cd4f"
+  },
+  "kernel_report_note": "Inherited GS_surfaces fields describe the preceding color-only patch; owned_rendering describes this extension",
+  "compiled_components": {
+    "sha256": "9f92c7eaa583a44dc7b0323ecfe22de5978eedd8423d9da7c8df0284cd7a7432"
+  },
+  "native_test_log": {
+    "sha256": "00d766e50dc74549169294c7570107430ed8c2d8ac5bd269559aa05b263e002b"
+  },
+  "patches": {
+    "sha256": "2703c5f5fa1f972fa74f54215f06e35d9c30d4577601b474a8c7046343306ed3"
+  },
+  "image": {
+    "sha256": "01ee50863f255bc5a063be2d84ef8fdcec780abd8d27004d8c0a16884a700484"
+  },
+  "image_assembly": {
+    "sha256": "c90299886e20f67eaea476c3c0f8c8293465dc9f98394938a6ccd35f82bd17a3"
+  },
+  "image_assembly_checks": {
+    "diagnostic_fat_readback_byte_exact": {},
+    "fat32_bpb_and_cluster_count": "passed",
+    "fsck_fat_read_only": "passed",
+    "kernel_fat_readback_byte_exact": true,
+    "readme_fat_readback_byte_exact": true,
+    "root_payload_byte_exact": true,
+    "source_inputs_unchanged": true
+  },
+  "probe": {
+    "sha256": "dd7231d515f659768a70a36b8f5c2236ef8a7f335398e8fab99d333abd16de82"
+  },
+  "packaged_probe_matches_tested_binary": true,
+  "host_checks": {
+    "cases": 10,
+    "result": "passed",
+    "sanitizers": [
+      "ASan",
+      "UBSan"
+    ],
+    "evidence_kind": "transcription of successful tool output in this session; no additional run",
+    "tests": {
+      "owned_kernel_rendering": 4,
+      "native_Mesa_Xorg_components": 3,
+      "actual_diagnostic_lifecycle": 3
+    }
+  },
+  "R5900_Linux_user_checks": {
+    "cases": 10,
+    "result": "passed",
+    "scope": "actual C callbacks and pure GS packets with wrapped GPU syscalls/locking scaffold",
+    "real_GNU_atomic_resource_references": true,
+    "kernel_lockdep_or_GPU_pixel_qualification": false
+  },
+  "controlled_PCSX2_run": {
+    "session": {
+      "sha256": "17889f710c4d7f26029a684f83c696c24b0a5cd62f2c394d2025c7f48babef55"
+    },
+    "process_result": {
+      "sha256": "9ea59d97c080b6b189ab39f292ab3373e92a00c4d917b1441972e3e95a8fbeb6"
+    },
+    "runtime": {
+      "requested_program": "C:\\Program Files\\PCSX2\\pcsx2-qt.exe",
+      "executable_sha256": "4d2a4d9c0db3cb2e9760e2d34bcd29150b53d56a1a87ae8e6fb4556796b40f58",
+      "runtime_manifest_sha256": "b7bf008375c55020bfb3287e0a100d1ff001323706bc2e18b3bf2d0e183ed478",
+      "mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85"
+    },
+    "log_snapshot": {
+      "sha256": "538167e017bf8af308995eb3fe72d3d974cf9b4b20f54df96a1aff06da255e5e"
+    },
+    "milestones": [
+      "EXT4-fs (sda2): mounted filesystem",
+      "ps2-gs: command/fence test PASSED",
+      "ps2-gs: image transfer/fence PASSED",
+      "ps2-gs: offscreen transfer/fence PASSED",
+      "ps2-gs: surface probe exit=0",
+      "ps2-gs: Mesa owned rendering 720x576 32bpp features=7f",
+      "ps2-gs: owned Mesa transfer/fence PASSED; expect cyan over red, no yellow, then text",
+      "ps2-gs: Mesa owned render probe exit=0",
+      "ps2-smap ps2-smap eth0: Link is Up"
+    ],
+    "automatic_timeout_seconds": 120,
+    "timed_out": true,
+    "timeout_is_a_boot_result": false,
+    "kernel_panic_or_user_segfault_in_log": false,
+    "visual_observation": {
+      "source": "user report in this session",
+      "all_four_startup_scenes_displayed": true,
+      "owned_render_scene": "cyan triangle over larger red triangle, no yellow triangle, followed by text console",
+      "user_confirmed_expected_scene": true,
+      "platform": "PCSX2",
+      "pixel_readback_or_format_sweep": false
+    },
+    "authenticated_login_tested": false
+  },
+  "owned_rendering": {
+    "shared_file_owner": true,
+    "opaque_color_depth_roles": true,
+    "depth_cleared_before_publication": true,
+    "whole_batch_validation": true,
+    "depth_compare": "GEQUAL with reversed 16-bit depth",
+    "EXA_fences_shared_Mesa_queue": true,
+    "texture_sampling": false
+  },
+  "physical_owned_rendering_pixels_tested": false,
+  "physical_devices_written": false,
+  "software_pixel_renderer": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL": false,
+  "remaining": [
+    "physical owned color/depth scene and format qualification",
+    "glyph/composite operations and complete DDX screen/cursor/VT setup",
+    "complete Mesa screen/context and transformation pipeline integration",
+    "texture sampling/cache invalidation and GLX",
+    "existing OpenGL application tests, pixel readback and RAM measurements"
+  ],
+  "physical_hardware_followup": {
+    "date": "2026-10-04",
+    "evidence": "docs/graphics-hardware-validation.json",
+    "evidence_sha256": "ef10249c0b5c23f171d1bc7390788c271086b4caaeff929984f5f6c0fe42e1f3",
+    "diagnostics": [
+      "ps2-gs-render-test"
+    ],
+    "diagnostic_scenes_tested_on_physical_hardware": true,
+    "result": "passed according to the user on real PlayStation 2 hardware",
+    "evidence_kind": "explicit user verification report; device logs not captured",
+    "earlier_fields_preserved": true,
+    "scope": "normal diagnostic scenes on the user's PS2; not all host/mock cases or a complete desktop",
+    "artifact_hash_read_back_on_console": false,
+    "GPU_pixel_readback": false,
+    "complete_Xorg_TWM_or_OpenGL_session_tested": false
+  },
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

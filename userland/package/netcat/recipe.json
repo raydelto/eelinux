@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "netcat",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.netcat",
+  "symbol": "BR2_PACKAGE_NETCAT",
+  "version": "0.7.1",
+  "recipe": "package/netcat/netcat.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "b55af0bbdf5acc02d1eb6ab18da2acd77a400bafd074489003f3df09676332bb",
+      "filename": "netcat-0.7.1.tar.bz2"
+    }
+  ],
+  "release_url": "https://netcat.sourceforge.net/download.php"
+}

@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "kmod",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.kmod",
+  "symbol": "BR2_PACKAGE_KMOD",
+  "version": "34.3",
+  "recipe": "package/kmod/kmod.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "985554de49c21a58abd68c6cda2251384e1e5bb08b3b14c7f02b51f4c90c2958",
+      "filename": "kmod-34.3.tar.xz"
+    }
+  ],
+  "release_url": "https://www.kernel.org/pub/linux/utils/kernel/kmod/"
+}

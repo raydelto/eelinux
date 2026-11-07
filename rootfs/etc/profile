@@ -1,0 +1,12 @@
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export LANG=${LANG:-C}
+export TERM=${TERM:-linux}
+export TMPDIR=${TMPDIR:-/var/tmp}
+export EDITOR=${EDITOR:-nano}
+umask 022
+if [ -n "${BASH_VERSION:-}" ] && [ -n "${PS1:-}" ]; then
+    PS1='\u@\h:\w\$ '
+    if [ -r /etc/profile.d/bash_completion.sh ]; then
+        . /etc/profile.d/bash_completion.sh
+    fi
+fi

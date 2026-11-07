@@ -1,0 +1,17 @@
+--- a/Xtrans.c
++++ b/Xtrans.c
+@@ -1349,10 +1349,11 @@
+ #ifdef NEED_UTSNAME
+     struct utsname name;
+ 
+-    uname (&name);
+-    len = strlen (name.nodename);
++    if (maxlen <= 0 || uname (&name) < 0)
++        return -1;
++    len = strnlen (name.nodename, sizeof (name.nodename));
+     if (len >= maxlen) len = maxlen - 1;
+-    strncpy (buf, name.nodename, len);
++    memcpy (buf, name.nodename, len);
+     buf[len] = '\0';
+ #else
+     buf[0] = '\0';

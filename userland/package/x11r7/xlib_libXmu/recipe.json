@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xlib_libXmu",
+  "kind": "library",
+  "program": "libXmu",
+  "version": "1.3.1",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/libXmu-1.3.1.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/lib/libXmu-1.3.1.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "81a99e94c4501e81c427cbaa4a11748b584933e94b7a156830c3621256857bc4",
+      "filename": "libXmu-1.3.1.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "5210acad4ec19d93a2ac906fbb062e69853c8ced8e6d3428586cb737a3485280489f238a54676a286aa0b6698af6406504274ffd08d9b5803cad57cf9476c802",
+      "filename": "libXmu-1.3.1.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

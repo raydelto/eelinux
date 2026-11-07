@@ -1,0 +1,15 @@
+# PS2 native compiler defaults: enable the short-loop workaround and avoid
+# emitting unsupported LL/SC instructions. GCC's MIPS driver adds -mllsc before
+# reading this spec, so remove that option before selecting the PS2 policy.
+*self_spec:
+%{!mfix-r5900:%{!mno-fix-r5900:-mfix-r5900}} %{!EL:%{!EB:-EL}} %<mllsc -mno-llsc
+
+# Canadian-cross configure cannot execute the target linker to probe shared
+# unwind support. The image carries the matching cross-built libgcc runtimes.
+*libgcc:
+%{static|static-libgcc|static-pie:-lgcc -lgcc_eh}%{!static:%{!static-libgcc:%{!static-pie:-lgcc_s -lgcc}}}
+
+# The target Binutils supports unwind headers. Emit them even when the
+# workstation's Canadian-cross linker probe could not execute target ld.
+*link:
++ --eh-frame-hdr

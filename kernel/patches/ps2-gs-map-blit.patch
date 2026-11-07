@@ -1,0 +1,177 @@
+--- a/drivers/video/fbdev/ps2fb-gs-device.h
++++ b/drivers/video/fbdev/ps2fb-gs-device.h
+@@ -14,6 +14,7 @@
+ #include "ps2fb-gs-batch-packet.h"
+ #include "ps2fb-gs-lut-packet.h"
+ #include "ps2fb-gs-map-packet.h"
++#include "ps2fb-gs-map-blit-packet.h"
+ #include "ps2fb-gs-readback-packet.h"
+ 
+ struct ps2gs_session;
+@@ -155,7 +156,9 @@
+ 		goto out;
+ 	}
+ 	gs_write_csr((struct gs_csr) { .finish = 1 });
+-	if (operation == PS2GS_CHANNEL_MAP) {
++	if (operation == PS2GS_CHANNEL_MAP_BLIT) {
++		count = ps2gs_package_map_blit(par->package.buffer, destination, request);
++	} else if (operation == PS2GS_CHANNEL_MAP) {
+ 		count = ps2gs_package_map(par->package.buffer, destination, request);
+ 	} else if (operation == PS2GS_CHANNEL_LUT) {
+ 		count = ps2gs_package_lut(par->package.buffer, destination, request);
+@@ -278,6 +281,7 @@
+ #include "ps2fb-gs-texture-device.h"
+ #include "ps2fb-gs-lut-device.h"
+ #include "ps2fb-gs-map-device.h"
++#include "ps2fb-gs-map-blit-device.h"
+ #include "ps2fb-gs-logic-device.h"
+ #include "ps2fb-gs-transfer-device.h"
+ #include "ps2fb-gs-readback-device.h"
+@@ -294,7 +298,7 @@
+ 		ps2gs_caps(info, &caps);
+ 		/* Explicitly allocated Z16/Z16S depth and bounded owned rendering. */
+ 		caps.features = PS2GS_HW_FILL | PS2GS_HW_COPY | PS2GS_HW_UPLOAD |
+-			PS2GS_HW_SURFACES | PS2GS_HW_TRIANGLE | PS2GS_HW_DEPTH16 | PS2GS_HW_OWNED_RENDER | PS2GS_HW_TEXTURE | PS2GS_HW_SOLID_LOGIC | PS2GS_HW_TEXTURE_TRANSFER | PS2GS_HW_READBACK | PS2GS_HW_SOLID_BATCH | PS2GS_HW_CHANNEL_LUT | PS2GS_HW_CHANNEL_MAP;
++			PS2GS_HW_SURFACES | PS2GS_HW_TRIANGLE | PS2GS_HW_DEPTH16 | PS2GS_HW_OWNED_RENDER | PS2GS_HW_TEXTURE | PS2GS_HW_SOLID_LOGIC | PS2GS_HW_TEXTURE_TRANSFER | PS2GS_HW_READBACK | PS2GS_HW_SOLID_BATCH | PS2GS_HW_CHANNEL_LUT | PS2GS_HW_CHANNEL_MAP | PS2GS_HW_CHANNEL_MAP_BLIT;
+ 		return copy_to_user(arg, &caps, sizeof(caps)) ? -EFAULT : 0;
+ 	}
+ 	if (session->epoch != ((struct ps2fb_par *)info->par)->gs_epoch)
+@@ -304,6 +308,8 @@
+ 	if (!vc_cons[fg_console].d || vc_cons[fg_console].d->vc_mode != KD_GRAPHICS)
+ 		return -EBUSY;
+ 	switch (cmd) {
++	case PS2GS_CHANNEL_MAP_BLIT:
++		return ps2gs_map_blit_locked(session, info, arg);
+ 	case PS2GS_CHANNEL_MAP:
+ 		return ps2gs_map_locked(session, info, arg);
+ 	case PS2GS_CHANNEL_LUT:
+--- a/drivers/video/fbdev/ps2fb.c
++++ b/drivers/video/fbdev/ps2fb.c
+@@ -52,6 +52,7 @@
+ #include <linux/ps2-gs-batch.h>
+ #include <linux/ps2-gs-lut.h>
+ #include <linux/ps2-gs-map.h>
++#include <linux/ps2-gs-map-blit.h>
+ #include <linux/miscdevice.h>
+ #include <linux/kref.h>
+ #include <linux/kd.h>
+--- /dev/null
++++ b/include/uapi/linux/ps2-gs-map-blit.h
+@@ -0,0 +1,16 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_MAP_BLIT_H
++#define _UAPI_PS2_GS_MAP_BLIT_H
++#include "ps2-gs-map.h"
++#define PS2GS_HW_CHANNEL_MAP_BLIT (1U << 14)
++/* Map one byte from an owned CT32 source rectangle into selected bits of a
++ * distinct owned CT32 destination. The source rectangle fits in one 64x32
++ * GS page. Palette is a third owned 16x16 CT32 surface. Coordinates and all
++ * storage bounds are validated; no addresses/registers are user supplied. */
++struct ps2gs_channel_map_blit {
++	__u32 abi, source, destination, palette;
++	__u32 width, height, plane_mask, source_channel;
++	__u32 sx, sy, dx, dy;
++};
++#define PS2GS_CHANNEL_MAP_BLIT _IOW('G', 0x81, struct ps2gs_channel_map_blit)
++#endif
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-map-blit-packet.h
+@@ -0,0 +1,42 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++struct ps2gs_map_blit_operation {
++	struct ps2gs_lut_operation lookup;
++	u32 sx, sy, dx, dy;
++};
++static size_t ps2gs_package_map_blit(union package *base,
++		const struct ps2gs_buffer *color, const struct ps2gs_map_blit_operation *op)
++{
++	struct ps2gs_lut_operation header = op->lookup;
++	union package *p;
++	u32 i, columns = DIV_ROUND_UP((op->sx & 3) + op->lookup.width, 4);
++	header.width += op->dx;
++	header.height += op->dy;
++	header.count = 0;
++	ps2gs_package_map(base, color, &header);
++	base[1].gif.packed.ad.data.frame_1.fbw = color->buffer_width / 64;
++	base[3].gif.packed.ad.data.scissor_1.scax0 = op->dx;
++	base[3].gif.packed.ad.data.scissor_1.scay0 = op->dy;
++	p = base + 17;
++	for (i = op->lookup.first; i < op->lookup.first + op->lookup.count; ++i) {
++		u32 bx = (op->sx & ~3U) + i % columns * 4;
++		u32 by = (op->sy & ~1U) + i / columns * 2;
++		u32 x = max_t(u32, bx, op->sx), y = max_t(u32, by, op->sy);
++		u32 w = min_t(u32, bx + 4, op->sx + op->lookup.width) - x;
++		u32 h = min_t(u32, by + 2, op->sy + op->lookup.height) - y;
++		u32 channel = op->lookup.channel;
++		u32 u = x / 8 * 16 + (x & 3) +
++			(((x >> 2) ^ channel ^ (y >> 1)) & 1) * 4 + (channel >> 1) * 8;
++		u32 v = y / 8 * 16 + (y & 1) + (channel & 1) * 2 + (y & 6) * 2;
++		u32 dx = op->dx + x - op->sx, dy = op->dy + y - op->sy;
++		p = ps2gs_texture_raw(p, gs_addr_uv, (u64)(u * 16 + 8) | (u64)(v * 16 + 8) << 16);
++		GIF_PACKAGE_AD(p) { .addr = gs_addr_xyz2, .data.xyz2 = { .x = dx * 16, .y = dy * 16 } };
++		p = ps2gs_texture_raw(p, gs_addr_uv, (u64)((u + w) * 16 + 8) | (u64)((v + h) * 16 + 8) << 16);
++		GIF_PACKAGE_AD(p) { .addr = gs_addr_xyz2, .data.xyz2 = { .x = (dx + w) * 16, .y = (dy + h) * 16 } };
++	}
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_frame_2,
++		.data.frame_1 = { .fbp = color->base / 8192, .fbw = color->buffer_width / 64, .psm = gs_psm_ct32 } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_finish };
++	base->gif.tag = (struct gif_tag) { .flg = gif_packed_mode, .reg0 = gif_reg_ad,
++		.nreg = 1, .nloop = p - base - 1, .eop = 1 };
++	return p - base;
++}
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-map-blit-device.h
+@@ -0,0 +1,53 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++static int ps2gs_map_blit_locked(struct ps2gs_session *session,
++		struct fb_info *info, void __user *arg)
++{
++	struct ps2gs_channel_map_blit r;
++	struct ps2gs_buffer *source, *destination, *palette, page;
++	u32 first, total;
++	int ret;
++	if (copy_from_user(&r, arg, sizeof(r)))
++		return -EFAULT;
++	if (r.abi != PS2GS_ABI_VERSION || r.source_channel > 3 || !r.width || !r.height ||
++	    r.width > 64 || r.height > 32 || !r.source || !r.destination || !r.palette ||
++	    r.source == r.destination || r.source == r.palette || r.destination == r.palette)
++		return -EINVAL;
++	source = ps2gs_arena_lookup(&session->arena, r.source);
++	destination = ps2gs_arena_lookup(&session->arena, r.destination);
++	palette = ps2gs_arena_lookup(&session->arena, r.palette);
++	if (!source || !destination || !palette)
++		return -ENOENT;
++	if (ps2gs_depth_role(session, r.source) || ps2gs_depth_role(session, r.destination) ||
++	    ps2gs_depth_role(session, r.palette) || source->bits_per_pixel != 32 ||
++	    destination->bits_per_pixel != 32 || palette->bits_per_pixel != 32 ||
++	    palette->width != 16 || palette->height != 16 || palette->buffer_width != 64)
++		return -EOPNOTSUPP;
++	if (r.sx >= source->width || r.sy >= source->height || r.dx >= destination->width ||
++	    r.dy >= destination->height || r.width > source->width - r.sx ||
++	    r.height > source->height - r.sy || r.width > destination->width - r.dx ||
++	    r.height > destination->height - r.dy || r.width > 64 - (r.sx & 63) ||
++	    r.height > 32 - (r.sy & 31))
++		return -EINVAL;
++	if (!r.plane_mask)
++		return 0;
++	page = *source;
++	page.base += (r.sy / 32 * (source->buffer_width / 64) + r.sx / 64) * 8192;
++	page.width = 64;
++	page.height = 32;
++	page.buffer_width = 64;
++	r.sx &= 63;
++	r.sy &= 31;
++	total = DIV_ROUND_UP((r.sx & 3) + r.width, 4) * DIV_ROUND_UP((r.sy & 1) + r.height, 2);
++	for (first = 0; first < total; first += 48) {
++		struct ps2gs_map_blit_operation op = { .lookup = { .texture = &page, .palette = palette,
++			.width = r.width, .height = r.height, .mask = r.plane_mask,
++			.channel = r.source_channel, .first = first, .count = min_t(u32, total - first, 48) },
++			.sx = r.sx, .sy = r.sy, .dx = r.dx, .dy = r.dy };
++		ret = ps2gs_surface_execute(info, PS2GS_CHANNEL_MAP_BLIT, NULL, destination, &op, NULL);
++		if (ret) {
++			session->failed = ret;
++			return ret;
++		}
++	}
++	return 0;
++}

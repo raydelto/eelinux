@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "file",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.file",
+  "symbol": "BR2_PACKAGE_FILE",
+  "version": "5.48",
+  "recipe": "package/file/file.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "ed14656883b23a364b4057c05595d93252da9bc473d30106519519d0da141283",
+      "filename": "file-5.48.tar.gz"
+    }
+  ],
+  "release_url": "https://www.astron.com/pub/file/"
+}

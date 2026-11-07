@@ -1,0 +1,17 @@
+{
+  "native_ISO9660_GNU_root_boot": "passed",
+  "embedded_USB_image": false,
+  "USB_storage_attached": false,
+  "production_Slim_ISO_sha256": "86bf562def8771e47439bac3b5363328e52b9b0b0212daadb216d31ef5b8a210",
+  "production_optical_kernel_sha256": "9c7a1faeb35dad0ff051e0d37ce2aec007cfd4dfdd6aace485c848bae9c65761",
+  "qualification_kernel_sha256": "a258dbba12afa61426a3fd1a76dd87e1e1a921243897da9d59d4f2bb820c621f",
+  "guest_main_ram_MiB": 32,
+  "GNU_services_and_SDK_present": true,
+  "Xorg_connected": true,
+  "xclock_mapped": true,
+  "full_desktop_and_cursor_runtime_check": "incomplete: user confirmed closing the emulator before remaining client assertions",
+  "unnecessary_cpp_processes_observed": false,
+  "boot_log_sha256": "be066581f3882d4f24046437cd771341a45e7f8f6d8c170e57d4b78c83de701a",
+  "FreeDVDBoot_exploit_qualified": false,
+  "physical_hardware_qualified": false
+}

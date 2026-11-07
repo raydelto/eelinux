@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xlsatoms",
+  "kind": "application",
+  "program": "xlsatoms",
+  "version": "1.1.5",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xlsatoms-1.1.5.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xlsatoms-1.1.5.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "9ac9400328fbeffe15c9d94a90dedb90d09dcaa9d51482efabc55b33a736e317",
+      "filename": "xlsatoms-1.1.5.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "a3e91814d6484f7bd6bb55d49ab898e685beb0bb5c86209cfc3e2f3b9aa85c81e09322f25b315bb0afe2ce86b8344adb81c47ed38730a1d4ffa15ce07c230631",
+      "filename": "xlsatoms-1.1.5.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

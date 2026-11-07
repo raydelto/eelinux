@@ -1,0 +1,17 @@
+Subject: [PATCH] lsfd: avoid compound literal commas in the bsearch macro
+
+glibc 2.44 may provide bsearch as a function-like macro. Braces do not
+protect commas during macro argument parsing; pass an ordinary local key.
+
+--- a/misc-utils/lsfd.c
++++ b/misc-utils/lsfd.c
+@@ -1569,7 +1569,8 @@
+ 		struct file *file = list_entry(f, struct file, files);
+ 		if (is_opened_file(file) && !file->multiplexed) {
+ 			int fd = file->association;
+-			if (bsearch(&(struct pollfd){.fd = fd,}, local.iov_base,
++			const struct pollfd key = { .fd = fd };
++			if (bsearch(&key, local.iov_base,
+ 				    nfds, sizeof(struct pollfd), pollfdcmp))
+ 				file->multiplexed = 1;
+ 		}

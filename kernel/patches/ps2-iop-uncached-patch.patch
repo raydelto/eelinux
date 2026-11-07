@@ -1,0 +1,129 @@
+--- a/drivers/ps2/iop-memory.c
++++ b/drivers/ps2/iop-memory.c
+@@ -8,7 +8,7 @@
+ #include <linux/init.h>
+ #include <linux/types.h>
+ #include <linux/module.h>
+-#include <linux/dma-mapping.h>
++#include <asm/addrspace.h>
+ 
+ #include <asm/mach-ps2/iop-memory.h>
+ 
+@@ -47,7 +47,10 @@
+  */
+ void *iop_bus_to_virt(iop_addr_t baddr)
+ {
+-	return phys_to_virt(iop_bus_to_phys(baddr));
++	/* The IOP owns this RAM. Cached EE aliases can retain stale data
++	 * and write back neighbours modified by the running IOP.
++	 */
++	return (void *)CKSEG1ADDR(iop_bus_to_phys(baddr));
+ }
+ EXPORT_SYMBOL_GPL(iop_bus_to_virt);
+ 
+--- a/drivers/ps2/iop-module-patch.c
++++ b/drivers/ps2/iop-module-patch.c
+@@ -9,7 +9,7 @@
+ #include <linux/kernel.h>
+ #include <linux/string.h>
+ 
+-#include <asm/io.h>	/* FIXME: For dma_cache_wback */
++#include <asm/io.h>
+ 
+ #include <uapi/asm/inst.h>
+ 
+@@ -34,10 +34,10 @@
+ 	size_t i;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(match); i++) {
+-		const u32 *code = iop_bus_to_virt(
++		const void __iomem *code = iop_bus_to_virt(
+ 			module->text_start + match[i].address);
+ 
+-		if (match[i].code != *code)
++		if (match[i].code != readl(code))
+ 			return false;
+ 	}
+ 
+@@ -47,24 +47,32 @@
+ static s16 __init iop_simm_insn(
+ 	const struct iop_module_info *module, const u32 address)
+ {
+-	const struct i_format *insn = iop_bus_to_virt(
++	const void __iomem *insn = iop_bus_to_virt(
+ 		module->text_start + address);
+ 
+-	return insn->simmediate;
++	return (s16)readl(insn);
+ }
+ 
+ static void __init iop_patch_jump_table(
+ 	const struct iop_module_info *loadfile, const u32 patch_address)
+ {
+-	struct u_format *sltiu = iop_bus_to_virt(
++	void __iomem *sltiu = iop_bus_to_virt(
+ 		loadfile->text_start + 0x4c8);		/* sltiu v0,a0,6     */
+ 	const s16 hi = iop_simm_insn(loadfile, 0x4e0);  /* lui   at,0x0      */
+ 	const s16 lo = iop_simm_insn(loadfile, 0x4e8);  /* lw    v0,7112(at) */
+ 	const u32 jump_table = (hi << 16) + lo;
+-	u32 *patch_entry = iop_bus_to_virt(jump_table + 6 * sizeof(u32));
++	void __iomem *patch_entry =
++		iop_bus_to_virt(jump_table + 6 * sizeof(u32));
++	u32 instruction = readl(sltiu);
+ 
+-	*patch_entry = patch_address;	/* Assign 7:th jump table entry. */
+-	sltiu->uimmediate++;	/* Increase jump table from 6 to 7 entries. */
++	/* Publish the code and seventh entry before enabling RPC 6.
++	 * Word stores never write back a neighbouring IOP cache line.
++	 */
++	writel(patch_address, patch_entry);
++	wmb();
++	writel((instruction & 0xffff0000) |
++		((instruction + 1) & 0xffff), sltiu);
++	(void)readl(sltiu);
+ }
+ 
+ static void __init iop_patch_apply(
+@@ -111,6 +119,8 @@
+ 	const u32 modload_load_module_buffer = modload->text_start + 0x248;
+ 	const u32 modload_start_module = modload->text_start + 0x358;
+ 	const u32 result_address = patch_address + 24 * sizeof(u32);
++	void __iomem *destination = iop_bus_to_virt(patch_address);
++	size_t i;
+ 
+ 	BUILD_BUG_ON(sizeof(patch) != 128);
+ 
+@@ -119,7 +129,10 @@
+ 	patch.insn[ 9].u_format.uimmediate = result_address;
+ 	patch.insn[15].j_format.target = modload_start_module >> 2;
+ 
+-	memcpy(iop_bus_to_virt(patch_address), &patch, sizeof(patch));
++	for (i = 0; i < ARRAY_SIZE(patch.word); i++)
++		writel(patch.word[i], destination + i * sizeof(u32));
++	wmb();
++	(void)readl(destination + sizeof(patch) - sizeof(u32));
+ 
+ 	iop_patch_jump_table(loadfile, patch_address);
+ }
+@@ -149,8 +162,7 @@
+ 
+ 	iop_patch_apply(loadfile, modload, patch_address);
+ 
+-	/* FIXME: Write back or use KSEG1? */
+-	dma_cache_wback((unsigned long)iop_bus_to_virt(0), 2*1024*1024);
++	/* All writes used the uncached IOP window; no EE cache flush. */
+ 
+ 	return 0;
+ }
+--- a/drivers/ps2/iop-module-request.c
++++ b/drivers/ps2/iop-module-request.c
+@@ -1137,7 +1137,9 @@
+ 		goto err_bind;
+ 	}
+ 
++	pr_info("IOP firmware: ROM ADDDRV: start on IOP\n");
+ 	err = iop_module_load_rom("rom0:ADDDRV");
++	pr_info("IOP firmware: ROM ADDDRV: start result %d\n", err);
+ 	if (err < 0) {
+ 		printk(KERN_ERR "iop-module: Loading rom0:ADDDRV failed with err = %d\n", err);
+ 		goto err_bind;

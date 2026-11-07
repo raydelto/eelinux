@@ -1,0 +1,13 @@
+#!/bin/bash
+# Load the selected console map before SysVinit starts the login prompt.
+# loadkeys exits after updating the kernel; no keyboard daemon remains in RAM.
+set -u
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+case ${1:-} in
+    start|restart)
+        /usr/bin/ps2-keyboard --apply-console || exit 1
+        printf 'eeLinux: selected console keyboard loaded.\n'
+        ;;
+    stop) ;;
+    *) printf 'Usage: keyboard {start|restart|stop}\n' >&2; exit 2 ;;
+esac

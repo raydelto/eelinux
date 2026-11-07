@@ -1,0 +1,13 @@
+--- a/src/dlmalloc.c
++++ b/src/dlmalloc.c
+@@ -1888,8 +1888,8 @@
+ #if defined(__GNUC__)&& (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1))
+-#define CAS_LOCK(sl)     __sync_lock_test_and_set(sl, 1)
+-#define CLEAR_LOCK(sl)   __sync_lock_release(sl)
++#define CAS_LOCK(sl)     __atomic_exchange_n(sl, 1, __ATOMIC_ACQUIRE)
++#define CLEAR_LOCK(sl)   __atomic_store_n(sl, 0, __ATOMIC_RELEASE)
+ 
+ #elif (defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__)))
+ /* Custom spin locks for older gcc on x86 */
+ static FORCEINLINE int x86_cas_lock(int *sl) {
+   int ret;

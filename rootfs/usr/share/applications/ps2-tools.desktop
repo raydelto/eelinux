@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Command and administration tools
+Comment=Browse installed GNU/Linux utilities by suite
+Exec=ps2-tools
+TryExec=ps2-tools
+Terminal=true
+Categories=System;Utility;
+X-PS2-Menu=Tools

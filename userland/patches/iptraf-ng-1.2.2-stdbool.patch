@@ -1,0 +1,16 @@
+Subject: [PATCH] compat: include standard boolean constants before curses
+
+The generated ncurses header supplies its configured bool ABI type but may
+not provide C99 true/false macros. Include stdbool.h first, so those macros
+remain available while curses retains its public NCURSES_BOOL definition.
+
+--- a/src/iptraf-ng-compat.h
++++ b/src/iptraf-ng-compat.h
+@@ -12,6 +12,7 @@
+ #include <errno.h>
+ #include <ctype.h>
+ #include <netdb.h>
++#include <stdbool.h>
+ #include <curses.h>
+ #include <panel.h>
+ #include <assert.h>

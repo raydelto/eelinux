@@ -1,0 +1,528 @@
+{
+  "schema": 1,
+  "repository": "https://github.com/frno7/iopmod.git",
+  "revision": "12cdf14b78ed5e648ffe1d52e6754f00b3b69001",
+  "license": "per-file SPDX and licence/ directory; preserved upstream",
+  "files": [
+    {
+      "path": ".github/workflows/compilation.yml",
+      "sha256": "48ad6449710c51b66ecb393089714fd4caad004701864e5d759ca7fcccf566f5",
+      "bytes": 3229
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "e6f89c34a104c68dda6cbcdbf3bb63421256482d8716f0f41dc6c33745825f76",
+      "bytes": 73
+    },
+    {
+      "path": "Makefile",
+      "sha256": "9612c4d4c03fb47a654d4ebc91e4904afac949fffc7c1ae5c3d83f272572f2f3",
+      "bytes": 1757
+    },
+    {
+      "path": "README.md",
+      "sha256": "2f4c29e460ee558251092e6d3d5bf51f24df4d5437c5dc0d8a76d552eca69c42",
+      "bytes": 3146
+    },
+    {
+      "path": "builtin/Makefile",
+      "sha256": "c78abd16aaca4d9e58c09fd2b3719c302cded5856999fc5e32d99b989cd0809a",
+      "bytes": 712
+    },
+    {
+      "path": "builtin/__udivdi3.c",
+      "sha256": "dadb6b284ff9dcafe0405a42a364cdb35669e25094e9ce03687ae18bf84720db",
+      "bytes": 252
+    },
+    {
+      "path": "builtin/__udivmoddi4.c",
+      "sha256": "5b751a8446cfec3655a383cacb8dc75b2e17c726757e3b2632b2404057d5adda",
+      "bytes": 454
+    },
+    {
+      "path": "builtin/__umoddi3.c",
+      "sha256": "e4bd1f09feedce5632589b8ef7e2477bb43c55c8d942488cc07adf6f83e4f4ec",
+      "bytes": 275
+    },
+    {
+      "path": "builtin/interrupt.c",
+      "sha256": "31e3b24290e1dd30c68d301e5b834d1d3c1882cd725c4072d655611740d75473",
+      "bytes": 1274
+    },
+    {
+      "path": "builtin/ioperr.c",
+      "sha256": "c664f5a9c8aee514ec5b60718d6e4916c7b4df8af61a9ca3b18ba89df88d7cf6",
+      "bytes": 1008
+    },
+    {
+      "path": "builtin/memcpy.c",
+      "sha256": "a7607909d313f057da93a84c1805840e10f12bf53dadeee51b9c61ce6df0ff77",
+      "bytes": 232
+    },
+    {
+      "path": "builtin/memset.c",
+      "sha256": "fcb687ff21665a9cc026df3d7c42f9c2440b9a520dc8df6ed186f2517f96fdb1",
+      "bytes": 203
+    },
+    {
+      "path": "builtin/printk.c",
+      "sha256": "e4a25c1a4ccdfe7923b26806076fb001526d1bdec1165805a2ba84f3396f5fe3",
+      "bytes": 328
+    },
+    {
+      "path": "builtin/sif.c",
+      "sha256": "8bd69197ed53ad8c1b10d94e0244a9c5983e756adbc8902103512546f53012c0",
+      "bytes": 3690
+    },
+    {
+      "path": "builtin/spd-irq.c",
+      "sha256": "e338060a1de1e429a676b09893aed06461e462e74117c9633ecb2d1a751b7284",
+      "bytes": 4899
+    },
+    {
+      "path": "builtin/strlen.c",
+      "sha256": "773263f7283447d038dc0fb582698a6127b6309d16a8bceba7bf3f7c984d3f15",
+      "bytes": 154
+    },
+    {
+      "path": "builtin/vsnprintf.c",
+      "sha256": "2798c2a5d5ff21cbcf4d6cd6ffef24426c7e2dd1935b5de5e253808cb73771e9",
+      "bytes": 9916
+    },
+    {
+      "path": "include/compat/elf.h",
+      "sha256": "2ac5c44d9ab23c3987a452f47b55223e9e76ae259c50dc09b946a7cea02732bf",
+      "bytes": 182413
+    },
+    {
+      "path": "include/iopmod/addrspace.h",
+      "sha256": "a386a8ef5edb78021b24dff625ddf66d2c37c084d42b1225f7fe9379095bc41b",
+      "bytes": 1125
+    },
+    {
+      "path": "include/iopmod/asm/irx.h",
+      "sha256": "fef7d7d6726294739b1d9b2a79f254b08524ee2356d494b5dbb7a4f187b21c60",
+      "bytes": 287
+    },
+    {
+      "path": "include/iopmod/asm/macro.h",
+      "sha256": "02da51dc0994bf205a09fac9b21d4437c5d60ffacca31ba7f48e64827c1c9291",
+      "bytes": 798
+    },
+    {
+      "path": "include/iopmod/assert.h",
+      "sha256": "93ca3e233d180a8e55744c7ce224031240c59c7b7c2938903211e559f2efb2ee",
+      "bytes": 1204
+    },
+    {
+      "path": "include/iopmod/barrier.h",
+      "sha256": "4ac84499016f824017df12d59fee18eecd40ad1632534e6a6c9701a44e2d8902",
+      "bytes": 208
+    },
+    {
+      "path": "include/iopmod/bits.h",
+      "sha256": "9b37006ff13105ca794188499b65a0f70f1657bd3ca2508d558d9de3cf5b331d",
+      "bytes": 678
+    },
+    {
+      "path": "include/iopmod/build-bug.h",
+      "sha256": "25e3775d398964773f36a8ea92d263ee445482d6e640f51d2e18d4bfa5de89ba",
+      "bytes": 912
+    },
+    {
+      "path": "include/iopmod/compare.h",
+      "sha256": "67586ef79dd85792ba385693da6ecf03ae833db7fc45aac379ef8dfd86dd8e59",
+      "bytes": 3359
+    },
+    {
+      "path": "include/iopmod/dev9.h",
+      "sha256": "42ab0222b5cda0e2fedfa1d2b145f1e9921d6716139c556a535f524f1dd716d2",
+      "bytes": 783
+    },
+    {
+      "path": "include/iopmod/errno.h",
+      "sha256": "a46a23febde4e2c342f65565c181452923fa50a003d3feca83c3bdb6de9c271d",
+      "bytes": 1618
+    },
+    {
+      "path": "include/iopmod/interrupt.h",
+      "sha256": "e459caee59d5968ff4e8f519c6fd6c5fa2566ca0855d2acbcd73551ed8b0c379",
+      "bytes": 2183
+    },
+    {
+      "path": "include/iopmod/io.h",
+      "sha256": "25ab705003ef1d28a8601237358e2ebe10252220d5923b0bb30a60c31d5b10ef",
+      "bytes": 1253
+    },
+    {
+      "path": "include/iopmod/iop-error.h",
+      "sha256": "c1a42e46874afd4a4e2e1cce845732e96bef3cf6a451e54f5970c9e5550f919a",
+      "bytes": 2695
+    },
+    {
+      "path": "include/iopmod/irq.h",
+      "sha256": "4f56bf9f37280dcb09035d5c797a237f53064c509fe8d4c27a921e5212cdaa31",
+      "bytes": 201
+    },
+    {
+      "path": "include/iopmod/irqs.h",
+      "sha256": "b3a004f0613cf99b6787e3cf35460313346e28af769e6959cff11b92b3d3737f",
+      "bytes": 3059
+    },
+    {
+      "path": "include/iopmod/irx.h",
+      "sha256": "0f48d4ac2717f5016cc76f5928307a4270d5f673835f2ffdf3cb87f09a04a81b",
+      "bytes": 2269
+    },
+    {
+      "path": "include/iopmod/loadcore.h",
+      "sha256": "9cf0c0407fd525e7334bffa653a02d5260e519543cde760be6515fe1f19dc884",
+      "bytes": 196
+    },
+    {
+      "path": "include/iopmod/macro.h",
+      "sha256": "8c32cd90eae65a215eaf72f74a3c19eec291298bc4098c06ba115d65e9f575de",
+      "bytes": 779
+    },
+    {
+      "path": "include/iopmod/mod.h",
+      "sha256": "35a99c6de5b2aa44c421f79741b1490050f088732d5b7847be71bb1efb38474f",
+      "bytes": 1084
+    },
+    {
+      "path": "include/iopmod/module-init.h",
+      "sha256": "6d172ea30053e7a539f577fafbebe43e4889fdc7a93f0432fe5e211fc0288472",
+      "bytes": 285
+    },
+    {
+      "path": "include/iopmod/module-prototype.h",
+      "sha256": "bf3f76845113c8a5a62074f4a08cf7a4b3587645e7adbcd4b37b1fe52712dcfb",
+      "bytes": 297
+    },
+    {
+      "path": "include/iopmod/module-symbol.S",
+      "sha256": "40c4c3f9b593be0eb25f57b1911bf1f3a910d395014b2fe5236463df23fe6b1a",
+      "bytes": 4386
+    },
+    {
+      "path": "include/iopmod/module.h",
+      "sha256": "4d44fbd5c6749e5108540e235776ff88df0255f3ffd1f54c0af4eb31d61d0991",
+      "bytes": 714
+    },
+    {
+      "path": "include/iopmod/module/ata.h",
+      "sha256": "d7127cda6e5855c54346ff6112417245413eb839f659e863a3261475c461c5b3",
+      "bytes": 61
+    },
+    {
+      "path": "include/iopmod/module/dev9.h",
+      "sha256": "ee8a7fb256f64ebe2f6bbea3ae438187ed991c7d3d5fe37389e1dbfbbe43f6d3",
+      "bytes": 501
+    },
+    {
+      "path": "include/iopmod/module/dmacman.h",
+      "sha256": "458f9e515ccf29b66dc45ab1efabe639c591956a88f6475326beee24d4e1d4cd",
+      "bytes": 1174
+    },
+    {
+      "path": "include/iopmod/module/gamepad.h",
+      "sha256": "da28b4a98237360e65182c8f534ec277e3bd48e4ae5ae6e5b3cd32275a4d7e6b",
+      "bytes": 65
+    },
+    {
+      "path": "include/iopmod/module/intrman.h",
+      "sha256": "9b1357677fa906ff741192ee10a688b792e9016cc36a0708b32e1bfda2324c2f",
+      "bytes": 3183
+    },
+    {
+      "path": "include/iopmod/module/irq.h",
+      "sha256": "9fc0c2b48a93156de91cea6eda8ddc6788e477c947b78e8b38cf44da2847b133",
+      "bytes": 288
+    },
+    {
+      "path": "include/iopmod/module/irqrelay.h",
+      "sha256": "1d3781449413589e31a70b28fa2122ed78dce77f39b5666edc169b725454b530",
+      "bytes": 66
+    },
+    {
+      "path": "include/iopmod/module/loadcore.h",
+      "sha256": "ce61c6a83df61cb415d0df686e10681da7c04d08a3fae887bdae344f34c49876",
+      "bytes": 450
+    },
+    {
+      "path": "include/iopmod/module/printk.h",
+      "sha256": "d85e291b8a1e6362d4d56ce45c11d21d3182925757f4c517e6cfe0b02990bc9e",
+      "bytes": 536
+    },
+    {
+      "path": "include/iopmod/module/sifcmd.h",
+      "sha256": "15bf860b250d0054084af56e076175838f012360c1e33bc0679fc358a6cf1b98",
+      "bytes": 5664
+    },
+    {
+      "path": "include/iopmod/module/sifman.h",
+      "sha256": "19c57a7782c8e6d47678cd87806a10c86a7728d719feb9f56f3f95ea4dad5e69",
+      "bytes": 2758
+    },
+    {
+      "path": "include/iopmod/module/stdio.h",
+      "sha256": "1962a50ba39cbd3faaa87658894efa7aea959b856e4e014221fa4aa91e188dc4",
+      "bytes": 753
+    },
+    {
+      "path": "include/iopmod/module/thread.h",
+      "sha256": "3967834a5bdc3795cac56250977e11388a74e7ed37ad6c5426d763f7d5faec40",
+      "bytes": 6332
+    },
+    {
+      "path": "include/iopmod/printk.h",
+      "sha256": "bf7370f1155992dee4bec866ebb0beb56b8528660c251147da2cb9acc819f034",
+      "bytes": 2284
+    },
+    {
+      "path": "include/iopmod/processor.h",
+      "sha256": "a57a963a076f2025042672e4b47a60bdfa1c139f297ef9af795268f1567996fc",
+      "bytes": 300
+    },
+    {
+      "path": "include/iopmod/sif.h",
+      "sha256": "c224ec0c752ccd525b22c0bc715ce7b85f79c0e946a249f2e797343df680876b",
+      "bytes": 2308
+    },
+    {
+      "path": "include/iopmod/sifcmd.h",
+      "sha256": "cdbbd81a0f9e8de30e92c6d058c23d7407506802613d0482836757394b5515cd",
+      "bytes": 3878
+    },
+    {
+      "path": "include/iopmod/sifman.h",
+      "sha256": "2c6bec1a3584b4d7d0267f04b9bf489c5128b10d2fd0055e3c07db3f61f9c959",
+      "bytes": 1368
+    },
+    {
+      "path": "include/iopmod/sio2.h",
+      "sha256": "f096b0e1b3f0a6f5bc1b07999816e96369e5b3057addf162bca253b0292cb7f3",
+      "bytes": 10503
+    },
+    {
+      "path": "include/iopmod/spd-irq.h",
+      "sha256": "2af7d59c206384f7d4884533bfd9fc010674482f72b772957de1d6ca3972dade",
+      "bytes": 640
+    },
+    {
+      "path": "include/iopmod/spd.h",
+      "sha256": "a80bef05c16e1a911416a510d4d9e9d0a09d064a3f2f16d36d3778d00af894e3",
+      "bytes": 643
+    },
+    {
+      "path": "include/iopmod/stdarg.h",
+      "sha256": "07562535c807c3bb5a8edf02631831bbc9abfb1d2b02351a2a08a4fe86b1db70",
+      "bytes": 57
+    },
+    {
+      "path": "include/iopmod/stdio.h",
+      "sha256": "e557d157b522f52f69114a984bd9639baf9ecf72cb8fe40a9fbcb76e025dad58",
+      "bytes": 232
+    },
+    {
+      "path": "include/iopmod/string.h",
+      "sha256": "72f6ae614704e44ae1d4ad7f558c59139d1c850c9a2a1a16db1596d8a097fa92",
+      "bytes": 280
+    },
+    {
+      "path": "include/iopmod/struct.h",
+      "sha256": "3dc50c47fe7396287b8aa47bb451207f0fb77ce14ef34579e7a6a0f07d32f42e",
+      "bytes": 718
+    },
+    {
+      "path": "include/iopmod/thread.h",
+      "sha256": "57827b38945318c04171f8972f79ad45f0028dee1e682f6fe2846b7cf0358008",
+      "bytes": 3521
+    },
+    {
+      "path": "include/iopmod/tool/elf.h",
+      "sha256": "3220f17fc3d51ea0a4906f8e1efbf52f4fc7a2151d774d947949ea4abc1d3445",
+      "bytes": 2056
+    },
+    {
+      "path": "include/iopmod/tool/elf32.h",
+      "sha256": "cf553eaf54c32da4931b4c3826e4aabf4322698f0a8accd3697de4dc08e1129b",
+      "bytes": 994
+    },
+    {
+      "path": "include/iopmod/tool/file.h",
+      "sha256": "e93623a82ceb1c70234644209c37bc68deb3924a0c33dc4ba228f707d6dcf78d",
+      "bytes": 929
+    },
+    {
+      "path": "include/iopmod/tool/irx.h",
+      "sha256": "0f2c00d86616cc1782958c719b503e7ba70923109ae7e07c9041df61e669f026",
+      "bytes": 3245
+    },
+    {
+      "path": "include/iopmod/tool/lexc.h",
+      "sha256": "26a2b8e7d297e04861a977d5ca6b84209b02ba1946be50f4d4ad30e354f96046",
+      "bytes": 6253
+    },
+    {
+      "path": "include/iopmod/tool/print.h",
+      "sha256": "b4a1ae92592726109eb55e811ff887e8c4e7f04406c0dbb9e4278b96d98a9ad4",
+      "bytes": 359
+    },
+    {
+      "path": "include/iopmod/tool/string.h",
+      "sha256": "531e3823b0f486dbe9fa466a010529b67015be9d0557f320882e8468f4d24dcd",
+      "bytes": 191
+    },
+    {
+      "path": "include/iopmod/tool/symtab.h",
+      "sha256": "6665280b35e3771a168f97c4d0aa21b405c81375bb52ab18b1761e20e9c62528",
+      "bytes": 3636
+    },
+    {
+      "path": "include/iopmod/tool/tool.h",
+      "sha256": "5178effa3b33824569b728de47836efe73595c32344b6556d3306924baed4888",
+      "bytes": 197
+    },
+    {
+      "path": "include/iopmod/typecheck.h",
+      "sha256": "6c1da17ea01efcc125084c4362fa0692bd086af6882d34171d583d4c812cd5b7",
+      "bytes": 680
+    },
+    {
+      "path": "include/iopmod/types.h",
+      "sha256": "6330d1293229239683b8eb92bc6ee6f3367a4e9cbe66dcb2f50b3152f98cf909",
+      "bytes": 1628
+    },
+    {
+      "path": "include/iopmod/version.h",
+      "sha256": "0926d3461f1265b553ce5ed3fef7c1fff65d158d453cfd56e579e9282500a3ef",
+      "bytes": 154
+    },
+    {
+      "path": "licence/GPL-2.0",
+      "sha256": "f6b78c087c3ebdf0f3c13415070dd480a3f35d8fc76f3d02180a407c1c812f79",
+      "bytes": 18729
+    },
+    {
+      "path": "licence/MIT",
+      "sha256": "323c587d0ccf10e376f8bf9a7f31fb4ca6078105194b42e0b1e0ee2bc9bde71f",
+      "bytes": 1372
+    },
+    {
+      "path": "module/Makefile",
+      "sha256": "1009b96fee659ee32313d8ca5356351d5948274ab91091e419a29a0a10155ba3",
+      "bytes": 1762
+    },
+    {
+      "path": "module/ata.c",
+      "sha256": "f4502439f79dc7f4475e99b7f4cc5760b8546e0fedb08eab678f48a5056cad1d",
+      "bytes": 9736
+    },
+    {
+      "path": "module/dev9.c",
+      "sha256": "5e1a1ba5200cf7570f83b339ec5d96be47dec04778fc70c8c7e3c724934f44cc",
+      "bytes": 1432
+    },
+    {
+      "path": "module/gamepad.c",
+      "sha256": "f1ed681431dddfc7569b71f3c7a6b53a30049374094ab54e99c2d2e98b2c365e",
+      "bytes": 4883
+    },
+    {
+      "path": "module/irq.c",
+      "sha256": "54c9b00c344ccdab2d09034f6a894c5bb1258bc033a44b32e87f91ed42555b57",
+      "bytes": 2565
+    },
+    {
+      "path": "module/irqrelay.c",
+      "sha256": "0ff99f837ae7b209bd7723984fde5162affc7c7a172b91b6a79fc8a0a8c26141",
+      "bytes": 5989
+    },
+    {
+      "path": "module/printk.c",
+      "sha256": "25a5691a6e05aea6f814bcf3987d3c2468cfa9c0de52378dc4591b25aacdefa9",
+      "bytes": 478
+    },
+    {
+      "path": "script/iop.ld",
+      "sha256": "8ed6c6c8733221088a33ed29664fac8817b7a3ff82e19f75566dc22915d5926a",
+      "bytes": 976
+    },
+    {
+      "path": "script/iopmod-modc",
+      "sha256": "5e2292b4cf50a6b7da03276d801f1f8b5ed18cf4081d3c8db4a5ce5c439e2396",
+      "bytes": 408
+    },
+    {
+      "path": "script/version",
+      "sha256": "c36f77952e22af63b48174df098c695a378ca85a08796533e97bdb6204caf5c8",
+      "bytes": 1203
+    },
+    {
+      "path": "tool/.gitignore",
+      "sha256": "26ce706a62b3657c262bf89c06d3895550d7c39068ea3ec3ceda75f629c5f59e",
+      "bytes": 46
+    },
+    {
+      "path": "tool/Makefile",
+      "sha256": "553013a01b5edcd291321eab1178f3493af12722d5f5fe11c20be51d56ab999e",
+      "bytes": 1351
+    },
+    {
+      "path": "tool/elf.c",
+      "sha256": "fb527bb4e422c27275cce3e38c6b58090161a93827b59799ae50421723a571af",
+      "bytes": 4588
+    },
+    {
+      "path": "tool/elf32.c",
+      "sha256": "6a869372b55daa615b4b9adee7c135b4f0e8f4c763d16b2989e7d0dbe95d29bc",
+      "bytes": 180
+    },
+    {
+      "path": "tool/file.c",
+      "sha256": "3eeff26c9848f99ad9cf27451d3a97ab87c08057b4c57a041d8fc7a03c00f37f",
+      "bytes": 3755
+    },
+    {
+      "path": "tool/iopmod-info.c",
+      "sha256": "335748aef0e41ea8945a4e22e2b17f1c55333ab0eaab458bd5a95e45f484a660",
+      "bytes": 8905
+    },
+    {
+      "path": "tool/iopmod-link.c",
+      "sha256": "8b3bc7460c414b8942420be299741c12a1d1dba60aa2971dee341ee77a07fccb",
+      "bytes": 3276
+    },
+    {
+      "path": "tool/iopmod-symc.c",
+      "sha256": "f364830638859a7d0552dd351dc51beed19b69d83df0b26a06a879002213387e",
+      "bytes": 17231
+    },
+    {
+      "path": "tool/irx.c",
+      "sha256": "e8bad7b91ac82b607f33e0d3d55baa5f82bb6e7ff1c1efbe0686a4c43709ea02",
+      "bytes": 5041
+    },
+    {
+      "path": "tool/lexc.c",
+      "sha256": "298c03d9cf0bea4ca6535bf153c17584b4e33296078a7b2c45f7048a0d6d135f",
+      "bytes": 11641
+    },
+    {
+      "path": "tool/print.c",
+      "sha256": "031d1e4634f2e2df19fd304f23be8c3434333efe27472250b8ec4db738ed1edb",
+      "bytes": 1094
+    },
+    {
+      "path": "tool/string.c",
+      "sha256": "90c6b9586e139bffc08a7e2cbd04d6f4ee36fb0b28c80fcc5bde15834d07f724",
+      "bytes": 514
+    },
+    {
+      "path": "tool/symtab.c",
+      "sha256": "3be29ed747fd889d80ce7759515ee0259217742b53f7e013554afaca0cdf8853",
+      "bytes": 9365
+    }
+  ]
+}

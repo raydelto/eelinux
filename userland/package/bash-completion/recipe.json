@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "bash-completion",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.bash-completion",
+  "symbol": "BR2_PACKAGE_BASH_COMPLETION",
+  "version": "2.18.0",
+  "recipe": "package/bash-completion/bash-completion.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "88bcf85124f77f74f2f2f8bcd16ac4382d807a827ede742a64940c7116aea33f",
+      "filename": "bash-completion-2.18.0.tar.xz"
+    }
+  ],
+  "release_url": "https://github.com/scop/bash-completion/releases/latest"
+}

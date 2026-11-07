@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-02",
+  "patch_sha256": "f3414004ae9540786772e20d1cfefd5b9739ea822130e73bc21abfc91aefffa2",
+  "cause": "Modern cpu_probe_vmbits and EntryHi helpers used DMTC0/DMFC0 on R5900; EE needs 32-bit CP0 transfers",
+  "binary_audit": "No 64-bit EntryHi transfers in the current complete vmlinux disassembly",
+  "other_MIPS_64bit_CP0_behavior_preserved": true,
+  "R5900_64bit_integer_ISA_preserved": true,
+  "user_confirmed_physical_Linux_text_and_init": true,
+  "physical_machine": "SCPH-90001, Tuna/LaunchELF, PS2-to-HDMI, PAL",
+  "user_measured_image_hash": false,
+  "physical_USB_root_or_login_confirmed": false,
+  "previous_candidate_physical_USB_mount_user_confirmed": false,
+  "physical_login_user_confirmed": false,
+  "latest_candidate_kernel_sha256": "1a1d01b0488b47279de30606c9069260dbf33cc51e20dcb5c04e9eddcdadc284",
+  "sources": [
+    "https://sourceware.org/legacy-ml/binutils/2012-12/msg00045.html",
+    "https://github.com/PCSX2/pcsx2/blob/v2.6.3/pcsx2/R5900OpcodeImpl.cpp"
+  ]
+}

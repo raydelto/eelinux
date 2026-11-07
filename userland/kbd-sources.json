@@ -1,0 +1,127 @@
+{
+  "schema": 1,
+  "name": "kbd",
+  "version": "2.10.0",
+  "license": "GPL-2.0-or-later",
+  "archive": {
+    "url": "https://www.kernel.org/pub/linux/utils/kbd/kbd-2.10.0.tar.xz",
+    "name": "kbd-2.10.0.tar.xz",
+    "sha256": "6e5ca4f8d76ee9e3a8db700b667f13e12aac9933828a64e1aaad93d26be9b479",
+    "root": "kbd-2.10.0"
+  },
+  "signature": {
+    "url": "https://www.kernel.org/pub/linux/utils/kbd/kbd-2.10.0.tar.sign",
+    "name": "kbd-2.10.0.tar.sign",
+    "sha256": "69cacd82614b206015f554478db73fb47f4d33fb1d1f032e9ee825d175691721",
+    "signs": "uncompressed tar archive",
+    "fingerprint": "7F2A3D07298149A0793C9A4EA45ABA544CFFD434",
+    "public_key": "userland/keys/kbd-maintainer.asc",
+    "public_key_sha256": "3fdbec58eddf14f2c8ea186e265b3ceeaed15bede30000e6d194b6e948411153",
+    "public_key_source": "https://github.com/legionus.gpg",
+    "key_identity": "Alexey Gladkov <legion@kernel.org>",
+    "key_authentication": "Pinned fingerprint and key fetched over HTTPS from the upstream maintainer profile; no independent web-of-trust certification is claimed"
+  },
+  "checksum_provenance": {
+    "url": "https://www.kernel.org/pub/linux/utils/kbd/sha256sums.asc",
+    "retrieved": "2026-10-02",
+    "file_sha256": "3149ebc1204f97049a8f38aee42bd8cdb2c9b1ecfe278b3d74c775746b824407",
+    "archive_entry_matched": true,
+    "checksum_list_pgp_signature_verified": false,
+    "developer_tar_signature_verified": true
+  },
+  "files": {
+    "COPYING": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+    "data/keymaps/i386/qwerty/uk.map": "ee28938387177da5c19d8e3062605a173ecc82e38550b36af9cd7e141765930a",
+    "data/keymaps/i386/include/qwerty-layout.inc": "c11c01db868b1d95b04841329dfc16ff7373b8e2b19374d6a8c9d219f63b8125",
+    "data/keymaps/i386/include/linux-with-alt-and-altgr.inc": "d00a99c0dd22c69e32e72f8c9377fb0ff6311d2a49453670e60c0a9392bc450e",
+    "data/keymaps/i386/include/linux-keys-bare.inc": "ff9d468bafdabe7346140d4ef55713660435f235c39ba2eedcb620f4cc1e4282",
+    "data/keymaps/i386/include/compose.inc": "bbe6e0ff6fc543728665f6341fbbaa37ebb29c0646f08f16af45deb705e98262"
+  },
+  "layouts": {
+    "us": {
+      "source": "data/keymaps/i386/qwerty/us.map",
+      "sha256": "b264b51545486aa83c52446490841285efd611ba478c834e2b84f3c4fc9d1545"
+    },
+    "gb": {
+      "source": "data/keymaps/i386/qwerty/uk.map",
+      "sha256": "ee28938387177da5c19d8e3062605a173ecc82e38550b36af9cd7e141765930a"
+    },
+    "pt": {
+      "source": "data/keymaps/i386/qwerty/pt-latin1.map",
+      "sha256": "dc1454afd5fc6862ab015ebffcf3e29081099be44a7004cd12354dd4df23800d"
+    },
+    "es": {
+      "source": "data/keymaps/i386/qwerty/es.map",
+      "sha256": "fd2e37f4b159aa529af53808670643473296e0314aa37690578460acd4ecec77"
+    },
+    "fr": {
+      "source": "data/keymaps/i386/azerty/fr-latin9.map",
+      "sha256": "b2553c54bea4702997023ab1f2089b979a640e2ca04591331f15c9d16da107a6"
+    },
+    "de": {
+      "source": "data/keymaps/i386/qwertz/de-latin1-nodeadkeys.map",
+      "sha256": "84e338d729dde420e625674c241d8a7676b525772a43baf0196616fbf097e516"
+    },
+    "it": {
+      "source": "data/keymaps/i386/qwerty/it.map",
+      "sha256": "259f2c0bac539644ce8c416db978b95c3293ddec9737daa9a5c796d34be0f2f4"
+    },
+    "br": {
+      "source": "data/keymaps/i386/qwerty/br-abnt2.map",
+      "sha256": "53d6471c8f7c9d44138b7b78f3f71d92487dfac2260449163c97a18bfb8f1a18"
+    },
+    "nl": {
+      "source": "data/keymaps/i386/qwerty/nl.map",
+      "sha256": "2684059bd7f5f0054a857da322806ecf468bd38c2a013441edf3d3cdb3ea1601"
+    },
+    "se": {
+      "source": "data/keymaps/i386/qwerty/sv-latin1.map",
+      "sha256": "c233f40bbdcb853d21d5d46a5ced84de4cf607a1f5f2462ea594dec0d1cbf1f8"
+    },
+    "fi": {
+      "source": "data/keymaps/i386/qwerty/fi.map",
+      "sha256": "67a08a53eba511b489ab8c58b0a7391998adb114d404012d8ada3e6cc49ec783"
+    },
+    "dk": {
+      "source": "data/keymaps/i386/qwerty/dk-latin1.map",
+      "sha256": "80b5bc8e500d76e446b41f9a58ad6fe92d27148d781f2057251470c36af77466"
+    },
+    "no": {
+      "source": "data/keymaps/i386/qwerty/no-latin1.map",
+      "sha256": "f0ae25e11c2b55e79b69a697fae9366aa2e4f73e0ad167f8d969570251d53499"
+    },
+    "pl": {
+      "source": "data/keymaps/i386/qwerty/pl.map",
+      "sha256": "995a5f87e270b0c1ca1c1caf6cb057998e550e5d2e3fa31f35090bfaae39e61a"
+    },
+    "cz": {
+      "source": "data/keymaps/i386/qwertz/cz.map",
+      "sha256": "757cc201751b929aef7a68a062045253ea6641cefb56357bc443f57916ac1e26"
+    },
+    "hu": {
+      "source": "data/keymaps/i386/qwertz/hu.map",
+      "sha256": "793b6bbf80e413ba2deae577d288e5e4e55226f20def1f6546ef56d622804e7f"
+    },
+    "tr": {
+      "source": "data/keymaps/i386/qwerty/trq.map",
+      "sha256": "82736b0b97322990b6141438118c17a66d0e1aeefb0b555b97fc8916bf2f0447"
+    },
+    "ro": {
+      "source": "data/keymaps/i386/qwerty/ro.map",
+      "sha256": "9e6e07c5b105837e6527ab0a4ac75acd5a4bfc1dab171bf49d64126ac44dd900"
+    },
+    "ru": {
+      "source": "data/keymaps/i386/qwerty/ru.map",
+      "sha256": "f38fff77b96d4971dad9e1a0a426300002c43a98450601802bcfa3979cb80125"
+    },
+    "ua": {
+      "source": "data/keymaps/i386/qwerty/ua.map",
+      "sha256": "a5d17aca06e0eb11507f1995d1dec85e9bac37dd467982a9757d3bc3a3be6ab9"
+    },
+    "us-dvorak": {
+      "source": "data/keymaps/i386/dvorak/dvorak.map",
+      "sha256": "b86328c4a60efa8d7b5f2e63a3d71f83a7557156126cd5811580cc6f5eda3ea1"
+    }
+  },
+  "default_layout": "us"
+}

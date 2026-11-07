@@ -1,0 +1,203 @@
+{
+  "date": "2026-10-02",
+  "physical_console": "SCPH-90001, Tuna/LaunchELF, PAL",
+  "last_user_photo": "relay-v3: LOADFILE RPC 6 / IRQ relay, DMA 0x200044; earlier SMAP -145",
+  "old_relay_layout": {
+    "sha256": "96ba5b79cecd78d62c83ec8e0a785a2801485648ed5b2dab2b8db31c63e301e3",
+    "file_bytes": 9336,
+    "load_file_bytes": 6262,
+    "load_memory_bytes": 6424,
+    "text_bytes": 6120,
+    "data_bytes": 0,
+    "bss_bytes": 152,
+    "file_boundary_word_aligned": false,
+    "module_sizes_match_load": false
+  },
+  "new_firmware_layouts": {
+    "ata.irx": {
+      "sha256": "a0d91721fa06dc7d50632bf6335cfda0a33c4c62401c4e905afa792e432faa74",
+      "file_bytes": 29092,
+      "load_file_bytes": 25600,
+      "load_memory_bytes": 25600,
+      "text_bytes": 9088,
+      "data_bytes": 16512,
+      "bss_bytes": 0,
+      "file_boundary_word_aligned": true,
+      "module_sizes_match_load": true
+    },
+    "dev9.irx": {
+      "sha256": "95936332510cee9c41d62f8a78e708f3a773d5df5d9902934ab2bc95cbe57711",
+      "file_bytes": 16108,
+      "load_file_bytes": 11328,
+      "load_memory_bytes": 11520,
+      "text_bytes": 11312,
+      "data_bytes": 16,
+      "bss_bytes": 192,
+      "file_boundary_word_aligned": true,
+      "module_sizes_match_load": true
+    },
+    "gamepad.irx": {
+      "sha256": "9995ce395c3f0c452a634428791907626e22315650a9dcedded070f0431008c9",
+      "file_bytes": 12004,
+      "load_file_bytes": 8208,
+      "load_memory_bytes": 8240,
+      "text_bytes": 8208,
+      "data_bytes": 0,
+      "bss_bytes": 32,
+      "file_boundary_word_aligned": true,
+      "module_sizes_match_load": true
+    },
+    "irq.irx": {
+      "sha256": "8cea3261c5c44f84d02b93eda81612c5a0a00e3976aa24569a805757b6e46720",
+      "file_bytes": 9596,
+      "load_file_bytes": 6992,
+      "load_memory_bytes": 7104,
+      "text_bytes": 6992,
+      "data_bytes": 0,
+      "bss_bytes": 112,
+      "file_boundary_word_aligned": true,
+      "module_sizes_match_load": true
+    },
+    "irqrelay.irx": {
+      "sha256": "91ab6816422bb437a55123e05e5bc91561f631259c2a6a43b18555101ef72d20",
+      "file_bytes": 9308,
+      "load_file_bytes": 6272,
+      "load_memory_bytes": 6432,
+      "text_bytes": 6272,
+      "data_bytes": 0,
+      "bss_bytes": 160,
+      "file_boundary_word_aligned": true,
+      "module_sizes_match_load": true
+    },
+    "printk.irx": {
+      "sha256": "87c9d03b518a3fbfbdea1833b022115ba0bddfdecaf78b85c2bd0f25c160b9bc",
+      "file_bytes": 10244,
+      "load_file_bytes": 8640,
+      "load_memory_bytes": 8640,
+      "text_bytes": 8640,
+      "data_bytes": 0,
+      "bss_bytes": 0,
+      "file_boundary_word_aligned": true,
+      "module_sizes_match_load": true
+    }
+  },
+  "changes": [
+    "IRX upload through SIF1 DMA with aligned allocations and zero tails",
+    "No blocking relay-entry printk, 4096-byte RPC thread stack",
+    "One stall report and phase changes through an owned/detached mailbox",
+    "Merge rodata into text, align file/BSS boundaries; include section gaps in module sizes"
+  ],
+  "private_injected_stall": {
+    "scope": "holds relay entry before CreateThread; never returns",
+    "old_kernel_log_sha256": "04a26a8c67c97a558fb74556e76fd761e889c929112658317dd8cc666011c8be",
+    "old_result": "phase 0; expected phase 2 not observed",
+    "new_kernel_sha256": "7bdc0ef77b22793dc4af4bb69cdb1f617e240de05022ab99a372108c878975fb",
+    "new_log_sha256": "a5c1888fb4a3c866cfba751aea5551385175b248e9f7fb56712efa19b4eb9d52",
+    "phase_2_observed": true,
+    "stall_warning_count": 1,
+    "phase_report_count": 1,
+    "wall_time_limit_seconds": 90,
+    "process_result": {
+      "pcsx2_version": "PCSX2 v2.6.3",
+      "runtime_selection": {
+        "requested_program": "C:\\Program Files\\PCSX2\\pcsx2-qt.exe",
+        "executable_sha256": "c8e14d5a0c9f8d2c4f687b94d6806226f698e46a5cfea3a9b92f2a36c84c5a91",
+        "runtime_manifest_sha256": "b0f82fade9089c2af2281312937cf2c2fbbcfff5773a12ef6cf48509392117db",
+        "mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85"
+      },
+      "last_invocation": "kernel boot attempt",
+      "configuration_method": "portable runtime copy",
+      "configuration_sha256_before_launch": "d7865cbc01971755037614f525a61328d2fc39eb7bc2ae7551504b8eae99f4e3",
+      "bios_configured": true,
+      "audio_backend": "Null",
+      "log_file": "pcsx2-profile/PCSX2/logs/emulog.txt",
+      "log_mode": "normal",
+      "ee_cpu_mode": "interpreter",
+      "iop_cpu_mode": "interpreter",
+      "cli_capabilities": {
+        "version": "PCSX2 v2.6.3",
+        "options": [
+          "-batch",
+          "-bigpicture",
+          "-bios",
+          "-debugger",
+          "-disc",
+          "-earlyconsolelog",
+          "-elf",
+          "-fastboot",
+          "-fullscreen",
+          "-gameargs",
+          "-help",
+          "-logfile",
+          "-nofullscreen",
+          "-nogui",
+          "-portable",
+          "-raintegration",
+          "-setupwizard",
+          "-slowboot",
+          "-state",
+          "-statefile",
+          "-testconfig",
+          "-version"
+        ],
+        "help_exit_code": 1
+      },
+      "pcsx2_arguments": [
+        "-portable",
+        "-batch",
+        "-elf"
+      ],
+      "pcsx2_exit_code": null,
+      "timed_out": true,
+      "configuration_check_only": false,
+      "linux_boot_pass": null,
+      "note": "exit code/configuration check is not a Linux boot result"
+    },
+    "not_a_boot_test": true,
+    "private_probe_in_release": false
+  },
+  "normal_guest": {
+    "kernel_sha256": "dd8a5bce87d18c450526e4121dfc40dcf8bb28df54ca95ccdf08bcd46f629d96",
+    "checks": {
+      "OHCI: IRQ relay firmware ready": true,
+      "OHCI: controller running": true,
+      "USB hub found": true,
+      "sda: sda1 sda2": true,
+      "EXT4-fs (sda2): mounted filesystem": true,
+      "EXT4-fs (sda2): re-mounted": true,
+      "keyboard probe: overall=PASS": true,
+      "automatic_IPv4": true,
+      "default via 192.0.2.1": true,
+      "eth0: leased 192.0.2.100": true,
+      "DNS search PCSX2": true,
+      "manual_default_config_rebind_result=0": true,
+      "2 packets transmitted, 2 received, 0% packet loss": true,
+      "external_ping_result=0": true,
+      "DNS_lookup_result=0": true,
+      "final_rx_errors=0": true,
+      "final_tx_errors=0": true,
+      "eeLinux CP0 probe: complete": true
+    },
+    "guest_log_sha256": "60a11187830e30d2f4e4fd689b95cde109d43bd62813ecf7754f3388fe734a90",
+    "rx_errors": 0,
+    "tx_errors": 0
+  },
+  "host_checks": {
+    "date": "2026-10-02",
+    "command": "make check",
+    "exit_code": 0,
+    "suite_counts": [
+      194,
+      31
+    ],
+    "total_tests": 225,
+    "imported_files": 437
+  },
+  "physical_acceptance": "pending user retest; exact physical stall cause not yet confirmed",
+  "sources": [
+    "https://github.com/ps2dev/ps2sdk/blob/master/iop/system/loadcore/src/loadcore.c",
+    "https://github.com/ps2dev/ps2sdk/blob/master/ee/kernel/src/loadfile.c",
+    "https://github.com/ps2dev/ps2sdk/blob/master/iop/system/sifcmd/src/sifrpc.c"
+  ],
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

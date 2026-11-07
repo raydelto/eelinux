@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xmessage",
+  "kind": "application",
+  "program": "xmessage",
+  "version": "1.0.7",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xmessage-1.0.7.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xmessage-1.0.7.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "703fccb7a0b772d61d7e603c189b9739866aa97ba985c727275420f829a30356",
+      "filename": "xmessage-1.0.7.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "0c44f7973f7ed8d7993aaeb457a8921301cb0de905e45d92bd99d49463223b54c704a28bef376fe6038b4aec7156be873a34294741c8537bb7a5a57e1f152cce",
+      "filename": "xmessage-1.0.7.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

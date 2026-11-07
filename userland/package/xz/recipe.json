@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "name": "xz",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "5.8.4",
+    "url": "https://github.com/tukaani-project/xz/releases/download/v5.8.4/xz-5.8.4.tar.bz2",
+    "filename": "xz-5.8.4.tar.bz2",
+    "sha256": "3340ae48f88665abc78d71dc43446fb3f7e70b48fd59844ac0e14958cef6e00b",
+    "checked": "2026-10-05",
+    "verification": "SHA256 pinned from upstream HTTPS archive; no signature claim"
+  },
+  "source_archive": "../../sources/xz-5.8.4.tar.bz2",
+  "configure_options": [],
+  "configure_environment": {},
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false
+}

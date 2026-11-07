@@ -1,0 +1,4 @@
+config BR2_PACKAGE_EELINUX_AUTOMAKE
+	bool "GNU automake on the target"
+	select BR2_PACKAGE_EELINUX_AUTOCONF
+	select BR2_PACKAGE_PERL

@@ -1,0 +1,390 @@
+{
+  "sources": [
+    {
+      "name": "binutils",
+      "version": "2.47",
+      "project_path": "build/toolchain/sources/binutils-2.47.tar.xz",
+      "bytes": 29034716,
+      "sha256": "154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff",
+      "algorithm": "sha256",
+      "digest": "154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff"
+    },
+    {
+      "name": "gcc",
+      "version": "16.2.0",
+      "project_path": "build/toolchain/sources/gcc-16.2.0.tar.xz",
+      "bytes": 107200820,
+      "sha256": "e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e",
+      "algorithm": "sha512",
+      "digest": "c51c30ca7422d0cbecf504b2e0f33c3aca31e0f90a76b65217f465163fa6fa17b3f5de39e145c47e5bab90ac0ce7fff3b03c8d553ae36e01faaea5a50f8648d1"
+    },
+    {
+      "name": "glibc",
+      "version": "2.44",
+      "project_path": "build/toolchain/sources/glibc-2.44.tar.xz",
+      "bytes": 20620544,
+      "sha256": "37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667",
+      "algorithm": "sha256",
+      "digest": "37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667"
+    }
+  ],
+  "source_lock_sha256": "0a995f3bdf30381ad28dbfb65496aa6f8d9cdc37fec15de4c39c79690f2fbe7a",
+  "prefix": "/home/machaddr/.local/eelinux-linux-latest",
+  "legacy_compiler_prefix_preserved": "/home/machaddr/.local/eelinux-linux",
+  "status": "complete; four bounded GNU R5900 runtime smoke cases passed",
+  "bootstrap_target_runtime_flags": {
+    "CFLAGS_FOR_TARGET": "-O2 -g -march=r5900 -mabi=32 -msoft-float -mfix-r5900 -mno-llsc",
+    "CXXFLAGS_FOR_TARGET": "-O2 -g -march=r5900 -mabi=32 -msoft-float -mfix-r5900 -mno-llsc"
+  },
+  "glibc_signature_verified": true,
+  "glibc_signing_key": "FD19E6D31B192EE4DC63EAD3DC2B16215ED5412A",
+  "headers_source": "frno7 PS2 Linux 5.4.221, complete verified source tree",
+  "minimum_kernel": "5.4.0",
+  "completed_stages": [
+    "binutils",
+    "gcc-bootstrap",
+    "glibc",
+    "gcc-final"
+  ],
+  "legacy_validation_preserved": true,
+  "compatibility_fix": {
+    "glibc": "2.44",
+    "required_flag": "-mllsc",
+    "reason": "GCC lock-free 32-bit atomic builtins; actual GCC 16.2 probe and original glibc assertion failure preserved",
+    "hardware_llsc": false,
+    "requires_linux_reserved_instruction_emulation": true,
+    "assertions_removed": false,
+    "glibc_source_modified": false,
+    "prior_stages_rerun_all_and_install": true
+  },
+  "bootstrap_recipe_sha256": "031edd411feb4131863df9642be4dba48f43bb156e01318f5d0ffd6e79a061de",
+  "glibc_compiler_command": "/home/machaddr/.local/eelinux-linux-latest/bin/mipsr5900el-unknown-linux-gnu-gcc -march=r5900 -mabi=32 -msoft-float -mfix-r5900 -mllsc",
+  "glibc_install_complete": true,
+  "legacy_compiler_programs_and_libc_hashes_unchanged": true,
+  "legacy_preserved_file_count": 5,
+  "final_target_runtime_flags": {
+    "CFLAGS_FOR_TARGET": "-O2 -g -march=r5900 -mabi=32 -msoft-float -mfix-r5900 -mno-llsc",
+    "CXXFLAGS_FOR_TARGET": "-O2 -g -march=r5900 -mabi=32 -msoft-float -mfix-r5900 -mno-llsc"
+  },
+  "header_export_fix": {
+    "command": "make -B ARCH=mips archheaders headers_install",
+    "generated_mips_syscall_headers": 6,
+    "export_verified": true,
+    "source_modified": false,
+    "prior_completed_stamps_preserved": true,
+    "incremental_all_and_install_required": true,
+    "failure_proof": "build/verification/toolchain-latest-header-failure",
+    "incremental_all_and_install_completed": true
+  },
+  "previous_glibc_install_passed_before_header_repair": true,
+  "headers_source_reference": {
+    "repository": "https://github.com/frno7/linux.git",
+    "revision": "77174dd4c8958a91aa5b76fb064a60eb68119e70",
+    "version": "5.4.221",
+    "actual_checkout_revision_verified": true,
+    "installed_header_hash_report": "build/verification/toolchain-latest-header-failure/header-export-validation.json"
+  },
+  "final_gcc_c_and_cxx_install_complete": true,
+  "incremental_header_repair_build_exit_code": 0,
+  "incremental_header_repair_build_wall_seconds": 1412.7256803512573,
+  "program_versions": {
+    "gcc": "mipsr5900el-unknown-linux-gnu-gcc (GCC) 16.2.0",
+    "g++": "mipsr5900el-unknown-linux-gnu-g++ (GCC) 16.2.0",
+    "as": "GNU assembler (GNU Binutils) 2.47.20260726",
+    "ld": "GNU ld (GNU Binutils) 2.47.20260726",
+    "readelf": "GNU readelf (GNU Binutils) 2.47.20260726"
+  },
+  "installed_programs": [
+    {
+      "path_from_prefix": "bin/mipsr5900el-unknown-linux-gnu-gcc",
+      "bytes": 18429480,
+      "sha256": "38faf931f66437ed1044bca20a95eed315c65b30d02b2cab89d5bbaf71361a1d"
+    },
+    {
+      "path_from_prefix": "bin/mipsr5900el-unknown-linux-gnu-g++",
+      "bytes": 18442008,
+      "sha256": "cee0844e15679c385c9f3d9f90a5d89676e8b5bc8038677dc94f210cd2248a8a"
+    },
+    {
+      "path_from_prefix": "bin/mipsr5900el-unknown-linux-gnu-as",
+      "bytes": 9927104,
+      "sha256": "f7c8c2c02a13dcb8c1cd9cc731e775678a7be59e961f00195a719e8db4d42e43"
+    },
+    {
+      "path_from_prefix": "bin/mipsr5900el-unknown-linux-gnu-ld",
+      "bytes": 12098632,
+      "sha256": "6ed7c0da482f5fb4d3df9b6e5eff00e2350cdd664c904186f7460eb5dd24525f"
+    },
+    {
+      "path_from_prefix": "bin/mipsr5900el-unknown-linux-gnu-readelf",
+      "bytes": 4248000,
+      "sha256": "780593da003d233cfc73c9b72504e4478e08525f5c7b29285550719ea9fb0b8f"
+    }
+  ],
+  "target_runtime_libraries": [
+    {
+      "name": "libgcc.a",
+      "path_from_prefix": "lib/gcc/mipsr5900el-unknown-linux-gnu/16.2.0/libgcc.a",
+      "bytes": 6946786,
+      "sha256": "a78b023e755ebddab6e7bcf640f0d9e36c99488117958ed1229d0383fc9de3b0"
+    },
+    {
+      "name": "libgcc_s.so.1",
+      "path_from_prefix": "mipsr5900el-unknown-linux-gnu/lib/libgcc_s.so.1",
+      "bytes": 1876540,
+      "sha256": "b278a53779678e6fcae8de63803263a9682c915db7153582e3f036a55cc9be0d",
+      "elf_attributes": "Attribute Section: gnu\nFile Attributes\n  Tag_GNU_MIPS_ABI_FP: Soft float\n\nMIPS ABI Flags Version: 0\n\nISA: MIPS3\nGPR size: 32\nCPR1 size: 0\nCPR2 size: 0\nFP ABI: Soft float\nISA Extension: Toshiba R5900\nASEs:\n\tNone\nFLAGS 1: 00000001\nFLAGS 2: 00000000"
+    },
+    {
+      "name": "libstdc++.a",
+      "path_from_prefix": "mipsr5900el-unknown-linux-gnu/lib/libstdc++.a",
+      "bytes": 37079648,
+      "sha256": "daa0b4263a6c7b8331217235d04007d79336abc78b527654fc0f4abfb6bb1b2f"
+    },
+    {
+      "name": "libstdc++.so.6",
+      "path_from_prefix": "mipsr5900el-unknown-linux-gnu/lib/libstdc++.so.6.0.36",
+      "bytes": 22548424,
+      "sha256": "6e9d08f749e06e798b9019f338b0424747fe64c51556fca8067f1181d249d02c",
+      "elf_attributes": "Attribute Section: gnu\nFile Attributes\n  Tag_GNU_MIPS_ABI_FP: Soft float\n\nMIPS ABI Flags Version: 0\n\nISA: MIPS3\nGPR size: 32\nCPR1 size: 0\nCPR2 size: 0\nFP ABI: Soft float\nISA Extension: Toshiba R5900\nASEs:\n\tNone\nFLAGS 1: 00000001\nFLAGS 2: 00000000"
+    },
+    {
+      "name": "libgomp.so.1",
+      "path_from_prefix": "mipsr5900el-unknown-linux-gnu/lib/libgomp.so.1.0.0",
+      "bytes": 1770304,
+      "sha256": "e5b68f4f37ce294f21a3e44e4eeb55151ef58bcd8fe4557374e70aaba91d4b08",
+      "elf_attributes": "Attribute Section: gnu\nFile Attributes\n  Tag_GNU_MIPS_ABI_FP: Soft float\n\nMIPS ABI Flags Version: 0\n\nISA: MIPS3\nGPR size: 32\nCPR1 size: 0\nCPR2 size: 0\nFP ABI: Soft float\nISA Extension: Toshiba R5900\nASEs:\n\tNone\nFLAGS 1: 00000001\nFLAGS 2: 00000000"
+    },
+    {
+      "name": "libatomic.so.1",
+      "path_from_prefix": "mipsr5900el-unknown-linux-gnu/lib/libatomic.so.1.2.0",
+      "bytes": 130680,
+      "sha256": "7227692f7b7106c5ac6ccf111d5c260eea2ae4d9920de8a6ce8a5e003dd77b2b",
+      "elf_attributes": "Attribute Section: gnu\nFile Attributes\n  Tag_GNU_MIPS_ABI_FP: Soft float\n\nMIPS ABI Flags Version: 0\n\nISA: MIPS3\nGPR size: 32\nCPR1 size: 0\nCPR2 size: 0\nFP ABI: Soft float\nISA Extension: Toshiba R5900\nASEs:\n\tNone\nFLAGS 1: 00000001\nFLAGS 2: 00000000"
+    },
+    {
+      "name": "libc.so.6",
+      "path_from_prefix": "mipsr5900el-unknown-linux-gnu/sysroot/lib/libc.so.6",
+      "bytes": 12176620,
+      "sha256": "09bf73f432632cf1e8ba4b90289623eb422889be51f2a6b2d9556025f99bfcf6",
+      "elf_attributes": "Attribute Section: gnu\nFile Attributes\n  Tag_GNU_MIPS_ABI_FP: Soft float\n\nMIPS ABI Flags Version: 0\n\nISA: MIPS3\nGPR size: 32\nCPR1 size: 0\nCPR2 size: 0\nFP ABI: Soft float\nISA Extension: Toshiba R5900\nASEs:\n\tNone\nFLAGS 1: 00000001\nFLAGS 2: 00000000"
+    }
+  ],
+  "runtime_smoke": {
+    "status": "passed",
+    "test_count": 4,
+    "report": "build/verification/toolchain-latest-smoke.json",
+    "report_sha256": "4fa91d8a4ea7b27ce8b83502b6f08304ac40a196051bd229b47a8829554ef64c",
+    "tests": [
+      {
+        "mode": "dynamic",
+        "exit_code": 0,
+        "stdout": "glibc 2.44: R5900 multiply, soft float, TLS, pthread and futex passed\n",
+        "stderr": "",
+        "passed": true,
+        "binary_sha256": "519f2f9045427fa32e64b95c88756ce765416329c3320503287901110b6c91f3",
+        "bytes": 47676,
+        "compile_command": [
+          "/home/machaddr/.local/eelinux-linux-latest/bin/mipsr5900el-unknown-linux-gnu-gcc",
+          "-march=r5900",
+          "-mabi=32",
+          "-msoft-float",
+          "-mno-llsc",
+          "-mfix-r5900",
+          "-Os",
+          "-pthread",
+          "/mnt/c/Users/sedzc/Documents/EEOS-Linux/toolchain/smoke.c",
+          "-o",
+          "/home/machaddr/.cache/eelinux-linux-latest/toolchain/smoke/gnu-runtime-dynamic"
+        ],
+        "test_source_sha256": "e4f24c0cf80d93d86409828281c252484699ff1d5fd6a4368235b694207fd29c"
+      },
+      {
+        "mode": "static",
+        "exit_code": 0,
+        "stdout": "glibc 2.44: R5900 multiply, soft float, TLS, pthread and futex passed\n",
+        "stderr": "",
+        "passed": true,
+        "binary_sha256": "b93d64b40e00a6117212a7185690ace32c0d29ae9cb57c15cda66395150190d4",
+        "bytes": 3641396,
+        "compile_command": [
+          "/home/machaddr/.local/eelinux-linux-latest/bin/mipsr5900el-unknown-linux-gnu-gcc",
+          "-march=r5900",
+          "-mabi=32",
+          "-msoft-float",
+          "-mno-llsc",
+          "-mfix-r5900",
+          "-Os",
+          "-pthread",
+          "/mnt/c/Users/sedzc/Documents/EEOS-Linux/toolchain/smoke.c",
+          "-static",
+          "-o",
+          "/home/machaddr/.cache/eelinux-linux-latest/toolchain/smoke/gnu-runtime-static"
+        ],
+        "test_source_sha256": "e4f24c0cf80d93d86409828281c252484699ff1d5fd6a4368235b694207fd29c"
+      },
+      {
+        "mode": "cxx-dynamic",
+        "exit_code": 0,
+        "stdout": "R5900 GNU C++ runtime passed\n",
+        "stderr": "",
+        "passed": true,
+        "binary_sha256": "a37b60db05a6b681199a299b9d000eb08a47f95e4a746ff2470a145da7d63f56",
+        "bytes": 12612,
+        "compile_command": [
+          "/home/machaddr/.local/eelinux-linux-latest/bin/mipsr5900el-unknown-linux-gnu-g++",
+          "-march=r5900",
+          "-mabi=32",
+          "-msoft-float",
+          "-mno-llsc",
+          "-mfix-r5900",
+          "-Os",
+          "-pthread",
+          "/mnt/c/Users/sedzc/Documents/EEOS-Linux/toolchain/smoke.cc",
+          "-o",
+          "/home/machaddr/.cache/eelinux-linux-latest/toolchain/smoke/gnu-runtime-cxx-dynamic",
+          "-latomic"
+        ],
+        "test_source_sha256": "5ede96e25ac0bc1354f1225ea52bd8c05c28703616975f8f273e5438631622e6"
+      },
+      {
+        "mode": "cxx-static",
+        "exit_code": 0,
+        "stdout": "R5900 GNU C++ runtime passed\n",
+        "stderr": "",
+        "passed": true,
+        "binary_sha256": "243055c7cf882815e0f51037e62da363a705790cf384eec12c1e17d661417320",
+        "bytes": 13344624,
+        "compile_command": [
+          "/home/machaddr/.local/eelinux-linux-latest/bin/mipsr5900el-unknown-linux-gnu-g++",
+          "-march=r5900",
+          "-mabi=32",
+          "-msoft-float",
+          "-mno-llsc",
+          "-mfix-r5900",
+          "-Os",
+          "-pthread",
+          "/mnt/c/Users/sedzc/Documents/EEOS-Linux/toolchain/smoke.cc",
+          "-static",
+          "-o",
+          "/home/machaddr/.cache/eelinux-linux-latest/toolchain/smoke/gnu-runtime-cxx-static",
+          "-latomic"
+        ],
+        "test_source_sha256": "5ede96e25ac0bc1354f1225ea52bd8c05c28703616975f8f273e5438631622e6"
+      }
+    ],
+    "runtime_hashes_unchanged": true,
+    "ps2_kernel_or_hardware_tested": false,
+    "scope": "Direct target ELF programs; Linux-user syscall and atomic behavior uses the host kernel",
+    "emulator_source_commit": "5f48e76da75409ac7aa23716c8a626d8f40539ef",
+    "emulator_sha256": "4d0fb1ebf2bc18bf7bd92f329ab070d6d2b032f3ad5c05167325740fec1b31a6"
+  },
+  "installed_limits_header_verified": true,
+  "required_mb_len_max": 16,
+  "common_recipe_sha256": "e8457ce3555c0530bdc0f61c0c82648e1a6fb52d509441b72abf7e9f9debd88d",
+  "actual_target_compile_evidence": {
+    "libgcc": "  /home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/./gcc/xgcc -B/home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/./gcc/ -B/home/machaddr/.local/eelinux-linux-latest/mipsr5900el-unknown-linux-gnu/bin/ -B/home/machaddr/.local/eelinux-linux-latest/mipsr5900el-unknown-linux-gnu/lib/ -isystem /home/machaddr/.local/eelinux-linux-latest/mipsr5900el-unknown-linux-gnu/include -isystem /home/machaddr/.local/eelinux-linux-latest/mipsr5900el-unknown-linux-gnu/sys-include    -O2 -g -march=r5900 -mabi=32 -msoft-float -mfix-r5900 -mno-llsc -minterlink-mips16 -O2  -O2 -g -march=r5900 -mabi=32 -msoft-float -mfix-r5900 -mno-llsc -minterlink-mips16 -DIN_GCC -DCROSS_DIRECTORY_STRUCTURE  -W -Wall -Wno-error=narrowing -Wwrite-strings -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes -Wold-style-definition  -isystem ./include  -fPIC -g -DIN_LIBGCC2 -fbuilding-libgcc -fno-stack-protector  -fPIC -I. -I. -I../.././gcc -I/home/machaddr/.cache/eelinux-linux-latest/toolchain/sources/gcc/gcc-16.2.0/libgcc -I/home/machaddr/.cache/eelinux-linux-latest/toolchain/sources/gcc/gcc-16.2.0/libgcc/. -I/home/machaddr/.cache/eelinux-linux-latest/toolchain/sources/gcc/gcc-16.2.0/libgcc/../gcc -I/home/machaddr/.cache/eelinux-linux-latest/toolchain/sources/gcc/gcc-16.2.0/libgcc/../include  -DHAVE_CC_TLS   -fvisibility=hidden -DHIDE_EXPORTS -c eh_dummy.c\t\t\\",
+    "libstdc++": "true \"AR_FLAGS=rc\" \"CC_FOR_BUILD=gcc\" \"CFLAGS=-O2 -g -march=r5900 -mabi=32 -msoft-float -mfix-r5900 -mno-llsc -minterlink-mips16\" \"CXXFLAGS=-O2 -g -march=r5900 -mabi=32 -msoft-float -mfix-r5900 -mno-llsc -D_GNU_SOURCE -minterlink-mips16\" \"CFLAGS_FOR_BUILD=-g -O2\" \"CFLAGS_FOR_TARGET=-O2 -g -march=r5900 -mabi=32 -msoft-float -mfix-r5900 -mno-llsc -minterlink-mips16\" \"EXPECT=expect\" \"INSTALL=/usr/bin/install -c\" \"INSTALL_DATA=/usr/bin/install -c -m 644\" \"INSTALL_PROGRAM=/usr/bin/install -c\" \"INSTALL_SCRIPT=/usr/bin/install -c\" \"JC1FLAGS=\" \"LDFLAGS=\" \"LIBCFLAGS=-O2 -g -march=r5900 -mabi=32 -msoft-float -mfix-r5900 -mno-llsc -minterlink-mips16\" \"LIBCFLAGS_FOR_TARGET=-O2 -g -march=r5900 -mabi=32 -msoft-float -mfix-r5900 -mno-llsc -minterlink-mips16\" \"MAKE=make\" \"MAKEINFO=makeinfo --split-size=5000000 --split-size=5000000  \" \"PICFLAG=\" \"PICFLAG_FOR_TARGET=\" \"SHELL=/bin/bash\" \"RUNTESTFLAGS=\" \"exec_prefix=/home/machaddr/.local/eelinux-linux-latest\" \"infodir=/home/machaddr/.local/eelinux-linux-latest/share/info\" \"libdir=/home/machaddr/.local/eelinux-linux-latest/lib\" \"prefix=/home/machaddr/.local/eelinux-linux-latest\" \"includedir=/home/machaddr/.local/eelinux-linux-latest/include\" \"AR=/home/machaddr/.local/eelinux-linux-latest/mipsr5900el-unknown-linux-gnu/bin/ar \" \"AS=/home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/./gcc/as\" \"CC=/home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/./gcc/xgcc -B/home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/./gcc/ -B/home/machaddr/.local/eelinux-linux-latest/mipsr5900el-unknown-linux-gnu/bin/ -B/home/machaddr/.local/eelinux-linux-latest/mipsr5900el-unknown-linux-gnu/lib/ -isystem /home/machaddr/.local/eelinux-linux-latest/mipsr5900el-unknown-linux-gnu/include -isystem /home/machaddr/.local/eelinux-linux-latest/mipsr5900el-unknown-linux-gnu/sys-include   \" \"CXX=/home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/./gcc/xg++ -B/home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/./gcc/ -nostdinc++ -nostdinc++ -I/home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/mipsr5900el-unknown-linux-gnu/libstdc++-v3/include/mipsr5900el-unknown-linux-gnu -I/home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/mipsr5900el-unknown-linux-gnu/libstdc++-v3/include -I/home/machaddr/.cache/eelinux-linux-latest/toolchain/sources/gcc/gcc-16.2.0/libstdc++-v3/libsupc++ -I/home/machaddr/.cache/eelinux-linux-latest/toolchain/sources/gcc/gcc-16.2.0/libstdc++-v3/include/backward -I/home/machaddr/.cache/eelinux-linux-latest/toolchain/sources/gcc/gcc-16.2.0/libstdc++-v3/testsuite/util -L/home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/mipsr5900el-unknown-linux-gnu/libstdc++-v3/src -L/home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/mipsr5900el-unknown-linux-gnu/libstdc++-v3/src/.libs -L/home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/mipsr5900el-unknown-linux-gnu/libstdc++-v3/libsupc++/.libs -B/home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/mipsr5900el-unknown-linux-gnu/libstdc++-v3/src/.libs -B/home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/mipsr5900el-unknown-linux-gnu/libstdc++-v3/libsupc++/.libs -B/home/machaddr/.local/eelinux-linux-latest/mipsr5900el-unknown-linux-gnu/bin/ -B/home/machaddr/.local/eelinux-linux-latest/mipsr5900el-unknown-linux-gnu/lib/ -isystem /home/machaddr/.local/eelinux-linux-latest/mipsr5900el-unknown-linux-gnu/include -isystem /home/machaddr/.local/eelinux-linux-latest/mipsr5900el-unknown-linux-gnu/sys-include   \" \"LD=/home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/./gcc/collect-ld\" \"LIBCFLAGS=-O2 -g -march=r5900 -mabi=32 -msoft-float -mfix-r5900 -mno-llsc -minterlink-mips16\" \"NM=/home/machaddr/.cache/eelinux-linux-latest/toolchain/gcc-final/./gcc/nm\" \"PICFLAG=\" \"RANLIB=/home/machaddr/.local/eelinux-linux-latest/mipsr5900el-unknown-linux-gnu/bin/ranlib \" \"DESTDIR=\" DO=install multi-do # make"
+  },
+  "dynamic_cxx_probe_failure": "unsuffixed __atomic_test_and_set missing from libatomic; prior smoke was static C++ only",
+  "gcc_patches": [
+    {
+      "path": "toolchain/patches/gcc-16.2.0-libatomic-tas.patch",
+      "sha256": "1fea253f8ae836136433eb924f69613594f33894326903f969004d2618e95fb3",
+      "origin": "https://gcc.gnu.org/pipermail/gcc-patches/2025-November/699826.html",
+      "status": "downstream adaptation of proposed upstream PR122078 fix; adds shared-library version export",
+      "files": {
+        "libatomic/tas_n.c": {
+          "before_sha256": "8e5afb0ac98038f8f13f099742b5484f519bf91e2e92e97a6476644975c0b746",
+          "after_sha256": "c4ea2d0445ed207ea7bbc7cb65fab99142130fcb641e636fc74a44b9afe58ef8"
+        },
+        "libatomic/libatomic.map": {
+          "before_sha256": "450a646d892de1cfc3be77248f7851edb6226e98ea5423aae6e19171461472eb",
+          "after_sha256": "c3c945404d3e9a191c42701d8df6ee48be241661283b4f4a673808f7061183ba"
+        }
+      }
+    }
+  ],
+  "stage_identity": {
+    "source_lock": {
+      "target": "mipsr5900el-unknown-linux-gnu",
+      "sources": [
+        {
+          "name": "binutils",
+          "version": "2.47",
+          "url": "https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz",
+          "algorithm": "sha256",
+          "digest": "154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff",
+          "hash_source": "https://sourceware.org/pipermail/binutils/2026-July/150520.html",
+          "release_source": "https://sourceware.org/pub/binutils/releases/"
+        },
+        {
+          "name": "gcc",
+          "version": "16.2.0",
+          "url": "https://ftp.gnu.org/gnu/gcc/gcc-16.2.0/gcc-16.2.0.tar.xz",
+          "algorithm": "sha512",
+          "digest": "c51c30ca7422d0cbecf504b2e0f33c3aca31e0f90a76b65217f465163fa6fa17b3f5de39e145c47e5bab90ac0ce7fff3b03c8d553ae36e01faaea5a50f8648d1",
+          "hash_source": "https://gcc.gnu.org/pub/gcc/releases/gcc-16.2.0/sha512.sum",
+          "release_source": "https://gcc.gnu.org/gcc-16/",
+          "patches": [
+            {
+              "path": "toolchain/patches/gcc-16.2.0-libatomic-tas.patch",
+              "sha256": "1fea253f8ae836136433eb924f69613594f33894326903f969004d2618e95fb3",
+              "origin": "https://gcc.gnu.org/pipermail/gcc-patches/2025-November/699826.html",
+              "status": "downstream adaptation of proposed upstream PR122078 fix; adds shared-library version export",
+              "files": {
+                "libatomic/tas_n.c": {
+                  "before_sha256": "8e5afb0ac98038f8f13f099742b5484f519bf91e2e92e97a6476644975c0b746",
+                  "after_sha256": "c4ea2d0445ed207ea7bbc7cb65fab99142130fcb641e636fc74a44b9afe58ef8"
+                },
+                "libatomic/libatomic.map": {
+                  "before_sha256": "450a646d892de1cfc3be77248f7851edb6226e98ea5423aae6e19171461472eb",
+                  "after_sha256": "c3c945404d3e9a191c42701d8df6ee48be241661283b4f4a673808f7061183ba"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "glibc",
+          "version": "2.44",
+          "url": "https://ftp.gnu.org/gnu/glibc/glibc-2.44.tar.xz",
+          "algorithm": "sha256",
+          "digest": "37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667",
+          "hash_source": "SHA256 of official release archive authenticated with its GNU detached signature",
+          "release_source": "https://sourceware.org/pipermail/libc-announce/2026/000058.html",
+          "signature": {
+            "url": "https://ftp.gnu.org/gnu/glibc/glibc-2.44.tar.xz.sig",
+            "key_fingerprint": "FD19E6D31B192EE4DC63EAD3DC2B16215ED5412A",
+            "keyring_url": "https://ftp.gnu.org/gnu/gnu-keyring.gpg",
+            "keyring_sha256": "b136fbe57ade4ee5270ca66c402cae7b50349fd07646b5b3de7962d58d4df608",
+            "verified_on": "2026-10-02"
+          }
+        }
+      ],
+      "ps2dev": {
+        "repository": "https://github.com/ps2dev/ps2dev.git",
+        "commit": "0463697a324b3d3c000636e6fd12324b0f2a8df2",
+        "note": "Optional official SDK bootstrap; upstream dependency scripts use moving revisions. Use an installed versioned PS2DEV SDK for a reproducible IOP firmware build."
+      },
+      "verified_on": "2026-10-02"
+    },
+    "prefix": "/home/machaddr/.local/eelinux-linux-latest",
+    "headers_sha256": "6961da261f97c5ec4ad82779d197d31d8d5cb9cb46cdb3d3ce1bfb694e41a0eb",
+    "recipe_sha256": "cac7b61f93808c621ece7af9cabd5b230961d6d7720a5bd61c4c3df42e728f76"
+  },
+  "libatomic_repair_build_exit_code": 0,
+  "libatomic_repair_build_wall_seconds": 1125.934053182602,
+  "libatomic_unsuffixed_atomic_flag_export": [
+    "86: 00002630    96 FUNC    GLOBAL DEFAULT   12 __atomic_test_and_set@@LIBATOMIC_1.2"
+  ],
+  "libatomic_fix": {
+    "origin": "https://gcc.gnu.org/pipermail/gcc-patches/2025-November/699826.html",
+    "kind": "guarded downstream adaptation of proposed GNU PR122078 alias plus shared-library export",
+    "glibc_source_modified": false,
+    "compiler_frontends_modified": false,
+    "previous_stamps_and_failure_logs_preserved": true,
+    "all_and_install_replayed": true,
+    "failure_proof": "build/verification/toolchain-latest-libatomic-failure"
+  }
+}

@@ -1,0 +1,225 @@
+{
+  "schema": 1,
+  "date": "2026-10-04",
+  "recorded_at": "2026-10-04T14:32:00.730464+00:00",
+  "scope": "native Xorg GC lifecycle and ordinary core text over the shared Mesa GS queue; complete desktop unfinished",
+  "compiled_components": {
+    "sha256": "15bd21c6f3ee36086662c380194e1ec5c54b4418476dd286daf587e5e9d2faff"
+  },
+  "preserved_source_inputs": {
+    "sha256": "32b60e1697fe017be3f29b95c77f9729813db982ab794b7f42e2f985118eac72"
+  },
+  "native_test_log": {
+    "sha256": "60ac4597bc54bc64c3000d1ab595d9c46e2a022fd8bc0a05a8fa3369194af37c"
+  },
+  "patches": {
+    "sha256": "12e66f4bad81f7b29c2662781cb4518ed529b1923bff39fa76746984d09446a0"
+  },
+  "image": {
+    "sha256": "9ed9a2dd6cd5c6b8f45c9ed0108f2d24660f4cc9f77e1d3902b966595e43cabd"
+  },
+  "image_assembly": {
+    "sha256": "da2f11e3856b939e3062cdc40d82edd04d63c7a29e93da0cced2c0fcf16f9c28"
+  },
+  "image_checks": {
+    "diagnostic_fat_readback_byte_exact": {},
+    "fat32_bpb_and_cluster_count": "passed",
+    "fsck_fat_read_only": "passed",
+    "kernel_fat_readback_byte_exact": true,
+    "readme_fat_readback_byte_exact": true,
+    "root_payload_byte_exact": true,
+    "source_inputs_unchanged": true
+  },
+  "probe": {
+    "sha256": "ebc7a6177d2098c454d4c4e96ed215578151e94d6aed2656bcbeca2ebf649968"
+  },
+  "probe_source": {
+    "sha256": "13a175724fbe3cf0fe3d8773835ecf6d84191a730327eb388414227501acea6e"
+  },
+  "kernel": {
+    "sha256": "27dd812c8ec9d1eccc4532fe04f928fb33ff7cdbf8b46e5623f304983c5eddc7"
+  },
+  "unchanged_kernel_sha256": "31308ea5c311d0f4e0a495e6006046c137e2ae4a1aa06001651c188e274b3eb7",
+  "packaged_probe_matches_tested_binary": true,
+  "earlier_glyph_source_snapshot": {
+    "sha256": "788e583ca6c05733f426548bcab44328e32b325bc547c7195e91b10509a4ec1d"
+  },
+  "host_checks": {
+    "cases": 11,
+    "result": "passed",
+    "sanitizers": [
+      "ASan",
+      "UBSan"
+    ],
+    "evidence_kind": "transcription of successful tool output",
+    "groups": {
+      "GC_lifecycle_and_core_text": 8,
+      "actual_probe_lifecycle": 3
+    },
+    "prior_glyph_regression_cases": 11,
+    "prior_glyph_regression_result": "passed",
+    "coverage": [
+      "8/16-bit core text lookup and clipped glyph pixels against the independent reference",
+      "all seven GCFuncs, state changes, copying, clips and multiple-GC unlinking",
+      "mutable lower drawing tables preserve native text hooks and return values",
+      "context destroy rejects validation before lower callbacks and defers close",
+      "allocation and lower creation failures, bounded GC count and cleanup",
+      "malformed text counts, font results and signed advance overflow",
+      "GPU failure does not replay after revalidation",
+      "actual probe success/failure/SIGINT release GS before restoring text"
+    ],
+    "lower_EXA_damage_tables_are_contract_fixtures": true,
+    "software_pixel_reference_is_production": false
+  },
+  "R5900_Linux_user_checks": {
+    "cases": 11,
+    "result": "passed",
+    "scope": "actual GC lifecycle/text callbacks; mutable lower table fixtures and wrapped GPU syscalls",
+    "actual_GNU_atomic_references": true,
+    "actual_pixman_regions": true,
+    "GPU_pixels_tested": false
+  },
+  "controlled_PCSX2_run": {
+    "session": {
+      "sha256": "a2cc4f9b1a8fe9daa2bdda24fd88cff28b05cb042588e28201a17bdedebddd48"
+    },
+    "process_result": {
+      "sha256": "878fc6646e5f5ed8dc5b852bcda04f4fc5e695976c47939ad990788d734d4c39"
+    },
+    "runtime": {
+      "requested_program": "C:\\Program Files\\PCSX2\\pcsx2-qt.exe",
+      "executable_sha256": "4d2a4d9c0db3cb2e9760e2d34bcd29150b53d56a1a87ae8e6fb4556796b40f58",
+      "runtime_manifest_sha256": "b7bf008375c55020bfb3287e0a100d1ff001323706bc2e18b3bf2d0e183ed478",
+      "mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85"
+    },
+    "log_snapshot": {
+      "sha256": "ee3df70cb567325f7298c0b220aaeba1cac837223b9c4473fee7a7b418167975"
+    },
+    "milestones": [
+      "EXT4-fs (sda2): mounted filesystem",
+      "ps2-gs: command/fence test PASSED",
+      "ps2-gs: image transfer/fence PASSED",
+      "ps2-gs: image upload probe exit=0",
+      "ps2-gs: offscreen transfer/fence PASSED",
+      "ps2-gs: surface probe exit=0",
+      "ps2-gs: owned Mesa transfer/fence PASSED",
+      "ps2-gs: Mesa owned render probe exit=0",
+      "ps2-gs: texture sampling/fence PASSED",
+      "ps2-gs: Mesa texture probe exit=0",
+      "ps2-gs: screen/context transfer/fence PASSED",
+      "ps2-gs: Mesa screen/context probe exit=0",
+      "ps2-gs: native glyph command/fence PASSED",
+      "ps2-gs: native Xorg glyph probe exit=0",
+      "ps2-gs: starting native Xorg GC probe",
+      "ps2-gs: native Xorg GC text 720x576 features=ff",
+      "ps2-gs: GC text/lifetime command/fence PASSED",
+      "ps2-gs: native Xorg GC probe exit=0",
+      "ps2-smap ps2-smap eth0: Link is Up"
+    ],
+    "startup_command_checks_passed": 8,
+    "GC_probe_exit": 0,
+    "GC_probe_exit_guest_seconds": 61.2983,
+    "automatic_timeout_seconds": 165,
+    "timed_out": true,
+    "timeout_is_a_boot_result": false,
+    "kernel_panic_or_user_segfault_in_log": false,
+    "authenticated_login_tested": false
+  },
+  "visual_observation": {
+    "source": "user-supplied three-row screenshot during this controlled emulator run",
+    "user_report": "This is the test, is it normal no 2 characters?",
+    "expected_scene": "PLAYSTATION 2: cyan 8-bit text; white 16-bit image text with background; clipped cyan 16-bit text; then console",
+    "assistant_screenshot_assessment": "two complete PLAYSTATION 2 rows, followed by clipped cyan PLAY  ATION 2 on navy",
+    "expected_pattern_matched": true,
+    "intentional_clip_hides": [
+      "S",
+      "following T"
+    ],
+    "intentional_clip_explained_to_user": true,
+    "exact_probe_identity_established_by_screenshot": false,
+    "reason": "the preceding glyph diagnostic uses the same visual pattern",
+    "platform_explicitly_named_by_user": false,
+    "console_return_user_confirmed": false,
+    "pixel_readback_or_format_sweep": false,
+    "physical_hardware_qualification": false
+  },
+  "implemented_callbacks": {
+    "screen": [
+      "CreateGC",
+      "CloseScreen"
+    ],
+    "GCFuncs": [
+      "ValidateGC",
+      "ChangeGC",
+      "CopyGC",
+      "DestroyGC",
+      "ChangeClip",
+      "DestroyClip",
+      "CopyClip"
+    ],
+    "ordinary_text": [
+      "PolyText8",
+      "PolyText16",
+      "ImageText8",
+      "ImageText16"
+    ],
+    "native_glyphs": [
+      "PolyGlyphBlt",
+      "ImageGlyphBlt"
+    ],
+    "non_text_lower_operations_with_table_restoration": 14
+  },
+  "restrictions": {
+    "submission": "one context/submission thread per screen",
+    "installation": "after EXA/damage setup and before any server GC allocation",
+    "cleanup": "other screen wrappers must unwrap before explicit cleanup",
+    "formats": "native CT16/depth15 and CT32/depth24; core monochrome font bits",
+    "raster": "full plane mask; transparent text solid GXcopy; image text forced copy/solid",
+    "max_managed_GCs": 1024,
+    "max_core_text_glyphs_per_request": 255,
+    "early_GC_private_registration": true,
+    "Composite_enabled": false,
+    "Render_alpha_glyphs": false,
+    "shader_caps": 0,
+    "native_probe_is_X_server": false
+  },
+  "memory": {
+    "acceptance_target_main_RAM_MiB": 32,
+    "reported_console_baseline_MiB": 7,
+    "console_baseline_is_measured_by_this_work": false,
+    "complete_desktop_total_and_peak_measured": false,
+    "separate_GS_VRAM_MiB": 4,
+    "root_filesystem_is_loaded_wholesale_into_RAM": false,
+    "acceptance_requires_swap_disabled": true
+  },
+  "physical_GC_pixels_tested": false,
+  "physical_devices_written": false,
+  "software_pixel_renderer": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL": false,
+  "remaining": [
+    "full DDX screen/cursor/VT setup and additional raster states",
+    "Render alpha glyphs",
+    "shader/state pipeline and draw_vbo",
+    "GLX and existing OpenGL applications",
+    "presentation/readback/double buffering",
+    "physical pixel and desktop memory qualification"
+  ],
+  "physical_hardware_followup": {
+    "date": "2026-10-04",
+    "evidence": "docs/graphics-hardware-validation.json",
+    "evidence_sha256": "ef10249c0b5c23f171d1bc7390788c271086b4caaeff929984f5f6c0fe42e1f3",
+    "diagnostics": [
+      "ps2-gs-gc-test"
+    ],
+    "diagnostic_scenes_tested_on_physical_hardware": true,
+    "result": "passed according to the user on real PlayStation 2 hardware",
+    "evidence_kind": "explicit user verification report; device logs not captured",
+    "earlier_fields_preserved": true,
+    "scope": "normal diagnostic scenes on the user's PS2; not all host/mock cases or a complete desktop",
+    "artifact_hash_read_back_on_console": false,
+    "GPU_pixel_readback": false,
+    "complete_Xorg_TWM_or_OpenGL_session_tested": false
+  },
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

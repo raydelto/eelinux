@@ -1,0 +1,6 @@
+EELINUX_M4_VERSION = 1.4.21
+EELINUX_M4_SOURCE = m4-$(EELINUX_M4_VERSION).tar.xz
+EELINUX_M4_SITE = https://ftp.gnu.org/gnu/m4
+EELINUX_M4_LICENSE = GPL-3.0+
+EELINUX_M4_LICENSE_FILES = COPYING
+$(eval $(autotools-package))

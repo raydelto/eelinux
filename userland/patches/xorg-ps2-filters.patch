@@ -1,0 +1,562 @@
+--- a/hw/xfree86/drivers/ps2/ps2_blit_exa.c
++++ b/hw/xfree86/drivers/ps2/ps2_blit_exa.c
+@@ -29,6 +29,14 @@
+     return a && a->handle == b->handle && a->width == b->width && a->height == b->height &&
+         a->bits_per_pixel == b->bits_per_pixel && a->buffer_width == b->buffer_width && a->bytes == b->bytes;
+ }
++static Bool supported_filter(PicturePtr p)
++{
++    if(p->filter==PictFilterNearest || p->filter==PictFilterBilinear)return !p->filter_nparams;
++    if(p->filter!=PictFilterConvolution || !p->filter_params || p->filter_nparams<3 || p->filter_nparams>262144)return FALSE;
++    int32_t w=p->filter_params[0],h=p->filter_params[1];
++    return w>0 && h>0 && w<=2048*65536 && h<=2048*65536 && !(w&65535) && !(h&65535) &&
++        (uint64_t)(w/65536)*(h/65536)+2==(unsigned)p->filter_nparams;
++}
+ static Bool picture(PicturePtr p, Bool source)
+ {
+     if(source && p && !p->pDrawable && !p->alphaMap && p->pSourcePict &&
+@@ -41,7 +49,7 @@
+             (p->pDrawable->type==DRAWABLE_PIXMAP && !p->pDrawable->x && !p->pDrawable->y &&
+              p->repeatType<=RepeatReflect && p->pDrawable->width<=1024 && p->pDrawable->height<=1024) :
+             !p->transform && !p->repeat) &&
+-        p->filter == PictFilterNearest && !p->filter_nparams &&
++        (source?supported_filter(p):p->filter==PictFilterNearest && !p->filter_nparams) &&
+         ((p->format == PICT_x8b8g8r8 && p->pDrawable->bitsPerPixel == 32 && p->pDrawable->depth == 24) ||
+          (p->format == PICT_x1b5g5r5 && p->pDrawable->bitsPerPixel == 16 && p->pDrawable->depth == 15));
+ }
+@@ -52,12 +60,13 @@
+         ((p->pDrawable->depth==1 && p->pDrawable->bitsPerPixel==1 && p->format==PICT_a1) ||
+          (p->pDrawable->depth==8 && p->pDrawable->bitsPerPixel==8 && p->format==PICT_a8)) &&
+         !p->alphaMap && !p->componentAlpha &&
+-        p->repeatType<=RepeatReflect && (p->filter==PictFilterNearest || p->filter==PictFilterBilinear) && !p->filter_nparams;
++        p->repeatType<=RepeatReflect && supported_filter(p);
+ }
+ static struct ps2_picture_sample sample(PicturePtr p)
+ {
+     struct ps2_picture_sample s={.transformed=!!p->transform,.repeat=p->repeat?p->repeatType:RepeatNone,
+-        .bilinear=p->filter==PictFilterBilinear};
++        .bilinear=p->filter==PictFilterBilinear,.convolution=p->filter==PictFilterConvolution,
++        .filter_params=p->filter_params,.filter_nparams=p->filter_nparams};
+     if(p->transform)memcpy(s.matrix,p->transform->matrix,sizeof(s.matrix));
+     return s;
+ }
+@@ -114,7 +123,9 @@
+     if(picture->transform){pixman_transform_t transform;memcpy(&transform,picture->transform,sizeof(transform));
+         if(!pixman_image_set_transform(image,&transform))goto failure;}
+     pixman_image_set_repeat(image,picture->repeat?(pixman_repeat_t)picture->repeatType:PIXMAN_REPEAT_NONE);
+-    if(!pixman_image_set_filter(image,picture->filter==PictFilterBilinear?PIXMAN_FILTER_BILINEAR:PIXMAN_FILTER_NEAREST,NULL,0))goto failure;
++    pixman_filter_t filter=picture->filter==PictFilterConvolution?PIXMAN_FILTER_CONVOLUTION:
++        picture->filter==PictFilterBilinear?PIXMAN_FILTER_BILINEAR:PIXMAN_FILTER_NEAREST;
++    if(!pixman_image_set_filter(image,filter,picture->filter_params,picture->filter_nparams))goto failure;
+     return image;
+ failure:
+     pixman_image_unref(image);return NULL;
+@@ -195,10 +206,10 @@
+     const struct ps2_pipe_blit_rect box = {.sx = sx, .sy = sy, .sw = width, .sh = height,
+         .dx = dx, .dy = dy, .dw = width, .dh = height};
+     int status;
+-    if(b->over<=PS2_COMPOSITE_OVER && !b->sample.has_alpha && !b->sample.transformed && !b->sample.repeat && !b->masked && sx>=0 && sy>=0 &&
++    if(b->over<=PS2_COMPOSITE_OVER && !b->sample.bilinear && !b->sample.convolution && !b->sample.has_alpha && !b->sample.transformed && !b->sample.repeat && !b->masked && sx>=0 && sy>=0 &&
+        (int64_t)sx+width<=b->source.width && (int64_t)sy+height<=b->source.height)
+         status=ps2_pipe_blit_rect(b->context,b->source.handle,b->destination.handle,&box);
+-    else if(b->over<=PS2_COMPOSITE_OVER && !b->sample.has_alpha && !b->sample.transformed && b->sample.repeat==PS2_REPEAT_NORMAL && !b->masked &&
++    else if(b->over<=PS2_COMPOSITE_OVER && !b->sample.bilinear && !b->sample.convolution && !b->sample.has_alpha && !b->sample.transformed && b->sample.repeat==PS2_REPEAT_NORMAL && !b->masked &&
+         b->source.handle && b->source.handle!=b->destination.handle){
+         const struct ps2_pipe_solid_box tile={dx,dy,dx+width,dy+height};
+         status=ps2_pipe_tile_rectangles(b->context,b->source.handle,b->destination.handle,&tile,1,dx-sx,dy-sy);
+--- a/hw/xfree86/drivers/ps2/ps2_composite.c
++++ b/hw/xfree86/drivers/ps2/ps2_composite.c
+@@ -4,12 +4,26 @@
+ #include "ps2_gs_logic.h"
+ #include "ps2_gs_lut.h"
+ #include "ps2_rop.h"
++#include "ps2_filter.h"
+ #include <errno.h>
+ #include <limits.h>
+ #include <stdlib.h>
+ #include <string.h>
+ 
+ struct texel { uint16_t x, y; };
++static int filter_valid(const struct ps2_picture_sample *s)
++{
++    if(s->bilinear>1 || s->convolution>1 || (s->bilinear && s->convolution))return 0;
++    if(!s->convolution)return !s->filter_nparams;
++    if(!s->filter_params || s->filter_nparams<3 || s->filter_nparams>262144 ||
++        (uintptr_t)s->filter_params>UINTPTR_MAX-(size_t)s->filter_nparams*4+1)return 0;
++    int32_t width=s->filter_params[0],height=s->filter_params[1];
++    return width>0 && height>0 && width<=2048*65536 && height<=2048*65536 &&
++        !(width&65535) && !(height&65535) &&
++        (uint64_t)(width/65536)*(height/65536)+2==s->filter_nparams;
++}
++static int filtered_sample(const struct ps2_picture_sample *s)
++{return s->bilinear || s->convolution;}
+ static int sum(int64_t a, int64_t b, int64_t *out)
+ {
+     if ((b > 0 && a > INT64_MAX - b) || (b < 0 && a < INT64_MIN - b)) return -1;
+@@ -47,6 +61,7 @@
+                 if(q<INT32_MIN || q>INT32_MAX)return -1;
+                 fixed[i]=q;
+             }
++            if(!fixed[2])return 0;
+             for(unsigned i=0;i<2;++i){
+                 uint32_t wrapped=fixed[2]?(uint32_t)(((uint64_t)(int64_t)fixed[i]<<16)/(uint64_t)(int64_t)fixed[2]):0;
+                 int32_t signed_fixed;memcpy(&signed_fixed,&wrapped,4);
+@@ -71,11 +86,11 @@
+     return 0;
+ }
+ static uint32_t float_bits(float f) { uint32_t v; memcpy(&v, &f, 4); return v; }
+-static int mask_fixed(const struct ps2_picture_sample *s,int64_t x,int64_t y,int32_t fixed[2])
++static int mask_fixed(const struct ps2_picture_sample *s,int64_t x,int64_t y,int32_t fixed[3])
+ {
+     if(x < -32768 || x > 32767 || y < -32768 || y > 32767)return -1;
+     int64_t fx=x*65536+32768,fy=y*65536+32768;
+-    if(!s->transformed){fixed[0]=fx;fixed[1]=fy;return 0;}
++    if(!s->transformed){fixed[0]=fx;fixed[1]=fy;fixed[2]=65536;return 0;}
+     int32_t vector[3];
+     for(unsigned i=0;i<3;++i){int64_t value;
+         if(sum((int64_t)s->matrix[i][0]*fx,(int64_t)s->matrix[i][1]*fy,&value) ||
+@@ -84,10 +99,27 @@
+         if(q<INT32_MIN || q>INT32_MAX)return -1;
+         vector[i]=q;
+     }
++    fixed[2]=vector[2];
+     for(unsigned i=0;i<2;++i){uint32_t wrapped=vector[2]?
+         (uint32_t)(((uint64_t)(int64_t)vector[i]<<16)/(uint64_t)(int64_t)vector[2]):0;
+         memcpy(fixed+i,&wrapped,4);}
+     return 0;
++}
++static void bilinear_taps(const int32_t fixed[3],const struct ps2_picture_sample *s,
++    unsigned width,unsigned height,struct ps2_filter_tap taps[4])
++{
++    int64_t px=(int64_t)fixed[0]-32768,py=(int64_t)fixed[1]-32768;
++    unsigned dx=((uint32_t)px>>9)&127,dy=((uint32_t)py>>9)&127;
++    int64_t ix=px/65536,iy=py/65536;
++    if(px<0 && px%65536)--ix;
++    if(py<0 && py%65536)--iy;
++    for(unsigned i=0;i<4;++i){unsigned u,v;
++        taps[i]=(struct ps2_filter_tap){.x=UINT16_MAX,.y=UINT16_MAX,
++            .weight=(i&1?dx:128-dx)*(i&2?dy:128-dy)};
++        if(fixed[2] && coordinate(ix+(i&1),width,s->repeat,&u) && coordinate(iy+(i>>1),height,s->repeat,&v)){
++            taps[i].x=u;taps[i].y=v;
++        }
++    }
+ }
+ static unsigned coverage_at(const struct ps2_picture_bitmap *mask,int64_t x,int64_t y)
+ {
+@@ -97,12 +129,37 @@
+     return mask->bits_per_pixel==8?mask->bits[v*mask->stride+u]:
+         (mask->bits[v*mask->stride+u/8]&(mask->msb_first?0x80U>>(u%8):1U<<(u%8)))?255:0;
+ }
++static void convolution_origin(const int32_t fixed[3],const struct ps2_picture_sample *s,int64_t *x,int64_t *y)
++{
++    for(unsigned i=0;i<2;++i){
++        uint32_t wrapped=(uint32_t)fixed[i]-1-((uint32_t)s->filter_params[i]-65536)/2;
++        int32_t signed_fixed;memcpy(&signed_fixed,&wrapped,4);
++        int64_t value=signed_fixed/65536;
++        if(signed_fixed<0 && signed_fixed%65536)--value;
++        *(i?y:x)=value;
++    }
++}
++static unsigned convolution_alpha(uint32_t accumulated)
++{
++    int32_t signed_value;memcpy(&signed_value,&accumulated,4);
++    int32_t value=signed_value/65536;
++    return value<0?0:value>255?255:value;
++}
+ static int mask_coverage(const struct ps2_picture_bitmap *mask,int64_t x,int64_t y,unsigned *a)
+ {
+-    if(!mask->sample.bilinear){struct texel m;
++    if(!filtered_sample(&mask->sample)){struct texel m;
+         if(point(&mask->sample,x,y,mask->width,mask->height,&m))return -1;
+         *a=m.x==UINT16_MAX?0:coverage_at(mask,m.x,m.y);return 0;}
+-    int32_t fixed[2];if(mask_fixed(&mask->sample,x,y,fixed))return -1;
++    int32_t fixed[3];if(mask_fixed(&mask->sample,x,y,fixed))return -1;
++    if(!fixed[2]){*a=0;return 0;}
++    if(mask->sample.convolution){
++        int64_t ix,iy;convolution_origin(fixed,&mask->sample,&ix,&iy);
++        unsigned width=mask->sample.filter_params[0]/65536,height=mask->sample.filter_params[1]/65536;
++        uint32_t accumulated=32768;
++        for(unsigned v=0;v<height;++v)for(unsigned u=0;u<width;++u)
++            accumulated+=(uint32_t)((int64_t)coverage_at(mask,ix+u,iy+v)*mask->sample.filter_params[2+v*width+u]);
++        *a=convolution_alpha(accumulated);return 0;
++    }
+     /* Pinned pixman uses seven fractional bits and truncates the combined
+      * four-tap sum once. These are source coverage values, never RGB pixels. */
+     int64_t px=(int64_t)fixed[0]-32768,py=(int64_t)fixed[1]-32768;
+@@ -142,17 +199,17 @@
+ static int alpha_run(struct ps2_rop_workspace *w, uint32_t palette,
+     uint32_t source, uint32_t destination, const struct ps2_surface *s,
+     unsigned x, unsigned y, unsigned width, const struct texel *t, int step, unsigned alpha,
+-    unsigned source_alpha, unsigned destination_bpp, unsigned operation)
++    unsigned source_alpha, unsigned destination_bpp, unsigned operation, unsigned prepared)
+ {
+     struct ps2_surface_client *gs=w->gs;
+     unsigned char table[256];
+     unsigned offset=0;
+-    if(draw_run(gs,source,w->a,s,0,0,width,t,step,0))return -1;
++    if(!prepared && draw_run(gs,source,w->a,s,0,0,width,t,step,0))return -1;
+     /* GS CT16 expands by shifting. Pixman's RGB555 fetch replicates the
+      * high bits into the low three bits before alpha arithmetic. The lookup
+      * incorporates that expansion, then performs exact rounded divide 255. */
+-    for(unsigned i=0;i<256;++i){unsigned c=s->bits_per_pixel==16?i|(i>>5):i;
+-        table[i]=(c*alpha+127)/255;}
++    for(unsigned i=0;i<256;++i){unsigned c=!prepared && s->bits_per_pixel==16?i|(i>>5):i;
++        table[i]=(operation==PS2_COMPOSITE_IN_REVERSE || operation==PS2_COMPOSITE_OUT_REVERSE)?0:(c*alpha+127)/255;}
+     if(ps2_surface_lut_palette(gs,palette,table) ||
+         ps2_surface_channel_lut(gs,w->a,w->c,palette,width,1,0xffffff))return -1;
+     if(operation!=PS2_COMPOSITE_SRC){
+@@ -176,7 +233,7 @@
+ {
+     if (!ctx || !input || !input_sample || over > PS2_COMPOSITE_ADD || input_sample->transformed > 1 ||
+         input_sample->repeat > PS2_REPEAT_REFLECT || input_sample->has_alpha>1 ||
+-        (input_sample->has_alpha && input_sample->alpha>255) || input_sample->bilinear) { errno = EINVAL; return -1; }
++        (input_sample->has_alpha && input_sample->alpha>255) || !filter_valid(input_sample)) { errno = EINVAL; return -1; }
+     if (ps2_pipe_context_acquire(ctx)) return -1;
+     struct ps2_render_client *r = ps2_pipe_context_render(ctx);
+     struct ps2_surface_client *gs = r->gs;
+@@ -185,12 +242,14 @@
+     struct ps2_picture_sample sample = *input_sample;
+     struct ps2_picture_bitmap mask = input_mask ? *input_mask : (struct ps2_picture_bitmap){0};
+     struct texel *plan = NULL;
++    int32_t (*filtered)[3] = NULL;
+     unsigned char *coverage = NULL;
+     struct ps2_rop_workspace w={0};
++    struct ps2_filter_workspace filter={0};
+     uint32_t snapshot = 0, palette = 0;
+     unsigned source_alpha=sample.has_alpha?sample.alpha:255;
+     unsigned alpha_needed=(over==PS2_COMPOSITE_OVER && source_alpha!=255) ||
+-        over==PS2_COMPOSITE_IN_REVERSE || over==PS2_COMPOSITE_OUT_REVERSE || over==PS2_COMPOSITE_ADD;
++        over==PS2_COMPOSITE_IN_REVERSE || over==PS2_COMPOSITE_OUT_REVERSE || over==PS2_COMPOSITE_ADD || filtered_sample(&sample);
+     int status = -1, error = EINVAL;
+     if (!s || !d || s->width > 1024 || s->height > 1024 ||
+         box.dx < 0 || box.dy < 0 || box.width < 0 || box.height < 0 ||
+@@ -200,7 +259,7 @@
+     if (input_mask && (!mask.width || !mask.height || mask.width > 2048 || mask.height > 2048 ||
+         (mask.bits_per_pixel!=0 && mask.bits_per_pixel!=1 && mask.bits_per_pixel!=8) ||
+         mask.msb_first > 1 || mask.sample.transformed > 1 || mask.sample.repeat > PS2_REPEAT_REFLECT ||
+-        mask.sample.bilinear>1 ||
++        !filter_valid(&mask.sample) ||
+         !mask.bits || mask.stride < mask_row || mask.bytes > 1024 * 1024 ||
+         mask.bytes < mask_row ||
+         mask.height - 1 > (mask.bytes - mask_row) / mask.stride ||
+@@ -210,25 +269,38 @@
+         error = ENOTSUP; goto out;
+     }
+     size_t pixels=(size_t)box.width*box.height;
+-    unsigned has_coverage=input_mask && (mask.bits_per_pixel==8 || mask.sample.bilinear);
+-    plan = malloc(pixels * (sizeof(*plan) + has_coverage));
++    if((sample.convolution && pixels*(uint64_t)(sample.filter_nparams-2)>16777216) ||
++        (input_mask && mask.sample.convolution && pixels*(uint64_t)(mask.sample.filter_nparams-2)>16777216)){
++        error=E2BIG;goto out;
++    }
++    unsigned has_coverage=input_mask && (filtered_sample(&sample) || mask.bits_per_pixel==8 || filtered_sample(&mask.sample));
++    size_t geometry=filtered_sample(&sample)?(size_t)box.width*sizeof(*filtered):pixels*sizeof(*plan);
++    size_t param_bytes=(sample.convolution?sample.filter_nparams*4:0)+(input_mask && mask.sample.convolution?mask.sample.filter_nparams*4:0);
++    /* Parameter arrays precede the byte coverage tail to retain alignment. */
++    plan = malloc(geometry + param_bytes + pixels*has_coverage);
+     if (!plan) { error = ENOMEM; goto out; }
+-    if(has_coverage)coverage=(unsigned char *)(plan+pixels);
++    if(filtered_sample(&sample))filtered=(void*)plan;
++    unsigned char *params=(unsigned char*)plan+geometry;
++    if(sample.convolution){memcpy(params,sample.filter_params,sample.filter_nparams*4);sample.filter_params=(void*)params;params+=sample.filter_nparams*4;}
++    if(input_mask && mask.sample.convolution){memcpy(params,mask.sample.filter_params,mask.sample.filter_nparams*4);mask.sample.filter_params=(void*)params;params+=mask.sample.filter_nparams*4;}
++    if(has_coverage)coverage=params;
+     for (int y = 0; y < box.height; ++y) for (int x = 0; x < box.width; ++x) {
+-        struct texel *t = plan + y * box.width + x;
+-        if (point(&sample, (int64_t)box.sx + x, (int64_t)box.sy + y, s->width, s->height, t)) goto out;
++        struct texel *t = filtered_sample(&sample)?NULL:plan + y * box.width + x;
++        if (filtered_sample(&sample)?mask_fixed(&sample,(int64_t)box.sx+x,(int64_t)box.sy+y,filtered[x]):
++            point(&sample, (int64_t)box.sx + x, (int64_t)box.sy + y, s->width, s->height, t)) goto out;
+         if (input_mask) {
+             unsigned a;
+             if(mask_coverage(&mask,(int64_t)mask.x+x,(int64_t)mask.y+y,&a))goto out;
+             if(coverage)coverage[y*box.width+x]=a;
+-            if(!a)t->x=t->y=UINT16_MAX;
+-            if(t->x!=UINT16_MAX && a && a!=255)alpha_needed=1;
++            if(t && !a)t->x=t->y=UINT16_MAX;
++            if((!t || t->x!=UINT16_MAX) && a && a!=255)alpha_needed=1;
+         }
+     }
+     if(alpha_needed){
+         if(!(gs->caps.features&PS2GS_HW_CHANNEL_LUT)){error=ENOTSUP;goto out;}
+         if(ps2_rop_reserve(&w,gs,d->bits_per_pixel) ||
+             ps2_surface_create(gs,16,16,32,&palette)){error=errno;goto out;}
++        if(filtered_sample(&sample) && ps2_filter_reserve(&filter,gs,sample.convolution?4:3)){error=errno;goto out;}
+     }
+     /* Front storage cannot be sampled directly; aliasing must not overwrite
+      * source texels needed by later fragments. Keep this snapshot on GS. */
+@@ -241,6 +313,60 @@
+         source = snapshot; s = ps2_surface_lookup(gs, source);
+     }
+     for (int y = 0; !status && y < box.height; ++y) for (int x = 0; !status && x < box.width;) {
++        if(filtered_sample(&sample)){
++            if(!x)for(int i=0;i<box.width;++i)
++                if(mask_fixed(&sample,(int64_t)box.sx+i,(int64_t)box.sy+y,filtered[i])){status=-1;break;}
++            if(status)break;
++            if(sample.convolution){
++                unsigned alpha=coverage?coverage[y*box.width+x]:255,kw=sample.filter_params[0]/65536,
++                    kh=sample.filter_params[1]/65536;
++                uint32_t accumulated=32768;
++                int64_t ix,iy;convolution_origin(filtered[x],&sample,&ix,&iy);
++                status=ps2_filter_convolution_begin(&filter);
++                for(unsigned v=0;!status && v<kh;++v)for(unsigned u=0;!status && u<kw;++u){
++                    int32_t coefficient=sample.filter_params[2+v*kw+u];unsigned tx,ty;
++                    if(coefficient && filtered[x][2] && coordinate(ix+u,s->width,sample.repeat,&tx) &&
++                        coordinate(iy+v,s->height,sample.repeat,&ty)){
++                        accumulated+=(uint32_t)((int64_t)source_alpha*coefficient);
++                        status=ps2_filter_convolution_tap(&filter,source,palette,tx,ty,coefficient);
++                    }
++                }
++                if(!status)status=ps2_filter_convolution_end(&filter,w.a,palette);
++                if(!status && over==PS2_COMPOSITE_CLEAR)status=ps2_surface_solid_logic(gs,destination,box.dx+x,box.dy+y,1,1,0,
++                    d->bits_per_pixel==16?0x7fff:0xffffff,0);
++                else if(!status)status=alpha_run(&w,palette,source,destination,s,box.dx+x,box.dy+y,1,NULL,0,
++                    alpha,convolution_alpha(accumulated),d->bits_per_pixel,over,1);
++                ++x;continue;
++            }
++            struct ps2_filter_tap taps[4];bilinear_taps(filtered[x],&sample,s->width,s->height,taps);
++            unsigned alpha=coverage?coverage[y*box.width+x]:255,width=1;
++            int step=0;
++            if(x+1<box.width){struct ps2_filter_tap next[4];bilinear_taps(filtered[x+1],&sample,s->width,s->height,next);
++                for(unsigned i=0;i<4;++i)if(taps[i].weight && taps[i].x!=UINT16_MAX && next[i].x!=UINT16_MAX){
++                    step=(int)next[i].x-taps[i].x;break;}}
++            while(width<64 && x+width<(unsigned)box.width && step>=-1 && step<=1){
++                if(coverage && coverage[y*box.width+x+width]!=alpha)break;
++                struct ps2_filter_tap next[4];bilinear_taps(filtered[x+width],&sample,s->width,s->height,next);
++                unsigned i;
++                for(i=0;i<4;++i)if(next[i].weight!=taps[i].weight || (taps[i].weight &&
++                    (taps[i].x==UINT16_MAX?next[i].x!=UINT16_MAX:
++                     next[i].y!=taps[i].y || (int)next[i].x!=(int)taps[i].x+step*(int)width)))break;
++                if(i!=4)break;
++                ++width;
++            }
++            if(width==1)step=0;
++            unsigned effective=0;for(unsigned i=0;i<4;++i)
++                if(taps[i].x!=UINT16_MAX)effective+=source_alpha*taps[i].weight;
++            effective>>=14;
++            if(over==PS2_COMPOSITE_CLEAR)status=ps2_surface_solid_logic(gs,destination,box.dx+x,box.dy+y,width,1,0,
++                d->bits_per_pixel==16?0x7fff:0xffffff,0);
++            else{
++                status=ps2_filter_bilinear(&filter,source,w.a,palette,taps,width,step);
++                if(!status)status=alpha_run(&w,palette,source,destination,s,box.dx+x,box.dy+y,width,NULL,0,
++                    alpha,effective,d->bits_per_pixel,over,1);
++            }
++            x+=width;continue;
++        }
+         const struct texel *t = plan + y * box.width + x;
+         unsigned width = 1; int step = 0;
+         unsigned alpha=coverage?coverage[y*box.width+x]:255;
+@@ -277,12 +403,13 @@
+                         ps2_surface_lut_palette(gs,palette,table) || ps2_surface_channel_lut(gs,w.b,w.c,palette,width,1,0xffffff) ||
+                         ps2_rop_sample(gs,w.c,destination,0,0,box.dx+x,box.dy+y,width,1,d->bits_per_pixel==16?0x7fff:0xffffff,0,128);
+                 }
+-            }else status=alpha_run(&w,palette,source,destination,s,box.dx+x,box.dy+y,width,t,step,alpha,source_alpha,d->bits_per_pixel,over);
++            }else status=alpha_run(&w,palette,source,destination,s,box.dx+x,box.dy+y,width,t,step,alpha,source_alpha,d->bits_per_pixel,over,0);
+         }else status=draw_run(gs,source,destination,s,box.dx+x,box.dy+y,width,t,step,over==PS2_COMPOSITE_OVER);
+         x += width;
+     }
+     error = errno;
+ out:
++    if(filter.gs && ps2_filter_release(&filter) && !status){status=-1;error=errno;}
+     if(palette && !gs->error && ps2_surface_destroy(gs,palette) && !status){status=-1;error=errno;}
+     if(w.gs && ps2_rop_release(&w) && !status){status=-1;error=errno;}
+     if (snapshot && !gs->error && ps2_surface_destroy(gs, snapshot) && !status) { status = -1; error = errno; }
+--- a/hw/xfree86/drivers/ps2/ps2_composite.h
++++ b/hw/xfree86/drivers/ps2/ps2_composite.h
+@@ -10,7 +10,10 @@
+     int32_t matrix[3][3]; /* 16.16 source transform, evaluated at pixel centres. */
+     unsigned transformed, repeat;
+     unsigned has_alpha, alpha; /* Optional constant premultiplied source alpha. */
+-    unsigned bilinear; /* Mask coverage only; colour currently uses nearest. */
++    unsigned bilinear; /* Exact seven-bit, four-tap XRender sampling. */
++    unsigned convolution;
++    const int32_t *filter_params; /* width, height, signed 16.16 coefficients. */
++    unsigned filter_nparams;
+ };
+ struct ps2_picture_bitmap {
+     const unsigned char *bits;
+@@ -21,7 +24,7 @@
+     unsigned bits_per_pixel; /* 0/1: A1, 8: A8 coverage. */
+ };
+ /* Basic Porter-Duff operations on opaque destinations, constant source alpha,
+- * nearest affine/projective colour and nearest/bilinear A1/A8 coverage.
++ * nearest/bilinear affine/projective colour and A1/A8 coverage.
+  * Geometry and coverage on CPU; destination colour pixels remain on GS.
+  * Missing Src samples clear; missing Over samples preserve destination RGB.
+  * Alias/front sources are snapshotted in VRAM before drawing. */
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_filter.c
+@@ -0,0 +1,143 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_filter.h"
++#include "ps2_gs_lut.h"
++#include "ps2_gs_logic.h"
++#include <errno.h>
++#include <string.h>
++
++int ps2_filter_release(struct ps2_filter_workspace *f)
++{
++    int status=0,error=errno;
++    uint32_t handles[]={f->tap,f->term,f->sum[0],f->sum[1],f->sum[2],f->sum[3],f->saturated,f->carry};
++    for(unsigned i=0;i<sizeof(handles)/sizeof(*handles);++i)
++        if(handles[i] && !f->gs->error && ps2_surface_destroy(f->gs,handles[i])){
++            if(!status)error=errno;
++            status=-1;
++        }
++    memset(f,0,sizeof(*f));errno=error;return status;
++}
++int ps2_filter_reserve(struct ps2_filter_workspace *f,struct ps2_surface_client *gs,unsigned bytes)
++{
++    *f=(struct ps2_filter_workspace){.gs=gs,.bytes=bytes};
++    if(bytes!=3 && bytes!=4){errno=EINVAL;return -1;}
++    if(!(gs->caps.features&PS2GS_HW_CHANNEL_LUT) || !(gs->caps.features&PS2GS_HW_TEXTURE_TRANSFER)){
++        errno=ENOTSUP;return -1;
++    }
++    uint32_t *handles[]={&f->tap,&f->term,&f->sum[0],&f->sum[1],&f->sum[2],&f->saturated,&f->carry};
++    for(unsigned i=0;i<sizeof(handles)/sizeof(*handles);++i)
++        if(ps2_surface_create(gs,64,32,32,handles[i])){
++            int error=errno;ps2_filter_release(f);errno=error;return -1;
++        }
++    if(bytes==4 && ps2_surface_create(gs,64,32,32,&f->sum[3])){
++        int error=errno;ps2_filter_release(f);errno=error;return -1;
++    }
++    return 0;
++}
++static int lookup(struct ps2_filter_workspace *f,uint32_t source,uint32_t destination,
++    uint32_t palette,const unsigned char table[256],unsigned width)
++{
++    return ps2_surface_lut_palette(f->gs,palette,table) ||
++        ps2_surface_channel_lut(f->gs,source,destination,palette,width,1,0xffffff)?-1:0;
++}
++static int transfer(struct ps2_filter_workspace *f,uint32_t source,uint32_t destination,unsigned width,unsigned mode)
++{return ps2_rop_sample(f->gs,source,destination,0,0,0,0,width,1,0xffffff,mode,128);}
++static int add_byte(struct ps2_filter_workspace *f,unsigned byte,uint32_t term,uint32_t palette,unsigned width)
++{
++    if(byte==f->bytes-1)return transfer(f,term,f->sum[byte],width,PS2GS_TRANSFER_ADD);
++    /* The difference between saturated and wrapping addition is zero
++     * exactly when there is no carry. A native lookup turns that difference
++     * into a one-byte carry; propagate before overwriting any scratch. */
++    if(transfer(f,f->sum[byte],f->saturated,width,PS2GS_TRANSFER_REPLACE) ||
++        transfer(f,term,f->saturated,width,PS2GS_TRANSFER_ADD_CLAMP) ||
++        transfer(f,term,f->sum[byte],width,PS2GS_TRANSFER_ADD) ||
++        transfer(f,f->sum[byte],f->saturated,width,PS2GS_TRANSFER_SUBTRACT))return -1;
++    unsigned char nonzero[256];for(unsigned i=0;i<256;++i)nonzero[i]=!!i;
++    if(lookup(f,f->saturated,f->carry,palette,nonzero,width))return -1;
++    return add_byte(f,byte+1,f->carry,palette,width);
++}
++int ps2_filter_bilinear(struct ps2_filter_workspace *f,uint32_t source,uint32_t destination,
++    uint32_t palette,const struct ps2_filter_tap taps[4],unsigned width,int step)
++{
++    const struct ps2_surface *s=ps2_surface_lookup(f->gs,source);
++    unsigned total=0;
++    if(!s || !width || width>64 || step < -1 || step > 1){errno=EINVAL;return -1;}
++    for(unsigned i=0;i<4;++i){
++        total+=taps[i].weight;
++        if(taps[i].weight>16384 || (taps[i].weight && taps[i].x!=UINT16_MAX &&
++            (taps[i].x>=s->width || taps[i].y>=s->height || (int)taps[i].x+step*(int)(width-1)<0 ||
++            (int)taps[i].x+step*(int)(width-1)>=(int)s->width))){errno=EINVAL;return -1;}
++    }
++    if(total!=16384){errno=EINVAL;return -1;}
++    for(unsigned i=0;i<3;++i)
++        if(ps2_surface_solid_logic(f->gs,f->sum[i],0,0,width,1,0,0xffffff,0))return -1;
++    unsigned char table[256];
++    for(unsigned tap=0;tap<4;++tap){
++        if(!taps[tap].weight || taps[tap].x==UINT16_MAX)continue;
++        /* Reversed and repeated runs use the same exact nearest sampling
++         * contract as the compositor, rather than GS fractional filtering. */
++        if(step==1){
++            if(ps2_rop_sample(f->gs,source,f->tap,taps[tap].x,taps[tap].y,0,0,width,1,0xffffff,0,128))return -1;
++        }else{
++            for(unsigned x=0;x<width;++x)
++                if(ps2_rop_sample(f->gs,source,f->tap,taps[tap].x+step*(int)x,taps[tap].y,x,0,1,1,0xffffff,0,128))return -1;
++        }
++        /* Three byte planes retain all fractional bits until all four
++         * products have been summed. CT16 fetch expands by shifting; XRender
++         * requires replication of the five high bits before arithmetic. */
++        for(int byte=2;byte>=0;--byte){
++            for(unsigned i=0;i<256;++i){unsigned c=s->bits_per_pixel==16?i|(i>>5):i;
++                table[i]=(c*taps[tap].weight)>>(byte*8);}
++            if(lookup(f,f->tap,f->term,palette,table,width) ||
++                add_byte(f,byte,f->term,palette,width))return -1;
++        }
++    }
++    for(unsigned i=0;i<256;++i)table[i]=i<<2;
++    if(lookup(f,f->sum[2],destination,palette,table,width))return -1;
++    for(unsigned i=0;i<256;++i)table[i]=i>>6;
++    return lookup(f,f->sum[1],f->term,palette,table,width) ||
++        transfer(f,f->term,destination,width,PS2GS_TRANSFER_ADD)?-1:0;
++}
++int ps2_filter_convolution_begin(struct ps2_filter_workspace *f)
++{
++    if(f->bytes!=4){errno=EINVAL;return -1;}
++    for(unsigned i=0;i<4;++i)
++        if(ps2_surface_solid_logic(f->gs,f->sum[i],0,0,1,1,i==1?0x808080:0,0xffffff,3))return -1;
++    return 0;
++}
++int ps2_filter_convolution_tap(struct ps2_filter_workspace *f,uint32_t source,
++    uint32_t palette,unsigned x,unsigned y,int32_t coefficient)
++{
++    const struct ps2_surface *s=ps2_surface_lookup(f->gs,source);
++    if(f->bytes!=4 || !s || x>=s->width || y>=s->height){errno=EINVAL;return -1;}
++    if(!coefficient)return 0;
++    if(ps2_rop_sample(f->gs,source,f->tap,x,y,0,0,1,1,0xffffff,0,128))return -1;
++    unsigned char table[256];
++    for(int byte=3;byte>=0;--byte){
++        for(unsigned i=0;i<256;++i){unsigned c=s->bits_per_pixel==16?i|(i>>5):i;
++            table[i]=(uint32_t)((int64_t)c*coefficient)>>(byte*8);}
++        if(lookup(f,f->tap,f->term,palette,table,1) || add_byte(f,byte,f->term,palette,1))return -1;
++    }
++    return 0;
++}
++int ps2_filter_convolution_end(struct ps2_filter_workspace *f,uint32_t destination,uint32_t palette)
++{
++    unsigned char table[256];
++    /* Select byte 2 only when byte 3 is zero, without a CPU colour readback.
++     * Split its seven high bits and low bit, inject the predicate above each
++     * part, and use two palette lookups as a native conditional operation. */
++    for(unsigned i=0;i<256;++i)table[i]=i>>1;
++    if(lookup(f,f->sum[2],f->term,palette,table,1))return -1;
++    for(unsigned i=0;i<256;++i)table[i]=i?0:128;
++    if(lookup(f,f->sum[3],f->carry,palette,table,1) || transfer(f,f->carry,f->term,1,PS2GS_TRANSFER_ADD))return -1;
++    for(unsigned i=0;i<256;++i)table[i]=i>=128?(i&127)*2:0;
++    if(lookup(f,f->term,destination,palette,table,1))return -1;
++    for(unsigned i=0;i<256;++i)table[i]=i&1;
++    if(lookup(f,f->sum[2],f->term,palette,table,1))return -1;
++    for(unsigned i=0;i<256;++i)table[i]=i?0:2;
++    if(lookup(f,f->sum[3],f->carry,palette,table,1) || transfer(f,f->carry,f->term,1,PS2GS_TRANSFER_ADD))return -1;
++    for(unsigned i=0;i<256;++i)table[i]=i==3;
++    if(lookup(f,f->term,f->saturated,palette,table,1) || transfer(f,f->saturated,destination,1,PS2GS_TRANSFER_ADD))return -1;
++    for(unsigned i=0;i<256;++i)table[i]=i && i<128?255:0;
++    return lookup(f,f->sum[3],f->term,palette,table,1) ||
++        transfer(f,f->term,destination,1,PS2GS_TRANSFER_ADD_CLAMP)?-1:0;
++}
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_filter.h
+@@ -0,0 +1,27 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_NATIVE_FILTER_H
++#define PS2_NATIVE_FILTER_H
++#include "ps2_rop.h"
++/* Four exact seven-bit bilinear weights. Coordinates and weights are CPU
++ * geometry; all sampled colour and multi-byte arithmetic stay in GS VRAM. */
++struct ps2_filter_tap { uint16_t x, y, weight; };
++struct ps2_filter_workspace {
++    struct ps2_surface_client *gs;
++    uint32_t tap, term, sum[4], saturated, carry;
++    unsigned bytes;
++};
++int ps2_filter_reserve(struct ps2_filter_workspace *, struct ps2_surface_client *, unsigned bytes);
++int ps2_filter_release(struct ps2_filter_workspace *);
++/* Native CT32 output, origin rectangle <=64x32. Each input already contains
++ * one tap per output pixel; UINT16_MAX coordinates represent transparency.
++ * The output is floor(sum(expanded-channel * weight) / 16384), once. */
++int ps2_filter_bilinear(struct ps2_filter_workspace *, uint32_t source,
++    uint32_t destination, uint32_t palette, const struct ps2_filter_tap [4],
++    unsigned width, int step);
++/* Convolution follows the pinned pixman's signed 16.16, wrapping 32-bit
++ * accumulation, half-unit rounding and signed saturation. */
++int ps2_filter_convolution_begin(struct ps2_filter_workspace *);
++int ps2_filter_convolution_tap(struct ps2_filter_workspace *, uint32_t source,
++    uint32_t palette, unsigned x, unsigned y, int32_t coefficient);
++int ps2_filter_convolution_end(struct ps2_filter_workspace *, uint32_t destination, uint32_t palette);
++#endif

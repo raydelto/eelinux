@@ -1,0 +1,310 @@
+--- a/arch/mips/ps2/dmac-irq.c
++++ b/arch/mips/ps2/dmac-irq.c
+@@ -9,6 +9,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/ioport.h>
+ #include <linux/module.h>
++#include <linux/spinlock.h>
+ #include <linux/types.h>
+ 
+ #include <asm/io.h>
+@@ -18,16 +19,39 @@
+ #include <asm/mach-ps2/dmac.h>
+ #include <asm/mach-ps2/irq.h>
+ 
+-static void dmac_reverse_mask(struct irq_data *data)
++static DEFINE_RAW_SPINLOCK(dmac_mask_lock);
++
++static void dmac_set_mask(struct irq_data *data, bool enabled)
+ {
+-	outl(BIT(16 + data->irq - IRQ_DMAC), DMAC_STAT_MASK);
++	const unsigned int bit = BIT(data->irq - IRQ_DMAC);
++	unsigned long flags;
++
++	/* BUSERR has status/ack bit 15 but no mask bit in D_STAT. */
++	if (bit == BIT(15))
++		return;
++	raw_spin_lock_irqsave(&dmac_mask_lock, flags);
++	if (!!(inl(DMAC_STAT_MASK) & (bit << 16)) != enabled) {
++		/* Lower bits acknowledge status; upper bits toggle masks. */
++		outl(bit << 16, DMAC_STAT_MASK);
++		(void)inl(DMAC_STAT_MASK);
++	}
++	raw_spin_unlock_irqrestore(&dmac_mask_lock, flags);
++}
++
++static void dmac_mask(struct irq_data *data)
++{
++	dmac_set_mask(data, false);
++}
++
++static void dmac_unmask(struct irq_data *data)
++{
++	dmac_set_mask(data, true);
+ }
+ 
+ static void dmac_mask_ack(struct irq_data *data)
+ {
+-	const unsigned int bit = BIT(data->irq - IRQ_DMAC);
+-
+-	outl((bit << 16) | bit, DMAC_STAT_MASK);
++	dmac_mask(data);
++	outl(BIT(data->irq - IRQ_DMAC), DMAC_STAT_MASK);
+ }
+ 
+ #define DMAC_IRQ_TYPE(irq_, name_)				\
+@@ -35,8 +59,8 @@
+ 		.irq = irq_,					\
+ 		.irq_chip = {					\
+ 			.name = name_,				\
+-			.irq_unmask = dmac_reverse_mask,	\
+-			.irq_mask = dmac_reverse_mask,		\
++			.irq_unmask = dmac_unmask,	\
++			.irq_mask = dmac_mask,		\
+ 			.irq_mask_ack = dmac_mask_ack		\
+ 		}						\
+ 	}
+@@ -62,7 +86,10 @@
+ 
+ static irqreturn_t dmac_cascade(int irq, void *data)
+ {
+-	unsigned int pending = inl(DMAC_STAT_MASK) & 0xffff;
++	const unsigned int status = inl(DMAC_STAT_MASK);
++	/* BUSERR is unmaskable; never discard a real bus fault. */
++	unsigned int pending = ((status & (status >> 16)) |
++		(status & BIT(15))) & 0xffff;
+ 
+ 	if (!pending)
+ 		return IRQ_NONE;
+--- a/drivers/ps2/sif.c
++++ b/drivers/ps2/sif.c
+@@ -101,6 +101,7 @@
+ };
+ 
+ static DEFINE_SPINLOCK(sregs_lock);
++static DEFINE_SPINLOCK(sif1_dma_lock);
+ static s32 sregs[32];
+ 
+ static iop_addr_t iop_buffer; /* Address of IOP SIF DMA receive address */
+@@ -265,13 +266,21 @@
+ 	const size_t dma_nbytes = sizeof(iop_dma_tag) + aligned_size;
+ 	u8 *dma_buffer = sif1_buffer;
+ 	dma_addr_t madr;
++	unsigned long flags;
++	int err = 0;
+ 
+ 	if (!aligned_size)
+ 		return 0;
+ 	if (dma_nbytes > SIF1_BUFFER_SIZE)
+ 		return -EINVAL;
+-	if (!sif1_ready())
+-		return -EBUSY;
++	/* A command from an IRQ must not overwrite a task's half-built packet.
++	 * SIF1 completion is hardware driven and does not require an EE IRQ.
++	 */
++	spin_lock_irqsave(&sif1_dma_lock, flags);
++	if (!sif1_ready()) {
++		err = -EBUSY;
++		goto out;
++	}
+ 
+ 	memcpy(&dma_buffer[0], &iop_dma_tag, sizeof(iop_dma_tag));
+ 	memcpy(&dma_buffer[sizeof(iop_dma_tag)], header, header_size);
+@@ -283,8 +292,10 @@
+ 	outl(madr, DMAC_SIF1_MADR);
+ 	outl(nbytes_to_qwc(dma_nbytes), DMAC_SIF1_QWC);
+ 	outl(DMAC_CHCR_SENDN_TIE, DMAC_SIF1_CHCR);
+-
+-	return 0;
++	(void)inl(DMAC_SIF1_CHCR);
++out:
++	spin_unlock_irqrestore(&sif1_dma_lock, flags);
++	return err;
+ }
+ 
+ static int sif1_write(const struct sif_cmd_header *header,
+@@ -437,7 +448,9 @@
+ 		return err;
+ 	}
+ 
+-	wait_for_completion(&client->done);
++	while (!wait_for_completion_timeout(&client->done, 5 * HZ))
++		pr_warn("SIF: waiting for bind server %#x (DMA status %#x)\n",
++			server_id, inl(DMAC_STAT_MASK));
+ 
+ 	return client->server ? 0 : -ENXIO;
+ }
+@@ -489,7 +502,9 @@
+ 		if (!wait_for_completion_timeout(&client->done, timeout))
+ 			return -ETIMEDOUT;
+ 	} else {
+-	wait_for_completion(&client->done);
++	while (!wait_for_completion_timeout(&client->done, 5 * HZ))
++		pr_warn("SIF: waiting for RPC %u server %#x (DMA status %#x)\n",
++			rpc_id, client->server, inl(DMAC_STAT_MASK));
+ 	}
+ 
+ 	if (recv_size > 0)
+--- a/drivers/usb/host/ohci-ps2.c
++++ b/drivers/usb/host/ohci-ps2.c
+@@ -13,6 +13,7 @@
+ #include <linux/usb/hcd.h>
+ 
+ #include <asm/mach-ps2/iop-heap.h>
++#include <asm/mach-ps2/irq.h>
+ #include <asm/mach-ps2/iop-memory.h>
+ #include <asm/mach-ps2/iop-registers.h>
+ 
+@@ -78,7 +79,6 @@
+ 		return err;
+ 	}
+ 
+-	ohci_ps2_enable(hcd);
+ 	dev_info(hcd->self.controller, "OHCI: reset complete, requesting IRQ relay\n");
+ 
+ 	return 0;
+@@ -113,7 +113,10 @@
+ 	int err;
+ 
+ 	dev_info(hcd->self.controller, "OHCI: IRQ ready, starting controller\n");
++	ohci_ps2_enable(hcd);
+ 	err = ohci_start_driver(hcd);
++	if (err)
++		ohci_ps2_disable(hcd);
+ 	if (!err)
+ 		dev_info(hcd->self.controller, "OHCI: controller running\n");
+ 	return err;
+@@ -196,6 +199,19 @@
+ 		dev_err(dev, "ioremap failed with %d\n", err);
+ 		goto err_ioremap;
+ 	}
++
++	/* Keep USB quiet while LOADFILE links the interrupt relay. Do this
++	 * before enabling the PS2-specific gate or configuring controller DMA.
++	 */
++	writel(OHCI_INTR_MIE, hcd->regs + 0x14);
++	(void)readl(hcd->regs + 0x14);
++	dev_info(dev, "OHCI: prepare IRQ relay before controller setup\n");
++	err = iop_irq_prepare();
++	if (err < 0) {
++		dev_err(dev, "IOP IRQ relay preparation failed: %d\n", err);
++		goto err_alloc_dma_buffer;
++	}
++	dev_info(dev, "OHCI: IRQ relay firmware ready\n");
+ 
+ 	err = iopheap_alloc_dma_buffer(pdev, DMA_BUFFER_SIZE);
+ 	if (err)
+--- a/drivers/ps2/iop-module-request.c
++++ b/drivers/ps2/iop-module-request.c
+@@ -719,6 +719,7 @@
+ 	}
+ 	memcpy(link.arg, arg_, arg_size);
+ 
++	pr_info("IOP firmware: submit LOADFILE at %#x (%zu bytes)\n", link.addr, nbyte);
+ 	err = sif_rpc(&load_file_rpc_client, rpo_mod_buf_load,
+ 		&link, sizeof(link), &result, sizeof(result));
+ 	if (err < 0)
+@@ -837,6 +838,7 @@
+ 		goto err_name;
+ 	}
+ 
++	pr_info("IOP firmware: %s: read\n", name);
+ 	err = request_firmware(&fw, filepath, iop_module_device);
+ 	if (err < 0)
+ 		goto err_request;
+@@ -861,11 +863,14 @@
+ 		goto err_incompatible;
+ 	}
+ 
++	pr_info("IOP firmware: %s: resolve imports\n", name);
+ 	err = iop_module_request_dependencies(ehdr, name);
+ 	if (err < 0)
+ 		goto err_dependency;
+ 
++	pr_info("IOP firmware: %s: start on IOP\n", name);
+ 	err = iop_module_link_buffer(fw->data, fw->size, arg);
++	pr_info("IOP firmware: %s: start result %d\n", name, err);
+ 
+ err_dependency:
+ err_incompatible:
+--- a/drivers/ps2/iop-irq.c
++++ b/drivers/ps2/iop-irq.c
+@@ -50,6 +50,37 @@
+ static struct sif_rpc_client iop_irq_rpc;
+ static DEFINE_MUTEX(iop_irq_lock);
+ static bool irq_relay;
++
++static int iop_irq_prepare_locked(void)
++{
++	int err;
++
++	if (irq_relay)
++		return 0;
++	pr_info("IOP USB: loading IRQ relay\n");
++	err = iop_module_request("irqrelay", 0x0100, NULL);
++	if (err < 0)
++		return err;
++	pr_info("IOP USB: binding IRQ relay\n");
++	err = sif_rpc_bind(&iop_irq_rpc, SIF_SID_IRQ_RELAY);
++	if (err < 0) {
++		pr_err("IOP USB: relay bind failed: %d\n", err);
++		return err;
++	}
++	irq_relay = true;
++	return 0;
++}
++
++int iop_irq_prepare(void)
++{
++	int err;
++
++	mutex_lock(&iop_irq_lock);
++	err = iop_irq_prepare_locked();
++	mutex_unlock(&iop_irq_lock);
++	return err;
++}
++EXPORT_SYMBOL_GPL(iop_irq_prepare);
+ 
+ static int iop_irq_request_resources(struct irq_data *data)
+ {
+@@ -63,27 +94,9 @@
+ 
+ 	/* This callback runs before the IRQ descriptor's raw spinlock. */
+ 	mutex_lock(&iop_irq_lock);
+-	if (!irq_relay) {
+-		int id;
+-
+-		if (data->irq == IRQ_IOP_USB)
+-			pr_info("IOP USB: loading IRQ relay\n");
+-		id = iop_module_request("irqrelay", 0x0100, NULL);
+-		if (id < 0) {
+-			err = id;
+-			goto out;
+-		}
+-
+-		if (data->irq == IRQ_IOP_USB)
+-			pr_info("IOP USB: binding IRQ relay\n");
+-		err = sif_rpc_bind(&iop_irq_rpc, SIF_SID_IRQ_RELAY);
+-		if (err < 0) {
+-			pr_err("%s: sif_rpc_bind failed with %d\n",
+-				__func__, err);
+-			goto out;
+-		}
+-		irq_relay = true;
+-	}
++	err = iop_irq_prepare_locked();
++	if (err < 0)
++		goto out;
+ 
+ 	if (data->irq == IRQ_IOP_USB)
+ 		pr_info("IOP USB: registering interrupt\n");
+--- a/arch/mips/include/asm/mach-ps2/irq.h
++++ b/arch/mips/include/asm/mach-ps2/irq.h
+@@ -138,4 +138,7 @@
+  */
+ void intc_sif_irq(unsigned int irq);
+ 
++/* Prepare the IOP relay in sleeping context before enabling USB DMA. */
++int iop_irq_prepare(void);
++
+ #endif /* __ASM_MACH_PS2_IRQ_H */

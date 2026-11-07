@@ -1,0 +1,205 @@
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2-gs-rgba-transfer.h
+@@ -0,0 +1,13 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_RGBA_TRANSFER_H
++#define _UAPI_PS2_GS_RGBA_TRANSFER_H
++#include "ps2-gs-transfer.h"
++#define PS2GS_HW_RGBA_TRANSFER (1U << 15)
++#define PS2GS_RGBA_REPLACE 0U
++#define PS2GS_RGBA_MULTIPLY 1U
++/* Owned CT32 only, with the existing bounded texture geometry and ownership
++ * checks. REPLACE copies all four bytes under an arbitrary mask. MULTIPLY
++ * writes RGB = floor(texture.RGB * texture.A / 128), clamped to 255, with
++ * RGB-only masks. No arbitrary registers, depth writes or framebuffer access. */
++#define PS2GS_TEXTURE_RGBA_TRANSFER _IOW('G', 0x82, struct ps2gs_texture_transfer)
++#endif
+--- a/src/gallium/drivers/ps2/ps2_composite.c
++++ b/src/gallium/drivers/ps2/ps2_composite.c
+@@ -278,9 +278,8 @@
+         destination_bpp==16?0x7fff:0xffffff,0,128))return -1;
+     if(destination_argb){
+         unsigned a=multiply(effective,sf)+multiply(destination_alpha,df);if(a>255)a=255;
+-        uint32_t mapping[256];for(unsigned i=0;i<256;++i)mapping[i]=i<<24;
+-        if(ps2_surface_fill(gs,w->a,0,0,width,1,a) || ps2_surface_map_palette(gs,palette,mapping) ||
+-            ps2_surface_channel_map_blit(gs,w->a,destination,palette,0,0,x,y,width,1,0xff000000,0))return -1;
++        if(ps2_surface_fill(gs,w->a,0,0,width,1,a) ||
++            ps2_surface_alpha_write(gs,w->a,w->b,destination,palette,x,y,width,1,0xff000000))return -1;
+     }
+     return 0;
+ }
+--- a/src/gallium/drivers/ps2/ps2_gs_logic.c
++++ b/src/gallium/drivers/ps2/ps2_gs_logic.c
+@@ -2,6 +2,7 @@
+ #define _POSIX_C_SOURCE 200809L
+ #include "ps2_gs_logic.h"
+ #include "ps2_gs_lut.h"
++#include "ps2-gs-rgba-transfer.h"
+ #include <errno.h>
+ #include <sys/ioctl.h>
+ #include <time.h>
+@@ -58,26 +59,27 @@
+     if(!(mask&0xff000000))return rgb_solid_logic(gs,handle,x,y,width,height,color&0xffffff,mask,alu);
+     if(!mask || alu==5)return 0;
+     if(gs->fd<0)return fail(gs,EBADF);
+-    uint32_t scratch=0,palette=0,table[256],identity[256];
++    uint32_t scratch=0,rgba_scratch=0,palette=0,table[256];
+     int result=-1,error=errno;
+-    if(ps2_surface_create(gs,64,32,32,&scratch) || ps2_surface_create(gs,16,16,32,&palette))goto out;
++    if(ps2_surface_create(gs,64,32,32,&scratch) || ps2_surface_create(gs,16,16,32,&palette) ||
++        ((gs->caps.features&PS2GS_HW_RGBA_TRANSFER) && ps2_surface_create(gs,64,32,32,&rgba_scratch)))goto out;
+     /* Keep the intermediate alpha value in a colour byte, as in the native
+      * Boolean copy engine. Its final channel map writes the alpha byte. */
+-    for(unsigned i=0;i<256;++i){table[i]=alpha_logic(alu,color>>24,i)&255;identity[i]=i<<24;}
++    for(unsigned i=0;i<256;++i)table[i]=alpha_logic(alu,color>>24,i)&255;
+     if((mask&0xffffff) && rgb_solid_logic(gs,handle,x,y,width,height,color&0xffffff,mask&0xffffff,alu))goto out;
+     result=0;
+     for(unsigned yy=0;!result && yy<height;){unsigned h=32-((y+yy)&31);if(h>height-yy)h=height-yy;
+         for(unsigned xx=0;!result && xx<width;){unsigned w=64-((x+xx)&63);if(w>width-xx)w=width-xx;
+             result=ps2_surface_map_palette(gs,palette,table) ||
+                 ps2_surface_channel_map_blit(gs,handle,scratch,palette,x+xx,y+yy,0,0,w,h,255,3) ||
+-                ps2_surface_map_palette(gs,palette,identity) ||
+-                ps2_surface_channel_map_blit(gs,scratch,handle,palette,0,0,x+xx,y+yy,w,h,mask&0xff000000,0)?-1:0;
++                ps2_surface_alpha_write(gs,scratch,rgba_scratch,handle,palette,x+xx,y+yy,w,h,mask&0xff000000)?-1:0;
+             xx+=w;
+         }
+         yy+=h;
+     }
+ out:
+     error=errno;
++    if(rgba_scratch && !gs->error && ps2_surface_destroy(gs,rgba_scratch) && !result){result=-1;error=errno;}
+     if(palette && !gs->error && ps2_surface_destroy(gs,palette) && !result){result=-1;error=errno;}
+     if(scratch && !gs->error && ps2_surface_destroy(gs,scratch) && !result){result=-1;error=errno;}
+     if(result)errno=error;
+--- a/src/gallium/drivers/ps2/ps2_gs_lut.c
++++ b/src/gallium/drivers/ps2/ps2_gs_lut.c
+@@ -1,6 +1,7 @@
+ /* SPDX-License-Identifier: MIT */
+ #define _POSIX_C_SOURCE 200809L
+ #include "ps2_gs_lut.h"
++#include "ps2_gs_transfer.h"
+ #include <errno.h>
+ #include <sys/ioctl.h>
+ #include <time.h>
+@@ -156,3 +157,20 @@
+     }
+     gs->error=errno=EAGAIN;return -1;
+ }
++int ps2_surface_alpha_write(struct ps2_surface_client *gs,uint32_t source,uint32_t rgba_scratch,
++    uint32_t destination,uint32_t palette,unsigned dx,unsigned dy,unsigned width,unsigned height,uint32_t mask)
++{
++    if(mask&0xffffff){errno=EINVAL;return -1;}
++    uint32_t table[256];
++    if(gs->caps.features&PS2GS_HW_RGBA_TRANSFER){
++        /* A complete RGBA scratch write also makes every lookup byte explicit
++         * before the masked CT32 texture replacement. No CPU pixels are read. */
++        for(unsigned i=0;i<256;++i)table[i]=i | i<<24;
++        return ps2_surface_map_palette(gs,palette,table) ||
++            ps2_surface_channel_map_region(gs,source,rgba_scratch,palette,0,0,0,0,width,height,UINT32_MAX,0) ||
++            ps2_surface_rgba_rectangle(gs,rgba_scratch,destination,0,0,dx,dy,width,height,mask,PS2GS_RGBA_REPLACE)?-1:0;
++    }
++    for(unsigned i=0;i<256;++i)table[i]=i<<24;
++    return ps2_surface_map_palette(gs,palette,table) ||
++        ps2_surface_channel_map_region(gs,source,destination,palette,0,0,dx,dy,width,height,mask,0)?-1:0;
++}
+--- a/src/gallium/drivers/ps2/ps2_gs_lut.h
++++ b/src/gallium/drivers/ps2/ps2_gs_lut.h
+@@ -24,4 +24,8 @@
+  * into its low byte before readback. Source colour bytes never reach the CPU. */
+ int ps2_surface_alpha_read(struct ps2_surface_client *,uint32_t source,
+     unsigned x,unsigned y,unsigned width,unsigned height,unsigned char *alpha,size_t bytes);
++/* Map a red-byte Boolean/coverage result into alpha. The optional typed RGBA
++ * transfer uses a separate scratch page; the legacy kernel retains its map. */
++int ps2_surface_alpha_write(struct ps2_surface_client *,uint32_t red_source,uint32_t rgba_scratch,
++    uint32_t destination,uint32_t palette,unsigned dx,unsigned dy,unsigned width,unsigned height,uint32_t mask);
+ #endif
+--- a/src/gallium/drivers/ps2/ps2_gs_transfer.c
++++ b/src/gallium/drivers/ps2/ps2_gs_transfer.c
+@@ -5,6 +5,7 @@
+ #include <errno.h>
+ #include <sys/ioctl.h>
+ #include <time.h>
++#include <string.h>
+ _Static_assert(sizeof(struct ps2gs_texture_transfer) == 48, "texture transfer ABI");
+ static int fail(struct ps2_render_client *r, int error)
+ {
+@@ -50,3 +51,50 @@
+     }
+     return fail(r, EAGAIN);
+ }
++int ps2_texture_rgba_transfer(struct ps2_render_client *r,uint32_t texture_handle,
++    const struct ps2gs_texture_triangle *triangles,unsigned count,uint32_t mask,unsigned mode)
++{
++    if(r->gs->error)return fail(r,r->gs->error);
++    const struct ps2_surface *d=ps2_surface_lookup(r->gs,r->target),*s=ps2_surface_lookup(r->gs,texture_handle);
++    if(!(r->gs->caps.features&PS2GS_HW_RGBA_TRANSFER))return fail(r,ENOTSUP);
++    if(!r->target || !texture_handle || !d || !s || d==s || d->bits_per_pixel!=32 || s->bits_per_pixel!=32 ||
++        !triangles || !count || count>64 || r->depth || s->width>1024 || s->height>1024 ||
++        mode>PS2GS_RGBA_MULTIPLY || (mode==PS2GS_RGBA_MULTIPLY && (mask&0xff000000)))return fail(r,EINVAL);
++    for(unsigned i=0;i<count;++i){const struct ps2gs_texture_triangle *t=triangles+i;
++        if(t->flags || t->reserved[0] || t->reserved[1] || t->reserved[2])return fail(r,EINVAL);
++        for(unsigned j=0;j<3;++j){const struct ps2gs_texture_vertex *v=t->v+j;
++            if(v->q<0x39800000 || v->q>0x45800000 || v->s>v->q || v->t>v->q ||
++                v->position.x>d->width*16 || v->position.y>d->height*16 || v->position.z>65535)return fail(r,EINVAL);}}
++    if(!mask)return 0;
++    if(ps2_render_flush(r))return -1;
++    struct ps2gs_texture_transfer request={.draw={.abi=PS2GS_ABI_VERSION,.target=r->target,.texture=texture_handle,
++        .count=count,.width=d->width,.height=d->height,.bits_per_pixel=32,.triangles=(uintptr_t)triangles},
++        .plane_mask=mask,.mode=mode};
++    for(unsigned attempt=0;attempt<100;++attempt){
++        if(!ioctl(r->gs->fd,PS2GS_TEXTURE_RGBA_TRANSFER,&request))return 0;
++        if(errno!=EAGAIN)return fail(r,errno);
++        struct timespec delay={.tv_nsec=10000000};
++        while(nanosleep(&delay,&delay)<0)if(errno!=EINTR)return fail(r,errno);
++    }
++    return fail(r,EAGAIN);
++}
++static uint32_t bits(float value){uint32_t result;memcpy(&result,&value,4);return result;}
++static unsigned padded(unsigned n){unsigned p=1;while(p<n)p*=2;return p;}
++int ps2_surface_rgba_rectangle(struct ps2_surface_client *gs,uint32_t source,uint32_t destination,
++    unsigned sx,unsigned sy,unsigned dx,unsigned dy,unsigned width,unsigned height,uint32_t mask,unsigned mode)
++{
++    const struct ps2_surface *s=ps2_surface_lookup(gs,source),*d=ps2_surface_lookup(gs,destination);
++    if(!source || !destination || !s || !d || s==d || !width || !height || sx>=s->width || sy>=s->height ||
++        dx>=d->width || dy>=d->height || width>s->width-sx || height>s->height-sy ||
++        width>d->width-dx || height>d->height-dy){errno=EINVAL;return -1;}
++    unsigned x[4]={dx,dx+width,dx+width,dx},y[4]={dy,dy,dy+height,dy+height};
++    unsigned u[4]={sx,sx+width,sx+width,sx},v[4]={sy,sy,sy+height,sy+height};
++    static const unsigned indices[2][3]={{0,1,2},{0,2,3}};
++    struct ps2gs_texture_triangle triangles[2]={0};
++    for(unsigned i=0;i<2;++i)for(unsigned j=0;j<3;++j){unsigned k=indices[i][j];
++        triangles[i].v[j]=(struct ps2gs_texture_vertex){
++            .position={.x=x[k]*16,.y=y[k]*16,.rgba=0x80808080},
++            .s=bits((float)u[k]/padded(s->width)),.t=bits((float)v[k]/padded(s->height)),.q=0x3f800000};}
++    struct ps2_render_client temporary={.gs=gs,.target=destination};
++    return ps2_texture_rgba_transfer(&temporary,source,triangles,2,mask,mode);
++}
+--- a/src/gallium/drivers/ps2/ps2_gs_transfer.h
++++ b/src/gallium/drivers/ps2/ps2_gs_transfer.h
+@@ -3,6 +3,11 @@
+ #define PS2_GS_TRANSFER_CLIENT_H
+ #include "ps2_gs_texture.h"
+ #include "ps2-gs-transfer.h"
++#include "ps2-gs-rgba-transfer.h"
+ int ps2_texture_transfer(struct ps2_render_client *, uint32_t texture,
+     const struct ps2gs_texture_triangle *, unsigned count, uint32_t mask, unsigned mode);
++int ps2_texture_rgba_transfer(struct ps2_render_client *,uint32_t texture,
++    const struct ps2gs_texture_triangle *,unsigned count,uint32_t mask,unsigned mode);
++int ps2_surface_rgba_rectangle(struct ps2_surface_client *,uint32_t source,uint32_t destination,
++    unsigned sx,unsigned sy,unsigned dx,unsigned dy,unsigned width,unsigned height,uint32_t mask,unsigned mode);
+ #endif
+--- a/src/gallium/drivers/ps2/ps2_rop.c
++++ b/src/gallium/drivers/ps2/ps2_rop.c
+@@ -159,10 +159,8 @@
+         rgb_rectangle(w,source,destination,sx,sy,dx,dy,width,height,mask&0xffffff,alu) ||
+         rgb_rectangle(w,w->alpha_source,w->alpha_destination,0,0,0,0,width,height,
+             (mask>>24)*0x010101U,alu))return -1;
+-    for(unsigned i=0;i<256;++i)table[i]=i<<24;
+-    return ps2_surface_map_palette(w->gs,w->palette,table) ||
+-        ps2_surface_channel_map_region(w->gs,w->alpha_destination,destination,w->palette,0,0,dx,dy,width,height,
+-            mask&0xff000000,0)?-1:0;
++    return ps2_surface_alpha_write(w->gs,w->alpha_destination,w->alpha_source,destination,w->palette,
++        dx,dy,width,height,mask&0xff000000);
+ }
+ static int before(const struct ps2_pipe_copy_box *a,const struct ps2_pipe_copy_box *b)
+ { return a->dy<b->dy || (a->dy==b->dy && a->dx<b->dx); }

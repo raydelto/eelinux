@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "repository": "https://github.com/frno7/linux.git",
+  "revision": "82c5894db8469566d45c7f45bf4d3f230ce3da3f",
+  "branch_hint": "ps2-gamepad",
+  "comparison_revision": "77174dd4c8958a91aa5b76fb064a60eb68119e70",
+  "status": "experimental feature source snapshot, not applied to baseline or modern port; full branch includes older unrelated upstream changes and must not be merged blindly",
+  "files": [
+    {
+      "path": "drivers/ps2/gamepad.c",
+      "sha256": "fc297fdae0198571736a2e74932a377d4fd327170161a090403e0371f17f0d7f",
+      "bytes": 10572
+    },
+    {
+      "path": "arch/mips/include/asm/mach-ps2/gamepad.h",
+      "sha256": "a9373af46dd31ac038830e6c1da4e89c8b20f1e7901339a65c48b18d5da3fd20",
+      "bytes": 2662
+    },
+    {
+      "path": "arch/mips/include/asm/mach-ps2/sif.h",
+      "sha256": "017d02fe8c49b1d2895c87b7dcddf0f9d72baf220fea9610e2212ede7d279e0f",
+      "bytes": 3863
+    }
+  ]
+}

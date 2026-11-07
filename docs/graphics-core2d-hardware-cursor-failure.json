@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-05",
+  "scope": "first physical boot of native core-X image",
+  "result": "Xorg failed before scene qualification",
+  "physical_boot_observed": true,
+  "Xorg_connection_observed": true,
+  "Xorg_exit_code": 1,
+  "error": "PS2 GS: foreign cursor device",
+  "mouse_driver_added": true,
+  "input_device": "Mouse0 id 7, /dev/input/mice, ExplorerPS/2",
+  "console_return_observed": true,
+  "full_2D_complete": false,
+  "driver_fix": "Resolve MI sprite callback devices through GetMaster(device, MASTER_POINTER); preserve master cursor on slave cleanup",
+  "fix_physical_acceptance": "pending",
+  "images_in_documentation": false
+}

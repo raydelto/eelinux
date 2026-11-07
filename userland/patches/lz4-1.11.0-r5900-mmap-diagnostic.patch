@@ -1,0 +1,17 @@
+--- a/programs/lz4io.c
++++ b/programs/lz4io.c
+@@ -1463,11 +1463,13 @@
+ static volatile sig_atomic_t g_mmapFault = 0;
+ 
+ /* several threads can fault simultaneously : only the first one reports */
+ static int LZ4IO_firstMmapFault(void)
+ {
+-#  if defined(__GNUC__)
++    /* The legacy exchange needs native 4-byte atomic support. Otherwise keep
++     * the signal-safe best-effort fallback instead of an unavailable helper. */
++#  if defined(__GNUC__) && defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)
+     return __sync_lock_test_and_set(&g_mmapFault, 1) == 0;
+ #  else
+     int const first = !g_mmapFault;   /* best effort : the message may be repeated */
+     g_mmapFault = 1;
+     return first;

@@ -1,0 +1,311 @@
+--- a/drivers/video/fbdev/ps2fb-gs-device.h
++++ b/drivers/video/fbdev/ps2fb-gs-device.h
+@@ -7,6 +7,7 @@
+  */
+ #include "ps2fb-gs-arena.h"
+ #include "ps2fb-gs-surface-packet.h"
++#include "ps2fb-gs-render-packet.h"
+ 
+ struct ps2gs_session;
+ struct ps2gs_device {
+@@ -19,6 +20,7 @@
+ struct ps2gs_session {
+ 	struct ps2gs_device *device;
+ 	struct ps2gs_arena arena;
++	u32 depth_color_bpp[PS2GS_MAX_SURFACES];
+ 	u64 epoch;
+ 	int failed;
+ };
+@@ -119,8 +121,10 @@
+ static struct ps2gs_buffer *ps2gs_session_buffer(struct ps2gs_session *session,
+ 		struct fb_info *info, u32 handle, struct ps2gs_buffer *front)
+ {
+-	if (handle)
+-		return ps2gs_arena_lookup(&session->arena, handle);
++	if (handle) {
++		struct ps2gs_buffer *b = ps2gs_arena_lookup(&session->arena, handle);
++		return b && !session->depth_color_bpp[b - session->arena.buffers] ? b : NULL;
++	}
+ 	*front = (struct ps2gs_buffer) { .width = info->var.xres,
+ 		.height = info->var.yres, .buffer_width = ALIGN(info->var.xres_virtual, 64),
+ 		.bits_per_pixel = info->var.bits_per_pixel };
+@@ -148,6 +152,8 @@
+ 		count = ps2gs_package_surface_fill(par->package.buffer, destination, request);
+ 	} else if (operation == PS2GS_SURFACE_COPY) {
+ 		count = ps2gs_package_surface_copy(par->package.buffer, source, destination, request);
++	} else if (operation == PS2GS_RENDER_SUBMIT) {
++		count = ps2gs_package_render(par->package.buffer, destination, source, request);
+ 	} else {
+ 		const struct ps2gs_surface_upload *u = request;
+ 		struct ps2gs_upload image = { .x = u->x, .y = u->y,
+@@ -176,6 +182,12 @@
+ 			++par->gs_stats.fills;
+ 		if (operation == PS2GS_SURFACE_COPY)
+ 			++par->gs_stats.copies;
++		if (operation == PS2GS_RENDER_SUBMIT) {
++			const struct ps2gs_command *c = request;
++			if (c->op == PS2GS_FILL) ++par->gs_stats.fills;
++			if (c->op == PS2GS_TRIANGLE) ++par->gs_stats.triangles;
++			if (c->op == PS2GS_CLEAR_DEPTH) ++par->gs_stats.depth_clears;
++		}
+ 	}
+ out:
+ 	if (ret)
+@@ -223,6 +235,8 @@
+ 	return 0;
+ }
+ 
++#include "ps2fb-gs-render-device.h"
++
+ static int ps2gs_surface_ioctl_locked(struct ps2gs_session *session,
+ 		struct fb_info *info, unsigned int cmd, void __user *arg)
+ {
+@@ -233,11 +247,9 @@
+ 
+ 	if (cmd == PS2GS_GET_CAPS) {
+ 		ps2gs_caps(info, &caps);
+-		/* This owned interface currently exposes color storage/transfers. The
+-		 * legacy framebuffer triangle/depth engine is a separate ABI endpoint;
+-		 * do not claim those operations on a file that cannot submit them. */
++		/* Explicitly allocated Z16/Z16S depth and bounded owned rendering. */
+ 		caps.features = PS2GS_HW_FILL | PS2GS_HW_COPY | PS2GS_HW_UPLOAD |
+-			PS2GS_HW_SURFACES;
++			PS2GS_HW_SURFACES | PS2GS_HW_TRIANGLE | PS2GS_HW_DEPTH16 | PS2GS_HW_OWNED_RENDER;
+ 		return copy_to_user(arg, &caps, sizeof(caps)) ? -EFAULT : 0;
+ 	}
+ 	if (session->epoch != ((struct ps2fb_par *)info->par)->gs_epoch)
+@@ -247,6 +259,10 @@
+ 	if (!vc_cons[fg_console].d || vc_cons[fg_console].d->vc_mode != KD_GRAPHICS)
+ 		return -EBUSY;
+ 	switch (cmd) {
++	case PS2GS_DEPTH_CREATE:
++		return ps2gs_depth_create_locked(session, info, arg);
++	case PS2GS_RENDER_SUBMIT:
++		return ps2gs_render_locked(session, info, arg);
+ 	case PS2GS_SURFACE_CREATE:
+ 		return ps2gs_surface_create_locked(session, info, arg);
+ 	case PS2GS_SURFACE_DESTROY: {
+@@ -255,7 +271,7 @@
+ 			return -EFAULT;
+ 		if (destroy.abi != PS2GS_ABI_VERSION || destroy.reserved[0] || destroy.reserved[1])
+ 			return -EINVAL;
+-		return ps2gs_arena_destroy(&session->arena, destroy.handle);
++		return ps2gs_destroy_owned(session, destroy.handle);
+ 	}
+ 	case PS2GS_SURFACE_FILL: {
+ 		struct ps2gs_surface_fill fill;
+--- a/drivers/video/fbdev/ps2fb.c
++++ b/drivers/video/fbdev/ps2fb.c
+@@ -44,6 +44,7 @@
+ #include <linux/console.h>
+ #include <linux/ps2-gs.h>
+ #include <linux/ps2-gs-surface.h>
++#include <linux/ps2-gs-render.h>
+ #include <linux/miscdevice.h>
+ #include <linux/kref.h>
+ #include <linux/kd.h>
+--- /dev/null
++++ b/include/uapi/linux/ps2-gs-render.h
+@@ -0,0 +1,29 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_RENDER_H
++#define _UAPI_PS2_GS_RENDER_H
++#include "ps2-gs-surface.h"
++
++#define PS2GS_HW_OWNED_RENDER (1U << 6)
++/* Depth objects use the same handle namespace, ownership and destroy ioctl.
++ * color_bits_per_pixel selects Z16 for CT16 or Z16S for CT32. They cannot
++ * be filled/copied/uploaded as color. Storage is zeroed before publication.
++ */
++struct ps2gs_depth_create {
++	__u32 abi, width, height, color_bits_per_pixel;
++	__u32 handle, buffer_width, allocated_bytes, reserved;
++};
++/* Snapshot and validate the entire batch before drawing. target=0 is front;
++ * depth=0 disables depth storage. All selected buffers must belong to this
++ * file. Depth dimensions and padded width must match the color target.
++ * Commands are existing ABI-1 FILL/TRIANGLE/CLEAR_DEPTH, not COPY. No blending,
++ * textures or arbitrary depth functions are implied. Larger Z is nearer;
++ * tested triangles use GEQUAL and update Z. CLEAR_DEPTH writes zero.
++ */
++struct ps2gs_render_submit {
++	__u32 abi, target, depth, count;
++	__u32 width, height, bits_per_pixel, reserved;
++	__aligned_u64 commands;
++};
++#define PS2GS_DEPTH_CREATE _IOWR('G', 0x78, struct ps2gs_depth_create)
++#define PS2GS_RENDER_SUBMIT _IOW('G', 0x79, struct ps2gs_render_submit)
++#endif
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-render-packet.h
+@@ -0,0 +1,61 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++static int ps2gs_validate_render(const struct ps2gs_buffer *color,
++		const struct ps2gs_buffer *depth, u32 depth_color_bpp,
++		const struct ps2gs_command *command)
++{
++	struct ps2gs_caps caps = { .width = color->width, .height = color->height,
++		.bits_per_pixel = color->bits_per_pixel };
++	if (depth) {
++		if (depth_color_bpp != color->bits_per_pixel ||
++		    depth->buffer_width != color->buffer_width ||
++		    depth->width != color->width || depth->height != color->height)
++			return -EINVAL;
++		caps.features = PS2GS_HW_DEPTH16;
++	}
++	if (command->op == PS2GS_COPY)
++		return -EOPNOTSUPP;
++	return ps2gs_validate(command, &caps);
++}
++
++static size_t ps2gs_package_render(union package *base,
++		const struct ps2gs_buffer *color, const struct ps2gs_buffer *depth,
++		const struct ps2gs_command *command)
++{
++	union package *p = base + 1;
++	u32 i;
++	bool clear = command->op == PS2GS_CLEAR_DEPTH;
++	bool zwrite = clear || (command->flags & PS2GS_DEPTH_TEST);
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_frame_2,
++		.data.frame_1 = { .fbp = color->base / 8192,
++			.fbw = color->buffer_width / 64, .psm = ps2gs_buffer_psm(color),
++			.fbmsk = clear ? 0xffffffff : 0 } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_xyoffset_2, .data.xyoffset_1 = { } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_scissor_2,
++		.data.scissor_1 = { .scax1 = color->width - 1, .scay1 = color->height - 1 } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_zbuf_2,
++		.data.zbuf = { .zbp = depth ? depth->base / 8192 : 0,
++			.psm = color->bits_per_pixel == 16 ? 2 : 0xa,
++			.zmsk = zwrite ? gs_zbuf_on : gs_zbuf_off } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_test_2,
++		.data.test_1 = { .zte = gs_depth_test_on,
++			.ztst = !clear && zwrite ? gs_depth_gequal : gs_depth_pass } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_prmodecont, .data.prmodecont = { .ac = 1 } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_prim,
++		.data.prim = { .prim = command->op == PS2GS_TRIANGLE ? gs_triangle : gs_sprite,
++			.ctxt = gs_context_2, .iip = command->op == PS2GS_TRIANGLE ?
++				gs_gouraud_shading : gs_flat_shading } };
++	if (command->op == PS2GS_TRIANGLE) {
++		for (i = 0; i < 3; ++i)
++			p = ps2gs_vertex(p, command->v[i]);
++	} else {
++		struct ps2gs_vertex v = command->v[0];
++		p = ps2gs_vertex(p, v);
++		v.x += (clear ? color->width : command->width) * 16;
++		v.y += (clear ? color->height : command->height) * 16;
++		p = ps2gs_vertex(p, v);
++	}
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_finish };
++	base->gif.tag = (struct gif_tag) { .flg = gif_packed_mode,
++		.reg0 = gif_reg_ad, .nreg = 1, .nloop = p - base - 1, .eop = 1 };
++	return p - base;
++}
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-render-device.h
+@@ -0,0 +1,106 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/* Included inside the owned provider, after its synchronous executor. */
++static u32 ps2gs_depth_role(struct ps2gs_session *session, u32 handle)
++{
++	struct ps2gs_buffer *buffer = ps2gs_arena_lookup(&session->arena, handle);
++	return buffer ? session->depth_color_bpp[buffer - session->arena.buffers] : 0;
++}
++
++static int ps2gs_destroy_owned(struct ps2gs_session *session, u32 handle)
++{
++	struct ps2gs_buffer *buffer = ps2gs_arena_lookup(&session->arena, handle);
++	if (!buffer)
++		return -ENOENT;
++	session->depth_color_bpp[buffer - session->arena.buffers] = 0;
++	return ps2gs_arena_destroy(&session->arena, handle);
++}
++
++static int ps2gs_depth_create_locked(struct ps2gs_session *session,
++		struct fb_info *info, void __user *arg)
++{
++	struct ps2gs_depth_create request;
++	struct ps2gs_buffer *depth, padded, dummy;
++	struct ps2gs_command clear = { .op = PS2GS_CLEAR_DEPTH };
++	int ret;
++	if (copy_from_user(&request, arg, sizeof(request)))
++		return -EFAULT;
++	if (request.abi != PS2GS_ABI_VERSION || request.reserved || request.handle ||
++	    request.buffer_width || request.allocated_bytes ||
++	    (request.color_bits_per_pixel != 16 && request.color_bits_per_pixel != 32))
++		return -EINVAL;
++	ret = ps2gs_arena_create(&session->arena, request.width, request.height, 16, &depth);
++	if (ret)
++		return ret;
++	/* Zero the full Z-swizzled allocation using depth writes; mask every
++	 * color bit. FRAME is a dummy at zero, never written by this operation. */
++	padded = *depth;
++	padded.width = padded.buffer_width;
++	padded.height = padded.bytes / (padded.width * 2);
++	dummy = padded;
++	dummy.base = 0;
++	dummy.bits_per_pixel = request.color_bits_per_pixel;
++	ret = ps2gs_surface_execute(info, PS2GS_RENDER_SUBMIT, &padded, &dummy, &clear, NULL);
++	if (ret) {
++		session->failed = ret;
++		ps2gs_arena_destroy(&session->arena, depth->handle);
++		return ret;
++	}
++	session->depth_color_bpp[depth - session->arena.buffers] = request.color_bits_per_pixel;
++	request.handle = depth->handle;
++	request.buffer_width = depth->buffer_width;
++	request.allocated_bytes = depth->bytes;
++	if (copy_to_user(arg, &request, sizeof(request))) {
++		ps2gs_destroy_owned(session, depth->handle);
++		return -EFAULT;
++	}
++	return 0;
++}
++
++static int ps2gs_render_locked(struct ps2gs_session *session,
++		struct fb_info *info, void __user *arg)
++{
++	struct ps2gs_render_submit request;
++	struct ps2gs_buffer front, *color, *depth = NULL;
++	struct ps2gs_command *commands;
++	u32 i, role = 0;
++	int ret;
++	if (copy_from_user(&request, arg, sizeof(request)))
++		return -EFAULT;
++	if (request.abi != PS2GS_ABI_VERSION || request.reserved || !request.count ||
++	    request.count > PS2GS_MAX_COMMANDS)
++		return -EINVAL;
++	color = ps2gs_session_buffer(session, info, request.target, &front);
++	if (!color)
++		return -ENOENT;
++	if (request.width != color->width || request.height != color->height ||
++	    request.bits_per_pixel != color->bits_per_pixel)
++		return -ESTALE;
++	if (request.depth) {
++		depth = ps2gs_arena_lookup(&session->arena, request.depth);
++		role = ps2gs_depth_role(session, request.depth);
++		if (!depth || !role)
++			return -ENOENT;
++	}
++	if (request.commands >> 32)
++		return -EFAULT;
++	commands = memdup_user(u64_to_user_ptr(request.commands), request.count * sizeof(*commands));
++	if (IS_ERR(commands))
++		return PTR_ERR(commands);
++	/* All handles, dimensions and commands are snapshotted under the provider
++	 * gate; reject the whole request before the first drawing side effect. */
++	for (i = 0; i < request.count; ++i) {
++		ret = ps2gs_validate_render(color, depth, role, &commands[i]);
++		if (ret)
++			goto out;
++	}
++	for (i = 0; i < request.count; ++i) {
++		ret = ps2gs_surface_execute(info, PS2GS_RENDER_SUBMIT, depth, color, &commands[i], NULL);
++		if (ret) {
++			session->failed = ret;
++			goto out;
++		}
++	}
++out:
++	kfree(commands);
++	return ret;
++}

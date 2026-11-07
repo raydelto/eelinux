@@ -1,0 +1,302 @@
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_gs_render.c
+@@ -0,0 +1,141 @@
++/* SPDX-License-Identifier: MIT */
++#define _POSIX_C_SOURCE 200809L
++#include "ps2_gs_render.h"
++#include <errno.h>
++#include <string.h>
++#include <sys/ioctl.h>
++#include <time.h>
++
++_Static_assert(sizeof(struct ps2gs_depth_create) == 32, "depth ABI");
++_Static_assert(sizeof(struct ps2gs_render_submit) == 40, "render ABI");
++static int fail(struct ps2_render_client *r, int error)
++{
++    if (!r->gs->error) r->gs->error = error;
++    r->count = 0;
++    errno = r->gs->error;
++    return -1;
++}
++static int request(struct ps2_render_client *r, unsigned long op, void *data)
++{
++    if (r->gs->error) return fail(r, r->gs->error);
++    if (r->gs->fd < 0) return fail(r, EBADF);
++    for (unsigned attempt = 0; attempt < 100; ++attempt) {
++        if (!ioctl(r->gs->fd, op, data)) return 0;
++        if (errno != EAGAIN) return fail(r, errno);
++        struct timespec delay = { .tv_nsec = 10000000 };
++        while (nanosleep(&delay, &delay) < 0)
++            if (errno != EINTR) return fail(r, errno);
++    }
++    return fail(r, EAGAIN);
++}
++static struct ps2_depth *depth_lookup(struct ps2_render_client *r, uint32_t handle)
++{
++    if (!handle) return NULL;
++    for (unsigned i = 0; i < PS2GS_MAX_SURFACES; ++i)
++        if (r->depths[i].handle == handle) return &r->depths[i];
++    return NULL;
++}
++int ps2_render_init(struct ps2_render_client *r, struct ps2_surface_client *gs)
++{
++    if (!r || !gs) { errno = EINVAL; return -1; }
++    memset(r, 0, sizeof(*r)); r->gs = gs;
++    if (gs->fd < 0 || gs->error) return fail(r, gs->error ? gs->error : EBADF);
++    if (!(gs->caps.features & PS2GS_HW_OWNED_RENDER)) return fail(r, ENOTSUP);
++    return 0;
++}
++int ps2_render_flush(struct ps2_render_client *r)
++{
++    if (r->gs->error) return fail(r, r->gs->error);
++    if (!r->count) return 0;
++    const struct ps2_surface *color = ps2_surface_lookup(r->gs, r->target);
++    if (!color || (r->depth && !depth_lookup(r, r->depth))) return fail(r, EINVAL);
++    struct ps2gs_render_submit submit = { .abi = PS2GS_ABI_VERSION,
++        .target = r->target, .depth = r->depth, .count = r->count,
++        .width = color->width, .height = color->height, .bits_per_pixel = color->bits_per_pixel,
++        .commands = (uintptr_t)r->commands };
++    if (request(r, PS2GS_RENDER_SUBMIT, &submit)) return -1;
++    r->count = 0;
++    return 0;
++}
++int ps2_render_depth_create(struct ps2_render_client *r, unsigned width, unsigned height,
++                            unsigned bpp, uint32_t *handle)
++{
++    if (handle) *handle = 0;
++    if (!handle || !width || !height || width > 2048 || height > 2048 ||
++        (bpp != 16 && bpp != 32)) return fail(r, EINVAL);
++    if (ps2_render_flush(r)) return -1;
++    unsigned slot;
++    for (slot = 0; slot < PS2GS_MAX_SURFACES && r->depths[slot].handle; ++slot) {}
++    if (slot == PS2GS_MAX_SURFACES) return fail(r, ENOSPC);
++    struct ps2gs_depth_create c = { .abi = PS2GS_ABI_VERSION,
++        .width = width, .height = height, .color_bits_per_pixel = bpp };
++    if (request(r, PS2GS_DEPTH_CREATE, &c)) return -1;
++    unsigned bw = (width + 63) & ~63U, rows = (height + 63) & ~63U;
++    if (!c.handle || ps2_surface_lookup(r->gs, c.handle) || depth_lookup(r, c.handle) ||
++        c.abi != PS2GS_ABI_VERSION || c.width != width || c.height != height ||
++        c.color_bits_per_pixel != bpp || c.reserved || c.buffer_width != bw ||
++        c.allocated_bytes != bw * rows * 2 || c.allocated_bytes > 4U * 1024 * 1024)
++        return fail(r, EPROTO);
++    r->depths[slot] = (struct ps2_depth) { .handle = c.handle, .width = width,
++        .height = height, .color_bpp = bpp, .buffer_width = bw, .bytes = c.allocated_bytes };
++    *handle = c.handle;
++    return 0;
++}
++int ps2_render_depth_destroy(struct ps2_render_client *r, uint32_t handle)
++{
++    struct ps2_depth *d = depth_lookup(r, handle);
++    if (!d) return fail(r, EINVAL);
++    if (ps2_render_flush(r)) return -1;
++    struct ps2gs_surface_destroy destroy = { .abi = PS2GS_ABI_VERSION, .handle = handle };
++    if (request(r, PS2GS_SURFACE_DESTROY, &destroy)) return -1;
++    memset(d, 0, sizeof(*d));
++    if (r->depth == handle) r->depth = 0;
++    return 0;
++}
++int ps2_render_bind(struct ps2_render_client *r, uint32_t color_handle, uint32_t depth_handle)
++{
++    const struct ps2_surface *color = ps2_surface_lookup(r->gs, color_handle);
++    struct ps2_depth *depth = depth_lookup(r, depth_handle);
++    if (!color || (depth_handle && (!depth || depth->width != color->width ||
++        depth->height != color->height || depth->color_bpp != color->bits_per_pixel ||
++        depth->buffer_width != ((color->width + 63) & ~63U)))) return fail(r, EINVAL);
++    if (ps2_render_flush(r)) return -1;
++    r->target = color_handle; r->depth = depth_handle;
++    return 0;
++}
++static int queue(struct ps2_render_client *r, const struct ps2gs_command *c)
++{
++    if (r->gs->error) return fail(r, r->gs->error);
++    if (r->count == PS2GS_MAX_COMMANDS && ps2_render_flush(r)) return -1;
++    r->commands[r->count++] = *c;
++    return 0;
++}
++int ps2_render_clear_depth(struct ps2_render_client *r)
++{
++    if (!r->depth || !depth_lookup(r, r->depth)) return fail(r, ENOTSUP);
++    struct ps2gs_command command = { .op = PS2GS_CLEAR_DEPTH };
++    return queue(r, &command);
++}
++int ps2_render_fill(struct ps2_render_client *r, unsigned x, unsigned y,
++                    unsigned width, unsigned height, uint32_t rgba)
++{
++    const struct ps2_surface *c = ps2_surface_lookup(r->gs, r->target);
++    if (!c || !width || !height || x >= c->width || y >= c->height ||
++        width > c->width - x || height > c->height - y) return fail(r, EINVAL);
++    struct ps2gs_command command = { .op = PS2GS_FILL, .width = width, .height = height,
++        .v = { { .x = x * 16, .y = y * 16, .rgba = rgba } } };
++    return queue(r, &command);
++}
++int ps2_render_triangle(struct ps2_render_client *r, const struct ps2gs_vertex vertices[3], int depth_test)
++{
++    const struct ps2_surface *c = ps2_surface_lookup(r->gs, r->target);
++    if (!c || !vertices || (depth_test != 0 && depth_test != 1)) return fail(r, EINVAL);
++    if (depth_test && (!r->depth || !depth_lookup(r, r->depth))) return fail(r, ENOTSUP);
++    for (unsigned i = 0; i < 3; ++i)
++        if (vertices[i].x > c->width * 16 || vertices[i].y > c->height * 16 || vertices[i].z > 65535)
++            return fail(r, EINVAL);
++    struct ps2gs_command command = { .op = PS2GS_TRIANGLE,
++        .flags = depth_test ? PS2GS_DEPTH_TEST : 0 };
++    memcpy(command.v, vertices, sizeof(command.v));
++    return queue(r, &command);
++}
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_gs_render.h
+@@ -0,0 +1,28 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_GS_RENDER_CLIENT_H
++#define PS2_GS_RENDER_CLIENT_H
++#include "ps2_gs_surface.h"
++#include "ps2-gs-render.h"
++struct ps2_depth {
++    uint32_t handle, width, height, color_bpp, buffer_width, bytes;
++};
++struct ps2_render_client {
++    struct ps2_surface_client *gs;
++    struct ps2_depth depths[PS2GS_MAX_SURFACES];
++    uint32_t target, depth, count;
++    struct ps2gs_command commands[PS2GS_MAX_COMMANDS];
++};
++/* Shares an existing exclusive GS file, not a new open or a CPU framebuffer.
++ * One submission thread; callers fence before direct surface uploads/copies
++ * and destroy all resources before closing the owning surface client. */
++int ps2_render_init(struct ps2_render_client *, struct ps2_surface_client *);
++int ps2_render_depth_create(struct ps2_render_client *, unsigned width, unsigned height,
++                            unsigned color_bpp, uint32_t *handle);
++int ps2_render_depth_destroy(struct ps2_render_client *, uint32_t handle);
++int ps2_render_bind(struct ps2_render_client *, uint32_t color, uint32_t depth);
++int ps2_render_flush(struct ps2_render_client *);
++int ps2_render_clear_depth(struct ps2_render_client *);
++int ps2_render_fill(struct ps2_render_client *, unsigned x, unsigned y,
++                    unsigned width, unsigned height, uint32_t rgba);
++int ps2_render_triangle(struct ps2_render_client *, const struct ps2gs_vertex[3], int depth_test);
++#endif
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2-gs-render.h
+@@ -0,0 +1,29 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_RENDER_H
++#define _UAPI_PS2_GS_RENDER_H
++#include "ps2-gs-surface.h"
++
++#define PS2GS_HW_OWNED_RENDER (1U << 6)
++/* Depth objects use the same handle namespace, ownership and destroy ioctl.
++ * color_bits_per_pixel selects Z16 for CT16 or Z16S for CT32. They cannot
++ * be filled/copied/uploaded as color. Storage is zeroed before publication.
++ */
++struct ps2gs_depth_create {
++	__u32 abi, width, height, color_bits_per_pixel;
++	__u32 handle, buffer_width, allocated_bytes, reserved;
++};
++/* Snapshot and validate the entire batch before drawing. target=0 is front;
++ * depth=0 disables depth storage. All selected buffers must belong to this
++ * file. Depth dimensions and padded width must match the color target.
++ * Commands are existing ABI-1 FILL/TRIANGLE/CLEAR_DEPTH, not COPY. No blending,
++ * textures or arbitrary depth functions are implied. Larger Z is nearer;
++ * tested triangles use GEQUAL and update Z. CLEAR_DEPTH writes zero.
++ */
++struct ps2gs_render_submit {
++	__u32 abi, target, depth, count;
++	__u32 width, height, bits_per_pixel, reserved;
++	__aligned_u64 commands;
++};
++#define PS2GS_DEPTH_CREATE _IOWR('G', 0x78, struct ps2gs_depth_create)
++#define PS2GS_RENDER_SUBMIT _IOW('G', 0x79, struct ps2gs_render_submit)
++#endif
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_render_bridge.c
+@@ -0,0 +1,73 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_render_bridge.h"
++#include "os.h"
++#include <errno.h>
++#include <string.h>
++static DevPrivateKeyRec bridge_key;
++static struct ps2_exa_render_bridge *bridge(ScreenPtr screen)
++{ return dixLookupPrivate(&screen->devPrivates, &bridge_key); }
++static void fence(struct ps2_exa_render_bridge *b)
++{
++    if (ps2_render_flush(b->render))
++        FatalError("PS2 GS: shared Xorg/Mesa fence failed: %s\n", strerror(b->render->gs->error));
++}
++static void *create(ScreenPtr screen, int width, int height, int depth, int usage, int bpp, int *pitch)
++{
++    struct ps2_exa_render_bridge *b = bridge(screen); fence(b);
++    return b->original.CreatePixmap2(screen, width, height, depth, usage, bpp, pitch);
++}
++static void destroy(ScreenPtr screen, void *private)
++{
++    struct ps2_exa_render_bridge *b = bridge(screen);
++    /* Cleanup after a failed context cannot fence or replay it. The owning
++     * file's final close releases any kernel allocations left by failure. */
++    if (!b->render->gs->error) fence(b);
++    b->original.DestroyPixmap(screen, private);
++}
++static Bool header(PixmapPtr pixmap, int w, int h, int depth, int bpp, int pitch, void *pixels)
++{
++    struct ps2_exa_render_bridge *b = bridge(pixmap->drawable.pScreen); fence(b);
++    return b->original.ModifyPixmapHeader(pixmap, w, h, depth, bpp, pitch, pixels);
++}
++static Bool prepare_solid(PixmapPtr p, int alu, Pixel mask, Pixel color)
++{
++    struct ps2_exa_render_bridge *b = bridge(p->drawable.pScreen); fence(b);
++    return b->original.PrepareSolid(p, alu, mask, color);
++}
++static void solid(PixmapPtr p, int x1, int y1, int x2, int y2)
++{
++    struct ps2_exa_render_bridge *b = bridge(p->drawable.pScreen); fence(b);
++    b->original.Solid(p, x1, y1, x2, y2);
++}
++static Bool prepare_copy(PixmapPtr source, PixmapPtr destination, int xd, int yd, int alu, Pixel mask)
++{
++    struct ps2_exa_render_bridge *b = bridge(destination->drawable.pScreen); fence(b);
++    return b->original.PrepareCopy(source, destination, xd, yd, alu, mask);
++}
++static void copy(PixmapPtr p, int sx, int sy, int dx, int dy, int w, int h)
++{
++    struct ps2_exa_render_bridge *b = bridge(p->drawable.pScreen); fence(b);
++    b->original.Copy(p, sx, sy, dx, dy, w, h);
++}
++static Bool upload(PixmapPtr p, int x, int y, int w, int h, char *pixels, int pitch)
++{
++    struct ps2_exa_render_bridge *b = bridge(p->drawable.pScreen); fence(b);
++    return b->original.UploadToScreen(p, x, y, w, h, pixels, pitch);
++}
++Bool ps2_exa_render_bridge_prepare(ScreenPtr screen, struct ps2_exa_render_bridge *b,
++                                   struct ps2_surface_exa *exa, struct ps2_render_client *render)
++{
++    if (!screen || !b || !exa || !render || render->gs != exa->gs || render->gs->error ||
++        !exa->driver.CreatePixmap2 || !exa->driver.DestroyPixmap || !exa->driver.ModifyPixmapHeader ||
++        !exa->driver.PrepareSolid || !exa->driver.Solid || !exa->driver.PrepareCopy ||
++        !exa->driver.Copy || !exa->driver.UploadToScreen || exa->driver.CreatePixmap2 == create)
++        return FALSE;
++    if (!dixRegisterPrivateKey(&bridge_key, PRIVATE_SCREEN, 0)) return FALSE;
++    memset(b, 0, sizeof(*b)); b->exa = exa; b->render = render; b->original = exa->driver;
++    dixSetPrivate(&screen->devPrivates, &bridge_key, b);
++    exa->driver.CreatePixmap2 = create; exa->driver.DestroyPixmap = destroy;
++    exa->driver.ModifyPixmapHeader = header; exa->driver.PrepareSolid = prepare_solid;
++    exa->driver.Solid = solid; exa->driver.PrepareCopy = prepare_copy; exa->driver.Copy = copy;
++    exa->driver.UploadToScreen = upload;
++    return TRUE;
++}
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_render_bridge.h
+@@ -0,0 +1,16 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_EXA_RENDER_BRIDGE_H
++#define PS2_EXA_RENDER_BRIDGE_H
++#include "ps2_surface_exa.h"
++#include "ps2_gs_render.h"
++struct ps2_exa_render_bridge {
++    struct ps2_surface_exa *exa;
++    struct ps2_render_client *render;
++    ExaDriverRec original;
++};
++/* Install after preparing EXA and before exaDriverInit. The eventual DDX
++ * shares its session with in-process Mesa; flush queued 3D before 2D/storage
++ * operations. This is not DRI or a complete screen/VT/glyph implementation. */
++Bool ps2_exa_render_bridge_prepare(ScreenPtr, struct ps2_exa_render_bridge *,
++                                   struct ps2_surface_exa *, struct ps2_render_client *);
++#endif

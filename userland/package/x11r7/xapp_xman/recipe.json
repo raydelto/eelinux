@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xman",
+  "kind": "application",
+  "program": "xman",
+  "version": "1.2.0",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xman-1.2.0.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xman-1.2.0.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "f18db80bd72a0c27cf38b2a7b75485ee48cd22aab10f2ff58de54d83e268b406",
+      "filename": "xman-1.2.0.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "072dba172fd30606c1e185c6e50b3b9a9ec5e430eb2ac7f0c476e1c2de998e8c0b5fbf53de20a7339d39a8990255e77fe72d3928b43d055e8463f8069389d192",
+      "filename": "xman-1.2.0.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

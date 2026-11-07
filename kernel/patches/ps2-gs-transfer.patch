@@ -1,0 +1,187 @@
+--- a/drivers/video/fbdev/ps2fb-gs-device.h
++++ b/drivers/video/fbdev/ps2fb-gs-device.h
+@@ -10,6 +10,7 @@
+ #include "ps2fb-gs-render-packet.h"
+ #include "ps2fb-gs-texture-packet.h"
+ #include "ps2fb-gs-logic-packet.h"
++#include "ps2fb-gs-transfer-packet.h"
+ 
+ struct ps2gs_session;
+ struct ps2gs_device {
+@@ -154,6 +155,9 @@
+ 		count = ps2gs_package_surface_fill(par->package.buffer, destination, request);
+ 	} else if (operation == PS2GS_SURFACE_COPY) {
+ 		count = ps2gs_package_surface_copy(par->package.buffer, source, destination, request);
++	} else if (operation == PS2GS_TEXTURE_TRANSFER) {
++		const struct ps2gs_transfer_operation *t = request;
++		count = ps2gs_package_transfer(par->package.buffer, destination, t->texture, t->triangle, t->mask, t->mode);
+ 	} else if (operation == PS2GS_SOLID_LOGIC) {
+ 		count = ps2gs_package_solid_logic(par->package.buffer, destination, request);
+ 	} else if (operation == PS2GS_TEXTURE_SUBMIT) {
+@@ -246,6 +250,7 @@
+ #include "ps2fb-gs-render-device.h"
+ #include "ps2fb-gs-texture-device.h"
+ #include "ps2fb-gs-logic-device.h"
++#include "ps2fb-gs-transfer-device.h"
+ 
+ static int ps2gs_surface_ioctl_locked(struct ps2gs_session *session,
+ 		struct fb_info *info, unsigned int cmd, void __user *arg)
+@@ -259,7 +264,7 @@
+ 		ps2gs_caps(info, &caps);
+ 		/* Explicitly allocated Z16/Z16S depth and bounded owned rendering. */
+ 		caps.features = PS2GS_HW_FILL | PS2GS_HW_COPY | PS2GS_HW_UPLOAD |
+-			PS2GS_HW_SURFACES | PS2GS_HW_TRIANGLE | PS2GS_HW_DEPTH16 | PS2GS_HW_OWNED_RENDER | PS2GS_HW_TEXTURE | PS2GS_HW_SOLID_LOGIC;
++			PS2GS_HW_SURFACES | PS2GS_HW_TRIANGLE | PS2GS_HW_DEPTH16 | PS2GS_HW_OWNED_RENDER | PS2GS_HW_TEXTURE | PS2GS_HW_SOLID_LOGIC | PS2GS_HW_TEXTURE_TRANSFER;
+ 		return copy_to_user(arg, &caps, sizeof(caps)) ? -EFAULT : 0;
+ 	}
+ 	if (session->epoch != ((struct ps2fb_par *)info->par)->gs_epoch)
+@@ -269,6 +274,8 @@
+ 	if (!vc_cons[fg_console].d || vc_cons[fg_console].d->vc_mode != KD_GRAPHICS)
+ 		return -EBUSY;
+ 	switch (cmd) {
++	case PS2GS_TEXTURE_TRANSFER:
++		return ps2gs_transfer_locked(session, info, arg);
+ 	case PS2GS_SOLID_LOGIC:
+ 		return ps2gs_solid_logic_locked(session, info, arg);
+ 	case PS2GS_TEXTURE_SUBMIT:
+--- a/drivers/video/fbdev/ps2fb.c
++++ b/drivers/video/fbdev/ps2fb.c
+@@ -47,6 +47,7 @@
+ #include <linux/ps2-gs-render.h>
+ #include <linux/ps2-gs-texture.h>
+ #include <linux/ps2-gs-logic.h>
++#include <linux/ps2-gs-transfer.h>
+ #include <linux/miscdevice.h>
+ #include <linux/kref.h>
+ #include <linux/kd.h>
+--- /dev/null
++++ b/include/uapi/linux/ps2-gs-transfer.h
+@@ -0,0 +1,18 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_TRANSFER_H
++#define _UAPI_PS2_GS_TRANSFER_H
++#include "ps2-gs-texture.h"
++#define PS2GS_HW_TEXTURE_TRANSFER (1U << 9)
++#define PS2GS_TRANSFER_REPLACE 0U
++#define PS2GS_TRANSFER_ADD 1U
++#define PS2GS_TRANSFER_SUBTRACT 2U
++/* Typed fixed-function texture operation. ADD wraps each eight-bit channel;
++ * SUBTRACT clamps. FRAME masks preserve every other RGB bit and spare/alpha
++ * bit. No arbitrary register programming, shaders or CPU destination access.
++ * Existing texture validation and file ownership rules apply unchanged. */
++struct ps2gs_texture_transfer {
++	struct ps2gs_texture_submit draw;
++	__u32 plane_mask, mode;
++};
++#define PS2GS_TEXTURE_TRANSFER _IOW('G', 0x7c, struct ps2gs_texture_transfer)
++#endif
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-transfer-packet.h
+@@ -0,0 +1,48 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++static size_t ps2gs_package_transfer(union package *base,
++		const struct ps2gs_buffer *color, const struct ps2gs_buffer *texture,
++		const struct ps2gs_texture_triangle *triangle, u32 mask, u32 mode)
++{
++	size_t count = ps2gs_package_texture(base, color, NULL, texture, triangle);
++	union package *p;
++	size_t i;
++	/* Reuse the pinned packet's validated geometry, texture state and fence.
++	 * Insert blend state immediately before PRIM, never after its vertices. */
++	for (i = 1; i < count; ++i) {
++		if (base[i].gif.packed.ad.addr == gs_addr_frame_2)
++			base[i].gif.packed.ad.data.frame_1.fbmsk =
++				~ps2gs_logic_rgb(mask, color->bits_per_pixel);
++		if (base[i].gif.packed.ad.addr == gs_addr_colclamp)
++			base[i].gif.doubleword[0] = mode != PS2GS_TRANSFER_ADD;
++		if (base[i].gif.packed.ad.addr == gs_addr_prim)
++			break;
++	}
++	memmove(base + i + 4, base + i, (count - i) * sizeof(*base));
++	p = base + i;
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_alpha_2,
++		.data.alpha_1 = {
++			.a = mode == PS2GS_TRANSFER_SUBTRACT ? gs_alpha_a_0 : gs_alpha_a_cs,
++			.b = mode == PS2GS_TRANSFER_SUBTRACT ? gs_alpha_b_cs : gs_alpha_b_0,
++			.c = gs_alpha_c_fix, .d = gs_alpha_d_cd, .fix = 128 } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_dthe };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_pabe };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_fba_2 };
++	p->gif.packed.ad.data.prim.abe = mode != PS2GS_TRANSFER_REPLACE;
++	count += 4;
++	/* Reset mask and clamp before FINISH. Following native drawing must not
++	 * inherit this operation's bit-plane state. */
++	p = base + count - 1;
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_frame_2,
++		.data.frame_1 = { .fbp = color->base / 8192,
++			.fbw = color->buffer_width / 64, .psm = ps2gs_buffer_psm(color) } };
++	p = ps2gs_texture_raw(p, gs_addr_colclamp, 1);
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_finish };
++	count = p - base;
++	base->gif.tag.nloop = count - 1;
++	return count;
++}
++struct ps2gs_transfer_operation {
++	const struct ps2gs_buffer *texture;
++	const struct ps2gs_texture_triangle *triangle;
++	u32 mask, mode;
++};
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-transfer-device.h
+@@ -0,0 +1,56 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++static int ps2gs_transfer_locked(struct ps2gs_session *session,
++		struct fb_info *info, void __user *arg)
++{
++	struct ps2gs_texture_transfer request;
++	struct ps2gs_texture_submit *r = &request.draw;
++	struct ps2gs_buffer front, *color, *texture;
++	struct ps2gs_texture_triangle *triangles;
++	u32 i, bits;
++	int ret;
++	if (copy_from_user(&request, arg, sizeof(request)))
++		return -EFAULT;
++	if (r->abi != PS2GS_ABI_VERSION || !r->count ||
++	    r->count > PS2GS_MAX_COMMANDS || r->depth ||
++	    request.mode > PS2GS_TRANSFER_SUBTRACT)
++		return -EINVAL;
++	color = ps2gs_session_buffer(session, info, r->target, &front);
++	texture = ps2gs_arena_lookup(&session->arena, r->texture);
++	if (!color || !texture || ps2gs_depth_role(session, r->target) ||
++	    ps2gs_depth_role(session, r->texture))
++		return -ENOENT;
++	bits = color->bits_per_pixel == 16 ? 0x7fff : 0xffffff;
++	if (request.plane_mask & ~bits)
++		return -EINVAL;
++	if (r->width != color->width || r->height != color->height ||
++	    r->bits_per_pixel != color->bits_per_pixel)
++		return -ESTALE;
++	if (r->triangles >> 32)
++		return -EFAULT;
++	triangles = memdup_user(u64_to_user_ptr(r->triangles), r->count * sizeof(*triangles));
++	if (IS_ERR(triangles))
++		return PTR_ERR(triangles);
++	for (i = 0; i < r->count; ++i) {
++		if (triangles[i].flags & PS2GS_DEPTH_TEST) {
++			ret = -EINVAL;
++			goto out;
++		}
++		ret = ps2gs_validate_texture(color, NULL, 0, texture, &triangles[i]);
++		if (ret)
++			goto out;
++	}
++	ret = 0;
++	for (i = 0; request.plane_mask && i < r->count; ++i) {
++		struct ps2gs_transfer_operation operation = {
++			.texture = texture, .triangle = &triangles[i],
++			.mask = request.plane_mask, .mode = request.mode };
++		ret = ps2gs_surface_execute(info, PS2GS_TEXTURE_TRANSFER, NULL, color, &operation, NULL);
++		if (ret) {
++			session->failed = ret;
++			break;
++		}
++	}
++out:
++	kfree(triangles);
++	return ret;
++}

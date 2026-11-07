@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-02",
+  "source": "user report and two real-console photographs",
+  "machine": "SCPH-90001; Tuna/LaunchELF; PAL; PS2-to-HDMI",
+  "candidate": "relay-v8 retest following delivery; kernel/image hashes not measured on console",
+  "boot_and_authenticated_root_shell_user_confirmed": true,
+  "GNU_commands_observed": [
+    "ls",
+    "ip",
+    "dhcpcd",
+    "dmesg"
+  ],
+  "network_interfaces_observed": [
+    "lo"
+  ],
+  "physical_Ethernet_packets_confirmed": false,
+  "SMAP_probe_error": -145,
+  "MIPS_errno": "ETIMEDOUT",
+  "probe_error_timestamp_seconds": "3.131847",
+  "dhcpcd_result": "no valid interfaces found; no interfaces have a carrier",
+  "UK_keyboard_user_report": "physical UK keyboard; backslash and pipe incorrect",
+  "limitation": "The old generic probe error does not identify DEV9, MAC/FIFO reset or MDIO timeout"
+}

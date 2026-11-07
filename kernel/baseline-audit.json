@@ -1,0 +1,11 @@
+{
+  "profile": "baseline",
+  "version": "5.4.221",
+  "expected_version": "5.4.221",
+  "missing": [],
+  "rejects": [],
+  "source_gate_passed": true,
+  "hardware_validated": false,
+  "native_smap_implemented": false,
+  "xorg_gs_backend_complete": false
+}

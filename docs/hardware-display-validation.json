@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "date": "2026-10-03",
+  "console": "SCPH-90001 (model supplied earlier by the user)",
+  "connection": "PS2-to-HDMI; adapter and display model unspecified",
+  "evidence_kind": "user physical test reports; no EDID or instrumented timing capture",
+  "observations": [
+    {
+      "mode": "pal",
+      "result": "terminal flicker reported"
+    },
+    {
+      "command": "ps2-video test 576p 15",
+      "mode": "720x576 progressive at 50 Hz",
+      "result": "stable terminal; user explicitly confirms no flickering"
+    },
+    {
+      "mode": "initial purported 576p boot",
+      "result": "flickering until ps2-video set 576p; old boot argument omitted the progressive flag and selected 576i"
+    },
+    {
+      "command_line_mode": "720x576p@50",
+      "result": "user confirms stable terminal from boot without ps2-video set 576p",
+      "artifact_hash_read_back_on_console": false
+    },
+    {
+      "mode": "1080i",
+      "result": "blank screen reported; exact command, refresh and cause unspecified"
+    },
+    {
+      "mode": "1080p",
+      "result": "blank screen reported; exact command, refresh and cause unspecified"
+    }
+  ],
+  "requested_default": "576p",
+  "project_default": "576p",
+  "edid_provider": false,
+  "qualification_limits": [
+    "The runtime preview passed on this display chain, not all PS2 displays/adapters.",
+    "The explicit progressive boot candidate passed the user's SCPH-90001 test; other display chains remain unqualified.",
+    "Blank 1080 output does not identify whether driver timing, adapter or monitor is responsible."
+  ],
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

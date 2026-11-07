@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "ethtool",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.ethtool",
+  "symbol": "BR2_PACKAGE_ETHTOOL",
+  "version": "7.2",
+  "recipe": "package/ethtool/ethtool.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "44256ddf4631ed08d816b7b8725f4b2e0f05e96b8c7ca64ee5c81449da2b6507",
+      "filename": "ethtool-7.2.tar.xz"
+    }
+  ],
+  "release_url": "https://www.kernel.org/pub/software/network/ethtool/"
+}

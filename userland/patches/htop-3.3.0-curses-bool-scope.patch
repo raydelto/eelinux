@@ -1,0 +1,33 @@
+Subject: [PATCH] curses wrapper: restore htop's language boolean type
+
+Parse curses' declarations with its configured NCURSES_BOOL ABI, then
+stop that header's bool macro from changing htop's own function types.
+Keep standard true/false available in pre-C23 builds as well.
+
+--- a/ProvideCurses.h
++++ b/ProvideCurses.h
+@@ -10,6 +10,7 @@
+ 
+ #include "config.h" // IWYU pragma: keep
+ 
++#include <stdbool.h>
+ // IWYU pragma: begin_exports
+ 
+ #if defined(HAVE_NCURSESW_CURSES_H)
+@@ -29,6 +30,16 @@
+ #include <wctype.h>
+ #endif
+ 
++/* Curses' prototypes above retain their ABI; htop uses the C boolean type. */
++#ifndef __cplusplus
++#ifdef bool
++#undef bool
++#endif
++#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 202311L
++#define bool _Bool
++#endif
++#endif
++
+ // IWYU pragma: end_exports
+ 
+ #endif // HEADER_ProvideCurses

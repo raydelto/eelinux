@@ -1,0 +1,39 @@
+--- a/src/if-linux.c
++++ b/src/if-linux.c
+@@ -242,12 +242,30 @@
+ 	if (fp == NULL)
+ 		return -1;
+ 
+-	while (fscanf(fp, "%255s : ", buf) != EOF) {
+-		if (strncmp(buf, mproc, strlen(mproc)) == 0 &&
+-		    fscanf(fp, "%255s", buf) == 1) {
+-			fclose(fp);
+-			return snprintf(str, len, "%s", buf);
+-		}
++	while (fgets(buf, sizeof(buf), fp) != NULL) {
++		char *colon, *end, *value;
++
++		/* cpuinfo keys can contain spaces, for example MIPS system type. */
++		colon = strchr(buf, ':');
++		if (colon == NULL)
++			continue;
++		end = colon;
++		while (end > buf && isspace((unsigned char)end[-1]))
++			end--;
++		*end = '\0';
++		if (strcmp(buf, mproc) != 0)
++			continue;
++		value = colon + 1;
++		while (isspace((unsigned char)*value))
++			value++;
++		end = value + strlen(value);
++		while (end > value && isspace((unsigned char)end[-1]))
++			end--;
++		*end = '\0';
++		if (*value == '\0')
++			continue;
++		fclose(fp);
++		return snprintf(str, len, "%s", value);
+ 	}
+ 	fclose(fp);
+ 	errno = ESRCH;

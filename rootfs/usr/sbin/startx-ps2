@@ -1,0 +1,4 @@
+#!/bin/bash
+set -eu
+# Compatibility alias. The upstream startx/xinit workflow is the default.
+exec /usr/bin/startx "$@"

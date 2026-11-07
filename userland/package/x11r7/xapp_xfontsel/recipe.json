@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xfontsel",
+  "kind": "application",
+  "program": "xfontsel",
+  "version": "1.1.2",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xfontsel-1.1.2.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xfontsel-1.1.2.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "78ff018757c7b22137cf5d3526ef5e9388bc0cdead1f00daf2c898e2e274553f",
+      "filename": "xfontsel-1.1.2.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "377ef4e95f68411716a9cd202f4b2468ef5638d53ebd058518bdf97319f8008052f2cb76154503a1eae76aae3ce27dfa7334428b66f738a087d0915bef69c603",
+      "filename": "xfontsel-1.1.2.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

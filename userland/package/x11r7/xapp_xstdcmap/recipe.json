@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xstdcmap",
+  "kind": "application",
+  "program": "xstdcmap",
+  "version": "1.0.6",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xstdcmap-1.0.6.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xstdcmap-1.0.6.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "062a15722769799524eee542fc82ae778f5ac180b618295d913f34962b134ffe",
+      "filename": "xstdcmap-1.0.6.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "912247ede6531c06f57544e83540c5a7b0f0c1faefc7adc86517499acfee65ac41569b6cdb34ffcafe958b7ed8349ad5ff06e2f398ab64432910e5d319e63d87",
+      "filename": "xstdcmap-1.0.6.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

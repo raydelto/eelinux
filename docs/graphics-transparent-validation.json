@@ -1,0 +1,172 @@
+{
+  "schema": 1,
+  "updated": "2026-10-04",
+  "milestone": "native transparent stippled GC rectangles and spans",
+  "implementation": [
+    "desktop/xorg/ps2_fill.c",
+    "mesa/ps2/ps2_tile.c",
+    "mesa/ps2/ps2_tile.h"
+  ],
+  "build": {
+    "sha256": "c90c9acd8492e0863f044880633e616ff2b530b571892dcf0629d5d9dd3827ec"
+  },
+  "host": {
+    "sha256": "3a0e052c5b515648c54a268887a1ee15f77100868984944f784435ccbc3bdc43"
+  },
+  "build_log": {
+    "sha256": "24c3a1b74a69592a2111cba0f2012e66772dc7c84615117262eedd98effaa83c"
+  },
+  "archives": {
+    "libps2-gallium-transparent.a": "a3a274a9487002a675edfe1d946d70fa1db2b1e8c0000b1d5a733489bf7ee2d6",
+    "libps2-xorg-transparent.a": "82338b5ee246c13cb10583e73f08004e1054696f3b5b33980bd1218b6dc9da91"
+  },
+  "patches": [
+    {
+      "patch": "userland/patches/xorg-ps2-transparent-stipple.patch",
+      "sha256": "02404774d95103d6cfbef9e9fb3fb515d88c28703d41d1051d46ff433b2988e1",
+      "after": "xorg-ps2-monochrome.patch",
+      "prerequisite_patches": [
+        "xorg-ps2-raster.patch",
+        "xorg-ps2-surfaces.patch",
+        "xorg-ps2-rendering.patch",
+        "xorg-ps2-textures.patch",
+        "xorg-ps2-contexts.patch",
+        "xorg-ps2-glyphs.patch",
+        "xorg-ps2-gc.patch",
+        "xorg-ps2-logic.patch",
+        "xorg-ps2-solid-gc.patch",
+        "xorg-ps2-copy.patch",
+        "xorg-ps2-exa-copy.patch",
+        "xorg-ps2-blit.patch",
+        "xorg-ps2-copy-window.patch",
+        "xorg-ps2-paint-window.patch",
+        "xorg-ps2-tiled-paint.patch",
+        "xorg-ps2-tiled-gc.patch",
+        "xorg-ps2-stippled-gc.patch",
+        "xorg-ps2-monochrome.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    },
+    {
+      "patch": "userland/patches/mesa-ps2-transparent-stipple.patch",
+      "sha256": "671b401051e69ee35439b0411c0037020be5299b0b337597d0cbb294c485f615",
+      "after": "mesa-ps2-stipple.patch",
+      "prerequisite_patches": [
+        "mesa-ps2-raster.patch",
+        "mesa-ps2-surfaces.patch",
+        "mesa-ps2-rendering.patch",
+        "mesa-ps2-textures.patch",
+        "mesa-ps2-contexts.patch",
+        "mesa-ps2-logic.patch",
+        "mesa-ps2-solid-batch.patch",
+        "mesa-ps2-copy-batch.patch",
+        "mesa-ps2-resource-copy.patch",
+        "mesa-ps2-blit.patch",
+        "mesa-ps2-tile.patch",
+        "mesa-ps2-stipple.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    }
+  ],
+  "host_sanitizer_cases": 114,
+  "R5900_cases": 114,
+  "new_cases_per_environment": 16,
+  "regression_cases_per_environment": 98,
+  "checks": [
+    "rectangles",
+    "spans",
+    "redirected",
+    "alu",
+    "owned",
+    "noop",
+    "empty",
+    "large",
+    "preflight",
+    "budget",
+    "allocation",
+    "snapshot",
+    "firstfailure",
+    "laterfailure",
+    "random",
+    "bitorders"
+  ],
+  "native_path": "owned/readable 1bpp source -> immutable bitmap snapshot -> preflight one-bit runs -> native GS fill/Boolean rectangles; zero bits preserve destination",
+  "all_16_Boolean_ALUs": true,
+  "partial_RGB_masks": true,
+  "overlapping_input_order_preserved": true,
+  "all_zero_GXnoop_zero_mask_preserve_queue_and_skip_Damage": true,
+  "limits": {
+    "max_source_dimension": 256,
+    "bitmap_snapshot_max_bytes": 8192,
+    "max_clipped_boxes": 256,
+    "max_plan_bytes": 4096,
+    "request_pixel_budget": 1048576,
+    "GXcopy_full_mask_native_run_limit": 262144,
+    "Boolean_or_partial_mask_run_limit": 16384,
+    "compiled_R5900_stipple_adapter_stack_bytes": 6320,
+    "compiled_run_emitter_stack_bytes": 104
+  },
+  "full_720x576_2x2_checker": {
+    "one_bit_rectangles": 207360,
+    "packets_of_64": 3240,
+    "modeled_pixels_match": true,
+    "runtime_performance_measured": false
+  },
+  "work_and_allocation_rejection_before_original_queue_fence": true,
+  "color_destination_CPU_access": "fatal; remains unavailable",
+  "color_pixel_uploads_used_by_probe": false,
+  "new_Gallium_capabilities_advertised": false,
+  "actual_full_EXA_fb_server_executed": false,
+  "actual_Damage_subsystem_executed": false,
+  "GPU_pixel_readback": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL_GLX": false,
+  "shader_caps": 0,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "prior_qualified_monochrome_evidence": {
+    "path": "docs/graphics-monochrome-validation.json",
+    "sha256": "86566398e6edafa6b0fae1551a0d5c150a529739c07925eb32b1f78b4a505b67"
+  },
+  "new_USB_image_packaged": true,
+  "new_PCSX2_pixels_verified": true,
+  "new_physical_PS2_pixels_verified": false,
+  "limitations": [
+    "fine transparent patterns generate many native runs; the Boolean path rejects above 16384 runs before fencing",
+    "opaque stipple and tile-pixmap ALUs/partial masks remain unsupported",
+    "actual EXA/fb bitmap client editing and X server/Damage lifecycle require full DDX integration",
+    "Mesa shaders/vertex/draw_vbo/GLX, TWM session and desktop RAM remain unfinished"
+  ],
+  "runtime_validation": {
+    "path": "docs/graphics-transparent-runtime-validation.json",
+    "sha256": "436768d85d635762f7f3806d8e24f24cf06e58da989c2aed9b73ba8b7c5928a2"
+  },
+  "probe_build": {
+    "sha256": "6b506dbb7ebfecb27f2471c68e4272e1e0521a87bb7e9d5dfee46711ec01f4e9"
+  },
+  "probe_host_checks": {
+    "schema": 1,
+    "result": "passed",
+    "cases": 6,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "log_sha256": "5089260b1cda2de5f4bb325702a15d96ee64f8d63f1144e8229d86ccb809e530",
+    "probe_source_sha256": "fcf68f01783fc44d2f9a329e6b8a527489aaadb3856883f0bdcd2f7117c5e63b",
+    "pixel_qualification": false
+  },
+  "PCSX2_command_fence_exit": 0,
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

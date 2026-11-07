@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "ncftp",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.ncftp",
+  "symbol": "BR2_PACKAGE_NCFTP",
+  "version": "3.3.0",
+  "recipe": "package/ncftp/ncftp.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "7920f884c2adafc82c8e41c46d6f3d22698785c7b3f56f5677a8d5c866396386",
+      "filename": "ncftp-3.3.0-src.tar.gz"
+    }
+  ],
+  "release_url": "https://www.ncftp.com/download/"
+}

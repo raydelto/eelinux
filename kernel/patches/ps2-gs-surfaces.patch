@@ -1,0 +1,759 @@
+--- a/drivers/video/fbdev/ps2fb.c
++++ b/drivers/video/fbdev/ps2fb.c
+@@ -43,6 +43,12 @@
+ #include <linux/capability.h>
+ #include <linux/console.h>
+ #include <linux/ps2-gs.h>
++#include <linux/ps2-gs-surface.h>
++#include <linux/miscdevice.h>
++#include <linux/kref.h>
++#include <linux/kd.h>
++#include <linux/vt_kern.h>
++#include <linux/console_struct.h>
+ #include <linux/highmem.h>
+ #include <asm/cacheflush.h>
+ #include <linux/module.h>
+@@ -154,6 +160,9 @@
+ 	struct fb_deferred_io shadow_io;
+ 	u32 gs_font_blocks;
+ 	struct ps2gs_caps gs_stats;
++	atomic_t gs_owned;
++	u64 gs_epoch;
++	struct ps2gs_device *gs_device;
+ 	atomic_t shadow_maps;
+ 	const struct vm_operations_struct *shadow_vm_original;
+ 	struct vm_operations_struct shadow_vm_wrapped;
+@@ -1030,6 +1039,7 @@
+ 		return;
+ 	}
+ 
++	++par->gs_epoch;
+ 	par->cb.tile = cb_tile(map->width, map->height);
+ 	par->gs_font_blocks = DIV_ROUND_UP(map->length,
+ 		par->cb.tile.block.cols * par->cb.tile.block.rows);
+@@ -1604,8 +1614,10 @@
+ 
+ 	spin_lock_irqsave(&par->lock, flags);
+ 
+-	if (changed_cb_pan_display(var))
++	if (changed_cb_pan_display(var)) {
++		++par->gs_epoch;
+ 		write_cb_pan_display(var, info);
++	}
+ 
+ 	spin_unlock_irqrestore(&par->lock, flags);
+ 
+@@ -2177,6 +2189,7 @@
+ 
+ 	err = ps2fb_set_par(info);
+ 	if (!err) {
++		++par->gs_epoch;
+ 		par->cb.block_count = var_to_block_count(info);
+ 
+ 		write_cb_environment(info);
+@@ -2252,6 +2265,7 @@
+ 
+ #include "ps2fb-shadow.h"
+ #include "ps2fb-gs.h"
++#include "ps2fb-gs-device.h"
+ 
+ static int init_console_buffer(struct platform_device *pdev,
+ 	struct fb_info *info)
+@@ -2398,6 +2412,9 @@
+ 	mode_margin = "";
+ 
+ 	platform_set_drvdata(pdev, info);
++	err = ps2gs_device_register(info);
++	if (err)
++		fb_warn(info, "GS surface device unavailable: %d\n", err);
+ 
+ 	return 0;
+ 
+@@ -2419,6 +2436,7 @@
+ 	struct fb_info *info = platform_get_drvdata(pdev);
+ 	struct ps2fb_par *par = info->par;
+ 
++	ps2gs_device_unregister(info);
+ 	unregister_framebuffer(info);
+ 	if (atomic_read(&par->shadow_maps)) {
+ 		fb_err(info, "Framebuffer mappings remain during removal\n");
+--- a/drivers/video/fbdev/ps2fb-gs.h
++++ b/drivers/video/fbdev/ps2fb-gs.h
+@@ -244,6 +244,8 @@
+ 	ps2gs_caps(info, &caps);
+ 	if (cmd == PS2GS_GET_CAPS)
+ 		return copy_to_user((void __user *)arg, &caps, sizeof(caps)) ? -EFAULT : 0;
++	if (atomic_read(&par->gs_owned))
++		return -EBUSY;
+ 	if (cmd == PS2GS_UPLOAD)
+ 		return ps2gs_upload_locked(info, arg, &caps);
+ 	if (!capable(CAP_SYS_RAWIO))
+--- a/drivers/video/fbdev/ps2fb-gs-image.h
++++ b/drivers/video/fbdev/ps2fb-gs-image.h
+@@ -27,9 +27,9 @@
+ 	return 0;
+ }
+ 
+-static size_t ps2gs_package_upload(union package *base,
++static size_t ps2gs_package_upload_to(union package *base,
+ 		const struct ps2gs_upload *u, const u8 *pixels,
+-		u32 fbw, enum gs_psm psm)
++		u32 dbp, u32 fbw, enum gs_psm psm)
+ {
+ 	union package *p = base;
+ 	u32 qwords = DIV_ROUND_UP(u->bytes, 16);
+@@ -37,7 +37,7 @@
+ 	GIF_PACKAGE_TAG(p) { .flg = gif_packed_mode,
+ 		.reg0 = gif_reg_ad, .nreg = 1, .nloop = 4 };
+ 	GIF_PACKAGE_AD(p) { .addr = gs_addr_bitbltbuf,
+-		.data.bitbltbuf = { .dbp = 0, .dbw = fbw, .dpsm = psm } };
++		.data.bitbltbuf = { .dbp = dbp, .dbw = fbw, .dpsm = psm } };
+ 	GIF_PACKAGE_AD(p) { .addr = gs_addr_trxpos,
+ 		.data.trxpos = { .dsax = u->x, .dsay = u->y } };
+ 	GIF_PACKAGE_AD(p) { .addr = gs_addr_trxreg,
+@@ -53,6 +53,13 @@
+ 		.nreg = 1, .nloop = 1, .eop = 1 };
+ 	GIF_PACKAGE_AD(p) { .addr = gs_addr_finish };
+ 	return p - base;
++}
++
++static size_t ps2gs_package_upload(union package *base,
++		const struct ps2gs_upload *u, const u8 *pixels,
++		u32 fbw, enum gs_psm psm)
++{
++	return ps2gs_package_upload_to(base, u, pixels, 0, fbw, psm);
+ }
+ 
+ static int ps2gs_upload_execute(struct fb_info *info,
+--- a/drivers/video/fbdev/ps2fb-shadow.h
++++ b/drivers/video/fbdev/ps2fb-shadow.h
+@@ -130,6 +130,8 @@
+ 	offset = vma->vm_pgoff << PAGE_SHIFT;
+ 	if (length > size - offset || !(vma->vm_flags & VM_SHARED))
+ 		return -EINVAL;
++	if (atomic_read(&par->gs_owned))
++		return -EBUSY;
+ 	ret = fb_deferred_io_mmap(info, vma);
+ 	if (ret)
+ 		return ret;
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-device.h
+@@ -0,0 +1,397 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/* Included after the framebuffer command engine. The misc device has a real
++ * file lifetime; fb_ioctl itself has no file/private_data argument. gate
++ * serializes sessions and disconnect. Removal clears info under gate before
++ * framebuffer teardown; surviving files then return ENODEV without touching
++ * framebuffer memory. No provider pointer is retained outside gate.
++ */
++#include "ps2fb-gs-arena.h"
++#include "ps2fb-gs-surface-packet.h"
++
++struct ps2gs_session;
++struct ps2gs_device {
++	struct miscdevice misc;
++	struct kref references;
++	struct mutex gate;
++	struct fb_info *info;
++	struct ps2gs_session *owner;
++};
++struct ps2gs_session {
++	struct ps2gs_device *device;
++	struct ps2gs_arena arena;
++	u64 epoch;
++	int failed;
++};
++
++static void ps2gs_device_free(struct kref *ref)
++{
++	kfree(container_of(ref, struct ps2gs_device, references));
++}
++
++static u32 ps2gs_surface_begin(struct fb_info *info)
++{
++	struct ps2fb_par *par = info->par;
++	u32 i, end = ALIGN(info->var.xres_virtual, 64) *
++		ALIGN(info->var.yres_virtual, info->var.bits_per_pixel == 16 ? 64 : 32) *
++		(info->var.bits_per_pixel / 8);
++	for (i = 0; i <= par->gs_font_blocks; ++i)
++		end = max(end, (block_address_for_index(par->cb.block_count + i, info) + 1) * 256);
++	return ALIGN(end, PS2GS_PAGE_BYTES);
++}
++
++static int ps2gs_device_open(struct inode *inode, struct file *file)
++{
++	struct ps2gs_device *device = container_of(file->private_data, struct ps2gs_device, misc);
++	struct ps2gs_session *session;
++	struct ps2gs_caps caps;
++	struct fb_info *info;
++	struct ps2fb_par *par;
++	int ret = 0;
++
++	if (!capable(CAP_SYS_RAWIO))
++		return -EPERM;
++	session = kzalloc(sizeof(*session), GFP_KERNEL);
++	if (!session)
++		return -ENOMEM;
++	mutex_lock(&device->gate);
++	info = device->info;
++	if (!info || device->owner) {
++		ret = info ? -EBUSY : -ENODEV;
++		goto unlock;
++	}
++	if (!console_trylock()) {
++		ret = -EAGAIN;
++		goto unlock;
++	}
++	if (!mutex_trylock(&info->lock)) {
++		ret = -EAGAIN;
++		goto console;
++	}
++	par = info->par;
++	mutex_lock(&info->mm_lock);
++	if (info->var.xoffset || info->var.yoffset) {
++		ret = -EOPNOTSUPP;
++		goto maps;
++	}
++	if (atomic_read(&par->shadow_maps)) {
++		ret = -EBUSY;
++		goto maps;
++	}
++	flush_delayed_work(&info->deferred_work);
++	ps2gs_caps(info, &caps);
++	ret = ps2gs_arena_init(&session->arena, ps2gs_surface_begin(info),
++		caps.depth_base ? caps.depth_base : GS_MEMORY_SIZE);
++	if (ret)
++		goto maps;
++	session->epoch = par->gs_epoch;
++	session->device = device;
++	kref_get(&device->references);
++	device->owner = session;
++	atomic_set(&par->gs_owned, 1);
++	file->private_data = session;
++maps:
++	mutex_unlock(&info->mm_lock);
++	mutex_unlock(&info->lock);
++console:
++	console_unlock();
++unlock:
++	mutex_unlock(&device->gate);
++	if (ret)
++		kfree(session);
++	return ret;
++}
++
++static int ps2gs_device_release(struct inode *inode, struct file *file)
++{
++	struct ps2gs_session *session = file->private_data;
++	struct ps2gs_device *device = session->device;
++
++	mutex_lock(&device->gate);
++	if (device->info)
++		atomic_set(&((struct ps2fb_par *)device->info->par)->gs_owned, 0);
++	device->owner = NULL;
++	mutex_unlock(&device->gate);
++	kfree(session);
++	kref_put(&device->references, ps2gs_device_free);
++	return 0;
++}
++
++static struct ps2gs_buffer *ps2gs_session_buffer(struct ps2gs_session *session,
++		struct fb_info *info, u32 handle, struct ps2gs_buffer *front)
++{
++	if (handle)
++		return ps2gs_arena_lookup(&session->arena, handle);
++	*front = (struct ps2gs_buffer) { .width = info->var.xres,
++		.height = info->var.yres, .buffer_width = ALIGN(info->var.xres_virtual, 64),
++		.bits_per_pixel = info->var.bits_per_pixel };
++	return front;
++}
++
++static int ps2gs_surface_execute(struct fb_info *info, unsigned int operation,
++		const struct ps2gs_buffer *source, const struct ps2gs_buffer *destination,
++		const void *request, const u8 *pixels)
++{
++	struct ps2fb_par *par = info->par;
++	unsigned long flags;
++	size_t count;
++	u32 i;
++	int ret = 0;
++
++	spin_lock_irqsave(&par->lock, flags);
++	/* Wait before touching the shared DMA packet, including after a timeout. */
++	if (!gif_wait()) {
++		ret = -ETIMEDOUT;
++		goto out;
++	}
++	gs_write_csr((struct gs_csr) { .finish = 1 });
++	if (operation == PS2GS_SURFACE_FILL) {
++		count = ps2gs_package_surface_fill(par->package.buffer, destination, request);
++	} else if (operation == PS2GS_SURFACE_COPY) {
++		count = ps2gs_package_surface_copy(par->package.buffer, source, destination, request);
++	} else {
++		const struct ps2gs_surface_upload *u = request;
++		struct ps2gs_upload image = { .x = u->x, .y = u->y,
++			.image_width = u->width, .image_height = u->height, .bytes = u->bytes };
++		count = ps2gs_package_upload_to(par->package.buffer, &image, pixels,
++			destination->base / 256, destination->buffer_width / 64,
++			ps2gs_buffer_psm(destination));
++	}
++	/* Fixed typed packets are <= 200 qwords, in the 256-qword DMA page. */
++	if (WARN_ON_ONCE(count > par->package.capacity)) {
++		ret = -ENOSPC;
++		goto out;
++	}
++	gif_write(&par->package.buffer->gif, count);
++	if (!gif_wait()) {
++		ret = -ETIMEDOUT;
++		goto out;
++	}
++	for (i = 0; i < 1000000 && !gs_read_csr().finish; ++i)
++		cpu_relax();
++	if (i == 1000000)
++		ret = -ETIMEDOUT;
++	else {
++		++par->gs_stats.completed_batches;
++		if (operation == PS2GS_SURFACE_FILL)
++			++par->gs_stats.fills;
++		if (operation == PS2GS_SURFACE_COPY)
++			++par->gs_stats.copies;
++	}
++out:
++	if (ret)
++		++par->gs_stats.timeouts;
++	spin_unlock_irqrestore(&par->lock, flags);
++	return ret;
++}
++
++static int ps2gs_surface_create_locked(struct ps2gs_session *session,
++		struct fb_info *info, void __user *arg)
++{
++	struct ps2gs_surface_create request;
++	struct ps2gs_surface_fill clear = { .abi = PS2GS_ABI_VERSION };
++	struct ps2gs_buffer *buffer, padded;
++	int ret;
++
++	if (copy_from_user(&request, arg, sizeof(request)))
++		return -EFAULT;
++	if (request.abi != PS2GS_ABI_VERSION || request.handle || request.reserved ||
++	    request.buffer_width || request.allocated_bytes)
++		return -EINVAL;
++	ret = ps2gs_arena_create(&session->arena, request.width, request.height,
++		request.bits_per_pixel, &buffer);
++	if (ret)
++		return ret;
++	/* Clear every reserved pixel, including page padding, before publishing. */
++	padded = *buffer;
++	padded.width = padded.buffer_width;
++	padded.height = padded.bytes / (padded.width * (padded.bits_per_pixel / 8));
++	clear.width = padded.width;
++	clear.height = padded.height;
++	ret = ps2gs_surface_execute(info, PS2GS_SURFACE_FILL, NULL, &padded, &clear, NULL);
++	if (ret) {
++		session->failed = ret;
++		ps2gs_arena_destroy(&session->arena, buffer->handle);
++		return ret;
++	}
++	request.handle = buffer->handle;
++	request.buffer_width = buffer->buffer_width;
++	request.allocated_bytes = buffer->bytes;
++	if (copy_to_user(arg, &request, sizeof(request))) {
++		ps2gs_arena_destroy(&session->arena, buffer->handle);
++		return -EFAULT;
++	}
++	return 0;
++}
++
++static int ps2gs_surface_ioctl_locked(struct ps2gs_session *session,
++		struct fb_info *info, unsigned int cmd, void __user *arg)
++{
++	struct ps2gs_buffer front1, front2, *source, *destination;
++	struct ps2gs_caps caps;
++	u8 *pixels;
++	int ret;
++
++	if (cmd == PS2GS_GET_CAPS) {
++		ps2gs_caps(info, &caps);
++		/* This owned interface currently exposes color storage/transfers. The
++		 * legacy framebuffer triangle/depth engine is a separate ABI endpoint;
++		 * do not claim those operations on a file that cannot submit them. */
++		caps.features = PS2GS_HW_FILL | PS2GS_HW_COPY | PS2GS_HW_UPLOAD |
++			PS2GS_HW_SURFACES;
++		return copy_to_user(arg, &caps, sizeof(caps)) ? -EFAULT : 0;
++	}
++	if (session->epoch != ((struct ps2fb_par *)info->par)->gs_epoch)
++		return -ESTALE;
++	if (session->failed)
++		return session->failed;
++	if (!vc_cons[fg_console].d || vc_cons[fg_console].d->vc_mode != KD_GRAPHICS)
++		return -EBUSY;
++	switch (cmd) {
++	case PS2GS_SURFACE_CREATE:
++		return ps2gs_surface_create_locked(session, info, arg);
++	case PS2GS_SURFACE_DESTROY: {
++		struct ps2gs_surface_destroy destroy;
++		if (copy_from_user(&destroy, arg, sizeof(destroy)))
++			return -EFAULT;
++		if (destroy.abi != PS2GS_ABI_VERSION || destroy.reserved[0] || destroy.reserved[1])
++			return -EINVAL;
++		return ps2gs_arena_destroy(&session->arena, destroy.handle);
++	}
++	case PS2GS_SURFACE_FILL: {
++		struct ps2gs_surface_fill fill;
++		if (copy_from_user(&fill, arg, sizeof(fill)))
++			return -EFAULT;
++		destination = ps2gs_session_buffer(session, info, fill.handle, &front1);
++		if (!destination)
++			return -ENOENT;
++		if (fill.abi != PS2GS_ABI_VERSION || fill.reserved ||
++		    !ps2gs_buffer_rect(destination, fill.x, fill.y, fill.width, fill.height))
++			return -EINVAL;
++		ret = ps2gs_surface_execute(info, cmd, NULL, destination, &fill, NULL);
++		break;
++	}
++	case PS2GS_SURFACE_COPY: {
++		struct ps2gs_surface_copy copy;
++		if (copy_from_user(&copy, arg, sizeof(copy)))
++			return -EFAULT;
++		source = ps2gs_session_buffer(session, info, copy.source, &front1);
++		destination = ps2gs_session_buffer(session, info, copy.destination, &front2);
++		if (!source || !destination)
++			return -ENOENT;
++		ret = ps2gs_validate_surface_copy(source, destination, &copy);
++		if (ret)
++			return ret;
++		ret = ps2gs_surface_execute(info, cmd, source, destination, &copy, NULL);
++		break;
++	}
++	case PS2GS_SURFACE_UPLOAD: {
++		struct ps2gs_surface_upload upload;
++		struct ps2gs_upload bounded;
++		if (copy_from_user(&upload, arg, sizeof(upload)))
++			return -EFAULT;
++		destination = ps2gs_session_buffer(session, info, upload.handle, &front1);
++		if (!destination)
++			return -ENOENT;
++		caps = (struct ps2gs_caps) { .abi = PS2GS_ABI_VERSION,
++			.width = destination->width, .height = destination->height,
++			.bits_per_pixel = destination->bits_per_pixel };
++		bounded = (struct ps2gs_upload) { .abi = upload.abi,
++			.width = caps.width, .height = caps.height, .bits_per_pixel = caps.bits_per_pixel,
++			.x = upload.x, .y = upload.y, .image_width = upload.width,
++			.image_height = upload.height, .bytes = upload.bytes,
++			.reserved = upload.reserved, .pixels = upload.pixels };
++		ret = ps2gs_validate_upload(&bounded, &caps);
++		if (ret)
++			return ret;
++		pixels = memdup_user(u64_to_user_ptr(upload.pixels), upload.bytes);
++		if (IS_ERR(pixels))
++			return PTR_ERR(pixels);
++		ret = ps2gs_surface_execute(info, cmd, NULL, destination, &upload, pixels);
++		kfree(pixels);
++		break;
++	}
++	default:
++		return -ENOTTY;
++	}
++	if (ret)
++		session->failed = ret;
++	return ret;
++}
++
++static long ps2gs_device_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
++{
++	struct ps2gs_session *session = file->private_data;
++	struct ps2gs_device *device = session->device;
++	struct fb_info *info;
++	int ret;
++
++	if (!capable(CAP_SYS_RAWIO))
++		return -EPERM;
++	mutex_lock(&device->gate);
++	info = device->info;
++	if (!info) {
++		ret = -ENODEV;
++		goto unlock;
++	}
++	if (!console_trylock()) {
++		ret = -EAGAIN;
++		goto unlock;
++	}
++	/* Never block against fbdev's opposite lock order. EAGAIN is pre-effect. */
++	if (!mutex_trylock(&info->lock)) {
++		ret = -EAGAIN;
++		goto console;
++	}
++	mutex_lock(&info->mm_lock);
++	ret = ps2gs_surface_ioctl_locked(session, info, cmd, (void __user *)arg);
++	mutex_unlock(&info->mm_lock);
++	mutex_unlock(&info->lock);
++console:
++	console_unlock();
++unlock:
++	mutex_unlock(&device->gate);
++	return ret;
++}
++
++static const struct file_operations ps2gs_device_operations = {
++	.owner = THIS_MODULE, .open = ps2gs_device_open, .release = ps2gs_device_release,
++	.unlocked_ioctl = ps2gs_device_ioctl, .compat_ioctl = ps2gs_device_ioctl,
++	.llseek = noop_llseek,
++};
++
++static int ps2gs_device_register(struct fb_info *info)
++{
++	struct ps2fb_par *par = info->par;
++	struct ps2gs_device *device = kzalloc(sizeof(*device), GFP_KERNEL);
++	int ret;
++	if (!device)
++		return -ENOMEM;
++	kref_init(&device->references);
++	mutex_init(&device->gate);
++	device->info = info;
++	device->misc = (struct miscdevice) { .minor = MISC_DYNAMIC_MINOR,
++		.name = "ps2-gs", .fops = &ps2gs_device_operations, .mode = 0600 };
++	ret = misc_register(&device->misc);
++	if (ret) {
++		kref_put(&device->references, ps2gs_device_free);
++		return ret;
++	}
++	par->gs_device = device;
++	return 0;
++}
++
++static void ps2gs_device_unregister(struct fb_info *info)
++{
++	struct ps2fb_par *par = info->par;
++	struct ps2gs_device *device = par->gs_device;
++	if (!device)
++		return;
++	/* misc_deregister synchronizes open before the provider reference drops. */
++	misc_deregister(&device->misc);
++	mutex_lock(&device->gate);
++	device->info = NULL;
++	atomic_set(&par->gs_owned, 0);
++	par->gs_device = NULL;
++	mutex_unlock(&device->gate);
++	kref_put(&device->references, ps2gs_device_free);
++}
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-arena.h
+@@ -0,0 +1,93 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/* Pure GS page allocator. Caller serializes it and supplies conservative
++ * front/font/depth reservations. Whole 8 KiB pages avoid CT16/CT32 swizzle
++ * aliasing. Never reuse a handle in one open session, including failed creates.
++ */
++#define PS2GS_PAGE_BYTES 8192U
++#define PS2GS_PAGE_COUNT 512U
++struct ps2gs_buffer {
++	u32 handle, width, height, buffer_width, bits_per_pixel;
++	u32 base, bytes;
++};
++struct ps2gs_arena {
++	u32 begin, end, next_handle;
++	u8 used[PS2GS_PAGE_COUNT];
++	struct ps2gs_buffer buffers[PS2GS_MAX_SURFACES];
++};
++
++static int ps2gs_arena_init(struct ps2gs_arena *arena, u32 begin, u32 end)
++{
++	if (begin > end || end > PS2GS_PAGE_COUNT * PS2GS_PAGE_BYTES ||
++	    begin % PS2GS_PAGE_BYTES || end % PS2GS_PAGE_BYTES)
++		return -EINVAL;
++	memset(arena, 0, sizeof(*arena));
++	arena->begin = begin / PS2GS_PAGE_BYTES;
++	arena->end = end / PS2GS_PAGE_BYTES;
++	arena->next_handle = 1;
++	return 0;
++}
++
++static struct ps2gs_buffer *ps2gs_arena_lookup(struct ps2gs_arena *arena, u32 handle)
++{
++	u32 i;
++	if (!handle)
++		return NULL;
++	for (i = 0; i < PS2GS_MAX_SURFACES; ++i)
++		if (arena->buffers[i].handle == handle)
++			return &arena->buffers[i];
++	return NULL;
++}
++
++static int ps2gs_arena_create(struct ps2gs_arena *arena, u32 width, u32 height,
++			    u32 bpp, struct ps2gs_buffer **result)
++{
++	u32 slot, stride, rows, pages, first, i;
++	*result = NULL;
++	if (!width || !height || width > 2048 || height > 2048 ||
++	    (bpp != 16 && bpp != 32))
++		return -EINVAL;
++	if (!arena->next_handle)
++		return -EOVERFLOW;
++	stride = ALIGN(width, 64);
++	rows = ALIGN(height, bpp == 32 ? 32 : 64);
++	pages = stride * rows * (bpp / 8) / PS2GS_PAGE_BYTES;
++	for (slot = 0; slot < PS2GS_MAX_SURFACES; ++slot)
++		if (!arena->buffers[slot].handle)
++			break;
++	if (slot == PS2GS_MAX_SURFACES || pages > arena->end - arena->begin)
++		return -ENOSPC;
++	for (first = arena->begin; first <= arena->end - pages; ++first) {
++		for (i = 0; i < pages && !arena->used[first + i]; ++i)
++			;
++		if (i != pages) {
++			first += i;
++			continue;
++		}
++		memset(arena->used + first, 1, pages);
++		arena->buffers[slot] = (struct ps2gs_buffer) {
++			.handle = arena->next_handle++, .width = width, .height = height,
++			.buffer_width = stride, .bits_per_pixel = bpp,
++			.base = first * PS2GS_PAGE_BYTES, .bytes = pages * PS2GS_PAGE_BYTES };
++		*result = &arena->buffers[slot];
++		return 0;
++	}
++	return -ENOSPC;
++}
++
++static int ps2gs_arena_destroy(struct ps2gs_arena *arena, u32 handle)
++{
++	struct ps2gs_buffer *buffer = ps2gs_arena_lookup(arena, handle);
++	if (!buffer)
++		return -ENOENT;
++	memset(arena->used + buffer->base / PS2GS_PAGE_BYTES, 0,
++	       buffer->bytes / PS2GS_PAGE_BYTES);
++	memset(buffer, 0, sizeof(*buffer));
++	return 0;
++}
++
++static bool ps2gs_buffer_rect(const struct ps2gs_buffer *buffer,
++			     u32 x, u32 y, u32 width, u32 height)
++{
++	return width && height && x < buffer->width && y < buffer->height &&
++		width <= buffer->width - x && height <= buffer->height - y;
++}
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-surface-packet.h
+@@ -0,0 +1,77 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/* Typed internal descriptors, never user-supplied GS addresses. */
++static enum gs_psm ps2gs_buffer_psm(const struct ps2gs_buffer *buffer)
++{
++	return buffer->bits_per_pixel == 16 ? gs_psm_ct16 : gs_psm_ct32;
++}
++
++static size_t ps2gs_package_surface_fill(union package *base,
++		const struct ps2gs_buffer *buffer, const struct ps2gs_surface_fill *fill)
++{
++	union package *p = base + 1;
++	struct ps2gs_vertex v = { .x = fill->x * 16, .y = fill->y * 16,
++		.rgba = fill->rgba };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_frame_2,
++		.data.frame_1 = { .fbp = buffer->base / 8192,
++			.fbw = buffer->buffer_width / 64, .psm = ps2gs_buffer_psm(buffer) } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_xyoffset_2, .data.xyoffset_1 = { } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_scissor_2,
++		.data.scissor_1 = { .scax1 = buffer->width - 1,
++			.scay1 = buffer->height - 1 } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_zbuf_2,
++		.data.zbuf = { .psm = buffer->bits_per_pixel == 16 ? 2 : 0xa,
++			.zmsk = gs_zbuf_off } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_test_2,
++		.data.test_1 = { .zte = gs_depth_test_on, .ztst = gs_depth_pass } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_prmodecont, .data.prmodecont = { .ac = 1 } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_prim,
++		.data.prim = { .prim = gs_sprite, .ctxt = gs_context_2 } };
++	p = ps2gs_vertex(p, v);
++	v.x += fill->width * 16;
++	v.y += fill->height * 16;
++	p = ps2gs_vertex(p, v);
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_finish };
++	base->gif.tag = (struct gif_tag) { .flg = gif_packed_mode,
++		.reg0 = gif_reg_ad, .nreg = 1, .nloop = p - base - 1, .eop = 1 };
++	return p - base;
++}
++
++static int ps2gs_validate_surface_copy(const struct ps2gs_buffer *source,
++		const struct ps2gs_buffer *destination, const struct ps2gs_surface_copy *c)
++{
++	if (c->abi != PS2GS_ABI_VERSION || c->reserved ||
++	    c->reserved2[0] || c->reserved2[1] ||
++	    !ps2gs_buffer_rect(source, c->sx, c->sy, c->width, c->height) ||
++	    !ps2gs_buffer_rect(destination, c->dx, c->dy, c->width, c->height))
++		return -EINVAL;
++	if (source->bits_per_pixel != destination->bits_per_pixel ||
++	    c->width % (source->bits_per_pixel == 16 ? 4 : 2))
++		return -EOPNOTSUPP;
++	return 0;
++}
++
++static size_t ps2gs_package_surface_copy(union package *base,
++		const struct ps2gs_buffer *source, const struct ps2gs_buffer *destination,
++		const struct ps2gs_surface_copy *c)
++{
++	union package *p = base + 1;
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_bitbltbuf,
++		.data.bitbltbuf = { .sbp = source->base / 256,
++			.sbw = source->buffer_width / 64, .spsm = ps2gs_buffer_psm(source),
++			.dbp = destination->base / 256, .dbw = destination->buffer_width / 64,
++			.dpsm = ps2gs_buffer_psm(destination) } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_trxpos,
++		.data.trxpos = { .ssax = c->sx, .ssay = c->sy,
++			.dsax = c->dx, .dsay = c->dy,
++			.dir = source->base != destination->base || c->dy < c->sy ||
++				(c->dy == c->sy && c->dx < c->sx) ?
++				gs_trxpos_dir_ul_lr : gs_trxpos_dir_lr_ul } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_trxreg,
++		.data.trxreg = { .rrw = c->width, .rrh = c->height } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_trxdir,
++		.data.trxdir = { .xdir = gs_trxdir_local_to_local } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_finish };
++	base->gif.tag = (struct gif_tag) { .flg = gif_packed_mode,
++		.reg0 = gif_reg_ad, .nreg = 1, .nloop = p - base - 1, .eop = 1 };
++	return p - base;
++}
+--- /dev/null
++++ b/include/uapi/linux/ps2-gs-surface.h
+@@ -0,0 +1,42 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_SURFACE_H
++#define _UAPI_PS2_GS_SURFACE_H
++#include "ps2-gs.h"
++
++/* /dev/ps2-gs is an exclusive, privileged drawing session. Handles belong to
++ * the open file description (dup shares it); closing frees all its surfaces.
++ * Mode/font/pan changes invalidate the session with ESTALE: close and reopen.
++ * Handle zero names the current front buffer. No VRAM address is accepted.
++ * Use KD_GRAPHICS on the active VT for drawing; restore KD_TEXT after close.
++ * Reset front-buffer pan offsets through fbdev before opening the session.
++ * Transfers/fills/copies are synchronous. Hardware failures poison the session;
++ * earlier drawing must not be replayed. Old /dev/fb0 ABI-1 remains supported
++ * when no session owns the GS. Text console rendering retains context 1.
++ */
++#define PS2GS_HW_SURFACES (1U << 5)
++#define PS2GS_MAX_SURFACES 64
++
++struct ps2gs_surface_create {
++	__u32 abi, width, height, bits_per_pixel;
++	/* Output: opaque nonzero handle, padded width, reserved GS bytes. */
++	__u32 handle, buffer_width, allocated_bytes, reserved;
++};
++struct ps2gs_surface_destroy { __u32 abi, handle, reserved[2]; };
++struct ps2gs_surface_fill {
++	__u32 abi, handle, x, y, width, height, rgba, reserved;
++};
++struct ps2gs_surface_copy {
++	__u32 abi, source, destination, reserved;
++	__u32 sx, sy, dx, dy, width, height, reserved2[2];
++};
++struct ps2gs_surface_upload {
++	__u32 abi, handle, x, y, width, height, bytes, reserved;
++	__aligned_u64 pixels;
++};
++
++#define PS2GS_SURFACE_CREATE  _IOWR('G', 0x73, struct ps2gs_surface_create)
++#define PS2GS_SURFACE_DESTROY _IOW('G', 0x74, struct ps2gs_surface_destroy)
++#define PS2GS_SURFACE_FILL    _IOW('G', 0x75, struct ps2gs_surface_fill)
++#define PS2GS_SURFACE_COPY    _IOW('G', 0x76, struct ps2gs_surface_copy)
++#define PS2GS_SURFACE_UPLOAD  _IOW('G', 0x77, struct ps2gs_surface_upload)
++#endif

@@ -1,0 +1,136 @@
+--- a/drivers/video/fbdev/ps2fb-gs-device.h
++++ b/drivers/video/fbdev/ps2fb-gs-device.h
+@@ -13,6 +13,7 @@
+ #include "ps2fb-gs-transfer-packet.h"
+ #include "ps2fb-gs-batch-packet.h"
+ #include "ps2fb-gs-lut-packet.h"
++#include "ps2fb-gs-map-packet.h"
+ #include "ps2fb-gs-readback-packet.h"
+ 
+ struct ps2gs_session;
+@@ -154,7 +155,9 @@
+ 		goto out;
+ 	}
+ 	gs_write_csr((struct gs_csr) { .finish = 1 });
+-	if (operation == PS2GS_CHANNEL_LUT) {
++	if (operation == PS2GS_CHANNEL_MAP) {
++		count = ps2gs_package_map(par->package.buffer, destination, request);
++	} else if (operation == PS2GS_CHANNEL_LUT) {
+ 		count = ps2gs_package_lut(par->package.buffer, destination, request);
+ 	} else if (operation == PS2GS_INTERNAL_BATCH) {
+ 		count = ps2gs_package_batch(par->package.buffer, destination, source, request);
+@@ -274,6 +277,7 @@
+ #include "ps2fb-gs-render-device.h"
+ #include "ps2fb-gs-texture-device.h"
+ #include "ps2fb-gs-lut-device.h"
++#include "ps2fb-gs-map-device.h"
+ #include "ps2fb-gs-logic-device.h"
+ #include "ps2fb-gs-transfer-device.h"
+ #include "ps2fb-gs-readback-device.h"
+@@ -290,7 +294,7 @@
+ 		ps2gs_caps(info, &caps);
+ 		/* Explicitly allocated Z16/Z16S depth and bounded owned rendering. */
+ 		caps.features = PS2GS_HW_FILL | PS2GS_HW_COPY | PS2GS_HW_UPLOAD |
+-			PS2GS_HW_SURFACES | PS2GS_HW_TRIANGLE | PS2GS_HW_DEPTH16 | PS2GS_HW_OWNED_RENDER | PS2GS_HW_TEXTURE | PS2GS_HW_SOLID_LOGIC | PS2GS_HW_TEXTURE_TRANSFER | PS2GS_HW_READBACK | PS2GS_HW_SOLID_BATCH | PS2GS_HW_CHANNEL_LUT;
++			PS2GS_HW_SURFACES | PS2GS_HW_TRIANGLE | PS2GS_HW_DEPTH16 | PS2GS_HW_OWNED_RENDER | PS2GS_HW_TEXTURE | PS2GS_HW_SOLID_LOGIC | PS2GS_HW_TEXTURE_TRANSFER | PS2GS_HW_READBACK | PS2GS_HW_SOLID_BATCH | PS2GS_HW_CHANNEL_LUT | PS2GS_HW_CHANNEL_MAP;
+ 		return copy_to_user(arg, &caps, sizeof(caps)) ? -EFAULT : 0;
+ 	}
+ 	if (session->epoch != ((struct ps2fb_par *)info->par)->gs_epoch)
+@@ -300,6 +304,8 @@
+ 	if (!vc_cons[fg_console].d || vc_cons[fg_console].d->vc_mode != KD_GRAPHICS)
+ 		return -EBUSY;
+ 	switch (cmd) {
++	case PS2GS_CHANNEL_MAP:
++		return ps2gs_map_locked(session, info, arg);
+ 	case PS2GS_CHANNEL_LUT:
+ 		return ps2gs_lut_locked(session, info, arg);
+ 	case PS2GS_SOLID_BATCH:
+--- a/drivers/video/fbdev/ps2fb.c
++++ b/drivers/video/fbdev/ps2fb.c
+@@ -51,6 +51,7 @@
+ #include <linux/ps2-gs-readback.h>
+ #include <linux/ps2-gs-batch.h>
+ #include <linux/ps2-gs-lut.h>
++#include <linux/ps2-gs-map.h>
+ #include <linux/miscdevice.h>
+ #include <linux/kref.h>
+ #include <linux/kd.h>
+--- /dev/null
++++ b/include/uapi/linux/ps2-gs-map.h
+@@ -0,0 +1,15 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_MAP_H
++#define _UAPI_PS2_GS_MAP_H
++#include "ps2-gs-lut.h"
++#define PS2GS_HW_CHANNEL_MAP (1U << 13)
++/* Map one selected source byte through an owned RGBA palette. All selected
++ * destination bits, including alpha, are replaced; other bits are preserved.
++ * Three distinct owned surfaces: source/destination 64x32 CT32 and palette
++ * 16x16 CT32. No user addresses or registers. Rectangles start at the origin. */
++struct ps2gs_channel_map {
++	__u32 abi, source, destination, palette;
++	__u32 width, height, plane_mask, source_channel;
++};
++#define PS2GS_CHANNEL_MAP _IOW('G', 0x80, struct ps2gs_channel_map)
++#endif
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-map-packet.h
+@@ -0,0 +1,13 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/* The indexed swizzle already addresses all four CT32 bytes. Enable RGBA
++ * DECAL so a palette entry can also replace alpha with its full eight bits.
++ * Keep the original RGB-only lookup packet and ABI unchanged. */
++static size_t ps2gs_package_map(union package *base,
++		const struct ps2gs_buffer *color, const struct ps2gs_lut_operation *op)
++{
++	size_t i, count = ps2gs_package_lut(base, color, op);
++	for (i = 1; i < count; ++i)
++		if (base[i].gif.doubleword[1] == gs_addr_tex0_2)
++			base[i].gif.doubleword[0] |= 1ULL << 34;
++	return count;
++}
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-map-device.h
+@@ -0,0 +1,42 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++static int ps2gs_map_locked(struct ps2gs_session *session,
++		struct fb_info *info, void __user *arg)
++{
++	struct ps2gs_channel_map r;
++	struct ps2gs_buffer *source, *destination, *palette;
++	u32 first, total;
++	int ret;
++	if (copy_from_user(&r, arg, sizeof(r)))
++		return -EFAULT;
++	if (r.abi != PS2GS_ABI_VERSION || r.source_channel > 3 || !r.width || !r.height ||
++	    r.width > 64 || r.height > 32 || !r.source || !r.destination || !r.palette ||
++	    r.source == r.destination || r.source == r.palette || r.destination == r.palette)
++		return -EINVAL;
++	source = ps2gs_arena_lookup(&session->arena, r.source);
++	destination = ps2gs_arena_lookup(&session->arena, r.destination);
++	palette = ps2gs_arena_lookup(&session->arena, r.palette);
++	if (!source || !destination || !palette)
++		return -ENOENT;
++	if (ps2gs_depth_role(session, r.source) || ps2gs_depth_role(session, r.destination) ||
++	    ps2gs_depth_role(session, r.palette) || source->bits_per_pixel != 32 ||
++	    destination->bits_per_pixel != 32 || palette->bits_per_pixel != 32 ||
++	    source->width != 64 || source->height != 32 || destination->width != 64 ||
++	    destination->height != 32 || palette->width != 16 || palette->height != 16 ||
++	    source->buffer_width != 64 || destination->buffer_width != 64 || palette->buffer_width != 64)
++		return -EOPNOTSUPP;
++	if (!r.plane_mask)
++		return 0;
++	total = DIV_ROUND_UP(r.width, 4) * DIV_ROUND_UP(r.height, 2);
++	for (first = 0; first < total; first += 48) {
++		struct ps2gs_lut_operation op = { .texture = source, .palette = palette,
++			.width = r.width, .height = r.height, .mask = r.plane_mask,
++			.channel = r.source_channel, .first = first,
++			.count = min_t(u32, total - first, 48) };
++		ret = ps2gs_surface_execute(info, PS2GS_CHANNEL_MAP, NULL, destination, &op, NULL);
++		if (ret) {
++			session->failed = ret;
++			return ret;
++		}
++	}
++	return 0;
++}

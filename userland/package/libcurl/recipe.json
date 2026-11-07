@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "libcurl",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.libcurl",
+  "symbol": "BR2_PACKAGE_LIBCURL",
+  "version": "8.23.0",
+  "recipe": "package/libcurl/libcurl.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5",
+      "filename": "curl-8.23.0.tar.xz"
+    }
+  ],
+  "release_url": "https://curl.se/download/"
+}

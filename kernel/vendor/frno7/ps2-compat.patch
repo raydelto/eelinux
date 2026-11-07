@@ -1,0 +1,4323 @@
+diff --git a/.gitignore b/.gitignore
+index 70580bdd352ccfc5b30ce42c378da860fcfaaccd..febb69159dbc421414f05220b0a6d360a2a81d74 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -91,6 +91,7 @@ modules.order
+ !.gitattributes
+ !.gitignore
+ !.mailmap
++!.github
+ 
+ #
+ # Generated include files
+diff --git a/Makefile b/Makefile
+index 1f42636e9efafb78d3a9f566776a6add5f4bd8fe..ad2f99703341de567eafbfea24a6dac4c6d9102d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -776,6 +776,10 @@ endif
+ KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
+ 
+ KBUILD_CFLAGS += $(call cc-disable-warning, unused-const-variable)
++
++# These result in bogus false positives
++KBUILD_CFLAGS += $(call cc-disable-warning, dangling-pointer)
++
+ ifdef CONFIG_FRAME_POINTER
+ KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
+ else
+diff --git a/arch/mips/Kbuild.platforms b/arch/mips/Kbuild.platforms
+index 0de8398821066868ad01b2f2a5497852c287fdfb..84be263f44d28f4883494e6d54bf8178ae1e51f0 100644
+--- a/arch/mips/Kbuild.platforms
++++ b/arch/mips/Kbuild.platforms
+@@ -24,6 +24,7 @@ platforms += netlogic
+ platforms += paravirt
+ platforms += pic32
+ platforms += pistachio
++platforms += ps2
+ platforms += pmcs-msp71xx
+ platforms += pnx833x
+ platforms += ralink
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 2811ecc1f3c71304937baaef1ca186110e6051fb..3626fbea4e0ace2eeb5d5014a8ac2f2eef734160 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -1021,6 +1021,27 @@ config MIPS_PARAVIRT
+ 	help
+ 	  This option supports guest running under ????
+ 
++config SONY_PS2
++	bool "Sony PlayStation 2"
++	select BOOT_ELF32
++	select CEVT_R4K
++	select CSRC_R4K
++	select DMA_NONCOHERENT
++	select HARDIRQS_SW_RESEND
++	select HAVE_PATA_PLATFORM
++	select IRQ_MIPS_CPU
++	select MIPS_L1_CACHE_SHIFT_6
++	select NO_IOPORT
++	select SYS_HAS_CPU_R5900
++	select SYS_HAS_EARLY_PRINTK
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select SYS_SUPPORTS_LITTLE_ENDIAN
++	select SYS_SUPPORTS_ZBOOT
++	select USB_ARCH_HAS_OHCI
++	select USB_OHCI_LITTLE_ENDIAN
++	help
++	  This enables support for the Sony PlayStation 2.
++
+ endchoice
+ 
+ source "arch/mips/alchemy/Kconfig"
+@@ -1047,6 +1068,7 @@ source "arch/mips/loongson32/Kconfig"
+ source "arch/mips/loongson64/Kconfig"
+ source "arch/mips/netlogic/Kconfig"
+ source "arch/mips/paravirt/Kconfig"
++source "arch/mips/ps2/Kconfig"
+ 
+ endmenu
+ 
+@@ -1742,6 +1764,14 @@ config CPU_BMIPS
+ 	help
+ 	  Support for BMIPS32/3300/4350/4380 and BMIPS5000 processors.
+ 
++config CPU_R5900
++	bool "R5900"
++	depends on SYS_HAS_CPU_R5900
++	select CPU_SUPPORTS_32BIT_KERNEL
++	select IRQ_MIPS_CPU
++	help
++	  Toshiba R5900 processor (Emotion Engine in the Sony PlayStation 2).
++
+ config CPU_XLR
+ 	bool "Netlogic XLR SoC"
+ 	depends on SYS_HAS_CPU_XLR
+@@ -1974,6 +2004,9 @@ config SYS_HAS_CPU_R5000
+ config SYS_HAS_CPU_R5500
+ 	bool
+ 
++config SYS_HAS_CPU_R5900
++	bool
++
+ config SYS_HAS_CPU_NEVADA
+ 	bool
+ 
+@@ -2294,7 +2327,7 @@ config MIPS_FP_SUPPORT
+ config CPU_R2300_FPU
+ 	bool
+ 	depends on MIPS_FP_SUPPORT
+-	default y if CPU_R3000 || CPU_TX39XX
++	default y if CPU_R3000 || CPU_TX39XX || CPU_R5900
+ 
+ config CPU_R3K_TLB
+ 	bool
+diff --git a/arch/mips/Makefile b/arch/mips/Makefile
+index 9ff2c70763a0caa589ba1759408e345c3388001b..5ea90481727543007eb74854af610697d8a4be68 100644
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -175,6 +175,7 @@ cflags-$(CONFIG_CPU_MIPS64_R6)	+= -march=mips64r6 -Wa,--trap
+ cflags-$(CONFIG_CPU_R5000)	+= -march=r5000 -Wa,--trap
+ cflags-$(CONFIG_CPU_R5500)	+= $(call cc-option,-march=r5500,-march=r5000) \
+ 			-Wa,--trap
++cflags-$(CONFIG_CPU_R5900)	+= -march=r5900 -Wa,--trap
+ cflags-$(CONFIG_CPU_NEVADA)	+= $(call cc-option,-march=rm5200,-march=r5000) \
+ 			-Wa,--trap
+ cflags-$(CONFIG_CPU_RM7000)	+= $(call cc-option,-march=rm7000,-march=r5000) \
+diff --git a/arch/mips/alchemy/board-gpr.c b/arch/mips/alchemy/board-gpr.c
+index 6c47318946e4f5bddbfa8eb798d0f27d7296e3df..5247dfc1e0ed905ca9672dad35214b29c2959a99 100644
+--- a/arch/mips/alchemy/board-gpr.c
++++ b/arch/mips/alchemy/board-gpr.c
+@@ -20,6 +20,7 @@
+ #include <linux/gpio/machine.h>
+ #include <asm/bootinfo.h>
+ #include <asm/idle.h>
++#include <asm/processor.h>
+ #include <asm/reboot.h>
+ #include <asm/setup.h>
+ #include <asm/mach-au1x00/au1000.h>
+@@ -65,14 +66,12 @@ static void gpr_reset(char *c)
+ 	alchemy_gpio_direction_output(1, 0);
+ 	udelay(1);
+ 	alchemy_gpio_set_value(1, 1);
+-	while (1)
+-		cpu_wait();
++	cpu_relax_forever();
+ }
+ 
+ static void gpr_power_off(void)
+ {
+-	while (1)
+-		cpu_wait();
++	cpu_relax_forever();
+ }
+ 
+ void __init board_setup(void)
+diff --git a/arch/mips/alchemy/board-mtx1.c b/arch/mips/alchemy/board-mtx1.c
+index 23093535399f1bd9713d687af1dacd0c55a1d1de..2025ba4ebfdd6105d9e3d709a4d0c4e3e96cc846 100644
+--- a/arch/mips/alchemy/board-mtx1.c
++++ b/arch/mips/alchemy/board-mtx1.c
+@@ -18,6 +18,7 @@
+ #include <linux/mtd/physmap.h>
+ #include <mtd/mtd-abi.h>
+ #include <asm/bootinfo.h>
++#include <asm/processor.h>
+ #include <asm/reboot.h>
+ #include <asm/setup.h>
+ #include <asm/mach-au1x00/au1000.h>
+@@ -60,11 +61,7 @@ static void mtx1_reset(char *c)
+ 
+ static void mtx1_power_off(void)
+ {
+-	while (1)
+-		asm volatile (
+-		"	.set	mips32					\n"
+-		"	wait						\n"
+-		"	.set	mips0					\n");
++	cpu_relax_forever();
+ }
+ 
+ void __init board_setup(void)
+diff --git a/arch/mips/alchemy/board-xxs1500.c b/arch/mips/alchemy/board-xxs1500.c
+index ec35aedc7727daf1d6fa04cf0c49d54a8d35dc70..f082c15f6c3aedcf71412ce47509fec8b3bcddde 100644
+--- a/arch/mips/alchemy/board-xxs1500.c
++++ b/arch/mips/alchemy/board-xxs1500.c
+@@ -15,6 +15,7 @@
+ #include <linux/delay.h>
+ #include <linux/pm.h>
+ #include <asm/bootinfo.h>
++#include <asm/processor.h>
+ #include <asm/reboot.h>
+ #include <asm/setup.h>
+ #include <asm/mach-au1x00/au1000.h>
+@@ -57,11 +58,7 @@ static void xxs1500_reset(char *c)
+ 
+ static void xxs1500_power_off(void)
+ {
+-	while (1)
+-		asm volatile (
+-		"	.set	mips32					\n"
+-		"	wait						\n"
+-		"	.set	mips0					\n");
++	cpu_relax_forever();
+ }
+ 
+ void __init board_setup(void)
+diff --git a/arch/mips/alchemy/devboards/platform.c b/arch/mips/alchemy/devboards/platform.c
+index 8d4b65c3268a5eef08f8fe10518af69468bc2b00..2203fddc42d89a070782c21b1a65a0071c22d1e2 100644
+--- a/arch/mips/alchemy/devboards/platform.c
++++ b/arch/mips/alchemy/devboards/platform.c
+@@ -13,6 +13,7 @@
+ 
+ #include <asm/bootinfo.h>
+ #include <asm/idle.h>
++#include <asm/processor.h>
+ #include <asm/reboot.h>
+ #include <asm/setup.h>
+ #include <asm/mach-au1x00/au1000.h>
+@@ -56,8 +57,7 @@ static void db1x_power_off(void)
+ {
+ 	bcsr_write(BCSR_RESETS, 0);
+ 	bcsr_write(BCSR_SYSTEM, BCSR_SYSTEM_PWROFF | BCSR_SYSTEM_RESET);
+-	while (1)		/* sit and spin */
+-		cpu_wait();
++	cpu_relax_forever();	/* sit and spin */
+ }
+ 
+ static void db1x_reset(char *c)
+diff --git a/arch/mips/ar7/setup.c b/arch/mips/ar7/setup.c
+index b3ffe7c898ebf9980cc0a55e4cfb66c829c335d5..2649ee848921293ce152962fcc3cfcb1ea88f217 100644
+--- a/arch/mips/ar7/setup.c
++++ b/arch/mips/ar7/setup.c
+@@ -8,6 +8,7 @@
+ #include <linux/pm.h>
+ #include <linux/time.h>
+ 
++#include <asm/processor.h>
+ #include <asm/reboot.h>
+ #include <asm/mach-ar7/ar7.h>
+ #include <asm/mach-ar7/prom.h>
+@@ -21,8 +22,7 @@ static void ar7_machine_restart(char *command)
+ 
+ static void ar7_machine_halt(void)
+ {
+-	while (1)
+-		;
++	cpu_relax_forever();
+ }
+ 
+ static void ar7_machine_power_off(void)
+diff --git a/arch/mips/ath79/setup.c b/arch/mips/ath79/setup.c
+index ea385a865781fce391e332fb865ba2509265539b..ad1d0fab5dad2551d547160e4dd18c463baff3f5 100644
+--- a/arch/mips/ath79/setup.c
++++ b/arch/mips/ath79/setup.c
+@@ -24,6 +24,7 @@
+ #include <asm/time.h>		/* for mips_hpt_frequency */
+ #include <asm/reboot.h>		/* for _machine_{restart,halt} */
+ #include <asm/mips_machine.h>
++#include <asm/processor.h>
+ #include <asm/prom.h>
+ #include <asm/fw/fw.h>
+ 
+@@ -39,15 +40,12 @@ static void ath79_restart(char *command)
+ {
+ 	local_irq_disable();
+ 	ath79_device_reset_set(AR71XX_RESET_FULL_CHIP);
+-	for (;;)
+-		if (cpu_wait)
+-			cpu_wait();
++	cpu_relax_forever();
+ }
+ 
+ static void ath79_halt(void)
+ {
+-	while (1)
+-		cpu_wait();
++	cpu_relax_forever();
+ }
+ 
+ static void __init ath79_detect_sys_type(void)
+diff --git a/arch/mips/bcm47xx/setup.c b/arch/mips/bcm47xx/setup.c
+index 82627c264964446c1319288823c8fce02f6c9be6..7ae2462ff3aeb84621b334206707750d77054489 100644
+--- a/arch/mips/bcm47xx/setup.c
++++ b/arch/mips/bcm47xx/setup.c
+@@ -39,6 +39,7 @@
+ #include <linux/bcma/bcma_soc.h>
+ #include <asm/bootinfo.h>
+ #include <asm/idle.h>
++#include <asm/processor.h>
+ #include <asm/prom.h>
+ #include <asm/reboot.h>
+ #include <asm/time.h>
+@@ -77,8 +78,8 @@ static void bcm47xx_machine_restart(char *command)
+ 		break;
+ #endif
+ 	}
+-	while (1)
+-		cpu_relax();
++
++	cpu_relax_forever();
+ }
+ 
+ static void bcm47xx_machine_halt(void)
+@@ -97,8 +98,8 @@ static void bcm47xx_machine_halt(void)
+ 		break;
+ #endif
+ 	}
+-	while (1)
+-		cpu_relax();
++
++	cpu_relax_forever();
+ }
+ 
+ #ifdef CONFIG_BCM47XX_SSB
+diff --git a/arch/mips/bcm63xx/setup.c b/arch/mips/bcm63xx/setup.c
+index e28ee9a7cc7e2cfeb18211f1d3650464ba7d42a8..342ca32c0ae2f9d0c4326ee6618a2c5460702394 100644
+--- a/arch/mips/bcm63xx/setup.c
++++ b/arch/mips/bcm63xx/setup.c
+@@ -14,6 +14,7 @@
+ #include <linux/pm.h>
+ #include <asm/bootinfo.h>
+ #include <asm/time.h>
++#include <asm/processor.h>
+ #include <asm/reboot.h>
+ #include <asm/cacheflush.h>
+ #include <bcm63xx_board.h>
+@@ -25,8 +26,8 @@
+ void bcm63xx_machine_halt(void)
+ {
+ 	pr_info("System halted\n");
+-	while (1)
+-		;
++
++	cpu_relax_forever();
+ }
+ 
+ static void bcm6348_a1_reboot(void)
+@@ -58,8 +59,8 @@ static void bcm6348_a1_reboot(void)
+ 		"jr\t%0"
+ 		:
+ 		: "r" (0xbfc00000));
+-	while (1)
+-		;
++
++	cpu_relax_forever();
+ }
+ 
+ void bcm63xx_machine_reboot(void)
+@@ -118,8 +119,7 @@ void bcm63xx_machine_reboot(void)
+ 		reg |= SYS_PLL_SOFT_RESET;
+ 		bcm_perf_writel(reg, PERF_SYS_PLL_CTL_REG);
+ 	}
+-	while (1)
+-		;
++	cpu_relax_forever();
+ }
+ 
+ static void __bcm63xx_machine_reboot(char *p)
+diff --git a/arch/mips/boot/compressed/Makefile b/arch/mips/boot/compressed/Makefile
+index 1d6ebbc2a5d02b357618da65349be032085eb31b..81ac3090fea14d7973616b62df7da233d96b45cf 100644
+--- a/arch/mips/boot/compressed/Makefile
++++ b/arch/mips/boot/compressed/Makefile
+@@ -23,7 +23,7 @@ KBUILD_CFLAGS := $(filter-out -pg, $(KBUILD_CFLAGS))
+ KBUILD_CFLAGS := $(filter-out -fstack-protector, $(KBUILD_CFLAGS))
+ 
+ KBUILD_CFLAGS := $(KBUILD_CFLAGS) -D__KERNEL__ \
+-	-DBOOT_HEAP_SIZE=$(BOOT_HEAP_SIZE) -D"VMLINUX_LOAD_ADDRESS_ULL=$(VMLINUX_LOAD_ADDRESS)ull"
++	-DBOOT_HEAP_SIZE=$(BOOT_HEAP_SIZE) -DKERNEL_ENTRY=$(VMLINUX_ENTRY_ADDRESS) -D"VMLINUX_LOAD_ADDRESS_ULL=$(VMLINUX_LOAD_ADDRESS)ull"
+ 
+ KBUILD_AFLAGS := $(KBUILD_AFLAGS) -D__ASSEMBLY__ \
+ 	-DBOOT_HEAP_SIZE=$(BOOT_HEAP_SIZE) \
+@@ -33,7 +33,7 @@ KBUILD_AFLAGS := $(KBUILD_AFLAGS) -D__ASSEMBLY__ \
+ KCOV_INSTRUMENT		:= n
+ 
+ # decompressor objects (linked with vmlinuz)
+-vmlinuzobjs-y := $(obj)/head.o $(obj)/decompress.o $(obj)/string.o $(obj)/bswapsi.o
++vmlinuzobjs-y := $(obj)/head.o $(obj)/cache.o $(obj)/decompress.o $(obj)/string.o $(obj)/bswapsi.o
+ 
+ ifdef CONFIG_DEBUG_ZBOOT
+ vmlinuzobjs-$(CONFIG_DEBUG_ZBOOT)		   += $(obj)/dbg.o
+diff --git a/arch/mips/boot/compressed/dbg.c b/arch/mips/boot/compressed/dbg.c
+index f6728a8fd1c3d2647695224825d40e52073945e6..88677619b02d6857b00b6580316996a23866874e 100644
+--- a/arch/mips/boot/compressed/dbg.c
++++ b/arch/mips/boot/compressed/dbg.c
+@@ -6,11 +6,726 @@
+  * please select SYS_SUPPORTS_ZBOOT_UART16550 for your machine. othewise, you
+  * need to implement your own putc().
+  */
++
+ #include <linux/compiler.h>
+ #include <linux/types.h>
+ 
+-void __weak putc(char c)
++#include <linux/io.h>
++#include <linux/irq.h>
++
++#include <asm/cpu.h>
++
++#include <asm/mach-ps2/gs.h>
++#include <asm/mach-ps2/gs-registers.h>
++#include <asm/mach-ps2/sio-registers.h>
++#include <uapi/asm/gif.h>
++
++#define D2_CHCR		0x1000a000	/* Channel 2 control */
++#define D2_MADR		0x1000a010	/* Channel 2 memory address */
++#define D2_QWC		0x1000a020	/* Channel 2 quad word count */
++
++#define CHCR_SENDN	0x0101
++
++static const unsigned char acorndata_8x8[] = {
++/* 00 */  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* ^@ */
++/* 01 */  0x7e, 0x81, 0xa5, 0x81, 0xbd, 0x99, 0x81, 0x7e, /* ^A */
++/* 02 */  0x7e, 0xff, 0xbd, 0xff, 0xc3, 0xe7, 0xff, 0x7e, /* ^B */
++/* 03 */  0x6c, 0xfe, 0xfe, 0xfe, 0x7c, 0x38, 0x10, 0x00, /* ^C */
++/* 04 */  0x10, 0x38, 0x7c, 0xfe, 0x7c, 0x38, 0x10, 0x00, /* ^D */
++/* 05 */  0x00, 0x18, 0x3c, 0xe7, 0xe7, 0x3c, 0x18, 0x00, /* ^E */
++/* 06 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 07 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 08 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 09 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 0A */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 0B */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 0C */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 0D */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 0E */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 0F */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 10 */  0x00, 0x60, 0x78, 0x7e, 0x7e, 0x78, 0x60, 0x00, /* |> */
++/* 11 */  0x00, 0x06, 0x1e, 0x7e, 0x7e, 0x1e, 0x06, 0x00, /* <| */
++/* 12 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 13 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 14 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 15 */  0x3c, 0x60, 0x3c, 0x66, 0x3c, 0x06, 0x3c, 0x00,
++/* 16 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 17 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 18 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 19 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 1A */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 1B */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 1C */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 1D */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 1E */  0x00, 0x18, 0x18, 0x3c, 0x3c, 0x7e, 0x7e, 0x00, /* /\ */
++/* 1F */  0x00, 0x7e, 0x7e, 0x3c, 0x3c, 0x18, 0x18, 0x00, /* \/ */
++/* 20 */  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /*   */
++/* 21 */  0x18, 0x3c, 0x3c, 0x18, 0x18, 0x00, 0x18, 0x00, /* ! */
++/* 22 */  0x6C, 0x6C, 0x6C, 0x00, 0x00, 0x00, 0x00, 0x00, /* " */
++/* 23 */  0x36, 0x36, 0x7F, 0x36, 0x7F, 0x36, 0x36, 0x00, /* # */
++/* 24 */  0x0C, 0x3F, 0x68, 0x3E, 0x0B, 0x7E, 0x18, 0x00, /* $ */
++/* 25 */  0x60, 0x66, 0x0C, 0x18, 0x30, 0x66, 0x06, 0x00, /* % */
++/* 26 */  0x38, 0x6C, 0x6C, 0x38, 0x6D, 0x66, 0x3B, 0x00, /* & */
++/* 27 */  0x18, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, /* ' */
++/* 28 */  0x0C, 0x18, 0x30, 0x30, 0x30, 0x18, 0x0C, 0x00, /* ( */
++/* 29 */  0x30, 0x18, 0x0C, 0x0C, 0x0C, 0x18, 0x30, 0x00, /* ) */
++/* 2A */  0x00, 0x18, 0x7E, 0x3C, 0x7E, 0x18, 0x00, 0x00, /* * */
++/* 2B */  0x00, 0x18, 0x18, 0x7E, 0x18, 0x18, 0x00, 0x00, /* + */
++/* 2C */  0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x18, 0x30, /* , */
++/* 2D */  0x00, 0x00, 0x00, 0x7E, 0x00, 0x00, 0x00, 0x00, /* - */
++/* 2E */  0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x18, 0x00, /* . */
++/* 2F */  0x00, 0x06, 0x0C, 0x18, 0x30, 0x60, 0x00, 0x00, /* / */
++/* 30 */  0x3C, 0x66, 0x6E, 0x7E, 0x76, 0x66, 0x3C, 0x00, /* 0 */
++/* 31 */  0x18, 0x38, 0x18, 0x18, 0x18, 0x18, 0x7E, 0x00, /* 1 */
++/* 32 */  0x3C, 0x66, 0x06, 0x0C, 0x18, 0x30, 0x7E, 0x00, /* 2 */
++/* 33 */  0x3C, 0x66, 0x06, 0x1C, 0x06, 0x66, 0x3C, 0x00, /* 3 */
++/* 34 */  0x0C, 0x1C, 0x3C, 0x6C, 0x7E, 0x0C, 0x0C, 0x00, /* 4 */
++/* 35 */  0x7E, 0x60, 0x7C, 0x06, 0x06, 0x66, 0x3C, 0x00, /* 5 */
++/* 36 */  0x1C, 0x30, 0x60, 0x7C, 0x66, 0x66, 0x3C, 0x00, /* 6 */
++/* 37 */  0x7E, 0x06, 0x0C, 0x18, 0x30, 0x30, 0x30, 0x00, /* 7 */
++/* 38 */  0x3C, 0x66, 0x66, 0x3C, 0x66, 0x66, 0x3C, 0x00, /* 8 */
++/* 39 */  0x3C, 0x66, 0x66, 0x3E, 0x06, 0x0C, 0x38, 0x00, /* 9 */
++/* 3A */  0x00, 0x00, 0x18, 0x18, 0x00, 0x18, 0x18, 0x00, /* : */
++/* 3B */  0x00, 0x00, 0x18, 0x18, 0x00, 0x18, 0x18, 0x30, /* ; */
++/* 3C */  0x0C, 0x18, 0x30, 0x60, 0x30, 0x18, 0x0C, 0x00, /* < */
++/* 3D */  0x00, 0x00, 0x7E, 0x00, 0x7E, 0x00, 0x00, 0x00, /* = */ 
++/* 3E */  0x30, 0x18, 0x0C, 0x06, 0x0C, 0x18, 0x30, 0x00, /* > */
++/* 3F */  0x3C, 0x66, 0x0C, 0x18, 0x18, 0x00, 0x18, 0x00, /* ? */
++/* 40 */  0x3C, 0x66, 0x6E, 0x6A, 0x6E, 0x60, 0x3C, 0x00, /* @ */
++/* 41 */  0x3C, 0x66, 0x66, 0x7E, 0x66, 0x66, 0x66, 0x00, /* A */
++/* 42 */  0x7C, 0x66, 0x66, 0x7C, 0x66, 0x66, 0x7C, 0x00, /* B */
++/* 43 */  0x3C, 0x66, 0x60, 0x60, 0x60, 0x66, 0x3C, 0x00, /* C */
++/* 44 */  0x78, 0x6C, 0x66, 0x66, 0x66, 0x6C, 0x78, 0x00, /* D */
++/* 45 */  0x7E, 0x60, 0x60, 0x7C, 0x60, 0x60, 0x7E, 0x00, /* E */
++/* 46 */  0x7E, 0x60, 0x60, 0x7C, 0x60, 0x60, 0x60, 0x00, /* F */
++/* 47 */  0x3C, 0x66, 0x60, 0x6E, 0x66, 0x66, 0x3C, 0x00, /* G */
++/* 48 */  0x66, 0x66, 0x66, 0x7E, 0x66, 0x66, 0x66, 0x00, /* H */
++/* 49 */  0x7E, 0x18, 0x18, 0x18, 0x18, 0x18, 0x7E, 0x00, /* I */
++/* 4A */  0x3E, 0x0C, 0x0C, 0x0C, 0x0C, 0x6C, 0x38, 0x00, /* J */
++/* 4B */  0x66, 0x6C, 0x78, 0x70, 0x78, 0x6C, 0x66, 0x00, /* K */
++/* 4C */  0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x7E, 0x00, /* L */
++/* 4D */  0x63, 0x77, 0x7F, 0x6B, 0x6B, 0x63, 0x63, 0x00, /* M */
++/* 4E */  0x66, 0x66, 0x76, 0x7E, 0x6E, 0x66, 0x66, 0x00, /* N */
++/* 4F */  0x3C, 0x66, 0x66, 0x66, 0x66, 0x66, 0x3C, 0x00, /* O */
++/* 50 */  0x7C, 0x66, 0x66, 0x7C, 0x60, 0x60, 0x60, 0x00, /* P */
++/* 51 */  0x3C, 0x66, 0x66, 0x66, 0x6A, 0x6C, 0x36, 0x00, /* Q */
++/* 52 */  0x7C, 0x66, 0x66, 0x7C, 0x6C, 0x66, 0x66, 0x00, /* R */
++/* 53 */  0x3C, 0x66, 0x60, 0x3C, 0x06, 0x66, 0x3C, 0x00, /* S */
++/* 54 */  0x7E, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x00, /* T */
++/* 55 */  0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x3C, 0x00, /* U */
++/* 56 */  0x66, 0x66, 0x66, 0x66, 0x66, 0x3C, 0x18, 0x00, /* V */
++/* 57 */  0x63, 0x63, 0x6B, 0x6B, 0x7F, 0x77, 0x63, 0x00, /* W */
++/* 58 */  0x66, 0x66, 0x3C, 0x18, 0x3C, 0x66, 0x66, 0x00, /* X */
++/* 59 */  0x66, 0x66, 0x66, 0x3C, 0x18, 0x18, 0x18, 0x00, /* Y */
++/* 5A */  0x7E, 0x06, 0x0C, 0x18, 0x30, 0x60, 0x7E, 0x00, /* Z */
++/* 5B */  0x7C, 0x60, 0x60, 0x60, 0x60, 0x60, 0x7C, 0x00, /* [ */
++/* 5C */  0x00, 0x60, 0x30, 0x18, 0x0C, 0x06, 0x00, 0x00, /* \ */
++/* 5D */  0x3E, 0x06, 0x06, 0x06, 0x06, 0x06, 0x3E, 0x00, /* ] */
++/* 5E */  0x3C, 0x66, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* ^ */
++/* 5F */  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, /* _ */
++/* 60 */  0x30, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* ` */
++/* 61 */  0x00, 0x00, 0x3C, 0x06, 0x3E, 0x66, 0x3E, 0x00, /* a */
++/* 62 */  0x60, 0x60, 0x7C, 0x66, 0x66, 0x66, 0x7C, 0x00, /* b */
++/* 63 */  0x00, 0x00, 0x3C, 0x66, 0x60, 0x66, 0x3C, 0x00, /* c */
++/* 64 */  0x06, 0x06, 0x3E, 0x66, 0x66, 0x66, 0x3E, 0x00, /* d */
++/* 65 */  0x00, 0x00, 0x3C, 0x66, 0x7E, 0x60, 0x3C, 0x00, /* e */
++/* 66 */  0x1C, 0x30, 0x30, 0x7C, 0x30, 0x30, 0x30, 0x00, /* f */
++/* 67 */  0x00, 0x00, 0x3E, 0x66, 0x66, 0x3E, 0x06, 0x3C, /* g */
++/* 68 */  0x60, 0x60, 0x7C, 0x66, 0x66, 0x66, 0x66, 0x00, /* h */
++/* 69 */  0x18, 0x00, 0x38, 0x18, 0x18, 0x18, 0x3C, 0x00, /* i */
++/* 6A */  0x18, 0x00, 0x38, 0x18, 0x18, 0x18, 0x18, 0x70, /* j */
++/* 6B */  0x60, 0x60, 0x66, 0x6C, 0x78, 0x6C, 0x66, 0x00, /* k */
++/* 6C */  0x38, 0x18, 0x18, 0x18, 0x18, 0x18, 0x3C, 0x00, /* l */
++/* 6D */  0x00, 0x00, 0x36, 0x7F, 0x6B, 0x6B, 0x63, 0x00, /* m */
++/* 6E */  0x00, 0x00, 0x7C, 0x66, 0x66, 0x66, 0x66, 0x00, /* n */
++/* 6F */  0x00, 0x00, 0x3C, 0x66, 0x66, 0x66, 0x3C, 0x00, /* o */
++/* 70 */  0x00, 0x00, 0x7C, 0x66, 0x66, 0x7C, 0x60, 0x60, /* p */
++/* 71 */  0x00, 0x00, 0x3E, 0x66, 0x66, 0x3E, 0x06, 0x07, /* q */
++/* 72 */  0x00, 0x00, 0x6C, 0x76, 0x60, 0x60, 0x60, 0x00, /* r */
++/* 73 */  0x00, 0x00, 0x3E, 0x60, 0x3C, 0x06, 0x7C, 0x00, /* s */
++/* 74 */  0x30, 0x30, 0x7C, 0x30, 0x30, 0x30, 0x1C, 0x00, /* t */
++/* 75 */  0x00, 0x00, 0x66, 0x66, 0x66, 0x66, 0x3E, 0x00, /* u */
++/* 76 */  0x00, 0x00, 0x66, 0x66, 0x66, 0x3C, 0x18, 0x00, /* v */
++/* 77 */  0x00, 0x00, 0x63, 0x6B, 0x6B, 0x7F, 0x36, 0x00, /* w */
++/* 78 */  0x00, 0x00, 0x66, 0x3C, 0x18, 0x3C, 0x66, 0x00, /* x */
++/* 79 */  0x00, 0x00, 0x66, 0x66, 0x66, 0x3E, 0x06, 0x3C, /* y */
++/* 7A */  0x00, 0x00, 0x7E, 0x0C, 0x18, 0x30, 0x7E, 0x00, /* z */
++/* 7B */  0x0C, 0x18, 0x18, 0x70, 0x18, 0x18, 0x0C, 0x00, /* { */
++/* 7C */  0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x00, /* | */
++/* 7D */  0x30, 0x18, 0x18, 0x0E, 0x18, 0x18, 0x30, 0x00, /* } */
++/* 7E */  0x31, 0x6B, 0x46, 0x00, 0x00, 0x00, 0x00, 0x00, /* ~ */
++/* 7F */  0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, /*  */
++/* 80 */  0x3c, 0x66, 0x60, 0x60, 0x66, 0x3c, 0x30, 0x60,
++/* 81 */  0x66, 0x00, 0x66, 0x66, 0x66, 0x66, 0x3e, 0x00,
++/* 82 */  0x0c, 0x18, 0x3c, 0x66, 0x7e, 0x60, 0x3c, 0x00,
++/* 83 */  0x18, 0x66, 0x3c, 0x06, 0x3e, 0x66, 0x3e, 0x00,
++/* 84 */  0x66, 0x00, 0x3c, 0x06, 0x3e, 0x66, 0x3e, 0x00,
++/* 85 */  0x30, 0x18, 0x3c, 0x06, 0x3e, 0x66, 0x3e, 0x00,
++/* 86 */  0x3c, 0x66, 0x3c, 0x06, 0x3e, 0x66, 0x3e, 0x00,
++/* 87 */  0x00, 0x00, 0x3c, 0x66, 0x60, 0x66, 0x3c, 0x60,
++/* 88 */  0x3c, 0x66, 0x3c, 0x66, 0x7e, 0x60, 0x3c, 0x00,
++/* 89 */  0x66, 0x00, 0x3c, 0x66, 0x7e, 0x60, 0x3c, 0x00,
++/* 8A */  0x30, 0x18, 0x3c, 0x66, 0x7e, 0x60, 0x3c, 0x00,
++/* 8B */  0x66, 0x00, 0x00, 0x38, 0x18, 0x18, 0x3c, 0x00,
++/* 8C */  0x3c, 0x66, 0x00, 0x38, 0x18, 0x18, 0x3c, 0x00,
++/* 8D */  0x30, 0x18, 0x00, 0x38, 0x18, 0x18, 0x3c, 0x00,
++/* 8E */  0x66, 0x66, 0x00, 0x3c, 0x66, 0x7e, 0x66, 0x00,
++/* 8F */  0x18, 0x66, 0x00, 0x3c, 0x66, 0x7e, 0x66, 0x00,
++/* 90 */  0x0c, 0x18, 0x7e, 0x60, 0x7c, 0x60, 0x7e, 0x00,
++/* 91 */  0x00, 0x00, 0x3f, 0x0d, 0x3f, 0x6c, 0x3f, 0x00,
++/* 92 */  0x3f, 0x66, 0x66, 0x7f, 0x66, 0x66, 0x67, 0x00,
++/* 93 */  0x3c, 0x66, 0x00, 0x3c, 0x66, 0x66, 0x3c, 0x00,
++/* 94 */  0x66, 0x00, 0x00, 0x3c, 0x66, 0x66, 0x3c, 0x00,
++/* 95 */  0x30, 0x18, 0x00, 0x3c, 0x66, 0x66, 0x3c, 0x00,
++/* 96 */  0x3c, 0x66, 0x00, 0x66, 0x66, 0x66, 0x3e, 0x00,
++/* 97 */  0x30, 0x18, 0x00, 0x66, 0x66, 0x66, 0x3e, 0x00,
++/* 98 */  0x66, 0x00, 0x66, 0x66, 0x66, 0x3e, 0x06, 0x3c,
++/* 99 */  0x66, 0x00, 0x3c, 0x66, 0x66, 0x66, 0x3c, 0x00,
++/* 9A */  0x66, 0x00, 0x66, 0x66, 0x66, 0x66, 0x3c, 0x00,
++/* 9B */  0x08, 0x3e, 0x6b, 0x68, 0x6b, 0x3e, 0x08, 0x00,
++/* 9C */  0x1c, 0x36, 0x30, 0x7c, 0x30, 0x30, 0x7e, 0x00,
++/* 9D */  0x66, 0x3c, 0x18, 0x18, 0x7e, 0x18, 0x18, 0x00,
++/* 9E */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* 9F */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* A0 */  0x0c, 0x18, 0x3c, 0x06, 0x3e, 0x66, 0x3e, 0x00,
++/* A1 */  0x0c, 0x18, 0x00, 0x38, 0x18, 0x18, 0x3c, 0x00,
++/* A2 */  0x0c, 0x18, 0x00, 0x3c, 0x66, 0x66, 0x3c, 0x00,
++/* A3 */  0x0c, 0x18, 0x00, 0x66, 0x66, 0x66, 0x3e, 0x00,
++/* A4 */  0x36, 0x6c, 0x00, 0x7c, 0x66, 0x66, 0x66, 0x00,
++/* A5 */  0x36, 0x6c, 0x00, 0x66, 0x76, 0x6e, 0x66, 0x00,
++/* A6 */  0x1c, 0x06, 0x1e, 0x36, 0x1e, 0x00, 0x3e, 0x00,
++/* A7 */  0x1c, 0x36, 0x36, 0x36, 0x1c, 0x00, 0x3e, 0x00,
++/* A8 */  0x18, 0x00, 0x18, 0x18, 0x30, 0x66, 0x3c, 0x00,
++/* A9 */  0x7e, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++/* AA */  0x7e, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++/* AB */  0x40, 0xc0, 0x40, 0x4f, 0x41, 0x0f, 0x08, 0x0f,
++/* AC */  0x40, 0xc0, 0x40, 0x48, 0x48, 0x0a, 0x0f, 0x02,
++/* AD */  0x18, 0x00, 0x18, 0x18, 0x18, 0x18, 0x18, 0x00,
++/* AE */  0x00, 0x33, 0x66, 0xcc, 0xcc, 0x66, 0x33, 0x00,
++/* AF */  0x00, 0xcc, 0x66, 0x33, 0x33, 0x66, 0xcc, 0x00,
++/* B0 */  0x22, 0x88, 0x22, 0x88, 0x22, 0x88, 0x22, 0x88,
++/* B1 */  0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa,
++/* B2 */  0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77,
++/* B3 */  0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18,
++/* B4 */  0x18, 0x18, 0x18, 0xf8, 0x18, 0x18, 0x18, 0x18,
++/* B5 */  0x18, 0x18, 0xf8, 0x18, 0xf8, 0x18, 0x18, 0x18,
++/* B6 */  0x66, 0x66, 0x66, 0xe6, 0x66, 0x66, 0x66, 0x66,
++/* B7 */  0x00, 0x00, 0x00, 0xfe, 0x66, 0x66, 0x66, 0x66,
++/* B8 */  0x00, 0x00, 0xf8, 0x18, 0xf8, 0x18, 0x18, 0x18,
++/* B9 */  0x66, 0x66, 0xe6, 0x06, 0xe6, 0x66, 0x66, 0x66,
++/* BA */  0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
++/* BB */  0x00, 0x00, 0xfe, 0x06, 0xe6, 0x66, 0x66, 0x66,
++/* BC */  0x66, 0x66, 0xe6, 0x06, 0xfe, 0x00, 0x00, 0x00,
++/* BD */  0x66, 0x66, 0x66, 0xfe, 0x00, 0x00, 0x00, 0x00,
++/* BE */  0x18, 0x18, 0xf8, 0x18, 0xf8, 0x00, 0x00, 0x00,
++/* BF */  0x00, 0x00, 0x00, 0xf8, 0x18, 0x18, 0x18, 0x18,
++/* C0 */  0x18, 0x18, 0x18, 0x1f, 0x00, 0x00, 0x00, 0x00,
++/* C1 */  0x18, 0x18, 0x18, 0xff, 0x00, 0x00, 0x00, 0x00,
++/* C2 */  0x00, 0x00, 0x00, 0xff, 0x18, 0x18, 0x18, 0x18,
++/* C3 */  0x18, 0x18, 0x18, 0x1f, 0x18, 0x18, 0x18, 0x18,
++/* C4 */  0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00,
++/* C5 */  0x18, 0x18, 0x18, 0xff, 0x18, 0x18, 0x18, 0x18,
++/* C6 */  0x18, 0x18, 0x1f, 0x18, 0x1f, 0x18, 0x18, 0x18,
++/* C7 */  0x66, 0x66, 0x66, 0x67, 0x66, 0x66, 0x66, 0x66,
++/* C8 */  0x66, 0x66, 0x67, 0x60, 0x7f, 0x00, 0x00, 0x00,
++/* C9 */  0x00, 0x00, 0x7f, 0x60, 0x67, 0x66, 0x66, 0x66,
++/* CA */  0x66, 0x66, 0xe7, 0x00, 0xff, 0x00, 0x00, 0x00,
++/* CB */  0x00, 0x00, 0xff, 0x00, 0xe7, 0x66, 0x66, 0x66,
++/* CC */  0x66, 0x66, 0x67, 0x60, 0x67, 0x66, 0x66, 0x66,
++/* CD */  0x00, 0x00, 0xff, 0x00, 0xff, 0x00, 0x00, 0x00,
++/* CE */  0x66, 0x66, 0xe7, 0x00, 0xe7, 0x66, 0x66, 0x66,
++/* CF */  0x18, 0x18, 0xff, 0x00, 0xff, 0x00, 0x00, 0x00,
++/* D0 */  0x66, 0x66, 0x66, 0xff, 0x00, 0x00, 0x00, 0x00,
++/* D1 */  0x00, 0x00, 0xff, 0x00, 0xff, 0x18, 0x18, 0x18,
++/* D2 */  0x00, 0x00, 0x00, 0xff, 0x66, 0x66, 0x66, 0x66,
++/* D3 */  0x66, 0x66, 0x66, 0x7f, 0x00, 0x00, 0x00, 0x00,
++/* D4 */  0x18, 0x18, 0x1f, 0x18, 0x1f, 0x00, 0x00, 0x00,
++/* D5 */  0x00, 0x00, 0x1f, 0x18, 0x1f, 0x18, 0x18, 0x18,
++/* D6 */  0x00, 0x00, 0x00, 0x7f, 0x66, 0x66, 0x66, 0x66,
++/* D7 */  0x66, 0x66, 0x66, 0xff, 0x66, 0x66, 0x66, 0x66,
++/* D8 */  0x18, 0x18, 0xff, 0x18, 0xff, 0x18, 0x18, 0x18,
++/* D9 */  0x18, 0x18, 0x18, 0xf8, 0x00, 0x00, 0x00, 0x00,
++/* DA */  0x00, 0x00, 0x00, 0x1f, 0x18, 0x18, 0x18, 0x18,
++/* DB */  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
++/* DC */  0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff,
++/* DD */  0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
++/* DE */  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
++/* DF */  0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00,
++/* E0 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* E1 */  0x3c, 0x66, 0x66, 0x6c, 0x66, 0x66, 0x6c, 0xc0,
++/* E2 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* E3 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* E4 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* E5 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* E6 */  0x00, 0x00, 0x33, 0x33, 0x33, 0x33, 0x3e, 0x60,
++/* E7 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* E8 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* E9 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* EA */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* EB */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* EC */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* ED */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* EE */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* EF */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* F0 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* F1 */  0x18, 0x18, 0x7e, 0x18, 0x18, 0x00, 0x7e, 0x00,
++/* F2 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* F3 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* F4 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* F5 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* F6 */  0x00, 0x18, 0x00, 0xff, 0x00, 0x18, 0x00, 0x00,
++/* F7 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* F8 */  0x3c, 0x66, 0x3c, 0x00, 0x00, 0x00, 0x00, 0x00,
++/* F9 */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* FA */  0x00, 0x00, 0x00, 0x18, 0x18, 0x00, 0x00, 0x00,
++/* FB */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* FC */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* FD */  0x38, 0x04, 0x18, 0x20, 0x3c, 0x00, 0x00, 0x00,
++/* FE */  0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00,
++/* FF */  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
++};
++
++static inline u32 rdl(unsigned long addr)
++{
++	return __raw_readl((void __iomem *)KSEG1ADDR(addr));
++}
++
++void wrlX(u32 value, unsigned long addr)
++{
++	__raw_writel(value, (void __iomem *)KSEG1ADDR(addr));
++	wmb();
++}
++
++static inline void wrb(u8 value, unsigned long addr)
++{
++	__raw_writeb(value, (void __iomem *)KSEG1ADDR(addr));
++	wmb();
++}
++
++static inline void wrl(u32 value, unsigned long addr)
++{
++	__raw_writel(value, (void __iomem *)KSEG1ADDR(addr));
++	wmb();
++}
++
++void flushDCacheAll(void);
++
++static void gif_write_FIXME(const union gif_data *packages, size_t count)
+ {
++	static u8 buffer[4096] __attribute__((aligned(64)));
++
++	const size_t size = sizeof(*packages) * count;
++	void * const uncached = (void *)KSEG1ADDR((unsigned long)buffer);
++
++	memcpy(uncached, packages, size);
++	dma_wmb();
++	wmb();
++
++	flushDCacheAll();
++
++	while ((rdl(D2_CHCR) & 0x100) != 0)
++		;
++
++	wrl(CPHYSADDR((unsigned long)uncached), D2_MADR);
++	wrl(count, D2_QWC);
++	wrl(CHCR_SENDN, D2_CHCR);
++
++	while ((rdl(D2_CHCR) & 0x100) != 0)
++		;
++}
++
++static void plot(int x, int y, bool v)
++{
++	const struct gs_rgbaq bg = { .r = 0x00, .g = 0x00, .b = 0x00, .a = 0x80 };
++	const struct gs_rgbaq fg = { .r = 0xff, .g = 0xff, .b = 0xff, .a = 0x80 };
++	const union gif_data packages[] __attribute__((aligned(64))) = {
++		{
++			.tag = {
++				.flg = gif_reglist_mode,
++				.reg0 = gif_reg_prim,
++				.nreg = 1,
++				.nloop = 1
++			}
++		},
++		{
++			.reg = {
++				.lo.prim = { .prim = gs_point }
++			}
++		},
++		{
++			.tag = {
++				.flg = gif_reglist_mode,
++				.reg0 = gif_reg_rgbaq,
++				.reg1 = gif_reg_xyz2,
++				.nreg = 2,
++				.nloop = 1,
++				.eop = 1
++			}
++		},
++		{
++			.reg = {
++				.lo.rgbaq = v ? fg : bg,
++				.hi.xyz2 = {
++					.x = gs_fbcs_to_pcs(x),
++					.y = gs_fbcs_to_pcs(y)
++				},
++			}
++		}
++	};
++
++	gif_write_FIXME(packages, ARRAY_SIZE(packages));
++}
++
++static void clear(int xres, int yres)
++{
++	const struct gs_rgbaq bg = { .r = 0x00, .g = 0x00, .b = 0x00, .a = 0x80 };
++	const union gif_data packages[] __attribute__((aligned(64))) = {
++		{
++			.tag = {
++				.flg = gif_reglist_mode,
++				.reg0 = gif_reg_prim,
++				.reg1 = gif_reg_rgbaq,
++				.reg2 = gif_reg_xyz2,
++				.reg3 = gif_reg_xyz2,
++				.nreg = 4,
++				.nloop = 1,
++				.eop = 1
++			}
++		},
++		{
++			.reg = {
++				.lo.prim = { .prim = gs_sprite },
++				.hi.rgbaq = bg
++			}
++		},
++		{
++			.reg = {
++				.lo.xyz2 = {
++					.x = gs_fbcs_to_pcs(0),
++					.y = gs_fbcs_to_pcs(0)
++				},
++				.hi.xyz2 = {
++					.x = gs_fbcs_to_pcs(xres),
++					.y = gs_fbcs_to_pcs(yres)
++				}
++			}
++		}
++	};
++
++	gif_write_FIXME(packages, ARRAY_SIZE(packages));
++}
++
++static void set_env(void)
++{
++	const u32 xres = 640;
++	const u32 yres = 512;
++
++	const u32 fbw = xres / 64;
++	const u32 fbp = 0;
++	const u32 psm = gs_psm_ct16;
++
++	const union gif_data packages[] __attribute__((aligned(64))) = {
++		{
++			.tag = {
++				.flg = gif_packed_mode,
++				.reg0 = gif_reg_ad,
++				.nreg = 1,
++				.nloop = 11
++			}
++		},
++		{
++			.packed = {
++				.ad = {
++					.addr = gs_addr_frame_1,
++					.data.frame_1 = {
++						.fbw = fbw,
++						.fbp = fbp,
++						.psm = psm
++					}
++				}
++			}
++		},
++		{
++			.packed = {
++				.ad = {
++					.addr = gs_addr_xyoffset_1,
++					.data.xyoffset_1 = {
++						.ofx = 0,
++						.ofy = 0,
++					}
++				}
++			}
++		},
++		{
++			.packed = {
++				.ad = {
++					.addr = gs_addr_scissor_1,
++					.data.scissor_1 = {
++						.scax0 = 0, .scax1 = xres,
++						.scay0 = 0, .scay1 = yres
++					}
++				}
++			}
++		},
++		{
++			.packed = {
++				.ad = {
++					.addr = gs_addr_scanmsk,
++					.data.scanmsk = {
++						.msk = gs_scanmsk_normal
++					}
++				}
++			}
++		},
++		{
++			.packed = {
++				.ad = {
++					.addr = gs_addr_prmode,
++					.data.prmode = { }	/* Reset PRMODE to a known value */
++				}
++			}
++		},
++		{
++			.packed = {
++				.ad = {
++					.addr = gs_addr_prmodecont,
++					.data.prmodecont = {
++						.ac = 1
++					}
++				}
++			}
++		},
++		{
++			.packed = {
++				.ad = {
++					.addr = gs_addr_test_1,
++					.data.test_1 = {
++						.zte  = gs_depth_test_on,	/* Must always be ON */
++						.ztst = gs_depth_pass		/* Emulate OFF */
++					}
++				}
++			}
++		},
++		{
++			.packed = {
++				.ad = {
++					.addr = gs_addr_texa,
++					.data.texa = {
++						.ta0 = GS_ALPHA_ONE,
++						.aem = gs_aem_normal,
++						.ta1 = GS_ALPHA_ONE
++					}
++				}
++			}
++		},
++		{
++			.packed = {
++				.ad = {
++					.addr = gs_addr_tex1_1,
++					.data.tex1 = {
++						.lcm = gs_lcm_fixed,
++						.mmag = gs_lod_nearest,
++						.mmin = gs_lod_nearest,
++						.k = 0
++					}
++				}
++			}
++		},
++		{
++			.packed = {
++				.ad = {
++					.addr = gs_addr_zbuf_1,
++					.data.zbuf = {
++						.zmsk = gs_zbuf_off
++					}
++				}
++			}
++		},
++		{
++			.packed = {
++				.ad = {
++					.addr = gs_addr_dthe,
++					.data.dthe = {
++						.dthe = gs_dthe_off
++					}
++				}
++			}
++		}
++	};
++
++	gif_write_FIXME(packages, ARRAY_SIZE(packages));
++
++	clear(xres, yres);
++}
++
++static inline void __raw_writeq__(u64 val, volatile u64 *addr)		\
++{									\
++	u64 tmp;							\
++									\
++	__asm__ __volatile__(						\
++		".set	push"		"\t\t# __writeq""\n\t"		\
++		".set	mips3"				"\n\t"		\
++		"dsll32	%L0, %L0, 0"			"\n\t"		\
++		"dsrl32	%L0, %L0, 0"			"\n\t"		\
++		"dsll32	%M0, %M0, 0"			"\n\t"		\
++		"or	%L0, %L0, %M0"			"\n\t"		\
++		"sd	%L0, %2"			"\n\t"		\
++		"sll	%L0, %L0, 0"			"\n\t"		\
++		"sll	%M0, %M0, 0"			"\n\t"		\
++		".set	pop"				"\n"		\
++		: "=r" (tmp)						\
++		: "0" (val), "m" (*addr));				\
++}
++
++#define DEFINE_WRITEQ_WO_REG(reg, addr) \
++	void gs_writeq_##reg(u64 value) \
++	{ \
++		__raw_writeq__(value, (void __iomem *)KSEG1ADDR(addr)); \
++		wmb(); \
++	}
++
++#define DEFINE_WO_REG(reg, addr) \
++	DEFINE_WRITEQ_WO_REG(reg, addr)
++
++#define DEFINE_WRITE_REG(reg, str) \
++	void gs_write_##reg(struct gs_##str value) \
++	{ \
++		u64 v; \
++		memcpy(&v, &value, sizeof(v)); \
++		gs_writeq_##reg(v); \
++	}
++
++DEFINE_WO_REG(pmode,	0x12000000);	/* PCRTC mode setting */
++DEFINE_WO_REG(smode1,	0x12000010);
++DEFINE_WO_REG(smode2,	0x12000020);	/* Video synchronization mode */
++DEFINE_WO_REG(srfsh,	0x12000030);
++DEFINE_WO_REG(synch1,	0x12000040);
++DEFINE_WO_REG(synch2,	0x12000050);
++DEFINE_WO_REG(syncv,	0x12000060);
++DEFINE_WO_REG(dispfb1,	0x12000070);	/* Rectangle read output circuit 1 */
++DEFINE_WO_REG(display1,	0x12000080);	/* Rectangle read output circuit 1 */
++DEFINE_WO_REG(dispfb2,	0x12000090);	/* Rectangle read output circuit 2 */
++DEFINE_WO_REG(display2,	0x120000a0);	/* Rectangle read output circuit 2 */
++
++DEFINE_WRITE_REG(pmode, pmode);
++DEFINE_WRITE_REG(smode1, smode1);
++DEFINE_WRITE_REG(smode2, smode2);
++DEFINE_WRITE_REG(srfsh, srfsh);
++DEFINE_WRITE_REG(synch1, synch1);
++DEFINE_WRITE_REG(synch2, synch2);
++DEFINE_WRITE_REG(syncv, syncv);
++DEFINE_WRITE_REG(display1, display);
++DEFINE_WRITE_REG(display2, display);
++DEFINE_WRITE_REG(dispfb1, dispfb);
++DEFINE_WRITE_REG(dispfb2, dispfb);
++
++volatile int dummy = 123456789;
++static void udelay(int t)
++{
++	int i;
++
++	for (i = 0; i < 10000000; i++)
++		dummy = (dummy*dummy) % 987654321;
++}
++
++static void set_res(void)
++{
++	/*
++	 * csr 0x551c6004
++	 * dispfb1 0x13c00
++	 * dispfb2 0x13c00
++	 * display1 0x43777f000280f8
++	 * display2 0x7ff77f004600f8
++	 * extbuf 0x0
++	 * extdata 0x0
++	 * extwrite 0x0
++	 * id 0x55
++	 * imr 0x0
++	 * pmode 0x5
++	 * revision 0x1c
++	 * siglblid 0x0
++	 * smode1 0x13422004b1
++	 * smode2 0x0
++	 * srfsh 0x2
++	 * synch1 0x2c4d0160509d7
++	 * synch2 0x240300
++	 * syncv 0xb0e00002400004
++	 * syscnt 0x0
++	 */
++
++	const u64 smode1_ = 0x740806504;
++	struct gs_smode1 smode1;
++
++	memcpy(&smode1, &smode1_, sizeof(smode1));
++	smode1.gcont = 1;	/* For YCrCb output */
++	smode1.sint = 1;
++	smode1.prst = 0;
++
++	gs_write_smode1(smode1);
++	gs_writeq_smode2(0x1);
++	gs_writeq_srfsh(0x8);
++	gs_writeq_synch1(0x7f5c21fc83030);
++	gs_writeq_synch2(0x3484bc);
++	gs_writeq_syncv(0xa9000502101401);
++	gs_writeq_display1(0x1ff9ff0184a2a9);
++
++	gs_write_dispfb1((struct gs_dispfb) {
++		.fbw = 640 / 64,
++		.psm = gs_psm_ct16,
++		.dbx = 0,
++		.dby = 0,
++	});
++
++	gs_write_pmode((struct gs_pmode) {
++		.en1 = 1,
++		.crtmd = 1
++	});
++
++	smode1.prst = 1;
++	gs_write_smode1(smode1);
++	udelay(2500);			/* 2.5 ms FIXME: spinlock */
++
++	smode1.sint = 0;
++	smode1.prst = 0;
++	gs_write_smode1(smode1);
++}
++
++void putc(char c)
++{
++	static bool initialized;
++	static int row, col;
++
++	int x, y;
++
++	if (!IS_ENABLED(CONFIG_EARLY_PRINTK))
++		return;
++
++	if (IS_ENABLED(CONFIG_SERIAL_PS2_UART_CONSOLE))
++		wrb(c, SIO_TXFIFO);	/* Send to EE UART */
++
++	if (!initialized) {
++		set_res();
++		set_env();
++
++		initialized = true;
++	}
++
++	if (c == '\r') {
++		col = 0;
++		return;
++	}
++	if (c == '\n') {
++		col = 0;
++		row++;
++		return;
++	}
++
++	for (y = 0; y < 8; y++)
++	for (x = 0; x < 8; x++)
++		plot(col * 8 + x, row * 8 + y,
++			(acorndata_8x8[8 * (u8)c + y] & (0x80 >> x)) != 0);
++
++	col++;
+ }
+ 
+ void puts(const char *s)
+diff --git a/arch/mips/boot/compressed/decompress.c b/arch/mips/boot/compressed/decompress.c
+index 281e922e5c652b0f51c924a975cd34a83f23c2e4..7b6e2fdf9a2ed5ed9ab90731d2caedca5b9d402b 100644
+--- a/arch/mips/boot/compressed/decompress.c
++++ b/arch/mips/boot/compressed/decompress.c
+@@ -16,6 +16,7 @@
+ 
+ #include <asm/addrspace.h>
+ #include <asm/unaligned.h>
++#include <asm/processor.h>
+ 
+ /*
+  * These two variables specify the free mem region
+@@ -44,8 +45,7 @@ void error(char *x)
+ 	puts(x);
+ 	puts("\n\n -- System halted");
+ 
+-	while (1)
+-		;	/* Halt */
++	cpu_relax_forever();	/* Halt */
+ }
+ 
+ /* activate the code for pre-boot environment */
+diff --git a/arch/mips/boot/compressed/head.S b/arch/mips/boot/compressed/head.S
+index 409cb483a9ffc5bf1045a0a928b44c9a78904f28..6dc728d6ebea9727a35a7c1d257c86a86a4deee2 100644
+--- a/arch/mips/boot/compressed/head.S
++++ b/arch/mips/boot/compressed/head.S
+@@ -15,7 +15,6 @@
+ #include <asm/asm.h>
+ #include <asm/regdef.h>
+ 
+-	.set noreorder
+ 	.cprestore
+ 	LEAF(start)
+ start:
+@@ -25,12 +24,21 @@ start:
+ 	move	s2, a2
+ 	move	s3, a3
+ 
++#ifdef CONFIG_CPU_R5900
++	# The PlayStation 2 uLaunchELF starts in user mode with
++	# CP0 access enabled (CP0 Status 0x70030c11), which is
++	# unexpected. This is corrected here:
++	li	k0, 0x30010000
++	mtc0	k0, $12
++	sync.p
++#endif /* CONFIG_CPU_R5900 */
++
+ 	/* Clear BSS */
+-	PTR_LA	a0, _edata
++	PTR_LA	a0, _edata - 4
+ 	PTR_LA	a2, _end
+-1:	sw	zero, 0(a0)
++1:	addiu	a0, a0, 4
++	sw	zero, 0(a0)
+ 	bne	a2, a0, 1b
+-	 addiu	a0, a0, 4
+ 
+ 	PTR_LA	a0, (.heap)	     /* heap address */
+ 	PTR_LA	sp, (.stack + 8192)  /* stack address */
+diff --git a/arch/mips/cavium-octeon/smp.c b/arch/mips/cavium-octeon/smp.c
+index 076db9a06b5ea31ef13a8f6d4ac79be42e3baad6..cb397b413967822060a679ec86a51ce2ce98026f 100644
+--- a/arch/mips/cavium-octeon/smp.c
++++ b/arch/mips/cavium-octeon/smp.c
+@@ -18,6 +18,7 @@
+ #include <linux/kexec.h>
+ 
+ #include <asm/mmu_context.h>
++#include <asm/processor.h>
+ #include <asm/time.h>
+ #include <asm/setup.h>
+ 
+@@ -354,8 +355,7 @@ void play_dead(void)
+ 
+ 	mb();
+ 
+-	while (1)	/* core will be reset here */
+-		;
++	cpu_relax_forever();	/* core will be reset here */
+ }
+ 
+ static void start_after_reset(void)
+diff --git a/arch/mips/cobalt/reset.c b/arch/mips/cobalt/reset.c
+index 4eedd481dd007bba3b25bfd733fca34cbe895730..13f67197193a65034ed870fc411df9c51ebb141e 100644
+--- a/arch/mips/cobalt/reset.c
++++ b/arch/mips/cobalt/reset.c
+@@ -37,10 +37,7 @@ void cobalt_machine_halt(void)
+ 	led_trigger_event(power_off_led_trigger, LED_FULL);
+ 
+ 	local_irq_disable();
+-	while (1) {
+-		if (cpu_wait)
+-			cpu_wait();
+-	}
++	cpu_relax_forever();
+ }
+ 
+ void cobalt_machine_restart(char *command)
+diff --git a/arch/mips/emma/markeins/setup.c b/arch/mips/emma/markeins/setup.c
+index c8a91c2a63bc54b6b49f24816c4f8db25939839b..c12e4e6ceb76c23dfbd9a6a1361b2d2cb86a643b 100644
+--- a/arch/mips/emma/markeins/setup.c
++++ b/arch/mips/emma/markeins/setup.c
+@@ -10,6 +10,7 @@
+ #include <linux/kernel.h>
+ #include <linux/types.h>
+ 
++#include <asm/processor.h>
+ #include <asm/time.h>
+ #include <asm/reboot.h>
+ 
+@@ -34,13 +35,13 @@ static void markeins_machine_halt(void)
+ {
+ 	printk("EMMA2RH Mark-eins halted.\n");
+ 	markeins_led("halted.");
+-	while (1) ;
++	cpu_relax_forever();
+ }
+ 
+ static void markeins_machine_power_off(void)
+ {
+ 	markeins_led("poweroff.");
+-	while (1) ;
++	cpu_relax_forever();
+ }
+ 
+ static unsigned long __initdata emma2rh_clock[4] = {
+diff --git a/arch/mips/fw/arc/init.c b/arch/mips/fw/arc/init.c
+index 008555969534236082ea61b1ecab5d627ff7a6d0..90fa8ed75a50176daf89477a0b4475b214de5b36 100644
+--- a/arch/mips/fw/arc/init.c
++++ b/arch/mips/fw/arc/init.c
+@@ -11,6 +11,7 @@
+ #include <linux/kernel.h>
+ 
+ #include <asm/bootinfo.h>
++#include <asm/processor.h>
+ #include <asm/sgialib.h>
+ #include <asm/smp-ops.h>
+ 
+@@ -34,8 +35,7 @@ void __init prom_init(void)
+ 	if (pb->magic != 0x53435241) {
+ 		printk(KERN_CRIT "Aieee, bad prom vector magic %08lx\n",
+ 		       (unsigned long) pb->magic);
+-		while(1)
+-			;
++		cpu_relax_forever();
+ 	}
+ 
+ 	prom_init_cmdline();
+diff --git a/arch/mips/include/asm/asmmacro.h b/arch/mips/include/asm/asmmacro.h
+index feb069cbf44e8a691f50df5711af88195bfc5d6b..67e77c0b64aa722b2c53e1379e6f07d008141ff1 100644
+--- a/arch/mips/include/asm/asmmacro.h
++++ b/arch/mips/include/asm/asmmacro.h
+@@ -56,9 +56,15 @@
+ 	.endm
+ #else
+ 	.macro	local_irq_enable reg=t0
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	mfc0	\reg, CP0_STATUS
+ 	ori	\reg, \reg, 1
+ 	mtc0	\reg, CP0_STATUS
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	irq_enable_hazard
+ 	.endm
+ 
+@@ -67,11 +73,17 @@
+ 	lw      \reg, TI_PRE_COUNT($28)
+ 	addi    \reg, \reg, 1
+ 	sw      \reg, TI_PRE_COUNT($28)
++#endif
++#ifdef CONFIG_CPU_R5900
++	sync.p
+ #endif
+ 	mfc0	\reg, CP0_STATUS
+ 	ori	\reg, \reg, 1
+ 	xori	\reg, \reg, 1
+ 	mtc0	\reg, CP0_STATUS
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	irq_disable_hazard
+ #ifdef CONFIG_PREEMPT
+ 	lw      \reg, TI_PRE_COUNT($28)
+@@ -654,4 +666,45 @@
+ 	.set	pop
+ 	.endm
+ 
++#ifdef CONFIG_CPU_R5900
++/*
++ * Workaround for the R5900 short loop bug
++ *
++ * The short loop bug under certain conditions causes loops to execute only
++ * once or twice. The Gnu assembler (GAS) has the following note about it:
++ *
++ *     On the R5900 short loops need to be fixed by inserting a NOP in the
++ *     branch delay slot.
++ *
++ *     The short loop bug under certain conditions causes loops to execute
++ *     only once or twice. We must ensure that the assembler never
++ *     generates loops that satisfy all of the following conditions:
++ *
++ *     - a loop consists of less than or equal to six instructions
++ *       (including the branch delay slot);
++ *     - a loop contains only one conditional branch instruction at the
++ *       end of the loop;
++ *     - a loop does not contain any other branch or jump instructions;
++ *     - a branch delay slot of the loop is not NOP (EE 2.9 or later).
++ *
++ *     We need to do this because of a hardware bug in the R5900 chip.
++ *
++ * GAS handles the short loop bug in most cases. However, GAS is unable to
++ * adjust machine code having the noreorder directive, as used by the kernel
++ * on several occasions. The short_loop_war macro defined here can be used
++ * to insert necessary NOPs by placing it just before the jump instruction.
++ */
++	.macro	short_loop_war loop_target
++	.set	instruction_count,2 + (. - \loop_target) / 4
++	.ifgt	7 - instruction_count
++	.rept	7 - instruction_count
++	nop
++	.endr
++	.endif
++	.endm
++#else
++	.macro	short_loop_war loop_target
++	.endm
++#endif
++
+ #endif /* _ASM_ASMMACRO_H */
+diff --git a/arch/mips/include/asm/cacheops.h b/arch/mips/include/asm/cacheops.h
+index 8031fbc6b69a2867a043ff4e1655497548631e72..3a6b34be1122bf1aa298abf38faaa61e14dfca52 100644
+--- a/arch/mips/include/asm/cacheops.h
++++ b/arch/mips/include/asm/cacheops.h
+@@ -34,6 +34,17 @@
+ /*
+  * Cache Operations available on all MIPS processors with R4000-style caches
+  */
++#ifdef CONFIG_CPU_R5900
++#define Index_Invalidate_I		0x07
++#define Index_Writeback_Inv_D		0x14
++#define Index_Load_Tag_I		0x00
++#define Index_Load_Tag_D		0x10
++#define Index_Store_Tag_I		0x04
++#define Index_Store_Tag_D		0x12
++#define Hit_Invalidate_I		0x0b
++#define Hit_Invalidate_D		0x1a
++#define Hit_Writeback_Inv_D		0x18
++#else
+ #define Index_Invalidate_I		(Cache_I | Index_Writeback_Inv)
+ #define Index_Writeback_Inv_D		(Cache_D | Index_Writeback_Inv)
+ #define Index_Load_Tag_I		(Cache_I | Index_Load_Tag)
+@@ -43,14 +54,20 @@
+ #define Hit_Invalidate_I		(Cache_I | Hit_Invalidate)
+ #define Hit_Invalidate_D		(Cache_D | Hit_Invalidate)
+ #define Hit_Writeback_Inv_D		(Cache_D | Hit_Writeback_Inv)
++#endif
+ 
+ /*
+  * R4000-specific cacheops
+  */
+ #define Create_Dirty_Excl_D		(Cache_D | 0x0c)
++#ifdef CONFIG_CPU_R5900
++#define Fill				0x0e
++#define Hit_Writeback_D			0x1c
++#else
+ #define Fill				(Cache_I | 0x14)
+ #define Hit_Writeback_I			(Cache_I | Hit_Writeback)
+ #define Hit_Writeback_D			(Cache_D | Hit_Writeback)
++#endif
+ 
+ /*
+  * R4000SC and R4400SC-specific cacheops
+diff --git a/arch/mips/include/asm/cpu-features.h b/arch/mips/include/asm/cpu-features.h
+index 3e26b0c7391b8b15bf9027e5610a9b1595ff5760..f39262745cdddadf08078db1f3078ddc0e54321a 100644
+--- a/arch/mips/include/asm/cpu-features.h
++++ b/arch/mips/include/asm/cpu-features.h
+@@ -396,6 +396,10 @@
+ #define cpu_has_dsp3		__ase(MIPS_ASE_DSP3)
+ #endif
+ 
++#ifndef cpu_has_toshiba_mmi
++#define cpu_has_toshiba_mmi	0	/* 128-bit multimedia instructions */
++#endif
++
+ #ifndef cpu_has_loongson_mmi
+ #define cpu_has_loongson_mmi		__ase(MIPS_ASE_LOONGSON_MMI)
+ #endif
+diff --git a/arch/mips/include/asm/cpu-type.h b/arch/mips/include/asm/cpu-type.h
+index 1809c408736b03c7a4e5d55a15e56de6364e75e1..494104ebfed7fed2bdadc09618d0a39176d40bb3 100644
+--- a/arch/mips/include/asm/cpu-type.h
++++ b/arch/mips/include/asm/cpu-type.h
+@@ -143,6 +143,10 @@ static inline int __pure __get_cpu_type(const int cpu_type)
+ 	case CPU_R5500:
+ #endif
+ 
++#ifdef CONFIG_SYS_HAS_CPU_R5900
++	case CPU_R5900:
++#endif
++
+ #ifdef CONFIG_SYS_HAS_CPU_NEVADA
+ 	case CPU_NEVADA:
+ #endif
+diff --git a/arch/mips/include/asm/cpu.h b/arch/mips/include/asm/cpu.h
+index 7fddcb8350c645821a1cf49911309aa9f07b8301..15b494ef7f9077c7710fcd62d6d2a9a8b562f5f0 100644
+--- a/arch/mips/include/asm/cpu.h
++++ b/arch/mips/include/asm/cpu.h
+@@ -87,6 +87,7 @@
+ #define PRID_IMP_MAGIC		0x2500
+ #define PRID_IMP_RM7000		0x2700
+ #define PRID_IMP_NEVADA		0x2800		/* RM5260 ??? */
++#define PRID_IMP_R5900		0x2e00		/* PlayStation 2 */
+ #define PRID_IMP_RM9000		0x3400
+ #define PRID_IMP_LOONGSON_32	0x4200  /* Loongson-1 */
+ #define PRID_IMP_R5432		0x5400
+@@ -298,7 +299,7 @@ enum cpu_type_enum {
+ 	CPU_R4700, CPU_R5000, CPU_R5500, CPU_NEVADA, CPU_R10000,
+ 	CPU_R12000, CPU_R14000, CPU_R16000, CPU_VR41XX, CPU_VR4111, CPU_VR4121,
+ 	CPU_VR4122, CPU_VR4131, CPU_VR4133, CPU_VR4181, CPU_VR4181A, CPU_RM7000,
+-	CPU_SR71000, CPU_TX49XX,
++	CPU_SR71000, CPU_TX49XX, CPU_R5900,
+ 
+ 	/*
+ 	 * TX3900 class processors
+diff --git a/arch/mips/include/asm/io.h b/arch/mips/include/asm/io.h
+index 2b7b5673637278d210f5a817e7d6dcf44b7cea23..8628f7232726cf68260a535f290708f0d4ec966d 100644
+--- a/arch/mips/include/asm/io.h
++++ b/arch/mips/include/asm/io.h
+@@ -409,10 +409,32 @@ static inline void pfx##out##bwlq##p(type val, unsigned long port)	\
+ 									\
+ 	__val = pfx##ioswab##bwlq(__addr, val);				\
+ 									\
+-	/* Really, we want this to be atomic */				\
+-	BUILD_BUG_ON(sizeof(type) > sizeof(unsigned long));		\
++	if (sizeof(type) != sizeof(u64) || sizeof(u64) == sizeof(long))	{ \
++		*__addr = __val;					\
++	} else if (cpu_has_64bits) {					\
++		unsigned long __flags;					\
++		type __tmp;						\
+ 									\
+-	*__addr = __val;						\
++		/* Manipulating 64-bit registers in a 32-bit kernel */	\
++		/* requires disabling interrupts, since only 32-bit */	\
++		/* registers are saved/restored by interrupts. */	\
++		local_irq_save(__flags);				\
++		__asm__ __volatile__(					\
++			".set	push"		"\t\t# __writeq""\n\t"	\
++			".set	mips3"				"\n\t"	\
++			"dsll32	%L0, %L0, 0"			"\n\t"	\
++			"dsrl32	%L0, %L0, 0"			"\n\t"	\
++			"dsll32	%M0, %M0, 0"			"\n\t"	\
++			"or	%L0, %L0, %M0"			"\n\t"	\
++			"sd	%L0, %2"			"\n\t"	\
++			"sll	%L0, %L0, 0"			"\n\t"	\
++			"sll	%M0, %M0, 0"			"\n\t"	\
++			".set	pop"				"\n"	\
++			: "=r" (__tmp)					\
++			: "0" (__val), "m" (*__addr));			\
++		local_irq_restore(__flags);				\
++	} else								\
++		BUG();							\
+ }									\
+ 									\
+ static inline type pfx##in##bwlq##p(unsigned long port)			\
+@@ -422,12 +444,30 @@ static inline type pfx##in##bwlq##p(unsigned long port)			\
+ 									\
+ 	__addr = (void *)__swizzle_addr_##bwlq(mips_io_port_base + port); \
+ 									\
+-	BUILD_BUG_ON(sizeof(type) > sizeof(unsigned long));		\
+-									\
+ 	if (barrier)							\
+ 		iobarrier_rw();						\
+ 									\
+-	__val = *__addr;						\
++	if (sizeof(type) != sizeof(u64) || sizeof(u64) == sizeof(long))	{ \
++		__val = *__addr;					\
++	} else if (cpu_has_64bits) {					\
++		unsigned long __flags;					\
++									\
++		/* Manipulating 64-bit registers in a 32-bit kernel */	\
++		/* requires disabling interrupts, since only 32-bit */	\
++		/* registers are saved/restored by interrupts. */	\
++		local_irq_save(__flags);				\
++		__asm__ __volatile__(					\
++			".set	push"		"\t\t# __outq"	"\n\t"	\
++			".set	mips3"				"\n\t"	\
++			"ld	%L0, %1"			"\n\t"	\
++			"dsra32	%M0, %L0, 0"			"\n\t"	\
++			"sll	%L0, %L0, 0"			"\n\t"	\
++			".set	pop"				"\n"	\
++			: "=r" (__val)					\
++			: "m" (*__addr));				\
++		local_irq_restore(__flags);				\
++	} else								\
++		BUG();							\
+ 									\
+ 	/* prevent prefetching of coherent DMA data prematurely */	\
+ 	if (!relax)							\
+@@ -467,7 +507,7 @@ __BUILD_MEMORY_PFX(__mem_, q, u64, 0)
+ BUILDIO_IOPORT(b, u8)
+ BUILDIO_IOPORT(w, u16)
+ BUILDIO_IOPORT(l, u32)
+-#ifdef CONFIG_64BIT
++#if defined(CONFIG_64BIT) || defined(CONFIG_CPU_R5900)
+ BUILDIO_IOPORT(q, u64)
+ #endif
+ 
+@@ -658,4 +698,10 @@ extern void (*_dma_cache_inv)(unsigned long start, unsigned long size);
+ 
+ void __ioread64_copy(void *to, const void __iomem *from, size_t count);
+ 
++#ifdef CONFIG_SONY_PS2
++#define ARCH_HAS_VALID_PHYS_ADDR_RANGE
++extern int valid_phys_addr_range(phys_addr_t addr, size_t size);
++extern int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
++#endif /* CONFIG_SONY_PS2 */
++
+ #endif /* _ASM_IO_H */
+diff --git a/arch/mips/include/asm/irqflags.h b/arch/mips/include/asm/irqflags.h
+index f0b862a83816b7f11d9c480bf23edaec17b90ee0..e0c0265b271988a9087c964bce88274310b3e52b 100644
+--- a/arch/mips/include/asm/irqflags.h
++++ b/arch/mips/include/asm/irqflags.h
+@@ -78,9 +78,15 @@ static inline void arch_local_irq_restore(unsigned long flags)
+ 	/*
+ 	 * Fast, dangerous.  Life is fun, life is good.
+ 	 */
++#ifdef CONFIG_CPU_R5900
++	"	sync.p							\n"
++#endif
+ 	"	mfc0	$1, $12						\n"
+ 	"	ins	$1, %[flags], 0, 1				\n"
+ 	"	mtc0	$1, $12						\n"
++#ifdef CONFIG_CPU_R5900
++	"	sync.p							\n"
++#endif
+ #endif
+ 	"	" __stringify(__irq_disable_hazard) "			\n"
+ 	"	.set	pop						\n"
+@@ -105,10 +111,16 @@ static inline void arch_local_irq_enable(void)
+ #if   defined(CONFIG_CPU_MIPSR2) || defined(CONFIG_CPU_MIPSR6)
+ 	"	ei							\n"
+ #else
++#ifdef CONFIG_CPU_R5900
++	"	sync.p							\n"
++#endif
+ 	"	mfc0	$1,$12						\n"
+ 	"	ori	$1,0x1f						\n"
+ 	"	xori	$1,0x1e						\n"
+ 	"	mtc0	$1,$12						\n"
++#ifdef CONFIG_CPU_R5900
++	"	sync.p							\n"
++#endif
+ #endif
+ 	"	" __stringify(__irq_enable_hazard) "			\n"
+ 	"	.set	pop						\n"
+@@ -124,6 +136,9 @@ static inline unsigned long arch_local_save_flags(void)
+ 	asm __volatile__(
+ 	"	.set	push						\n"
+ 	"	.set	reorder						\n"
++#ifdef CONFIG_CPU_R5900
++	"	sync.p							\n"
++#endif
+ 	"	mfc0	%[flags], $12					\n"
+ 	"	.set	pop						\n"
+ 	: [flags] "=r" (flags));
+diff --git a/arch/mips/include/asm/mipsregs.h b/arch/mips/include/asm/mipsregs.h
+index c28b892937fe1681b44162de9e569b27c38cefd7..838a7c761d660b38b6cc8e26da202070a9d31129 100644
+--- a/arch/mips/include/asm/mipsregs.h
++++ b/arch/mips/include/asm/mipsregs.h
+@@ -511,6 +511,14 @@
+ #define R5K_CONF_SE		(_ULCAST_(1) << 12)
+ #define R5K_CONF_SS		(_ULCAST_(3) << 20)
+ 
++/* Bits specific to the R5900.	*/
++#define R5900_CONF_BPE		(_ULCAST_(1) << 12)	/* Enable branch prediction. */
++#define R5900_CONF_NBE		(_ULCAST_(1) << 13)	/* Enable non-blocking load. */
++#define R5900_CONF_BE		(_ULCAST_(1) << 15)	/* Enable big-endian (read-only). */
++#define R5900_CONF_DCE		(_ULCAST_(1) << 16)	/* Enable the data cache. */
++#define R5900_CONF_ICE		(_ULCAST_(1) << 17)	/* Enable the instruction cache. */
++#define R5900_CONF_DIE		(_ULCAST_(1) << 18)	/* Enable double issue. */
++
+ /* Bits specific to the RM7000.	 */
+ #define RM7K_CONF_SE		(_ULCAST_(1) <<	 3)
+ #define RM7K_CONF_TE		(_ULCAST_(1) << 12)
+@@ -1348,6 +1356,29 @@ do {								\
+  * Macros to access the system control coprocessor
+  */
+ 
++#ifdef CONFIG_CPU_R5900
++#define ___read_32bit_c0_register(source, sel, vol)			\
++({ int __res;								\
++	if (sel == 0)							\
++		__asm__ vol(						\
++			".set push\n\t"					\
++			".set noreorder\n\t"				\
++			"sync.p\n\t"					\
++			"mfc0\t%0, " #source "\n\t"			\
++			".set pop\n\t"					\
++			: "=r" (__res));				\
++	else								\
++		__asm__ vol(						\
++			".set push\n\t"					\
++			".set noreorder\n\t"				\
++			".set\tmips32\n\t"				\
++			"sync.p\n\t"					\
++			"mfc0\t%0, " #source ", " #sel "\n\t"		\
++			".set pop\n\t"					\
++			: "=r" (__res));				\
++	__res;								\
++})
++#else
+ #define ___read_32bit_c0_register(source, sel, vol)			\
+ ({ unsigned int __res;							\
+ 	if (sel == 0)							\
+@@ -1363,6 +1394,7 @@ do {								\
+ 			: "=r" (__res));				\
+ 	__res;								\
+ })
++#endif
+ 
+ #define ___read_64bit_c0_register(source, sel, vol)			\
+ ({ unsigned long long __res;						\
+@@ -1397,6 +1429,28 @@ do {								\
+ #define __read_const_64bit_c0_register(source, sel)			\
+ 	___read_64bit_c0_register(source, sel,)
+ 
++#ifdef CONFIG_CPU_R5900
++#define __write_32bit_c0_register(register, sel, value)			\
++do {									\
++	if (sel == 0)							\
++		__asm__ __volatile__(					\
++			".set push\n\t"					\
++			".set noreorder\n\t"				\
++			"mtc0\t%z0, " #register "\n\t"			\
++			"sync.p\n\t"					\
++			".set pop\n\t"					\
++			: : "Jr" ((unsigned int)(value)));		\
++	else								\
++		__asm__ __volatile__(					\
++			".set push\n\t"					\
++			".set noreorder\n\t"				\
++			".set\tmips32\n\t"				\
++			"mtc0\t%z0, " #register ", " #sel "\n\t"	\
++			"sync.p\n\t"					\
++			".set pop\n\t"					\
++			: : "Jr" ((unsigned int)(value)));		\
++} while (0)
++#else
+ #define __write_32bit_c0_register(register, sel, value)			\
+ do {									\
+ 	if (sel == 0)							\
+@@ -1411,6 +1465,7 @@ do {									\
+ 			".set\tpop"					\
+ 			: : "Jr" ((unsigned int)(value)));		\
+ } while (0)
++#endif
+ 
+ #define __write_64bit_c0_register(register, sel, value)			\
+ do {									\
+@@ -2542,6 +2597,28 @@ do {									\
+ 
+ #else
+ 
++#ifdef CONFIG_CPU_R5900
++#define mfsa()								\
++({									\
++	unsigned long __treg;	/* FIXME: __u64? */			\
++									\
++	__asm__ __volatile__(						\
++	"	mfsa	%0\n"						\
++	: "=r" (__treg));						\
++	__treg;								\
++})
++
++#define mtsa(x)								\
++do {									\
++	unsigned long __treg = (x);/* FIXME: __u64? */			\
++									\
++	__asm__ __volatile__(						\
++	"	mtsa	%0\n"						\
++	:								\
++	: "r" (__treg));						\
++} while (0)
++#endif
++
+ #define rddsp(mask)							\
+ ({									\
+ 	unsigned int __res;						\
+@@ -2652,6 +2729,14 @@ static inline void tlb_probe(void)
+ 	__asm__ __volatile__(
+ 		".set noreorder\n\t"
+ 		"tlbp\n\t"
++#ifdef CONFIG_CPU_R5900
++		/* No memory access behind the tlbp instruction. */
++		"sync.p\n\t"
++		"nop\n\t"
++		"nop\n\t"
++		"nop\n\t"
++		"nop\n\t"
++#endif
+ 		".set reorder");
+ }
+ 
+@@ -2676,7 +2761,19 @@ static inline void tlb_read(void)
+ 
+ 	__asm__ __volatile__(
+ 		".set noreorder\n\t"
++#ifdef CONFIG_CPU_R5900
++		/* instruction must not be at the end of a page. */
++		".align 8\n\t"
++#endif
+ 		"tlbr\n\t"
++#ifdef CONFIG_CPU_R5900
++		"sync.p\n\t"
++		/* No branch behind tlbr. */
++		"nop\n\t"
++		"nop\n\t"
++		"nop\n\t"
++		"nop\n\t"
++#endif
+ 		".set reorder");
+ 
+ #if MIPS34K_MISSED_ITLB_WAR
+@@ -2697,6 +2794,9 @@ static inline void tlb_write_indexed(void)
+ 	__asm__ __volatile__(
+ 		".set noreorder\n\t"
+ 		"tlbwi\n\t"
++#ifdef CONFIG_CPU_R5900
++		"sync.p\n\t"
++#endif
+ 		".set reorder");
+ }
+ 
+@@ -2705,6 +2805,9 @@ static inline void tlb_write_random(void)
+ 	__asm__ __volatile__(
+ 		".set noreorder\n\t"
+ 		"tlbwr\n\t"
++#ifdef CONFIG_CPU_R5900
++		"sync.p\n\t"
++#endif
+ 		".set reorder");
+ }
+ 
+diff --git a/arch/mips/include/asm/module.h b/arch/mips/include/asm/module.h
+index ed70994fbbec963b36fe0629e480011029ae09bf..4bc3cd15dd71ed9fa0d3300dd2003cc0f7bfb2dc 100644
+--- a/arch/mips/include/asm/module.h
++++ b/arch/mips/include/asm/module.h
+@@ -111,6 +111,8 @@ search_module_dbetables(unsigned long addr)
+ #define MODULE_PROC_FAMILY "R5000 "
+ #elif defined CONFIG_CPU_R5500
+ #define MODULE_PROC_FAMILY "R5500 "
++#elif defined CONFIG_CPU_R5900
++#define MODULE_PROC_FAMILY "R5900 "
+ #elif defined CONFIG_CPU_NEVADA
+ #define MODULE_PROC_FAMILY "NEVADA "
+ #elif defined CONFIG_CPU_R10000
+diff --git a/arch/mips/include/asm/processor.h b/arch/mips/include/asm/processor.h
+index fba18d4a9190990cedf7ab4bb939a5db92bb5641..e3e7afe9b03117a911052d8c4cd38e7af503ca75 100644
+--- a/arch/mips/include/asm/processor.h
++++ b/arch/mips/include/asm/processor.h
+@@ -400,6 +400,12 @@ unsigned long get_wchan(struct task_struct *p);
+ #define cpu_relax()	barrier()
+ #endif
+ 
++static inline void __noreturn cpu_relax_forever(void)
++{
++	for (;;)
++		cpu_relax();
++}
++
+ /*
+  * Return_address is a replacement for __builtin_return_address(count)
+  * which on certain architectures cannot reasonably be implemented in GCC
+diff --git a/arch/mips/include/asm/ptrace.h b/arch/mips/include/asm/ptrace.h
+index 1e76774b36ddf28c4ce72ca0a9ed4c8655ded6c9..0f0e9514f5ad1cba661131644ff91636fe2b56d0 100644
+--- a/arch/mips/include/asm/ptrace.h
++++ b/arch/mips/include/asm/ptrace.h
+@@ -47,6 +47,11 @@ struct pt_regs {
+ #ifdef CONFIG_CPU_CAVIUM_OCTEON
+ 	unsigned long long mpl[6];        /* MTM{0-5} */
+ 	unsigned long long mtp[6];        /* MTP{0-5} */
++#endif
++#ifdef CONFIG_CPU_R5900
++	uint64_t sa;			/* Shift amount MMI register */
++	uint64_t hi1;			/* HI1 register */
++	uint64_t lo1;			/* LO1 register */
+ #endif
+ 	unsigned long __last[0];
+ } __aligned(8);
+diff --git a/arch/mips/include/asm/r4kcache.h b/arch/mips/include/asm/r4kcache.h
+index 7f4a32d3345a00c75446fbae17b302dfd187c8ae..da9f55f36fcf960e0daec7c3291d63408c74dbf0 100644
+--- a/arch/mips/include/asm/r4kcache.h
++++ b/arch/mips/include/asm/r4kcache.h
+@@ -37,9 +37,14 @@ extern void (*r4k_blast_icache)(void);
+  *  - We need a properly sign extended address for 64-bit code.	 To get away
+  *    without ifdefs we let the compiler do it by a type cast.
+  */
++#ifdef CONFIG_CPU_R5900
++/* MSB must be 0 for the instruction cache due to an R5900 bug. */
++#define INDEX_BASE	0
++#else
+ #define INDEX_BASE	CKSEG0
++#endif
+ 
+-#define cache_op(op,addr)						\
++#define cache_op_s(op,addr)						\
+ 	__asm__ __volatile__(						\
+ 	"	.set	push					\n"	\
+ 	"	.set	noreorder				\n"	\
+@@ -48,56 +53,85 @@ extern void (*r4k_blast_icache)(void);
+ 	"	.set	pop					\n"	\
+ 	:								\
+ 	: "i" (op), "R" (*(unsigned char *)(addr)))
++#ifdef CONFIG_CPU_R5900
++#define cache_op_d(op,addr)						\
++	__asm__ __volatile__(						\
++	"	.set	push					\n"	\
++	"	.set	noreorder				\n"	\
++	"	.set	mips3\n\t				\n"	\
++	"	sync.l						\n"	\
++	"	cache	%0, %1					\n"	\
++	"	sync.l						\n"	\
++	"	.set	pop					\n"	\
++	:								\
++	: "i" (op), "R" (*(unsigned char *)(addr)))
++#define cache_op_i(op,addr)						\
++	__asm__ __volatile__(						\
++	"	.set	push					\n"	\
++	"	.set	noreorder				\n"	\
++	"	.set	mips3\n\t				\n"	\
++	"	sync.p						\n"	\
++	"	cache	%0, %1					\n"	\
++	"	sync.p						\n"	\
++	"	.set	pop					\n"	\
++	:								\
++	: "i" (op), "R" (*(unsigned char *)(addr)))
++#else
++#define cache_op_d cache_op_s
++#define cache_op_i cache_op_s
++#define cache_op cache_op_s
++#endif
++#define cache_op_t cache_op_s
+ 
+ static inline void flush_icache_line_indexed(unsigned long addr)
+ {
+-	cache_op(Index_Invalidate_I, addr);
++	cache_op_i(Index_Invalidate_I, addr);
+ }
+ 
+ static inline void flush_dcache_line_indexed(unsigned long addr)
+ {
+-	cache_op(Index_Writeback_Inv_D, addr);
++	cache_op_d(Index_Writeback_Inv_D, addr);
+ }
+ 
+ static inline void flush_scache_line_indexed(unsigned long addr)
+ {
+-	cache_op(Index_Writeback_Inv_SD, addr);
++	cache_op_s(Index_Writeback_Inv_SD, addr);
+ }
+ 
+ static inline void flush_icache_line(unsigned long addr)
+ {
+ 	switch (boot_cpu_type()) {
+ 	case CPU_LOONGSON2:
+-		cache_op(Hit_Invalidate_I_Loongson2, addr);
++		cache_op_i(Hit_Invalidate_I_Loongson2, addr);
+ 		break;
+ 
+ 	default:
+-		cache_op(Hit_Invalidate_I, addr);
++		cache_op_i(Hit_Invalidate_I, addr);
+ 		break;
+ 	}
+ }
+ 
+ static inline void flush_dcache_line(unsigned long addr)
+ {
+-	cache_op(Hit_Writeback_Inv_D, addr);
++	cache_op_d(Hit_Writeback_Inv_D, addr);
+ }
+ 
+ static inline void invalidate_dcache_line(unsigned long addr)
+ {
+-	cache_op(Hit_Invalidate_D, addr);
++	cache_op_d(Hit_Invalidate_D, addr);
+ }
+ 
+ static inline void invalidate_scache_line(unsigned long addr)
+ {
+-	cache_op(Hit_Invalidate_SD, addr);
++	cache_op_s(Hit_Invalidate_SD, addr);
+ }
+ 
+ static inline void flush_scache_line(unsigned long addr)
+ {
+-	cache_op(Hit_Writeback_Inv_SD, addr);
++	cache_op_s(Hit_Writeback_Inv_SD, addr);
+ }
+ 
+-#define protected_cache_op(op,addr)				\
++#define protected_cache_op_s(op,addr)				\
+ ({								\
+ 	int __err = 0;						\
+ 	__asm__ __volatile__(					\
+@@ -119,6 +153,49 @@ static inline void flush_scache_line(unsigned long addr)
+ 	__err;							\
+ })
+ 
++#ifdef CONFIG_CPU_R5900
++#define protected_cache_op_d(op,addr)				\
++({								\
++	int __err = 0;						\
++	__asm__ __volatile__(					\
++	"	.set	push			\n"		\
++	"	.set	noreorder		\n"		\
++	"	.set	mips3			\n"		\
++	"	sync.l				\n"		\
++	"1:	cache	%0, (%1)		\n"		\
++	"	sync.l				\n"		\
++	"2:	.set	pop			\n"		\
++	"	.section __ex_table,\"a\"	\n"		\
++	"	"STR(PTR)" 1b, 2b		\n"		\
++	"	.previous"					\
++	:							\
++	: "i" (op), "r" (addr));				\
++	__err;							\
++})
++
++#define protected_cache_op_i(op,addr)				\
++({								\
++	int __err = 0;						\
++	__asm__ __volatile__(					\
++	"	.set	push			\n"		\
++	"	.set	noreorder		\n"		\
++	"	.set	mips3			\n"		\
++	"	sync.p				\n"		\
++	"1:	cache	%0, (%1)		\n"		\
++	"	sync.p				\n"		\
++	"2:	.set	pop			\n"		\
++	"	.section __ex_table,\"a\"	\n"		\
++	"	"STR(PTR)" 1b, 2b		\n"		\
++	"	.previous"					\
++	:							\
++	: "i" (op), "r" (addr));				\
++	__err;							\
++})
++#else
++#define protected_cache_op_i protected_cache_op_s
++#define protected_cache_op_d protected_cache_op_s
++#define protected_cache_op protected_cache_op_s
++#endif
+ 
+ #define protected_cachee_op(op,addr)				\
+ ({								\
+@@ -150,13 +227,13 @@ static inline int protected_flush_icache_line(unsigned long addr)
+ {
+ 	switch (boot_cpu_type()) {
+ 	case CPU_LOONGSON2:
+-		return protected_cache_op(Hit_Invalidate_I_Loongson2, addr);
++		return protected_cache_op_i(Hit_Invalidate_I_Loongson2, addr);
+ 
+ 	default:
+ #ifdef CONFIG_EVA
+-		return protected_cachee_op(Hit_Invalidate_I, addr);
++		return protected_cachee_op_i(Hit_Invalidate_I, addr);
+ #else
+-		return protected_cache_op(Hit_Invalidate_I, addr);
++		return protected_cache_op_i(Hit_Invalidate_I, addr);
+ #endif
+ 	}
+ }
+@@ -170,18 +247,18 @@ static inline int protected_flush_icache_line(unsigned long addr)
+ static inline int protected_writeback_dcache_line(unsigned long addr)
+ {
+ #ifdef CONFIG_EVA
+-	return protected_cachee_op(Hit_Writeback_Inv_D, addr);
++	return protected_cachee_op_d(Hit_Writeback_Inv_D, addr);
+ #else
+-	return protected_cache_op(Hit_Writeback_Inv_D, addr);
++	return protected_cache_op_d(Hit_Writeback_Inv_D, addr);
+ #endif
+ }
+ 
+ static inline int protected_writeback_scache_line(unsigned long addr)
+ {
+ #ifdef CONFIG_EVA
+-	return protected_cachee_op(Hit_Writeback_Inv_SD, addr);
++	return protected_cachee_op_s(Hit_Writeback_Inv_SD, addr);
+ #else
+-	return protected_cache_op(Hit_Writeback_Inv_SD, addr);
++	return protected_cache_op_s(Hit_Writeback_Inv_SD, addr);
+ #endif
+ }
+ 
+@@ -190,7 +267,7 @@ static inline int protected_writeback_scache_line(unsigned long addr)
+  */
+ static inline void invalidate_tcache_page(unsigned long addr)
+ {
+-	cache_op(Page_Invalidate_T, addr);
++	cache_op_t(Page_Invalidate_T, addr);
+ }
+ 
+ #ifndef CONFIG_CPU_MIPSR6
+@@ -271,6 +348,65 @@ static inline void invalidate_tcache_page(unsigned long addr)
+ 		:							\
+ 		: "r" (base),						\
+ 		  "i" (op));
++#ifdef CONFIG_CPU_R5900
++#define cache64_unroll32_d(base,op)					\
++	__asm__ __volatile__(						\
++	"	.set push					\n"	\
++	"	.set noreorder					\n"	\
++	"	.set mips3					\n"	\
++	"	sync.l						\n"	\
++	"	cache %1, 0x000(%0); sync.l; cache %1, 0x040(%0); sync.l	\n"	\
++	"	cache %1, 0x080(%0); sync.l; cache %1, 0x0c0(%0); sync.l	\n"	\
++	"	cache %1, 0x100(%0); sync.l; cache %1, 0x140(%0); sync.l	\n"	\
++	"	cache %1, 0x180(%0); sync.l; cache %1, 0x1c0(%0); sync.l	\n"	\
++	"	cache %1, 0x200(%0); sync.l; cache %1, 0x240(%0); sync.l	\n"	\
++	"	cache %1, 0x280(%0); sync.l; cache %1, 0x2c0(%0); sync.l	\n"	\
++	"	cache %1, 0x300(%0); sync.l; cache %1, 0x340(%0); sync.l	\n"	\
++	"	cache %1, 0x380(%0); sync.l; cache %1, 0x3c0(%0); sync.l	\n"	\
++	"	cache %1, 0x400(%0); sync.l; cache %1, 0x440(%0); sync.l	\n"	\
++	"	cache %1, 0x480(%0); sync.l; cache %1, 0x4c0(%0); sync.l	\n"	\
++	"	cache %1, 0x500(%0); sync.l; cache %1, 0x540(%0); sync.l	\n"	\
++	"	cache %1, 0x580(%0); sync.l; cache %1, 0x5c0(%0); sync.l	\n"	\
++	"	cache %1, 0x600(%0); sync.l; cache %1, 0x640(%0); sync.l	\n"	\
++	"	cache %1, 0x680(%0); sync.l; cache %1, 0x6c0(%0); sync.l	\n"	\
++	"	cache %1, 0x700(%0); sync.l; cache %1, 0x740(%0); sync.l	\n"	\
++	"	cache %1, 0x780(%0); sync.l; cache %1, 0x7c0(%0); sync.l	\n"	\
++	"	.set pop					\n"	\
++		:							\
++		: "r" (base),						\
++		  "i" (op));
++
++#define cache64_unroll32_i(base,op)					\
++	__asm__ __volatile__(						\
++	"	.set push					\n"	\
++	"	.set noreorder					\n"	\
++	"	.set mips3					\n"	\
++	"	sync.p						\n"	\
++	"	cache %1, 0x000(%0); cache %1, 0x040(%0)	\n"	\
++	"	cache %1, 0x080(%0); cache %1, 0x0c0(%0)	\n"	\
++	"	cache %1, 0x100(%0); cache %1, 0x140(%0)	\n"	\
++	"	cache %1, 0x180(%0); cache %1, 0x1c0(%0)	\n"	\
++	"	cache %1, 0x200(%0); cache %1, 0x240(%0)	\n"	\
++	"	cache %1, 0x280(%0); cache %1, 0x2c0(%0)	\n"	\
++	"	cache %1, 0x300(%0); cache %1, 0x340(%0)	\n"	\
++	"	cache %1, 0x380(%0); cache %1, 0x3c0(%0)	\n"	\
++	"	cache %1, 0x400(%0); cache %1, 0x440(%0)	\n"	\
++	"	cache %1, 0x480(%0); cache %1, 0x4c0(%0)	\n"	\
++	"	cache %1, 0x500(%0); cache %1, 0x540(%0)	\n"	\
++	"	cache %1, 0x580(%0); cache %1, 0x5c0(%0)	\n"	\
++	"	cache %1, 0x600(%0); cache %1, 0x640(%0)	\n"	\
++	"	cache %1, 0x680(%0); cache %1, 0x6c0(%0)	\n"	\
++	"	cache %1, 0x700(%0); cache %1, 0x740(%0)	\n"	\
++	"	cache %1, 0x780(%0); cache %1, 0x7c0(%0)	\n"	\
++	"	sync.p						\n"	\
++	"	.set pop					\n"	\
++		:							\
++		: "r" (base),						\
++		  "i" (op));
++#else
++#define cache64_unroll32_i cache64_unroll32
++#define cache64_unroll32_d cache64_unroll32
++#endif
+ 
+ #define cache128_unroll32(base,op)					\
+ 	__asm__ __volatile__(						\
+@@ -527,7 +663,7 @@ static inline void invalidate_tcache_page(unsigned long addr)
+ 		  "i" (op));
+ 
+ /* build blast_xxx, blast_xxx_page, blast_xxx_page_indexed */
+-#define __BUILD_BLAST_CACHE(pfx, desc, indexop, hitop, lsize, extra)	\
++#define __BUILD_BLAST_CACHE(fn_pfx, pfx, desc, indexop, hitop, lsize, extra)	\
+ static inline void extra##blast_##pfx##cache##lsize(void)		\
+ {									\
+ 	unsigned long start = INDEX_BASE;				\
+@@ -539,7 +675,7 @@ static inline void extra##blast_##pfx##cache##lsize(void)		\
+ 									\
+ 	for (ws = 0; ws < ws_end; ws += ws_inc)				\
+ 		for (addr = start; addr < end; addr += lsize * 32)	\
+-			cache##lsize##_unroll32(addr|ws, indexop);	\
++			cache##lsize##_unroll32##fn_pfx(addr|ws, indexop);	\
+ }									\
+ 									\
+ static inline void extra##blast_##pfx##cache##lsize##_page(unsigned long page) \
+@@ -548,7 +684,7 @@ static inline void extra##blast_##pfx##cache##lsize##_page(unsigned long page) \
+ 	unsigned long end = page + PAGE_SIZE;				\
+ 									\
+ 	do {								\
+-		cache##lsize##_unroll32(start, hitop);			\
++		cache##lsize##_unroll32##fn_pfx(start, hitop);			\
+ 		start += lsize * 32;					\
+ 	} while (start < end);						\
+ }									\
+@@ -565,29 +701,29 @@ static inline void extra##blast_##pfx##cache##lsize##_page_indexed(unsigned long
+ 									\
+ 	for (ws = 0; ws < ws_end; ws += ws_inc)				\
+ 		for (addr = start; addr < end; addr += lsize * 32)	\
+-			cache##lsize##_unroll32(addr|ws, indexop);	\
++			cache##lsize##_unroll32##fn_pfx(addr|ws, indexop);	\
+ }
+ 
+-__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 16, )
+-__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 16, )
+-__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 16, )
+-__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 32, )
+-__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 32, )
+-__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I_Loongson2, 32, loongson2_)
+-__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 32, )
+-__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 64, )
+-__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 64, )
+-__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 64, )
+-__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 128, )
+-__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 128, )
+-__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 128, )
+-
+-__BUILD_BLAST_CACHE(inv_d, dcache, Index_Writeback_Inv_D, Hit_Invalidate_D, 16, )
+-__BUILD_BLAST_CACHE(inv_d, dcache, Index_Writeback_Inv_D, Hit_Invalidate_D, 32, )
+-__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 16, )
+-__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 32, )
+-__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 64, )
+-__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 128, )
++__BUILD_BLAST_CACHE(, d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 16, )
++__BUILD_BLAST_CACHE(, i, icache, Index_Invalidate_I, Hit_Invalidate_I, 16, )
++__BUILD_BLAST_CACHE(, s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 16, )
++__BUILD_BLAST_CACHE(, d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 32, )
++__BUILD_BLAST_CACHE(, i, icache, Index_Invalidate_I, Hit_Invalidate_I, 32, )
++__BUILD_BLAST_CACHE(, i, icache, Index_Invalidate_I, Hit_Invalidate_I_Loongson2, 32, loongson2_)
++__BUILD_BLAST_CACHE(, s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 32, )
++__BUILD_BLAST_CACHE(_d, d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 64, )
++__BUILD_BLAST_CACHE(_i, i, icache, Index_Invalidate_I, Hit_Invalidate_I, 64, )
++__BUILD_BLAST_CACHE(, s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 64, )
++__BUILD_BLAST_CACHE(, d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 128, )
++__BUILD_BLAST_CACHE(, i, icache, Index_Invalidate_I, Hit_Invalidate_I, 128, )
++__BUILD_BLAST_CACHE(, s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 128, )
++
++__BUILD_BLAST_CACHE(, inv_d, dcache, Index_Writeback_Inv_D, Hit_Invalidate_D, 16, )
++__BUILD_BLAST_CACHE(, inv_d, dcache, Index_Writeback_Inv_D, Hit_Invalidate_D, 32, )
++__BUILD_BLAST_CACHE(, inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 16, )
++__BUILD_BLAST_CACHE(, inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 32, )
++__BUILD_BLAST_CACHE(, inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 64, )
++__BUILD_BLAST_CACHE(, inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 128, )
+ 
+ #define __BUILD_BLAST_USER_CACHE(pfx, desc, indexop, hitop, lsize) \
+ static inline void blast_##pfx##cache##lsize##_user_page(unsigned long page) \
+@@ -612,7 +748,7 @@ __BUILD_BLAST_USER_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D,
+ __BUILD_BLAST_USER_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 64)
+ 
+ /* build blast_xxx_range, protected_blast_xxx_range */
+-#define __BUILD_BLAST_CACHE_RANGE(pfx, desc, hitop, prot, extra)	\
++#define __BUILD_BLAST_CACHE_RANGE(fn_pfx, pfx, desc, hitop, prot, extra)	\
+ static inline void prot##extra##blast_##pfx##cache##_range(unsigned long start, \
+ 						    unsigned long end)	\
+ {									\
+@@ -621,7 +757,7 @@ static inline void prot##extra##blast_##pfx##cache##_range(unsigned long start,
+ 	unsigned long aend = (end - 1) & ~(lsize - 1);			\
+ 									\
+ 	while (1) {							\
+-		prot##cache_op(hitop, addr);				\
++		prot##cache_op##fn_pfx(hitop, addr);			\
+ 		if (addr == aend)					\
+ 			break;						\
+ 		addr += lsize;						\
+@@ -630,8 +766,8 @@ static inline void prot##extra##blast_##pfx##cache##_range(unsigned long start,
+ 
+ #ifndef CONFIG_EVA
+ 
+-__BUILD_BLAST_CACHE_RANGE(d, dcache, Hit_Writeback_Inv_D, protected_, )
+-__BUILD_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I, protected_, )
++__BUILD_BLAST_CACHE_RANGE(_d, d, dcache, Hit_Writeback_Inv_D, protected_, )
++__BUILD_BLAST_CACHE_RANGE(_i, i, icache, Hit_Invalidate_I, protected_, )
+ 
+ #else
+ 
+@@ -665,15 +801,15 @@ __BUILD_PROT_BLAST_CACHE_RANGE(d, dcache, Hit_Writeback_Inv_D)
+ __BUILD_PROT_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I)
+ 
+ #endif
+-__BUILD_BLAST_CACHE_RANGE(s, scache, Hit_Writeback_Inv_SD, protected_, )
+-__BUILD_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I_Loongson2, \
++__BUILD_BLAST_CACHE_RANGE(_s, s, scache, Hit_Writeback_Inv_SD, protected_, )
++__BUILD_BLAST_CACHE_RANGE(_i, i, icache, Hit_Invalidate_I_Loongson2, \
+ 	protected_, loongson2_)
+-__BUILD_BLAST_CACHE_RANGE(d, dcache, Hit_Writeback_Inv_D, , )
+-__BUILD_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I, , )
+-__BUILD_BLAST_CACHE_RANGE(s, scache, Hit_Writeback_Inv_SD, , )
++__BUILD_BLAST_CACHE_RANGE(_d, d, dcache, Hit_Writeback_Inv_D, , )
++__BUILD_BLAST_CACHE_RANGE(_i, i, icache, Hit_Invalidate_I, , )
++__BUILD_BLAST_CACHE_RANGE(_s, s, scache, Hit_Writeback_Inv_SD, , )
+ /* blast_inv_dcache_range */
+-__BUILD_BLAST_CACHE_RANGE(inv_d, dcache, Hit_Invalidate_D, , )
+-__BUILD_BLAST_CACHE_RANGE(inv_s, scache, Hit_Invalidate_SD, , )
++__BUILD_BLAST_CACHE_RANGE(_d, inv_d, dcache, Hit_Invalidate_D, , )
++__BUILD_BLAST_CACHE_RANGE(_d, inv_s, scache, Hit_Invalidate_SD, , )
+ 
+ /* Currently, this is very specific to Loongson-3 */
+ #define __BUILD_BLAST_CACHE_NODE(pfx, desc, indexop, hitop, lsize)	\
+diff --git a/arch/mips/include/asm/stackframe.h b/arch/mips/include/asm/stackframe.h
+index 4d6ad907ae5473054fc1032a3693afa727150949..e259177f4897e4b8e787c55df3e6eb0a0001ff9d 100644
+--- a/arch/mips/include/asm/stackframe.h
++++ b/arch/mips/include/asm/stackframe.h
+@@ -91,6 +91,14 @@
+ 		 * kernel code might corrupt it
+ 		 */
+ 		jal     octeon_mult_save
++#endif
++#ifdef CONFIG_CPU_R5900
++		mfsa	v1
++		sd	v1, PT_SA(sp)
++		mfhi1	v1
++		sd	v1, PT_HI1(sp)
++		mflo1	v1
++		sd	v1, PT_LO1(sp)
+ #endif
+ 		.endm
+ 
+@@ -116,6 +124,9 @@
+ 
+ 		/* SMP variation */
+ 		.macro	get_saved_sp docfi=0 tosp=0
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		ASM_CPUID_MFC0	k0, ASM_SMP_CPUID_REG
+ #if defined(CONFIG_32BIT) || defined(KBUILD_64BIT_SYM32)
+ 		lui	k1, %hi(kernelsp)
+@@ -140,6 +151,9 @@
+ 		.endm
+ 
+ 		.macro	set_saved_sp stackp temp temp2
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		ASM_CPUID_MFC0	\temp, ASM_SMP_CPUID_REG
+ 		LONG_SRL	\temp, SMP_CPUID_PTRSHIFT
+ 		LONG_S	\stackp, kernelsp(\temp)
+@@ -165,6 +179,9 @@
+ 1:		move	ra, k0
+ 		li	k0, 3
+ 		mtc0	k0, $22
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ #endif /* CONFIG_CPU_JUMP_WORKAROUNDS */
+ #if defined(CONFIG_32BIT) || defined(KBUILD_64BIT_SYM32)
+ 		lui	k1, %hi(kernelsp)
+@@ -195,6 +212,9 @@
+ 		.set	push
+ 		.set	noat
+ 		.set	reorder
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		mfc0	k0, CP0_STATUS
+ 		sll	k0, 3		/* extract cu0 bit */
+ 		.set	noreorder
+@@ -251,15 +271,24 @@
+ 		 * need it to operate correctly
+ 		 */
+ 		LONG_S	$0, PT_R0(sp)
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		mfc0	v1, CP0_STATUS
+ 		cfi_st	v0, PT_R2, \docfi
+ 		LONG_S	v1, PT_STATUS(sp)
+ 		cfi_st	$4, PT_R4, \docfi
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		mfc0	v1, CP0_CAUSE
+ 		cfi_st	$5, PT_R5, \docfi
+ 		LONG_S	v1, PT_CAUSE(sp)
+ 		cfi_st	$6, PT_R6, \docfi
+ 		cfi_st	ra, PT_R31, \docfi
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		MFC0	ra, CP0_EPC
+ 		cfi_st	$7, PT_R7, \docfi
+ #ifdef CONFIG_64BIT
+@@ -273,6 +302,9 @@
+ 		cfi_st	$25, PT_R25, \docfi
+ 		cfi_st	$28, PT_R28, \docfi
+ 
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		/* Set thread_info if we're coming from user mode */
+ 		mfc0	k0, CP0_STATUS
+ 		sll	k0, 3		/* extract cu0 bit */
+@@ -303,6 +335,14 @@
+ 		.endm
+ 
+ 		.macro	RESTORE_TEMP docfi=0
++#ifdef CONFIG_CPU_R5900
++		ld	v1, PT_LO1(sp)
++		mtlo1	v1
++		ld	v1, PT_HI1(sp)
++		mthi1	v1
++		ld	v1, PT_SA(sp)
++		mtsa	v1
++#endif
+ #ifdef CONFIG_CPU_CAVIUM_OCTEON
+ 		/* Restore the Octeon multiplier state */
+ 		jal	octeon_mult_restore
+@@ -349,6 +389,58 @@
+ 		cfi_ld	sp, PT_R29, \docfi
+ 		.endm
+ 
++#ifdef CONFIG_CPU_R5900
++		/*
++		 * Reset bits 127..64 of 128-bit multimedia registers.
++		 *
++		 * Bits 127..64 are not used by the kernel but can be modified
++		 * by applications using the R5900 specific multimedia
++		 * instructions. Clearing them prevents leaking information
++		 * between processes. This is a provisional measure until full
++		 * 128-bit registers are saved/restored, possibly using SQ/LQ.
++		 */
++		.macro	RESET_MMR
++		.set	push
++		.set	noreorder
++		.set	noat
++		pcpyld	$1, $0, $1
++		pcpyld	$2, $0, $2
++		pcpyld	$3, $0, $3
++		pcpyld	$4, $0, $4
++		pcpyld	$5, $0, $5
++		pcpyld	$6, $0, $6
++		pcpyld	$7, $0, $7
++		pcpyld	$8, $0, $8
++		pcpyld	$9, $0, $9
++		pcpyld	$10, $0, $10
++		pcpyld	$11, $0, $11
++		pcpyld	$12, $0, $12
++		pcpyld	$13, $0, $13
++		pcpyld	$14, $0, $14
++		pcpyld	$15, $0, $15
++		pcpyld	$16, $0, $16
++		pcpyld	$17, $0, $17
++		pcpyld	$18, $0, $18
++		pcpyld	$19, $0, $19
++		pcpyld	$20, $0, $20
++		pcpyld	$21, $0, $21
++		pcpyld	$22, $0, $22
++		pcpyld	$23, $0, $23
++		pcpyld	$24, $0, $24
++		pcpyld	$25, $0, $25
++		pcpyld	$26, $0, $26
++		pcpyld	$27, $0, $27
++		pcpyld	$28, $0, $28
++		pcpyld	$29, $0, $29
++		pcpyld	$30, $0, $30
++		pcpyld	$31, $0, $31
++		.set	pop
++		.endm
++#else
++		.macro	RESET_MMR
++		.endm
++#endif
++
+ #if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
+ 
+ 		.macro	RESTORE_SOME docfi=0
+@@ -393,10 +485,17 @@
+ 		.set	push
+ 		.set	reorder
+ 		.set	noat
++		RESET_MMR
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		mfc0	a0, CP0_STATUS
+ 		ori	a0, STATMASK
+ 		xori	a0, STATMASK
+ 		mtc0	a0, CP0_STATUS
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		li	v1, ST0_CU1 | ST0_FR | ST0_IM
+ 		and	a0, v1
+ 		LONG_L	v0, PT_STATUS(sp)
+@@ -404,8 +503,14 @@
+ 		and	v0, v1
+ 		or	v0, a0
+ 		mtc0	v0, CP0_STATUS
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		LONG_L	v1, PT_EPC(sp)
+ 		MTC0	v1, CP0_EPC
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		cfi_ld	$31, PT_R31, \docfi
+ 		cfi_ld	$28, PT_R28, \docfi
+ 		cfi_ld	$25, PT_R25, \docfi
+@@ -449,11 +554,17 @@
+  * Set cp0 enable bit as sign that we're running on the kernel stack
+  */
+ 		.macro	CLI
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		mfc0	t0, CP0_STATUS
+ 		li	t1, ST0_CU0 | STATMASK
+ 		or	t0, t1
+ 		xori	t0, STATMASK
+ 		mtc0	t0, CP0_STATUS
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		irq_disable_hazard
+ 		.endm
+ 
+@@ -462,11 +573,17 @@
+  * Set cp0 enable bit as sign that we're running on the kernel stack
+  */
+ 		.macro	STI
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		mfc0	t0, CP0_STATUS
+ 		li	t1, ST0_CU0 | STATMASK
+ 		or	t0, t1
+ 		xori	t0, STATMASK & ~1
+ 		mtc0	t0, CP0_STATUS
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		irq_enable_hazard
+ 		.endm
+ 
+@@ -476,6 +593,9 @@
+  * Set cp0 enable bit as sign that we're running on the kernel stack
+  */
+ 		.macro	KMODE
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		mfc0	t0, CP0_STATUS
+ 		li	t1, ST0_CU0 | (STATMASK & ~1)
+ #if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
+@@ -486,6 +606,9 @@
+ 		or	t0, t1
+ 		xori	t0, STATMASK & ~1
+ 		mtc0	t0, CP0_STATUS
++#ifdef CONFIG_CPU_R5900
++		sync.p
++#endif
+ 		irq_disable_hazard
+ 		.endm
+ 
+diff --git a/arch/mips/include/asm/traps.h b/arch/mips/include/asm/traps.h
+index 6a0864bb604dc7957c26a87a87263e358d25b735..ed6449f2967ba06610cd719db00c42815f8683ab 100644
+--- a/arch/mips/include/asm/traps.h
++++ b/arch/mips/include/asm/traps.h
+@@ -35,4 +35,6 @@ extern int register_nmi_notifier(struct notifier_block *nb);
+ 	register_nmi_notifier(&fn##_nb);				\
+ })
+ 
++int simulate_rdhwr(struct pt_regs *regs, int rd, int rt);
++
+ #endif /* _ASM_TRAPS_H */
+diff --git a/arch/mips/include/asm/uasm.h b/arch/mips/include/asm/uasm.h
+index f7effca791a50f2abf021fa63740d0208f1ddde2..34b61fb53da5ac0eef2a43f1529aa3d165767cad 100644
+--- a/arch/mips/include/asm/uasm.h
++++ b/arch/mips/include/asm/uasm.h
+@@ -171,6 +171,7 @@ Ip_u3u2u1(_srlv);
+ Ip_u3u1u2(_subu);
+ Ip_u2s3u1(_sw);
+ Ip_u1(_sync);
++Ip_0(_syncp);
+ Ip_u1(_syscall);
+ Ip_0(_tlbp);
+ Ip_0(_tlbr);
+@@ -213,8 +214,19 @@ static inline void uasm_l##lb(struct uasm_label **lab, u32 *addr)	\
+ # define UASM_i_LL(buf, rs, rt, off) uasm_i_lld(buf, rs, rt, off)
+ # define UASM_i_LW(buf, rs, rt, off) uasm_i_ld(buf, rs, rt, off)
+ # define UASM_i_LWX(buf, rs, rt, rd) uasm_i_ldx(buf, rs, rt, rd)
++#ifndef CONFIG_CPU_R5900
+ # define UASM_i_MFC0(buf, rt, rd...) uasm_i_dmfc0(buf, rt, rd)
+ # define UASM_i_MTC0(buf, rt, rd...) uasm_i_dmtc0(buf, rt, rd)
++#else
++# define UASM_i_MFC0(buf, rt, rd...) do { \
++		uasm_i_syncp(buf); \
++		uasm_i_mfc0(buf, rt, rd); \
++	} while(0)
++# define UASM_i_MTC0(buf, rt, rd...) do { \
++		uasm_i_mtc0(buf, rt, rd); \
++		uasm_i_syncp(buf); \
++	} while(0)
++#endif
+ # define UASM_i_ROTR(buf, rs, rt, sh) uasm_i_drotr(buf, rs, rt, sh)
+ # define UASM_i_SC(buf, rs, rt, off) uasm_i_scd(buf, rs, rt, off)
+ # define UASM_i_SLL(buf, rs, rt, sh) uasm_i_dsll(buf, rs, rt, sh)
+@@ -229,8 +241,19 @@ static inline void uasm_l##lb(struct uasm_label **lab, u32 *addr)	\
+ # define UASM_i_LL(buf, rs, rt, off) uasm_i_ll(buf, rs, rt, off)
+ # define UASM_i_LW(buf, rs, rt, off) uasm_i_lw(buf, rs, rt, off)
+ # define UASM_i_LWX(buf, rs, rt, rd) uasm_i_lwx(buf, rs, rt, rd)
++#ifndef CONFIG_CPU_R5900
+ # define UASM_i_MFC0(buf, rt, rd...) uasm_i_mfc0(buf, rt, rd)
+ # define UASM_i_MTC0(buf, rt, rd...) uasm_i_mtc0(buf, rt, rd)
++#else
++# define UASM_i_MFC0(buf, rt, rd...) do { \
++		uasm_i_syncp(buf); \
++		uasm_i_mfc0(buf, rt, rd); \
++	} while(0)
++# define UASM_i_MTC0(buf, rt, rd...) do { \
++		uasm_i_mtc0(buf, rt, rd); \
++		uasm_i_syncp(buf); \
++	} while(0)
++#endif
+ # define UASM_i_ROTR(buf, rs, rt, sh) uasm_i_rotr(buf, rs, rt, sh)
+ # define UASM_i_SC(buf, rs, rt, off) uasm_i_sc(buf, rs, rt, off)
+ # define UASM_i_SLL(buf, rs, rt, sh) uasm_i_sll(buf, rs, rt, sh)
+diff --git a/arch/mips/jz4740/reset.c b/arch/mips/jz4740/reset.c
+index 1f9f02e54085b8c0c438a814ad8f7cedfe219c53..c6703d32edb9fe1aece2a410e72c581301b7d8ad 100644
+--- a/arch/mips/jz4740/reset.c
++++ b/arch/mips/jz4740/reset.c
+@@ -3,19 +3,14 @@
+  *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
+  */
+ 
++#include <asm/processor.h>
+ #include <asm/reboot.h>
+ 
+ #include "reset.h"
+ 
+ static void jz4740_halt(void)
+ {
+-	while (1) {
+-		__asm__(".set push;\n"
+-			".set mips3;\n"
+-			"wait;\n"
+-			".set pop;\n"
+-		);
+-	}
++	cpu_relax_forever();
+ }
+ 
+ void jz4740_reset_init(void)
+diff --git a/arch/mips/kernel/asm-offsets.c b/arch/mips/kernel/asm-offsets.c
+index aebfda81120a1a9c1a1868f8e0eeaf95412d0c6a..777f38584491a44b0884d385dd2d39212463938a 100644
+--- a/arch/mips/kernel/asm-offsets.c
++++ b/arch/mips/kernel/asm-offsets.c
+@@ -71,6 +71,11 @@ void output_ptreg_defines(void)
+ 	OFFSET(PT_MPL, pt_regs, mpl);
+ 	OFFSET(PT_MTP, pt_regs, mtp);
+ #endif /* CONFIG_CPU_CAVIUM_OCTEON */
++#ifdef CONFIG_CPU_R5900
++	OFFSET(PT_SA, pt_regs, sa);
++	OFFSET(PT_HI1, pt_regs, hi1);
++	OFFSET(PT_LO1, pt_regs, lo1);
++#endif
+ 	DEFINE(PT_SIZE, sizeof(struct pt_regs));
+ 	BLANK();
+ }
+diff --git a/arch/mips/kernel/cpu-probe.c b/arch/mips/kernel/cpu-probe.c
+index f521cbf934e769bb33f212e66edcafac9ee5aac0..cd5097e45b6ae20687743434be2064f3ace59147 100644
+--- a/arch/mips/kernel/cpu-probe.c
++++ b/arch/mips/kernel/cpu-probe.c
+@@ -1467,6 +1467,14 @@ static inline void cpu_probe_legacy(struct cpuinfo_mips *c, unsigned int cpu)
+ 			     MIPS_CPU_WATCH | MIPS_CPU_LLSC;
+ 		c->tlbsize = 48;
+ 		break;
++	case PRID_IMP_R5900:
++		c->cputype = CPU_R5900;
++		__cpu_name[cpu] = "R5900";
++		c->isa_level = MIPS_CPU_ISA_III;
++		c->fpu_msk31 |= FPU_CSR_CONDX;
++		c->options = R4K_OPTS | MIPS_CPU_DIVEC;
++		c->tlbsize = 48;
++		break;
+ 	case PRID_IMP_NEVADA:
+ 		c->cputype = CPU_NEVADA;
+ 		__cpu_name[cpu] = "Nevada";
+diff --git a/arch/mips/kernel/genex.S b/arch/mips/kernel/genex.S
+index 9c5f8a5d097f2f6c37b1f41f5e922b6be72f08f1..7e40a1729551cbbb6e7c69a4fce1fd192a62a2c6 100644
+--- a/arch/mips/kernel/genex.S
++++ b/arch/mips/kernel/genex.S
+@@ -32,6 +32,14 @@
+ NESTED(except_vec3_generic, 0, sp)
+ 	.set	push
+ 	.set	noat
++#ifdef CONFIG_CPU_R5900
++	/* Workaround for R5900 exception execution bug (FLX05). */
++	nop
++	nop
++#endif
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	mfc0	k1, CP0_CAUSE
+ 	andi	k1, k1, 0x7c
+ #ifdef CONFIG_64BIT
+@@ -52,6 +60,9 @@ NESTED(except_vec3_r4000, 0, sp)
+ 	.set	push
+ 	.set	arch=r4000
+ 	.set	noat
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	mfc0	k1, CP0_CAUSE
+ 	li	k0, 31<<2
+ 	andi	k1, k1, 0x7c
+@@ -75,10 +86,16 @@ NESTED(except_vec3_r4000, 0, sp)
+ 	 * load / store will be re-executed.
+ 	 */
+ handle_vced:
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	MFC0	k0, CP0_BADVADDR
+ 	li	k1, -4					# Is this ...
+ 	and	k0, k1					# ... really needed?
+ 	mtc0	zero, CP0_TAGLO
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	cache	Index_Store_Tag_D, (k0)
+ 	cache	Hit_Writeback_Inv_SD, (k0)
+ #ifdef CONFIG_PROC_FS
+@@ -90,6 +107,9 @@ handle_vced:
+ 	eret
+ 
+ handle_vcei:
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	MFC0	k0, CP0_BADVADDR
+ 	cache	Hit_Writeback_Inv_SD, (k0)		# also cleans pi
+ #ifdef CONFIG_PROC_FS
+@@ -135,12 +155,18 @@ LEAF(__r4k_wait)
+ 	FEXPORT(rollback_\handler)
+ 	.set	push
+ 	.set	noat
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	MFC0	k0, CP0_EPC
+ 	PTR_LA	k1, __r4k_wait
+ 	ori	k0, 0x1f	/* 32 byte rollback region */
+ 	xori	k0, 0x1f
+ 	bne	k0, k1, \handler
+ 	MTC0	k0, CP0_EPC
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	.set pop
+ 	.endm
+ 
+@@ -161,11 +187,17 @@ NESTED(handle_int, PT_SIZE, sp)
+ 	 */
+ 	.set	push
+ 	.set	noat
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	mfc0	k0, CP0_STATUS
+ #if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
+ 	and	k0, ST0_IEP
+ 	bnez	k0, 1f
+ 
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	mfc0	k0, CP0_EPC
+ 	.set	noreorder
+ 	j	k0
+@@ -346,6 +378,9 @@ NESTED(ejtag_debug_handler, PT_SIZE, sp)
+ 	.set	push
+ 	.set	noat
+ 	MTC0	k0, CP0_DESAVE
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	mfc0	k0, CP0_DEBUG
+ 
+ 	sll	k0, k0, 30	# Check for SDBBP.
+@@ -401,6 +436,9 @@ NESTED(ejtag_debug_handler, PT_SIZE, sp)
+ 
+ ejtag_return:
+ 	back_to_back_c0_hazard
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	MFC0	k0, CP0_DESAVE
+ 	.set	mips32
+ 	deret
+@@ -491,6 +529,9 @@ NESTED(nmi_handler, PT_SIZE, sp)
+ 	.endm
+ 
+ 	.macro	__build_clear_ade
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	MFC0	t0, CP0_BADVADDR
+ 	PTR_S	t0, PT_BVADDR(sp)
+ 	KMODE
+@@ -576,16 +617,28 @@ NESTED(nmi_handler, PT_SIZE, sp)
+ 	.set	noat
+ 	.set	noreorder
+ 	/* check if TLB contains a entry for EPC */
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	MFC0	k1, CP0_ENTRYHI
+ 	andi	k1, MIPS_ENTRYHI_ASID | MIPS_ENTRYHI_ASIDX
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	MFC0	k0, CP0_EPC
+ 	PTR_SRL	k0, _PAGE_SHIFT + 1
+ 	PTR_SLL	k0, _PAGE_SHIFT + 1
+ 	or	k1, k0
+ 	MTC0	k1, CP0_ENTRYHI
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	mtc0_tlbw_hazard
+ 	tlbp
+ 	tlb_probe_hazard
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	mfc0	k1, CP0_INDEX
+ 	.set	pop
+ 	bltz	k1, handle_ri	/* slow path */
+@@ -598,6 +651,9 @@ NESTED(nmi_handler, PT_SIZE, sp)
+ 	.set	noreorder
+ 	/* MIPS32:    0x7c03e83b: rdhwr v1,$29 */
+ 	/* microMIPS: 0x007d6b3c: rdhwr v1,$29 */
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	MFC0	k1, CP0_EPC
+ #if defined(CONFIG_CPU_MICROMIPS) || defined(CONFIG_CPU_MIPS32_R2) || defined(CONFIG_CPU_MIPS64_R2)
+ 	and	k0, k1, 1
+@@ -628,6 +684,9 @@ isrdhwr:
+ 	/* The insn is rdhwr.  No need to check CAUSE.BD here. */
+ 	get_saved_sp	/* k1 := current_thread_info */
+ 	.set	noreorder
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	MFC0	k0, CP0_EPC
+ #if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
+ 	ori	k1, _THREAD_MASK
+@@ -645,6 +704,9 @@ isrdhwr:
+ 	.set	noat
+ #endif
+ 	MTC0	k0, CP0_EPC
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	/* I hope three instructions between MTC0 and ERET are enough... */
+ 	ori	k1, _THREAD_MASK
+ 	xori	k1, _THREAD_MASK
+diff --git a/arch/mips/kernel/head.S b/arch/mips/kernel/head.S
+index 351d40fe08598e7c9b473ddaf085c7e1742161bd..aae4b17a33d0eb89ab81ccb69730ec136b750814 100644
+--- a/arch/mips/kernel/head.S
++++ b/arch/mips/kernel/head.S
+@@ -34,10 +34,16 @@
+ 	 */
+ 	.macro	setup_c0_status set clr
+ 	.set	push
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	mfc0	t0, CP0_STATUS
+ 	or	t0, ST0_CU0|\set|0x1f|\clr
+ 	xor	t0, 0x1f|\clr
+ 	mtc0	t0, CP0_STATUS
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	.set	noreorder
+ 	sll	zero,3				# ehb
+ 	.set	pop
+@@ -132,6 +138,9 @@ dtb_found:
+ #endif
+ 
+ 	MTC0		zero, CP0_CONTEXT	# clear context register
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	PTR_LA		$28, init_thread_union
+ 	/* Set the SP after an empty pt_regs.  */
+ 	PTR_LI		sp, _THREAD_SIZE - 32 - PT_SIZE
+diff --git a/arch/mips/kernel/idle.c b/arch/mips/kernel/idle.c
+index eb2afc0b8db1a04f7d11bd06e14b97b8b9cc33a7..ae8f41d51fb1fc57352060069ceb742cd8e43f68 100644
+--- a/arch/mips/kernel/idle.c
++++ b/arch/mips/kernel/idle.c
+@@ -157,6 +157,7 @@ void __init check_wait(void)
+ 	case CPU_R4700:
+ 	case CPU_R5000:
+ 	case CPU_R5500:
++	/* FIXME: case CPU_R5900: */
+ 	case CPU_NEVADA:
+ 	case CPU_4KC:
+ 	case CPU_4KEC:
+diff --git a/arch/mips/kernel/proc.c b/arch/mips/kernel/proc.c
+index d408b3a5bfd57c98d4362e57524a5fa9003636d3..e61c77a045d1c11a11663db8b0fb6a44c1dfcf95 100644
+--- a/arch/mips/kernel/proc.c
++++ b/arch/mips/kernel/proc.c
+@@ -124,6 +124,7 @@ static int show_cpuinfo(struct seq_file *m, void *v)
+ 	if (cpu_has_eva)	seq_printf(m, "%s", " eva");
+ 	if (cpu_has_htw)	seq_printf(m, "%s", " htw");
+ 	if (cpu_has_xpa)	seq_printf(m, "%s", " xpa");
++	if (cpu_has_toshiba_mmi)	seq_printf(m, "%s", " toshiba-mmi");
+ 	if (cpu_has_loongson_mmi)	seq_printf(m, "%s", " loongson-mmi");
+ 	if (cpu_has_loongson_cam)	seq_printf(m, "%s", " loongson-cam");
+ 	if (cpu_has_loongson_ext)	seq_printf(m, "%s", " loongson-ext");
+diff --git a/arch/mips/kernel/ptrace.c b/arch/mips/kernel/ptrace.c
+index 414b6e9c900b2c9e455389b9f557d69c16e9c4b2..dbf2ed1da0b15ae7dc20923e7656afc61226cee1 100644
+--- a/arch/mips/kernel/ptrace.c
++++ b/arch/mips/kernel/ptrace.c
+@@ -991,6 +991,11 @@ static const struct pt_regs_offset regoffset_table[] = {
+ 	REG_OFFSET_NAME(mtp0, mtp[0]),
+ 	REG_OFFSET_NAME(mtp1, mtp[1]),
+ 	REG_OFFSET_NAME(mtp2, mtp[2]),
++#endif
++#ifdef CONFIG_CPU_R5900
++	REG_OFFSET_NAME(sa, sa),
++	REG_OFFSET_NAME(hi1, hi1),
++	REG_OFFSET_NAME(lo1, lo1),
+ #endif
+ 	REG_OFFSET_END,
+ };
+diff --git a/arch/mips/kernel/r4k_switch.S b/arch/mips/kernel/r4k_switch.S
+index 58232ae6cfae3e4c26aa96afd09eb3adb378184e..de4a1880e9a81628b27838b8fbf237f5e2e34bee 100644
+--- a/arch/mips/kernel/r4k_switch.S
++++ b/arch/mips/kernel/r4k_switch.S
+@@ -26,6 +26,9 @@
+  */
+ 	.align	5
+ 	LEAF(resume)
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	mfc0	t1, CP0_STATUS
+ 	LONG_S	t1, THREAD_STATUS(a0)
+ 	cpu_save_nonscratch a0
+@@ -46,6 +49,9 @@
+ 
+ 	PTR_ADDU	t0, $28, _THREAD_SIZE - 32
+ 	set_saved_sp	t0, t1, t2
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	mfc0	t1, CP0_STATUS		/* Do we really need this? */
+ 	li	a3, 0xff01
+ 	and	t1, a3
+@@ -54,6 +60,9 @@
+ 	and	a2, a3
+ 	or	a2, t1
+ 	mtc0	a2, CP0_STATUS
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	move	v0, a0
+ 	jr	ra
+ 	END(resume)
+diff --git a/arch/mips/kernel/scall32-o32.S b/arch/mips/kernel/scall32-o32.S
+index b449b68662a9aa488400e5b6e86a71ac84d286f1..e9e4464c31dc360e00bee5a63e3a17f643577e52 100644
+--- a/arch/mips/kernel/scall32-o32.S
++++ b/arch/mips/kernel/scall32-o32.S
+@@ -25,6 +25,18 @@
+ 	.align	5
+ NESTED(handle_sys, PT_SIZE, sp)
+ 	.set	noat
++#ifdef CONFIG_CPU_R5900
++	/*
++	 * We don't want to stumble over broken sign extensions from
++	 * userland. O32 does never use the upper half, but since the
++	 * R5900 does not implement CP0.Status.UX it cannot enforce it.
++	 */
++	sll	v0, v0, 0
++	sll	a0, a0, 0
++	sll	a1, a1, 0
++	sll	a2, a2, 0
++	sll	a3, a3, 0
++#endif
+ 	SAVE_SOME
+ 	TRACE_IRQS_ON_RELOAD
+ 	STI
+diff --git a/arch/mips/kernel/traps.c b/arch/mips/kernel/traps.c
+index 749089c25d5e653200a2f3ddf9a44d6f98f06cb6..b1a504629735215acddadfb3c05aa6b4a4015ec4 100644
+--- a/arch/mips/kernel/traps.c
++++ b/arch/mips/kernel/traps.c
+@@ -625,7 +625,7 @@ static int simulate_llsc(struct pt_regs *regs, unsigned int opcode)
+  * Simulate trapping 'rdhwr' instructions to provide user accessible
+  * registers not implemented in hardware.
+  */
+-static int simulate_rdhwr(struct pt_regs *regs, int rd, int rt)
++int simulate_rdhwr(struct pt_regs *regs, int rd, int rt)
+ {
+ 	struct thread_info *ti = task_thread_info(current);
+ 
+@@ -1965,6 +1965,12 @@ void __init *set_except_vector(int n, void *addr)
+ #endif
+ 		u32 *buf = (u32 *)(ebase + 0x200);
+ 		unsigned int k0 = 26;
++
++#ifdef CONFIG_CPU_R5900
++		/* Workaround for R5900 exception execution bug (FLX05). */
++		uasm_i_nop(&buf);
++		uasm_i_nop(&buf);
++#endif
+ 		if ((handler & jump_mask) == ((ebase + 0x200) & jump_mask)) {
+ 			uasm_i_j(&buf, handler & ~jump_mask);
+ 			uasm_i_nop(&buf);
+@@ -1973,6 +1979,17 @@ void __init *set_except_vector(int n, void *addr)
+ 			uasm_i_jr(&buf, k0);
+ 			uasm_i_nop(&buf);
+ 		}
++#ifdef CONFIG_CPU_R5900
++		/*
++		 * Data that could be interpreted as cache instructions
++		 * is not allowed after the jump.
++		 */
++		uasm_i_nop(&buf);
++		uasm_i_nop(&buf);
++		uasm_i_nop(&buf);
++		uasm_i_nop(&buf);
++		uasm_i_nop(&buf);
++#endif
+ 		local_flush_icache_range(ebase + 0x200, (unsigned long)buf);
+ 	}
+ 	return (void *)old_handler;
+diff --git a/arch/mips/kernel/unaligned.c b/arch/mips/kernel/unaligned.c
+index 92bd2b0f05484f13a36768d8adb8905b20363d5b..eeb0719ced61f665e22af2b9508eddcfab52bcf6 100644
+--- a/arch/mips/kernel/unaligned.c
++++ b/arch/mips/kernel/unaligned.c
+@@ -90,6 +90,7 @@
+ #include <asm/fpu_emulator.h>
+ #include <asm/inst.h>
+ #include <asm/mmu_context.h>
++#include <asm/traps.h>
+ #include <linux/uaccess.h>
+ 
+ #define STR(x)	__STR(x)
+@@ -934,7 +935,45 @@ static void emulate_load_store_insn(struct pt_regs *regs,
+ 		 * interest.
+ 		 */
+ 	case spec3_op:
+-		if (insn.dsp_format.func == lx_op) {
++		if (IS_ENABLED(CONFIG_CPU_R5900)) {
++			/*
++			 * On the R5900, a valid RDHWR instruction
++			 *
++			 *     +--------+-------+----+----+-------+--------+
++			 *     | 011111 | 00000 | rt | rd | 00000 | 111011 |
++			 *     +--------+-------+----+----+-------+--------+
++			 *          6       5      5    5     5        6
++			 *
++			 * having rd $29 (MIPS_HWR_ULR) is interpreted as
++			 * the R5900 specific SQ instruction
++			 *
++			 *     +--------+-------+----+---------------------+
++			 *     | 011111 |  base | rt |        offset       |
++			 *     +--------+-------+----+---------------------+
++			 *          6       5      5            16
++			 *
++			 * being (where rd usually is $3)
++			 *
++			 *     sq v1,-6085(zero)
++			 *
++			 * that asserts an address exception since -6085(zero)
++			 * always resolves to 0xffffe83b in 32-bit KSEG2.
++			 *
++			 * Other legacy values of rd, such as MIPS_HWR_CPUNUM,
++			 * are ignored.
++			 */
++			if (insn.r_format.func == rdhwr_op &&
++			    insn.r_format.rd == MIPS_HWR_ULR &&
++			    insn.r_format.rs == 0 &&
++			    insn.r_format.re == 0) {
++				if (compute_return_epc(regs) < 0 ||
++				    simulate_rdhwr(regs, insn.r_format.rd,
++						   insn.r_format.rt) < 0)
++					goto sigill;
++				return;
++			}
++			goto sigbus;
++		} else if (insn.dsp_format.func == lx_op) {
+ 			switch (insn.dsp_format.op) {
+ 			case lwx_op:
+ 				if (!access_ok(addr, 4))
+diff --git a/arch/mips/lib/delay.c b/arch/mips/lib/delay.c
+index 68c495ed71e303f4bb83bd5cac88d04c73b2a2a9..0b370b8317081d57b31fd095a7800808209b8cf0 100644
+--- a/arch/mips/lib/delay.c
++++ b/arch/mips/lib/delay.c
+@@ -27,11 +27,10 @@
+ void __delay(unsigned long loops)
+ {
+ 	__asm__ __volatile__ (
+-	"	.set	noreorder				\n"
+ 	"	.align	3					\n"
+-	"1:	bnez	%0, 1b					\n"
+-	"	 " __stringify(LONG_SUBU) "	%0, %1		\n"
+-	"	.set	reorder					\n"
++	"	" __stringify(LONG_ADDU) "	%0, %1		\n"
++	"1:	" __stringify(LONG_SUBU) "	%0, %1		\n"
++	"	bnez	%0, 1b					\n"
+ 	: "=r" (loops)
+ 	: GCC_DADDI_IMM_ASM() (1), "0" (loops));
+ }
+diff --git a/arch/mips/lib/memset.S b/arch/mips/lib/memset.S
+index 418611ef13cfc1963b72ea9b9467e2ead1d3fd6f..70db395159f16110466fa1eaae3b4824ceeff178 100644
+--- a/arch/mips/lib/memset.S
++++ b/arch/mips/lib/memset.S
+@@ -9,6 +9,7 @@
+  * Copyright (C) 2011, 2012 MIPS Technologies, Inc.
+  */
+ #include <asm/asm.h>
++#include <asm/asmmacro.h>
+ #include <asm/asm-offsets.h>
+ #include <asm/export.h>
+ #include <asm/regdef.h>
+@@ -222,6 +223,7 @@
+ 1:	PTR_ADDIU	a0, 1			/* fill bytewise */
+ 	R10KCBARRIER(0(ra))
+ 	.set		noreorder
++	short_loop_war(1b)
+ 	bne		t1, a0, 1b
+ 	 EX(sb, a1, -1(a0), .Lsmall_fixup\@)
+ 	.set		reorder
+diff --git a/arch/mips/loongson64/common/reset.c b/arch/mips/loongson64/common/reset.c
+index ce39e918e4d5f775556cb5fe299a07665a971aa5..e91137922373f200c1007337852426cb4bfcd47c 100644
+--- a/arch/mips/loongson64/common/reset.c
++++ b/arch/mips/loongson64/common/reset.c
+@@ -10,6 +10,7 @@
+ #include <linux/pm.h>
+ 
+ #include <asm/idle.h>
++#include <asm/processor.h>
+ #include <asm/reboot.h>
+ 
+ #include <loongson.h>
+@@ -45,10 +46,7 @@ static void loongson_restart(char *command)
+ 	void (*fw_restart)(void) = (void *)loongson_sysconf.restart_addr;
+ 
+ 	fw_restart();
+-	while (1) {
+-		if (cpu_wait)
+-			cpu_wait();
+-	}
++	cpu_relax_forever();
+ #endif
+ }
+ 
+@@ -66,20 +64,14 @@ static void loongson_poweroff(void)
+ 	void (*fw_poweroff)(void) = (void *)loongson_sysconf.poweroff_addr;
+ 
+ 	fw_poweroff();
+-	while (1) {
+-		if (cpu_wait)
+-			cpu_wait();
+-	}
++	cpu_relax_forever();
+ #endif
+ }
+ 
+ static void loongson_halt(void)
+ {
+ 	pr_notice("\n\n** You can safely turn off the power now **\n\n");
+-	while (1) {
+-		if (cpu_wait)
+-			cpu_wait();
+-	}
++	cpu_relax_forever();
+ }
+ 
+ static int __init mips_reboot_setup(void)
+diff --git a/arch/mips/mm/Makefile b/arch/mips/mm/Makefile
+index 46f483e952c8cd62d314895fbca27bb93bb54bb4..4aa08bf57a22f39b1228ca28f1000618adc5b232 100644
+--- a/arch/mips/mm/Makefile
++++ b/arch/mips/mm/Makefile
+@@ -31,6 +31,7 @@ obj-$(CONFIG_DMA_NONCOHERENT)	+= dma-noncoherent.o
+ obj-$(CONFIG_CPU_R3K_TLB)	+= tlb-r3k.o
+ obj-$(CONFIG_CPU_R4K_CACHE_TLB) += c-r4k.o cex-gen.o tlb-r4k.o
+ obj-$(CONFIG_CPU_R3000)		+= c-r3k.o
++obj-$(CONFIG_CPU_R5900)		+= c-r4k.o cex-gen.o tlb-r4k.o
+ obj-$(CONFIG_CPU_SB1)		+= c-r4k.o cerr-sb1.o cex-sb1.o tlb-r4k.o
+ obj-$(CONFIG_CPU_TX39XX)	+= c-tx39.o
+ obj-$(CONFIG_CPU_CAVIUM_OCTEON) += c-octeon.o cex-oct.o tlb-r4k.o
+diff --git a/arch/mips/mm/c-r4k.c b/arch/mips/mm/c-r4k.c
+index 3375bbe63284ef68490d7e22eb421d6c0d9ba26f..e92a351febbfe8d59c6f0cc55414ac988933f626 100644
+--- a/arch/mips/mm/c-r4k.c
++++ b/arch/mips/mm/c-r4k.c
+@@ -1112,6 +1112,18 @@ static void probe_pcache(void)
+ 		c->options |= MIPS_CPU_CACHE_CDEX_P | MIPS_CPU_PREFETCH;
+ 		break;
+ 
++	case CPU_R5900:
++		icache_size = 1 << (12 + ((config & CONF_IC) >> 9));
++		c->icache.linesz = 64;
++		c->icache.ways = 2;
++		c->icache.waybit = 0;
++
++		dcache_size = 1 << (12 + ((config & CONF_DC) >> 6));
++		c->dcache.linesz = 64;
++		c->dcache.ways = 2;
++		c->dcache.waybit = 0;
++		break;
++
+ 	case CPU_TX49XX:
+ 		icache_size = 1 << (12 + ((config & CONF_IC) >> 9));
+ 		c->icache.linesz = 16 << ((config & CONF_IB) >> 5);
+@@ -1386,6 +1398,13 @@ static void probe_pcache(void)
+ 	case CPU_R16000:
+ 		break;
+ 
++	case CPU_R5900:
++		if (c->icache.waysize > PAGE_SIZE)
++			c->dcache.flags |= MIPS_CACHE_ALIASES;
++		if (c->dcache.waysize > PAGE_SIZE)
++			c->dcache.flags |= MIPS_CACHE_ALIASES;
++		break;
++
+ 	case CPU_74K:
+ 	case CPU_1074K:
+ 		has_74k_erratum = alias_74k_erratum(c);
+@@ -1536,14 +1555,14 @@ static int probe_scache(void)
+ 	write_c0_taglo(0);
+ 	write_c0_taghi(0);
+ 	__asm__ __volatile__("nop; nop; nop; nop;"); /* avoid the hazard */
+-	cache_op(Index_Store_Tag_I, begin);
+-	cache_op(Index_Store_Tag_D, begin);
+-	cache_op(Index_Store_Tag_SD, begin);
++	cache_op_i(Index_Store_Tag_I, begin);
++	cache_op_d(Index_Store_Tag_D, begin);
++	cache_op_s(Index_Store_Tag_SD, begin);
+ 
+ 	/* Now search for the wrap around point. */
+ 	pow2 = (128 * 1024);
+ 	for (addr = begin + (128 * 1024); addr < end; addr = begin + pow2) {
+-		cache_op(Index_Load_Tag_SD, addr);
++		cache_op_s(Index_Load_Tag_SD, addr);
+ 		__asm__ __volatile__("nop; nop; nop; nop;"); /* hazard... */
+ 		if (!read_c0_taglo())
+ 			break;
+diff --git a/arch/mips/mm/cache.c b/arch/mips/mm/cache.c
+index 33b409391ddb6ba394da60a84c75f8a5d5091ad8..033184558e8936aed63784bc2bf26c2e4f47ab6f 100644
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
+@@ -24,6 +24,7 @@
+ 
+ /* Cache operations. */
+ void (*flush_cache_all)(void);
++EXPORT_SYMBOL(flush_cache_all);
+ void (*__flush_cache_all)(void);
+ EXPORT_SYMBOL_GPL(__flush_cache_all);
+ void (*flush_cache_mm)(struct mm_struct *mm);
+@@ -62,6 +63,10 @@ void (*_dma_cache_wback_inv)(unsigned long start, unsigned long size);
+ void (*_dma_cache_wback)(unsigned long start, unsigned long size);
+ void (*_dma_cache_inv)(unsigned long start, unsigned long size);
+ 
++EXPORT_SYMBOL(_dma_cache_wback_inv);
++EXPORT_SYMBOL(_dma_cache_wback);
++EXPORT_SYMBOL(_dma_cache_inv);
++
+ #endif /* CONFIG_DMA_NONCOHERENT */
+ 
+ /*
+@@ -150,6 +155,15 @@ void __update_cache(unsigned long address, pte_t pte)
+ 			__kunmap_atomic((void *)addr);
+ 
+ 		ClearPageDcacheDirty(page);
++	} else {
++		/* Cache can be dirty when page is not writeable, because
++		 * data is copied to page in kernel.
++		 */
++		address = (unsigned long) page_address(page);
++		if (!cpu_has_ic_fills_f_dc) {
++			flush_data_cache_page(address);
++			/* TBD: Flush instruction cache also? */
++		}
+ 	}
+ }
+ 
+diff --git a/arch/mips/mm/cerr-sb1.c b/arch/mips/mm/cerr-sb1.c
+index a3c02df19f6faedb02846b4bf416e14d67685fb3..c0a6acea532c56c444bb20357ad616b36433ba65 100644
+--- a/arch/mips/mm/cerr-sb1.c
++++ b/arch/mips/mm/cerr-sb1.c
+@@ -4,6 +4,7 @@
+  */
+ #include <linux/sched.h>
+ #include <asm/mipsregs.h>
++#include <asm/processor.h>
+ #include <asm/sibyte/sb1250.h>
+ #include <asm/sibyte/sb1250_regs.h>
+ 
+@@ -244,8 +245,7 @@ asmlinkage void sb1_cache_error(void)
+ 	 * undesirable.
+ 	 */
+ #ifdef CONFIG_SB1_CERR_STALL
+-	while (1)
+-		;
++	cpu_relax_forever();
+ #else
+ 	panic("unhandled cache error");
+ #endif
+diff --git a/arch/mips/mm/cex-gen.S b/arch/mips/mm/cex-gen.S
+index 45dff5cd4b8e7a0278442acee6818a47bd72eb76..c5075651229cce6e5e5d71ebc91e2d16a15f962f 100644
+--- a/arch/mips/mm/cex-gen.S
++++ b/arch/mips/mm/cex-gen.S
+@@ -27,11 +27,17 @@
+ 	 * in the cache, we may not be able to recover.	 As a
+ 	 * first-order desperate measure, turn off KSEG0 cacheing.
+ 	 */
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	mfc0	k0,CP0_CONFIG
+ 	li	k1,~CONF_CM_CMASK
+ 	and	k0,k0,k1
+ 	ori	k0,k0,CONF_CM_UNCACHED
+ 	mtc0	k0,CP0_CONFIG
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	/* Give it a few cycles to sink in... */
+ 	nop
+ 	nop
+diff --git a/arch/mips/mm/page.c b/arch/mips/mm/page.c
+index 56e4f8bffd4cd96a0439abac031b48d4c57634f6..3bc4949cd4d15f4683ce77c5bca6a2b06e443aa5 100644
+--- a/arch/mips/mm/page.c
++++ b/arch/mips/mm/page.c
+@@ -148,6 +148,7 @@ static void set_prefetch_parameters(void)
+ 		cache_line_size = cpu_dcache_line_size();
+ 		switch (current_cpu_type()) {
+ 		case CPU_R5500:
++		/* FIXME: case CPU_R5900: */
+ 		case CPU_TX49XX:
+ 			/* These processors only support the Pref_Load. */
+ 			pref_bias_copy_load = 256;
+diff --git a/arch/mips/mm/tlbex-fault.S b/arch/mips/mm/tlbex-fault.S
+index 77db401fc62073a119bf79c10da908a07c08c4df..fe2b2c61cca711f00dd99612cddd5e3da5663cd9 100644
+--- a/arch/mips/mm/tlbex-fault.S
++++ b/arch/mips/mm/tlbex-fault.S
+@@ -14,6 +14,9 @@
+ 	NESTED(tlb_do_page_fault_\write, PT_SIZE, sp)
+ 	.cfi_signal_frame
+ 	SAVE_ALL docfi=1
++#ifdef CONFIG_CPU_R5900
++	sync.p
++#endif
+ 	MFC0	a2, CP0_BADVADDR
+ 	KMODE
+ 	move	a0, sp
+diff --git a/arch/mips/mm/tlbex.c b/arch/mips/mm/tlbex.c
+index 061dc5c97d5ad47288e391306143758a8bfe1d4c..faf8feb33d4923d8ae989248023f751c806c61fc 100644
+--- a/arch/mips/mm/tlbex.c
++++ b/arch/mips/mm/tlbex.c
+@@ -489,6 +489,19 @@ static void __maybe_unused build_tlb_probe_entry(u32 **p)
+ 		uasm_i_tlbp(p);
+ 		break;
+ 
++	case CPU_R5900:
++		/*
++		 * On the R5900, the TLBP instruction must be immediately
++		 * followed by an ERET or a SYNC.P instruction.
++		 */
++		uasm_i_tlbp(p);
++		uasm_i_syncp(p);
++		uasm_i_nop(p);
++		uasm_i_nop(p);
++		uasm_i_nop(p);
++		uasm_i_nop(p);
++		break;
++
+ 	default:
+ 		uasm_i_tlbp(p);
+ 		break;
+@@ -607,6 +620,15 @@ void build_tlb_write_entry(u32 **p, struct uasm_label **l,
+ 		uasm_i_nop(p);
+ 		tlbw(p);
+ 		break;
++	case CPU_R5900:
++		/*
++		 * On the R5900, the TLBWI and TLBWR instructions must be
++		 * followed by an ERET or a SYNC.P instruction to ensure a
++		 * TLB update.
++		 */
++		tlbw(p);
++		uasm_i_syncp(p);
++		break;
+ 
+ 	case CPU_XBURST:
+ 		tlbw(p);
+@@ -694,6 +716,9 @@ static void build_restore_pagemask(u32 **p, struct uasm_reloc **r,
+ 			uasm_i_mtc0(p, 0, C0_PAGEMASK);
+ 		}
+ 	}
++#ifdef CONFIG_CPU_R5900
++	uasm_i_syncp(p);
++#endif
+ }
+ 
+ static void build_huge_tlb_write_entry(u32 **p, struct uasm_label **l,
+@@ -706,6 +731,9 @@ static void build_huge_tlb_write_entry(u32 **p, struct uasm_label **l,
+ 	uasm_i_lui(p, tmp, PM_HUGE_MASK >> 16);
+ 	uasm_i_ori(p, tmp, tmp, PM_HUGE_MASK & 0xffff);
+ 	uasm_i_mtc0(p, tmp, C0_PAGEMASK);
++#ifdef CONFIG_CPU_R5900
++	uasm_i_syncp(p);
++#endif
+ 
+ 	build_tlb_write_entry(p, l, r, wmode);
+ 
+@@ -968,21 +996,21 @@ void build_get_pgde32(u32 **p, unsigned int tmp, unsigned int ptr)
+ {
+ 	if (pgd_reg != -1) {
+ 		/* pgd is in pgd_reg */
+-		uasm_i_mfc0(p, ptr, c0_kscratch(), pgd_reg);
+-		uasm_i_mfc0(p, tmp, C0_BADVADDR); /* get faulting address */
++		UASM_i_MFC0(p, ptr, c0_kscratch(), pgd_reg);
++		UASM_i_MFC0(p, tmp, C0_BADVADDR); /* get faulting address */
+ 	} else {
+ 		long pgdc = (long)pgd_current;
+ 
+ 		/* 32 bit SMP has smp_processor_id() stored in CONTEXT. */
+ #ifdef CONFIG_SMP
+-		uasm_i_mfc0(p, ptr, SMP_CPUID_REG);
++		UASM_i_MFC0(p, ptr, SMP_CPUID_REG);
+ 		UASM_i_LA_mostly(p, tmp, pgdc);
+ 		uasm_i_srl(p, ptr, ptr, SMP_CPUID_PTRSHIFT);
+ 		uasm_i_addu(p, ptr, tmp, ptr);
+ #else
+ 		UASM_i_LA_mostly(p, ptr, pgdc);
+ #endif
+-		uasm_i_mfc0(p, tmp, C0_BADVADDR); /* get faulting address */
++		UASM_i_MFC0(p, tmp, C0_BADVADDR); /* get faulting address */
+ 		uasm_i_lw(p, ptr, uasm_rel_lo(pgdc), ptr);
+ 	}
+ 	uasm_i_srl(p, tmp, tmp, PGDIR_SHIFT); /* get pgd only bits */
+@@ -1312,6 +1340,12 @@ static void build_r4000_tlb_refill_handler(void)
+ 	memset(relocs, 0, sizeof(relocs));
+ 	memset(final_handler, 0, sizeof(final_handler));
+ 
++#ifdef CONFIG_CPU_R5900
++	/* Workaround for R5900 exception execution bug (FLX05). */
++	uasm_i_nop(&p);
++	uasm_i_nop(&p);
++#endif
++
+ 	if (IS_ENABLED(CONFIG_64BIT) && (scratch_reg >= 0 || scratchpad_available()) && use_bbit_insns()) {
+ 		htlb_info = build_fast_tlb_refill_handler(&p, &l, &r, K0, K1,
+ 							  scratch_reg);
+@@ -1354,6 +1388,16 @@ static void build_r4000_tlb_refill_handler(void)
+ 		uasm_l_leave(&l, p);
+ 		uasm_i_eret(&p); /* return from trap */
+ 	}
++
++#ifdef CONFIG_CPU_R5900
++	/* There should be nothing which can be interpreted as cache instruction. */
++	uasm_i_nop(&p);
++	uasm_i_nop(&p);
++	uasm_i_nop(&p);
++	uasm_i_nop(&p);
++	uasm_i_nop(&p);
++#endif
++
+ #ifdef CONFIG_MIPS_HUGE_TLB_SUPPORT
+ 	uasm_l_tlb_huge_update(&l, p);
+ 	if (htlb_info.need_reload_pte)
+@@ -1375,6 +1419,10 @@ static void build_r4000_tlb_refill_handler(void)
+ 	 * unused.
+ 	 */
+ 	switch (boot_cpu_type()) {
++	case CPU_R5900:
++		if ((p - tlb_handler) > 32)
++			panic("TLB refill handler space exceeded");
++		/* Fallthrough */
+ 	default:
+ 		if (sizeof(long) == 4) {
+ 	case CPU_LOONGSON2:
+@@ -1473,9 +1521,9 @@ static void build_r4000_tlb_refill_handler(void)
+ 	pr_debug("Wrote TLB refill handler (%u instructions).\n",
+ 		 final_len);
+ 
+-	memcpy((void *)ebase, final_handler, 0x100);
+-	local_flush_icache_range(ebase, ebase + 0x100);
+-	dump_handler("r4000_tlb_refill", (u32 *)ebase, (u32 *)(ebase + 0x100));
++	memcpy((void *)ebase, final_handler, 4 * final_len);
++	local_flush_icache_range(ebase, ebase + 4 * final_len);
++	dump_handler("r4000_tlb_refill", (u32 *)ebase, (u32 *)(ebase + 4 * final_len));
+ }
+ 
+ static void setup_pw(void)
+@@ -2099,6 +2147,14 @@ build_r4000_tlbchange_handler_tail(u32 **p, struct uasm_label **l,
+ 	uasm_l_leave(l, *p);
+ 	build_restore_work_registers(p);
+ 	uasm_i_eret(p); /* return from trap */
++#ifdef CONFIG_CPU_R5900
++	/* There should be nothing which can be interpreted as cache instruction. */
++	uasm_i_nop(p);
++	uasm_i_nop(p);
++	uasm_i_nop(p);
++	uasm_i_nop(p);
++	uasm_i_nop(p);
++#endif
+ 
+ #ifdef CONFIG_64BIT
+ 	build_get_pgd_vmalloc64(p, l, r, tmp, ptr, not_refill);
+@@ -2159,6 +2215,18 @@ static void build_r4000_tlb_load_handler(void)
+ 
+ 		uasm_i_tlbr(&p);
+ 
++#ifdef CONFIG_CPU_R5900
++		/*
++		 * On the R5900, the TLBR instruction must be immediately
++		 * followed by an ERET or a SYNC.P instruction.
++		 */
++		uasm_i_syncp(&p);
++		uasm_i_nop(&p);
++		uasm_i_nop(&p);
++		uasm_i_nop(&p);
++		uasm_i_nop(&p);
++#endif
++
+ 		switch (current_cpu_type()) {
+ 		default:
+ 			if (cpu_has_mips_r2_exec_hazard) {
+@@ -2234,6 +2302,18 @@ static void build_r4000_tlb_load_handler(void)
+ 
+ 		uasm_i_tlbr(&p);
+ 
++#ifdef CONFIG_CPU_R5900
++		/*
++		 * On the R5900, the TLBR instruction must be immediately
++		 * followed by an ERET or a SYNC.P instruction.
++		 */
++		uasm_i_syncp(&p);
++		uasm_i_nop(&p);
++		uasm_i_nop(&p);
++		uasm_i_nop(&p);
++		uasm_i_nop(&p);
++#endif
++
+ 		switch (current_cpu_type()) {
+ 		default:
+ 			if (cpu_has_mips_r2_exec_hazard) {
+diff --git a/arch/mips/mm/uasm-mips.c b/arch/mips/mm/uasm-mips.c
+index 7154a1d99aad6131dd1e33811f4bc863c2ab30d5..725c6fe1e317f60581df743d3e37d0b03f97b80b 100644
+--- a/arch/mips/mm/uasm-mips.c
++++ b/arch/mips/mm/uasm-mips.c
+@@ -191,6 +191,7 @@ static const struct insn insn_table[insn_invalid] = {
+ 	[insn_subu]	= {M(spec_op, 0, 0, 0, 0, subu_op),	RS | RT | RD},
+ 	[insn_sw]	= {M(sw_op, 0, 0, 0, 0, 0),  RS | RT | SIMM},
+ 	[insn_sync]	= {M(spec_op, 0, 0, 0, 0, sync_op), RE},
++	[insn_syncp]	= {M(spec_op, 0, 0, 0, 0x10, sync_op), 0},
+ 	[insn_syscall]	= {M(spec_op, 0, 0, 0, 0, syscall_op), SCIMM},
+ 	[insn_tlbp]	= {M(cop0_op, cop_op, 0, 0, 0, tlbp_op),  0},
+ 	[insn_tlbr]	= {M(cop0_op, cop_op, 0, 0, 0, tlbr_op),  0},
+diff --git a/arch/mips/mm/uasm.c b/arch/mips/mm/uasm.c
+index c56f129c9a4ba400e70a3be459b689f4fd103b25..32c7a5827ba8f4eef4cf5e1118940abb2a1452ed 100644
+--- a/arch/mips/mm/uasm.c
++++ b/arch/mips/mm/uasm.c
+@@ -64,8 +64,8 @@ enum opcode {
+ 	insn_scd, insn_seleqz, insn_selnez, insn_sd, insn_sh, insn_sll,
+ 	insn_sllv, insn_slt, insn_slti, insn_sltiu, insn_sltu, insn_sra,
+ 	insn_srav, insn_srl, insn_srlv, insn_subu, insn_sw, insn_sync,
+-	insn_syscall, insn_tlbp, insn_tlbr, insn_tlbwi, insn_tlbwr, insn_wait,
+-	insn_wsbh, insn_xor, insn_xori, insn_yield,
++	insn_syncp, insn_syscall, insn_tlbp, insn_tlbr, insn_tlbwi, insn_tlbwr,
++	insn_wait, insn_wsbh, insn_xor, insn_xori, insn_yield,
+ 	insn_invalid /* insn_invalid must be last */
+ };
+ 
+@@ -369,6 +369,7 @@ I_u2u1u3(_rotr)
+ I_u3u1u2(_subu)
+ I_u2s3u1(_sw)
+ I_u1(_sync)
++I_0(_syncp)
+ I_0(_tlbp)
+ I_0(_tlbr)
+ I_0(_tlbwi)
+diff --git a/arch/mips/pic32/common/reset.c b/arch/mips/pic32/common/reset.c
+index a5fd7a8e2800ff06cfe8c0ed91c8ff6f5996750f..32dcda98aa156507d98003690acf2de4c7b2ace8 100644
+--- a/arch/mips/pic32/common/reset.c
++++ b/arch/mips/pic32/common/reset.c
+@@ -5,6 +5,7 @@
+  */
+ #include <linux/init.h>
+ #include <linux/pm.h>
++#include <asm/processor.h>
+ #include <asm/reboot.h>
+ #include <asm/mach-pic32/pic32.h>
+ 
+@@ -12,13 +13,7 @@
+ 
+ static void pic32_halt(void)
+ {
+-	while (1) {
+-		__asm__(".set push;\n"
+-			".set arch=r4000;\n"
+-			"wait;\n"
+-			".set pop;\n"
+-		);
+-	}
++	cpu_relax_forever();
+ }
+ 
+ static void pic32_machine_restart(char *command)
+diff --git a/arch/mips/pnx833x/common/reset.c b/arch/mips/pnx833x/common/reset.c
+index b48e83bf912b305c0573bbdedba23bdc576eff30..8f8b79994daef9bfc4a76f57c4c085a432ee6696 100644
+--- a/arch/mips/pnx833x/common/reset.c
++++ b/arch/mips/pnx833x/common/reset.c
+@@ -10,6 +10,7 @@
+  *	Nikita Youshchenko <yoush@debian.org>, based on PNX8550 code.
+  */
+ #include <linux/reboot.h>
++#include <asm/processor.h>
+ #include <pnx833x.h>
+ 
+ void pnx833x_machine_restart(char *command)
+@@ -20,9 +21,7 @@ void pnx833x_machine_restart(char *command)
+ 
+ void pnx833x_machine_halt(void)
+ {
+-	while (1)
+-		__asm__ __volatile__ ("wait");
+-
++	cpu_relax_forever();
+ }
+ 
+ void pnx833x_machine_power_off(void)
+diff --git a/arch/mips/sgi-ip22/ip22-reset.c b/arch/mips/sgi-ip22/ip22-reset.c
+index c374f3ceec38cf6ae5040e16665521ea69cefecf..5355c96a2b894befb271280e681e7a9179afad0f 100644
+--- a/arch/mips/sgi-ip22/ip22-reset.c
++++ b/arch/mips/sgi-ip22/ip22-reset.c
+@@ -17,6 +17,7 @@
+ 
+ #include <asm/io.h>
+ #include <asm/irq.h>
++#include <asm/processor.h>
+ #include <asm/reboot.h>
+ #include <asm/sgialib.h>
+ #include <asm/sgi/ioc.h>
+@@ -72,7 +73,7 @@ static void __noreturn sgi_machine_restart(char *command)
+ 	if (machine_state & MACHINE_SHUTTING_DOWN)
+ 		sgi_machine_power_off();
+ 	sgimc->cpuctrl0 |= SGIMC_CCTRL0_SYSINIT;
+-	while (1);
++	cpu_relax_forever();
+ }
+ 
+ static void __noreturn sgi_machine_halt(void)
+diff --git a/arch/mips/sgi-ip27/ip27-berr.c b/arch/mips/sgi-ip27/ip27-berr.c
+index 73ad29b180fb500e90cdde82a926475662815aed..81cd434cb9ae894287b9875d126b21cfd06fe0bc 100644
+--- a/arch/mips/sgi-ip27/ip27-berr.c
++++ b/arch/mips/sgi-ip27/ip27-berr.c
+@@ -14,6 +14,7 @@
+ #include <linux/sched/debug.h>
+ #include <linux/sched/signal.h>
+ 
++#include <asm/processor.h>
+ #include <asm/ptrace.h>
+ #include <asm/sn/addrs.h>
+ #include <asm/sn/arch.h>
+@@ -73,8 +74,7 @@ int ip27_be_handler(struct pt_regs *regs, int is_fixup)
+ 	dump_hub_information(errst0, errst1);
+ 	show_regs(regs);
+ 	dump_tlb_all();
+-	while(1);
+-	force_sig(SIGBUS);
++	cpu_relax_forever();
+ }
+ 
+ void __init ip27_be_init(void)
+diff --git a/arch/mips/sgi-ip27/ip27-reset.c b/arch/mips/sgi-ip27/ip27-reset.c
+index e44a15d4f57364be376af2ee4c9c625d13e53371..bc8c2507ba91bf2c1fc9d70bc838ca1d7e44c50a 100644
+--- a/arch/mips/sgi-ip27/ip27-reset.c
++++ b/arch/mips/sgi-ip27/ip27-reset.c
+@@ -19,6 +19,7 @@
+ 
+ #include <asm/io.h>
+ #include <asm/irq.h>
++#include <asm/processor.h>
+ #include <asm/reboot.h>
+ #include <asm/sgialib.h>
+ #include <asm/sn/addrs.h>
+@@ -26,12 +27,6 @@
+ #include <asm/sn/gda.h>
+ #include <asm/sn/sn0/hub.h>
+ 
+-void machine_restart(char *command) __noreturn;
+-void machine_halt(void) __noreturn;
+-void machine_power_off(void) __noreturn;
+-
+-#define noreturn while(1);				/* Silence gcc.	 */
+-
+ /* XXX How to pass the reboot command to the firmware??? */
+ static void ip27_machine_restart(char *command)
+ {
+@@ -50,7 +45,7 @@ static void ip27_machine_restart(char *command)
+ #else
+ 	LOCAL_HUB_S(NI_PORT_RESET, NPR_PORTRESET | NPR_LOCALRESET);
+ #endif
+-	noreturn;
++	cpu_relax_forever();
+ }
+ 
+ static void ip27_machine_halt(void)
+@@ -64,13 +59,13 @@ static void ip27_machine_halt(void)
+ 		REMOTE_HUB_S(COMPACT_TO_NASID_NODEID(i), PROMOP_REG,
+ 							PROMOP_RESTART);
+ 	LOCAL_HUB_S(NI_PORT_RESET, NPR_PORTRESET | NPR_LOCALRESET);
+-	noreturn;
++	cpu_relax_forever();
+ }
+ 
+ static void ip27_machine_power_off(void)
+ {
+ 	/* To do ...  */
+-	noreturn;
++	cpu_relax_forever();
+ }
+ 
+ void ip27_reboot_setup(void)
+diff --git a/arch/mips/sgi-ip32/ip32-berr.c b/arch/mips/sgi-ip32/ip32-berr.c
+index c860f95ab7edd44147ac6d99a8c07b16b2d95253..daa2036aeecc94f8f04bce91bf9fb4c732d2b351 100644
+--- a/arch/mips/sgi-ip32/ip32-berr.c
++++ b/arch/mips/sgi-ip32/ip32-berr.c
+@@ -15,6 +15,7 @@
+ #include <asm/traps.h>
+ #include <linux/uaccess.h>
+ #include <asm/addrspace.h>
++#include <asm/processor.h>
+ #include <asm/ptrace.h>
+ #include <asm/tlbdebug.h>
+ 
+@@ -28,8 +29,7 @@ static int ip32_be_handler(struct pt_regs *regs, int is_fixup)
+ 	printk("Got %cbe at 0x%lx\n", data ? 'd' : 'i', regs->cp0_epc);
+ 	show_regs(regs);
+ 	dump_tlb_all();
+-	while(1);
+-	force_sig(SIGBUS);
++	cpu_relax_forever();
+ }
+ 
+ void __init ip32_be_init(void)
+diff --git a/arch/mips/sgi-ip32/ip32-irq.c b/arch/mips/sgi-ip32/ip32-irq.c
+index a6a0ff7f5aed00bb5161c5783f5895e99ceef56e..d34a6b4f2096cbd3d53ccf6cd55238b9aa0dcc90 100644
+--- a/arch/mips/sgi-ip32/ip32-irq.c
++++ b/arch/mips/sgi-ip32/ip32-irq.c
+@@ -22,6 +22,7 @@
+ 
+ #include <asm/irq_cpu.h>
+ #include <asm/mipsregs.h>
++#include <asm/processor.h>
+ #include <asm/signal.h>
+ #include <asm/time.h>
+ #include <asm/ip32/crime.h>
+@@ -355,7 +356,7 @@ static void ip32_unknown_interrupt(void)
+ 
+ 	printk("Please mail this report to linux-mips@linux-mips.org\n");
+ 	printk("Spinning...");
+-	while(1) ;
++	cpu_relax_forever();
+ }
+ 
+ /* CRIME 1.1 appears to deliver all interrupts to this one pin. */
+diff --git a/arch/mips/sibyte/common/cfe.c b/arch/mips/sibyte/common/cfe.c
+index cbf5939ed53a2ffe9692cac65085c7c8597b7c11..33143172a64487cac3cbe7f59615783be7e338e6 100644
+--- a/arch/mips/sibyte/common/cfe.c
++++ b/arch/mips/sibyte/common/cfe.c
+@@ -13,6 +13,7 @@
+ #include <linux/smp.h>
+ 
+ #include <asm/bootinfo.h>
++#include <asm/processor.h>
+ #include <asm/reboot.h>
+ #include <asm/setup.h>
+ #include <asm/sibyte/board.h>
+@@ -65,7 +66,7 @@ static void __noreturn cfe_linux_exit(void *arg)
+ 		cfe_exit(warm, 0);
+ 		printk("cfe_exit returned??\n");
+ 	}
+-	while (1);
++	cpu_relax_forever();
+ }
+ 
+ static void __noreturn cfe_linux_restart(char *command)
+diff --git a/arch/mips/txx9/rbtx4939/setup.c b/arch/mips/txx9/rbtx4939/setup.c
+index ef29a9c2ffd602e1d6e1ed30ba0860a773f6a1aa..ec32d8a63d2e62e33e37be0b36db64016d1bc8ad 100644
+--- a/arch/mips/txx9/rbtx4939/setup.c
++++ b/arch/mips/txx9/rbtx4939/setup.c
+@@ -21,6 +21,7 @@
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/map.h>
++#include <asm/processor.h>
+ #include <asm/reboot.h>
+ #include <asm/txx9/generic.h>
+ #include <asm/txx9/pci.h>
+@@ -31,8 +32,7 @@ static void rbtx4939_machine_restart(char *command)
+ 	local_irq_disable();
+ 	writeb(1, rbtx4939_reseten_addr);
+ 	writeb(1, rbtx4939_softreset_addr);
+-	while (1)
+-		;
++	cpu_relax_forever();
+ }
+ 
+ static void __init rbtx4939_time_init(void)
+diff --git a/arch/mips/vdso/Makefile b/arch/mips/vdso/Makefile
+index d3cd9c4cadc28894b53d46e489dfa1443fb1c603..33704b6bf0640c0bab76c0b35622587bafc1b19c 100644
+--- a/arch/mips/vdso/Makefile
++++ b/arch/mips/vdso/Makefile
+@@ -25,6 +25,7 @@ ccflags-vdso := \
+ # offsets.
+ cflags-vdso := $(ccflags-vdso) \
+ 	$(filter -W%,$(filter-out -Wa$(comma)%,$(KBUILD_CFLAGS))) \
++	$(filter -std=%,$(KBUILD_CFLAGS)) \
+ 	-O3 -g -fPIC -fno-strict-aliasing -fno-common -fno-builtin -G 0 \
+ 	-fno-stack-protector -fno-jump-tables -DDISABLE_BRANCH_PROFILING \
+ 	$(call cc-option, -fno-asynchronous-unwind-tables) \
+diff --git a/arch/mips/vr41xx/common/pmu.c b/arch/mips/vr41xx/common/pmu.c
+index 93cc7e0b30b1fe743c194275c8961f36fb940770..d73178e3d910f6ac57fe0909d479cbe78cdd97ab 100644
+--- a/arch/mips/vr41xx/common/pmu.c
++++ b/arch/mips/vr41xx/common/pmu.c
+@@ -72,7 +72,7 @@ static void vr41xx_restart(char *command)
+ {
+ 	local_irq_disable();
+ 	software_reset();
+-	while (1) ;
++	cpu_relax_forever();
+ }
+ 
+ static void vr41xx_halt(void)
+diff --git a/drivers/Makefile b/drivers/Makefile
+index aaef17cc651287afb4b51fca89829b2efa743365..5f278a9805df1d9caecc6083c1f351b27937f60d 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -139,6 +139,7 @@ obj-y				+= clocksource/
+ endif
+ obj-$(CONFIG_DCA)		+= dca/
+ obj-$(CONFIG_HID)		+= hid/
++obj-$(CONFIG_SONY_PS2)		+= ps2/
+ obj-$(CONFIG_PPC_PS3)		+= ps3/
+ obj-$(CONFIG_OF)		+= of/
+ obj-$(CONFIG_SSB)		+= ssb/
+diff --git a/drivers/android/binder.c b/drivers/android/binder.c
+index 807ee97254795994a47e1fba61151f62390ac9c7..988743c90b8f16e61c1d252ba08996810eafe6a3 100644
+--- a/drivers/android/binder.c
++++ b/drivers/android/binder.c
+@@ -6095,7 +6095,6 @@ const struct file_operations binder_fops = {
+ 	.open = binder_open,
+ 	.flush = binder_flush,
+ 	.release = binder_release,
+-	.may_pollfree = true,
+ };
+ 
+ static int __init init_binder_device(const char *name)
+diff --git a/drivers/ata/Kconfig b/drivers/ata/Kconfig
+index a6beb2c5a6920e33b643d853ef4d56caf71e87b8..38a774a84f1123cd6b15f59a038b3de2060bccd7 100644
+--- a/drivers/ata/Kconfig
++++ b/drivers/ata/Kconfig
+@@ -1047,6 +1047,14 @@ config PATA_PLATFORM
+ 
+ 	  If unsure, say N.
+ 
++config PATA_PS2
++	tristate "PlayStation 2 PATA support"
++	depends on SONY_PS2
++	help
++	  This option enables support for PATA interface harddisks, found
++	  on PlayStation 2 models SCPH 10000-500xx having an appropriate
++	  network adapter accessory.
++
+ config PATA_OF_PLATFORM
+ 	tristate "OpenFirmware platform device PATA support"
+ 	depends on PATA_PLATFORM && OF
+diff --git a/drivers/ata/Makefile b/drivers/ata/Makefile
+index d8cc2e04a6c7d032d14794df040948ce7bb5add1..f96d55cad23deadbe7625191cb0bcb1b293b126f 100644
+--- a/drivers/ata/Makefile
++++ b/drivers/ata/Makefile
+@@ -107,6 +107,7 @@ obj-$(CONFIG_PATA_OPTI)		+= pata_opti.o
+ obj-$(CONFIG_PATA_PCMCIA)	+= pata_pcmcia.o
+ obj-$(CONFIG_PATA_PALMLD)	+= pata_palmld.o
+ obj-$(CONFIG_PATA_PLATFORM)	+= pata_platform.o
++obj-$(CONFIG_PATA_PS2)		+= pata_ps2.o
+ obj-$(CONFIG_PATA_OF_PLATFORM)	+= pata_of_platform.o
+ obj-$(CONFIG_PATA_RB532)	+= pata_rb532_cf.o
+ obj-$(CONFIG_PATA_RZ1000)	+= pata_rz1000.o
+diff --git a/drivers/gpu/drm/Kconfig b/drivers/gpu/drm/Kconfig
+index fc6c4f81985e651ab861edf137ad4442f6e186e0..01a9f082ad3991b2e37df1bffc7aac6a7601a017 100644
+--- a/drivers/gpu/drm/Kconfig
++++ b/drivers/gpu/drm/Kconfig
+@@ -360,6 +360,8 @@ source "drivers/gpu/drm/aspeed/Kconfig"
+ 
+ source "drivers/gpu/drm/mcde/Kconfig"
+ 
++source "drivers/gpu/drm/gs/Kconfig"
++
+ # Keep legacy drivers last
+ 
+ menuconfig DRM_LEGACY
+diff --git a/drivers/gpu/drm/Makefile b/drivers/gpu/drm/Makefile
+index 82ff826b33ccd13f40680d1a9a35d2dcc111068e..b873a765032e21d0cf45027bbe8dd474d1773e33 100644
+--- a/drivers/gpu/drm/Makefile
++++ b/drivers/gpu/drm/Makefile
+@@ -120,3 +120,4 @@ obj-$(CONFIG_DRM_LIMA)  += lima/
+ obj-$(CONFIG_DRM_PANFROST) += panfrost/
+ obj-$(CONFIG_DRM_ASPEED_GFX) += aspeed/
+ obj-$(CONFIG_DRM_MCDE) += mcde/
++obj-$(CONFIG_DRM_GS) += gs/
+diff --git a/drivers/gpu/drm/drm_fb_helper.c b/drivers/gpu/drm/drm_fb_helper.c
+index 4ae68bf0489204d52d38504426d2adcbd34bbf30..5622bd0c2a7fa24989ace6c0063bc5a3d8e77f35 100644
+--- a/drivers/gpu/drm/drm_fb_helper.c
++++ b/drivers/gpu/drm/drm_fb_helper.c
+@@ -1495,7 +1495,7 @@ EXPORT_SYMBOL(drm_fb_helper_pan_display);
+  * Allocates the backing storage and sets up the fbdev info structure through
+  * the ->fb_probe callback.
+  */
+-static int drm_fb_helper_single_fb_probe(struct drm_fb_helper *fb_helper,
++int drm_fb_helper_single_fb_probe(struct drm_fb_helper *fb_helper,
+ 					 int preferred_bpp)
+ {
+ 	struct drm_client_dev *client = &fb_helper->client;
+@@ -1663,6 +1663,7 @@ static int drm_fb_helper_single_fb_probe(struct drm_fb_helper *fb_helper,
+ 	strcpy(fb_helper->fb->comm, "[fbcon]");
+ 	return 0;
+ }
++EXPORT_SYMBOL(drm_fb_helper_single_fb_probe);
+ 
+ static void drm_fb_helper_fill_fix(struct fb_info *info, uint32_t pitch,
+ 				   uint32_t depth)
+@@ -1741,7 +1742,7 @@ EXPORT_SYMBOL(drm_fb_helper_fill_info);
+  * So, any setup that touches those fields needs to be done here instead of in
+  * drm_setup_crtcs().
+  */
+-static void drm_setup_crtcs_fb(struct drm_fb_helper *fb_helper)
++void drm_setup_crtcs_fb(struct drm_fb_helper *fb_helper)
+ {
+ 	struct drm_client_dev *client = &fb_helper->client;
+ 	struct drm_connector_list_iter conn_iter;
+@@ -1799,6 +1800,7 @@ static void drm_setup_crtcs_fb(struct drm_fb_helper *fb_helper)
+ 		info->fbcon_rotate_hint = FB_ROTATE_UR;
+ 	}
+ }
++EXPORT_SYMBOL(drm_setup_crtcs_fb);
+ 
+ /* Note: Drops fb_helper->lock before returning. */
+ static int
+diff --git a/drivers/gpu/drm/drm_plane.c b/drivers/gpu/drm/drm_plane.c
+index 6bdebcca569053bdfd5bdece27ddfb77316cef20..ae1aaafe3e63c0335f7e032d0a0f96df760e4268 100644
+--- a/drivers/gpu/drm/drm_plane.c
++++ b/drivers/gpu/drm/drm_plane.c
+@@ -161,7 +161,7 @@ done:
+  * @formats: array of supported formats (DRM_FORMAT\_\*)
+  * @format_count: number of elements in @formats
+  * @format_modifiers: array of struct drm_format modifiers terminated by
+- *                    DRM_FORMAT_MOD_INVALID
++ *                    DRM_FORMAT_MOD_INVALID (optional)
+  * @type: type of plane (overlay, primary, cursor)
+  * @name: printf style format string for the plane name, or NULL for default name
+  *
+@@ -254,8 +254,9 @@ int drm_universal_plane_init(struct drm_device *dev, struct drm_plane *plane,
+ 
+ 	memcpy(plane->format_types, formats, format_count * sizeof(uint32_t));
+ 	plane->format_count = format_count;
+-	memcpy(plane->modifiers, format_modifiers,
+-	       format_modifier_count * sizeof(format_modifiers[0]));
++	if (format_modifier_count)
++		memcpy(plane->modifiers, format_modifiers,
++		       format_modifier_count * sizeof(format_modifiers[0]));
+ 	plane->possible_crtcs = possible_crtcs;
+ 	plane->type = type;
+ 
+diff --git a/drivers/gpu/drm/drm_simple_kms_helper.c b/drivers/gpu/drm/drm_simple_kms_helper.c
+index b11910f14c46b9eca4bbd0495fc785884494230e..595ecdda1c5f7270a33b6f689cbfc35cf52d9dd1 100644
+--- a/drivers/gpu/drm/drm_simple_kms_helper.c
++++ b/drivers/gpu/drm/drm_simple_kms_helper.c
+@@ -239,7 +239,7 @@ EXPORT_SYMBOL(drm_simple_display_pipe_attach_bridge);
+  * @funcs: callbacks for the display pipe (optional)
+  * @formats: array of supported formats (DRM_FORMAT\_\*)
+  * @format_count: number of elements in @formats
+- * @format_modifiers: array of formats modifiers
++ * @format_modifiers: array of formats modifiers (optional)
+  * @connector: connector to attach and register (optional)
+  *
+  * Sets up a display pipeline which consist of a really simple
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800usb.c b/drivers/net/wireless/ralink/rt2x00/rt2800usb.c
+index 0dfb55c69b738f6af031ef7fc1e24a93a6fa6e3d..2b6fa04a578fdfaacc6afadc59a34cff1e3222b4 100644
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800usb.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800usb.c
+@@ -718,7 +718,7 @@ static void rt2800usb_queue_init(struct data_queue *queue)
+ 
+ 	switch (queue->qid) {
+ 	case QID_RX:
+-		queue->limit = 128;
++		queue->limit = 8;
+ 		queue->data_size = AGGREGATION_SIZE;
+ 		queue->desc_size = RXINFO_DESC_SIZE;
+ 		queue->winfo_size = rxwi_size;
+@@ -729,7 +729,7 @@ static void rt2800usb_queue_init(struct data_queue *queue)
+ 	case QID_AC_VI:
+ 	case QID_AC_BE:
+ 	case QID_AC_BK:
+-		queue->limit = 16;
++		queue->limit = 8;
+ 		queue->data_size = AGGREGATION_SIZE;
+ 		queue->desc_size = TXINFO_DESC_SIZE;
+ 		queue->winfo_size = txwi_size;
+diff --git a/drivers/rtc/Kconfig b/drivers/rtc/Kconfig
+index 0ad8d84aeb339d4f26682e26f87133057afc5c7d..6f35951ffe08d437c791a484d0d86374de90520f 100644
+--- a/drivers/rtc/Kconfig
++++ b/drivers/rtc/Kconfig
+@@ -1933,4 +1933,14 @@ config RTC_DRV_WILCO_EC
+ 	  This can also be built as a module. If so, the module will
+ 	  be named "rtc_wilco_ec".
+ 
++config RTC_DRV_PS2
++	tristate "PlayStation 2 RTC"
++	depends on SONY_PS2
++	default y
++	help
++	  Say yes here to get support for the PlayStation 2 real-time clock.
++
++	  This driver can also be built as a module. If so, the module
++	  will be called rtc-ps2.
++
+ endif # RTC_CLASS
+diff --git a/drivers/rtc/Makefile b/drivers/rtc/Makefile
+index 4ac8f19fb6314929f51c896025904ad8a6b74be5..dc81379147a93ff0a78a06c90ce7070ff388f89e 100644
+--- a/drivers/rtc/Makefile
++++ b/drivers/rtc/Makefile
+@@ -131,6 +131,7 @@ obj-$(CONFIG_RTC_DRV_PIC32)	+= rtc-pic32.o
+ obj-$(CONFIG_RTC_DRV_PL030)	+= rtc-pl030.o
+ obj-$(CONFIG_RTC_DRV_PL031)	+= rtc-pl031.o
+ obj-$(CONFIG_RTC_DRV_PM8XXX)	+= rtc-pm8xxx.o
++obj-$(CONFIG_RTC_DRV_PS2)	+= rtc-ps2.o
+ obj-$(CONFIG_RTC_DRV_PS3)	+= rtc-ps3.o
+ obj-$(CONFIG_RTC_DRV_PUV3)	+= rtc-puv3.o
+ obj-$(CONFIG_RTC_DRV_PXA)	+= rtc-pxa.o
+diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
+index a9751a83d5dbb2e3e9dbef8ac405be8bb204a97b..66a202f014bb22d0957ffbb7173e0508ce3eef13 100644
+--- a/drivers/tty/serial/Kconfig
++++ b/drivers/tty/serial/Kconfig
+@@ -1573,6 +1573,25 @@ config SERIAL_MILBEAUT_USIO_CONSOLE
+ 	  receives all kernel messages and warnings and which allows logins in
+ 	  single user mode).
+ 
++config SERIAL_PS2_UART
++	tristate "PS2 serial port"
++	depends on SONY_PS2
++	select SERIAL_CORE
++	default n
++	help
++	  Driver for the PlayStation 2 UART/SIO port. You can see the output
++	  with a serial cable connected to the internal serial pins of the
++	  PlayStation 2. To use it as system console, specify the kernel
++	  parameter "console=ttyS0".
++
++config SERIAL_PS2_UART_CONSOLE
++	bool "PS2 serial port console"
++	depends on SERIAL_PS2_UART=y
++	select SERIAL_CORE_CONSOLE
++	select SERIAL_EARLYCON
++	help
++	  Enable the PlayStation 2 UART/SIO port for the system console.
++
+ endmenu
+ 
+ config SERIAL_MCTRL_GPIO
+diff --git a/drivers/tty/serial/Makefile b/drivers/tty/serial/Makefile
+index 863f47056539cb02ab84869574f31fb706f70e73..6f007aacbad44a08f67e8c6fdd701d714431b27c 100644
+--- a/drivers/tty/serial/Makefile
++++ b/drivers/tty/serial/Makefile
+@@ -89,6 +89,7 @@ obj-$(CONFIG_SERIAL_OWL)	+= owl-uart.o
+ obj-$(CONFIG_SERIAL_RDA)	+= rda-uart.o
+ obj-$(CONFIG_SERIAL_MILBEAUT_USIO) += milbeaut_usio.o
+ obj-$(CONFIG_SERIAL_SIFIVE)	+= sifive.o
++obj-$(CONFIG_SERIAL_PS2_UART)	+= ps2_uart.o
+ 
+ # GPIOLIB helpers for modem control lines
+ obj-$(CONFIG_SERIAL_MCTRL_GPIO)	+= serial_mctrl_gpio.o
+diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
+index 79b2e79dddd0674b83d0406c41edb183dc85557e..58f5c717595774bbbd3d59166c606dbf06e5da4c 100644
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -547,6 +547,14 @@ config USB_OHCI_EXYNOS
+ 	help
+ 	 Enable support for the Samsung Exynos SOC's on-chip OHCI controller.
+ 
++config USB_OHCI_HCD_PS2
++	tristate "OHCI support for the Sony PlayStation 2"
++	depends on SONY_PS2
++	select GENERIC_ALLOCATOR
++	default y
++	help
++	 Enable support for the Sony PlayStation 2 OHCI controller.
++
+ config USB_CNS3XXX_OHCI
+ 	bool "Cavium CNS3XXX OHCI Module (DEPRECATED)"
+ 	depends on ARCH_CNS3XXX
+diff --git a/drivers/usb/host/Makefile b/drivers/usb/host/Makefile
+index b191361257cc5d0d738624edd744a68bcb5d4b3e..e68cbf21e8abb9f09789e1c20b23ae7457b6638b 100644
+--- a/drivers/usb/host/Makefile
++++ b/drivers/usb/host/Makefile
+@@ -66,6 +66,7 @@ obj-$(CONFIG_USB_OHCI_HCD_S3C2410)	+= ohci-s3c2410.o
+ obj-$(CONFIG_USB_OHCI_HCD_LPC32XX)	+= ohci-nxp.o
+ obj-$(CONFIG_USB_OHCI_HCD_PXA27X)	+= ohci-pxa27x.o
+ obj-$(CONFIG_USB_OHCI_HCD_DAVINCI)	+= ohci-da8xx.o
++obj-$(CONFIG_USB_OHCI_HCD_PS2)	+= ohci-ps2.o
+ 
+ obj-$(CONFIG_USB_UHCI_HCD)	+= uhci-hcd.o
+ obj-$(CONFIG_USB_FHCI_HCD)	+= fhci.o
+diff --git a/drivers/video/fbdev/Kconfig b/drivers/video/fbdev/Kconfig
+index a7e5f12687b70a612f06c52cdc064133901ffae8..6bea8addc584d50af8d3ed78dfe5ae592b8ae90c 100644
+--- a/drivers/video/fbdev/Kconfig
++++ b/drivers/video/fbdev/Kconfig
+@@ -1985,6 +1985,18 @@ config FB_IBM_GXT4500
+ 	  doesn't use Geometry Engine GT1000. This driver also supports
+ 	  AGP Fire GL2/3/4 cards on x86.
+ 
++# FIXME FB_SYS_*
++config FB_PS2
++	tristate "Frame buffer driver for Sony Playstation 2"
++	depends on FB && SONY_PS2
++	select PS2_GS
++	select FB_TILEBLITTING
++	default y
++	help
++	  Frame buffer driver for the Sony Playstation 2 Graphics Synthesizer.
++	  Memory mapping is not supported since the frame buffer is local to
++	  the GS.
++
+ config FB_PS3
+ 	tristate "PS3 GPU framebuffer driver"
+ 	depends on FB && PS3_PS3AV
+diff --git a/drivers/video/fbdev/Makefile b/drivers/video/fbdev/Makefile
+index aa6352798cf4ef7f8a93a45e8f181a4066af2ad5..2f01db73400a231f258ae76f6ebb760bd7029691 100644
+--- a/drivers/video/fbdev/Makefile
++++ b/drivers/video/fbdev/Makefile
+@@ -105,6 +105,7 @@ obj-$(CONFIG_FB_S3C2410)	  += s3c2410fb.o
+ obj-$(CONFIG_FB_FSL_DIU)	  += fsl-diu-fb.o
+ obj-$(CONFIG_FB_COBALT)           += cobalt_lcdfb.o
+ obj-$(CONFIG_FB_IBM_GXT4500)	  += gxt4500.o
++obj-$(CONFIG_FB_PS2)		  += ps2fb.o
+ obj-$(CONFIG_FB_PS3)		  += ps3fb.o
+ obj-$(CONFIG_FB_SM501)            += sm501fb.o
+ obj-$(CONFIG_FB_UDL)		  += udlfb.o
+diff --git a/fs/io_uring.c b/fs/io_uring.c
+index e8df6345a812d29756161fde54acf0e1f95feeae..b63f5c37fd17088db4ff09fa8b560685f168c44b 100644
+--- a/fs/io_uring.c
++++ b/fs/io_uring.c
+@@ -1908,9 +1908,6 @@ static int io_poll_add(struct io_kiocb *req, const struct io_uring_sqe *sqe)
+ 	__poll_t mask;
+ 	u16 events;
+ 
+-	if (req->file->f_op->may_pollfree)
+-		return -EOPNOTSUPP;
+-
+ 	if (unlikely(req->ctx->flags & IORING_SETUP_IOPOLL))
+ 		return -EINVAL;
+ 	if (sqe->addr || sqe->ioprio || sqe->off || sqe->len || sqe->buf_index)
+diff --git a/fs/signalfd.c b/fs/signalfd.c
+index c3415d969ecfc3814184d725f0fc6bb3d77d443f..3e94d181930fdd0042aa2069230d20ddb31d5698 100644
+--- a/fs/signalfd.c
++++ b/fs/signalfd.c
+@@ -248,7 +248,6 @@ static const struct file_operations signalfd_fops = {
+ 	.poll		= signalfd_poll,
+ 	.read		= signalfd_read,
+ 	.llseek		= noop_llseek,
+-	.may_pollfree	= true,
+ };
+ 
+ static int do_signalfd4(int ufd, sigset_t *mask, int flags)
+diff --git a/include/linux/console_struct.h b/include/linux/console_struct.h
+index 717f51e1b1dfa3947e579d3d5fb61f922a003ee6..5031065425576b38a42ada4971856b769ad11edd 100644
+--- a/include/linux/console_struct.h
++++ b/include/linux/console_struct.h
+@@ -13,9 +13,11 @@
+ #ifndef _LINUX_CONSOLE_STRUCT_H
+ #define _LINUX_CONSOLE_STRUCT_H
+ 
++#include <linux/tty.h>
+ #include <linux/wait.h>
+ #include <linux/vt.h>
+ #include <linux/workqueue.h>
++#include <uapi/linux/kd.h>
+ 
+ struct uni_pagedir;
+ struct uni_screen;
+diff --git a/include/linux/fb.h b/include/linux/fb.h
+index 8221838fefd9822ad82282f4f502a7759d5b5157..df4512e5c405d776bb3f2cdc01b3e843a89e733e 100644
+--- a/include/linux/fb.h
++++ b/include/linux/fb.h
+@@ -809,6 +809,8 @@ extern int fb_find_mode(struct fb_var_screeninfo *var,
+ 	pr_notice("fb%d: " fmt, (fb_info)->node, ##__VA_ARGS__)
+ #define fb_warn(fb_info, fmt, ...)					\
+ 	pr_warn("fb%d: " fmt, (fb_info)->node, ##__VA_ARGS__)
++#define fb_warn_once(fb_info, fmt, ...)					\
++	pr_warn_once("fb%d: " fmt, (fb_info)->node, ##__VA_ARGS__)
+ #define fb_info(fb_info, fmt, ...)					\
+ 	pr_info("fb%d: " fmt, (fb_info)->node, ##__VA_ARGS__)
+ #define fb_dbg(fb_info, fmt, ...)					\
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 4ecbe12f6215203de7287a99e8efcec6b05f5aa9..ef118b8ba6993158c3550ce191b1bb5d2d8af82a 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1859,7 +1859,6 @@ struct file_operations {
+ 				   struct file *file_out, loff_t pos_out,
+ 				   loff_t len, unsigned int remap_flags);
+ 	int (*fadvise)(struct file *, loff_t, loff_t, int);
+-	bool may_pollfree;
+ } __randomize_layout;
+ 
+ struct inode_operations {
+diff --git a/include/linux/kernel.h b/include/linux/kernel.h
+index 77c86a2236daf25ad3cd434cf8d4bd835422dbc4..7ab87b9ed6a4707b441b53e2d6f93e1f5dae835a 100644
+--- a/include/linux/kernel.h
++++ b/include/linux/kernel.h
+@@ -975,9 +975,15 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
+ #define swap(a, b) \
+ 	do { typeof(a) __tmp = (a); (a) = (b); (b) = __tmp; } while (0)
+ 
+-/* This counts to 12. Any more, it will return 13th argument. */
+-#define __COUNT_ARGS(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _n, X...) _n
+-#define COUNT_ARGS(X...) __COUNT_ARGS(, ##X, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
++/* This counts to 32. Any more, it will return the 33rd argument. */
++#define __COUNT_ARGS(							\
++	 _0,  _1,  _2,  _3,  _4,  _5,  _6,  _7,  _8,  _9, _10,		\
++	_11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21,		\
++	_22, _23, _24, _25, _26, _27, _28, _29, _30, _31, _32, _n, X...) _n
++#define COUNT_ARGS(X...) __COUNT_ARGS(, ##X,				\
++	32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22,			\
++	21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11,			\
++	10,  9,  8,  7,  6,  5,  4,  3,  2,  1,  0)
+ 
+ #define __CONCAT(a, b) a ## b
+ #define CONCATENATE(a, b) __CONCAT(a, b)
+diff --git a/include/linux/workqueue.h b/include/linux/workqueue.h
+index 4261d1c6e87b1a24fafa650dab1c1092cdbcd926..887f0b94d6e993b708195e558135a12e5db2d90b 100644
+--- a/include/linux/workqueue.h
++++ b/include/linux/workqueue.h
+@@ -73,7 +73,6 @@ enum {
+ 	WORK_OFFQ_FLAG_BASE	= WORK_STRUCT_COLOR_SHIFT,
+ 
+ 	__WORK_OFFQ_CANCELING	= WORK_OFFQ_FLAG_BASE,
+-	WORK_OFFQ_CANCELING	= (1 << __WORK_OFFQ_CANCELING),
+ 
+ 	/*
+ 	 * When a work item is off queue, its high bits point to the last
+@@ -84,12 +83,6 @@ enum {
+ 	WORK_OFFQ_POOL_SHIFT	= WORK_OFFQ_FLAG_BASE + WORK_OFFQ_FLAG_BITS,
+ 	WORK_OFFQ_LEFT		= BITS_PER_LONG - WORK_OFFQ_POOL_SHIFT,
+ 	WORK_OFFQ_POOL_BITS	= WORK_OFFQ_LEFT <= 31 ? WORK_OFFQ_LEFT : 31,
+-	WORK_OFFQ_POOL_NONE	= (1LU << WORK_OFFQ_POOL_BITS) - 1,
+-
+-	/* convenience constants */
+-	WORK_STRUCT_FLAG_MASK	= (1UL << WORK_STRUCT_FLAG_BITS) - 1,
+-	WORK_STRUCT_WQ_DATA_MASK = ~WORK_STRUCT_FLAG_MASK,
+-	WORK_STRUCT_NO_POOL	= (unsigned long)WORK_OFFQ_POOL_NONE << WORK_OFFQ_POOL_SHIFT,
+ 
+ 	/* bit mask for work_busy() return values */
+ 	WORK_BUSY_PENDING	= 1 << 0,
+@@ -99,6 +92,14 @@ enum {
+ 	WORKER_DESC_LEN		= 24,
+ };
+ 
++/* Convenience constants - of type 'unsigned long', not 'enum'! */
++#define WORK_OFFQ_CANCELING	(1ul << __WORK_OFFQ_CANCELING)
++#define WORK_OFFQ_POOL_NONE	((1ul << WORK_OFFQ_POOL_BITS) - 1)
++#define WORK_STRUCT_NO_POOL	(WORK_OFFQ_POOL_NONE << WORK_OFFQ_POOL_SHIFT)
++
++#define WORK_STRUCT_FLAG_MASK    ((1ul << WORK_STRUCT_FLAG_BITS) - 1)
++#define WORK_STRUCT_WQ_DATA_MASK (~WORK_STRUCT_FLAG_MASK)
++
+ struct work_struct {
+ 	atomic_long_t data;
+ 	struct list_head entry;
+diff --git a/include/uapi/drm/drm_mode.h b/include/uapi/drm/drm_mode.h
+index 735c8cfdaaa145b7535b4ca0a2145158f2e567dc..bfca91052ae8b13107c70b17b5c49d802177e523 100644
+--- a/include/uapi/drm/drm_mode.h
++++ b/include/uapi/drm/drm_mode.h
+@@ -134,6 +134,7 @@ extern "C" {
+ 				 DRM_MODE_FLAG_PCSYNC |		\
+ 				 DRM_MODE_FLAG_NCSYNC |		\
+ 				 DRM_MODE_FLAG_HSKEW |		\
++				 DRM_MODE_FLAG_BCAST |		\
+ 				 DRM_MODE_FLAG_DBLCLK |		\
+ 				 DRM_MODE_FLAG_CLKDIV2 |	\
+ 				 DRM_MODE_FLAG_3D_MASK)
+diff --git a/include/uapi/linux/fb.h b/include/uapi/linux/fb.h
+index b6aac7ee1f670c231aac75a5da7e1ca4e9a567a0..38d88eebf65126dd5172b74322069ff9be30773b 100644
+--- a/include/uapi/linux/fb.h
++++ b/include/uapi/linux/fb.h
+@@ -149,6 +149,7 @@
+ #define FB_ACCEL_SUPERSAVAGE    0x8c    /* S3 Supersavage               */
+ #define FB_ACCEL_PROSAVAGE_DDR  0x8d	/* S3 ProSavage DDR             */
+ #define FB_ACCEL_PROSAVAGE_DDRK 0x8e	/* S3 ProSavage DDR-K           */
++#define FB_ACCEL_PLAYSTATION_2  0x8f	/* PlayStation 2                */
+ 
+ #define FB_ACCEL_PUV3_UNIGFX	0xa0	/* PKUnity-v3 Unigfx		*/
+ 
+diff --git a/include/uapi/linux/serial_core.h b/include/uapi/linux/serial_core.h
+index e7fe550b6038afeda29b4d8f29f8386f142ae46d..6ead3ceeccd76ff83befda68c0076176bfe82038 100644
+--- a/include/uapi/linux/serial_core.h
++++ b/include/uapi/linux/serial_core.h
+@@ -293,4 +293,7 @@
+ /* Freescale Linflex UART */
+ #define PORT_LINFLEXUART	122
+ 
++/* PlayStation 2 EE UART */
++#define PORT_PS2_UART	123
++
+ #endif /* _UAPILINUX_SERIAL_CORE_H */
+diff --git a/kernel/extable.c b/kernel/extable.c
+index f6c9406eec7db9cf478f9509d482f16d4164ce57..14bda7cab65f0af945c632071b9101446f72c42f 100644
+--- a/kernel/extable.c
++++ b/kernel/extable.c
+@@ -34,7 +34,8 @@ u32 __initdata __visible main_extable_sort_needed = 1;
+ /* Sort the kernel's built-in exception table */
+ void __init sort_main_extable(void)
+ {
+-	if (main_extable_sort_needed && __stop___ex_table > __start___ex_table) {
++	if (main_extable_sort_needed &&
++	    &__stop___ex_table > &__start___ex_table) {
+ 		pr_notice("Sorting __ex_table...\n");
+ 		sort_extable(__start___ex_table, __stop___ex_table);
+ 	}
+diff --git a/kernel/workqueue.c b/kernel/workqueue.c
+index dd96391b44de08bda639e27e104535fd3c678598..856188b0681af7cf7d1bdf52fb38c4ba5ac7657a 100644
+--- a/kernel/workqueue.c
++++ b/kernel/workqueue.c
+@@ -684,12 +684,17 @@ static void clear_work_data(struct work_struct *work)
+ 	set_work_data(work, WORK_STRUCT_NO_POOL, 0);
+ }
+ 
++static inline struct pool_workqueue *work_struct_pwq(unsigned long data)
++{
++	return (struct pool_workqueue *)(data & WORK_STRUCT_WQ_DATA_MASK);
++}
++
+ static struct pool_workqueue *get_work_pwq(struct work_struct *work)
+ {
+ 	unsigned long data = atomic_long_read(&work->data);
+ 
+ 	if (data & WORK_STRUCT_PWQ)
+-		return (void *)(data & WORK_STRUCT_WQ_DATA_MASK);
++		return work_struct_pwq(data);
+ 	else
+ 		return NULL;
+ }
+@@ -717,8 +722,7 @@ static struct worker_pool *get_work_pool(struct work_struct *work)
+ 	assert_rcu_or_pool_mutex();
+ 
+ 	if (data & WORK_STRUCT_PWQ)
+-		return ((struct pool_workqueue *)
+-			(data & WORK_STRUCT_WQ_DATA_MASK))->pool;
++		return work_struct_pwq(data)->pool;
+ 
+ 	pool_id = data >> WORK_OFFQ_POOL_SHIFT;
+ 	if (pool_id == WORK_OFFQ_POOL_NONE)
+@@ -739,8 +743,7 @@ static int get_work_pool_id(struct work_struct *work)
+ 	unsigned long data = atomic_long_read(&work->data);
+ 
+ 	if (data & WORK_STRUCT_PWQ)
+-		return ((struct pool_workqueue *)
+-			(data & WORK_STRUCT_WQ_DATA_MASK))->pool->id;
++		return work_struct_pwq(data)->pool->id;
+ 
+ 	return data >> WORK_OFFQ_POOL_SHIFT;
+ }
+diff --git a/scripts/extract-cert.c b/scripts/extract-cert.c
+index b071bf476fea7ede6aab95730f5844ac1bf5caa5..dd1a4bd706a2e7e4403ad8391ab57d0f62cba41a 100644
+--- a/scripts/extract-cert.c
++++ b/scripts/extract-cert.c
+@@ -23,6 +23,13 @@
+ #include <openssl/err.h>
+ #include <openssl/engine.h>
+ 
++/*
++ * OpenSSL 3.0 deprecates the OpenSSL's ENGINE API.
++ *
++ * Remove this if/when that API is no longer used
++ */
++#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
++
+ #define PKEY_ID_PKCS7 2
+ 
+ static __attribute__((noreturn))
+diff --git a/scripts/sign-file.c b/scripts/sign-file.c
+index fbd34b8e8f578aba003533348c907899779fb62c..7434e9ea926e2ab44b6c1b683c677340ee0c0f8e 100644
+--- a/scripts/sign-file.c
++++ b/scripts/sign-file.c
+@@ -29,6 +29,13 @@
+ #include <openssl/err.h>
+ #include <openssl/engine.h>
+ 
++/*
++ * OpenSSL 3.0 deprecates the OpenSSL's ENGINE API.
++ *
++ * Remove this if/when that API is no longer used
++ */
++#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
++
+ /*
+  * Use CMS if we have openssl-1.0.0 or newer available - otherwise we have to
+  * assume that it's not available and its header file is missing and that we

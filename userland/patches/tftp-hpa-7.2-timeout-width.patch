@@ -1,0 +1,28 @@
+--- a/tftp/tftp.c
++++ b/tftp/tftp.c
+@@ -278,11 +278,11 @@
+     int n, size;
+     volatile int err = 0;
+     bool convert = !strcmp(mode, "netascii");
+     struct optreq optreq, optack;
+     uint16_t ap_opcode, ap_block;
+-    unsigned long r_timeout;
++    uintmax_t r_timeout;
+     volatile uintmax_t amount = 0;
+     struct stat st;
+ 
+     optreq_init(&optreq);
+     optreq_init(&optack);
+@@ -446,11 +446,11 @@
+     int n, size;
+     volatile int err = 0;
+     bool convert = !strcmp(mode, "netascii");
+     struct optreq optreq, optack;
+     uint16_t opcode;
+-    unsigned long r_timeout;
++    uintmax_t r_timeout;
+     volatile uintmax_t amount = 0;
+ 
+     optreq_init(&optreq);
+     optreq.tsize = 0;
+ 

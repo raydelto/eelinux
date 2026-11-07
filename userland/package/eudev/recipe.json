@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "name": "eudev",
+  "engine": "Buildroot 2025.02.18 external tree",
+  "manifest_entry": "configs/packages.json:packages.eudev",
+  "symbol": "BR2_PACKAGE_EUDEV",
+  "version": "3.2.14",
+  "recipe": "package/eudev/eudev.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "8da4319102f24abbf7fff5ce9c416af848df163b29590e666d334cc1927f006f",
+      "filename": "eudev-3.2.14.tar.gz"
+    }
+  ]
+}

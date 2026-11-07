@@ -1,0 +1,32 @@
+From: Federico Terraneo <fede.tft@miosix.org>
+Subject: [eeLinux] libatomic: provide the no-instruction test-and-set fallback
+
+Based on the proposed upstream fix for GCC PR122078:
+https://gcc.gnu.org/pipermail/gcc-patches/2025-November/699826.html
+The release archive still lacks this alias. Export it in the version map too,
+so both static and shared libatomic provide GCC's fallback symbol. Preserve
+the existing suffixed implementation and all its locking/memory-order rules.
+
+--- a/libatomic/tas_n.c
++++ b/libatomic/tas_n.c
+@@ -115,3 +115,10 @@
+ 
+ EXPORT_ALIAS (SIZE(test_and_set));
+ #undef LAT_TAS_N
++
++/* Provide the fallback emitted by GCC when test-and-set cannot be inlined.
++   Based on the proposed upstream fix for PR122078.  */
++#if N == 1 && !SIZE(HAVE_ATOMIC_TAS)
++extern bool __atomic_test_and_set (volatile void *mptr, int smodel)
++  __attribute__((alias("libat_test_and_set_1")));
++#endif
+--- a/libatomic/libatomic.map
++++ b/libatomic/libatomic.map
+@@ -104,6 +104,7 @@
+ 	atomic_thread_fence;
+ 	atomic_signal_fence;
+ 	atomic_flag_test_and_set;
++	__atomic_test_and_set;
+ 	atomic_flag_test_and_set_explicit;
+ 	atomic_flag_clear;
+ 	atomic_flag_clear_explicit;

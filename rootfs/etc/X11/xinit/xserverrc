@@ -1,0 +1,15 @@
+#!/bin/bash
+set -eu
+[[ -n ${HOME:-} && -d $HOME ]] || { printf 'A login home directory is required.\n' >&2; exit 1; }
+[[ $(id -u) == 0 ]] || { printf 'Start this framebuffer desktop from the root console login.\n' >&2; exit 1; }
+[[ -r /dev/fb0 && -w /dev/fb0 ]] || { printf 'PS2 framebuffer /dev/fb0 is unavailable.\n' >&2; exit 1; }
+[[ -r /usr/lib/xorg/modules/drivers/ps2_drv.so ]] || {
+    printf 'The native PS2 Xorg drawing module is missing from this image.\n' >&2
+    exit 1
+}
+umask 077
+mkdir -p /run/ps2-xorg
+/usr/lib/eelinux/ps2-xorg-prepare /etc/X11/xorg.conf /run/ps2-xorg/xorg.conf
+# Prefer the input/display server while applications compete for the single EE CPU.
+# Keep normal time-sharing and the current framebuffer timing.
+exec /usr/bin/nice -n -5 /usr/bin/Xorg "$@" -config /run/ps2-xorg/xorg.conf -fp /usr/share/fonts/X11/misc -nolisten tcp -noreset

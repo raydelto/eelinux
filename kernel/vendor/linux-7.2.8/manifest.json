@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "repository": "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git",
+  "version": "7.2.8",
+  "archive": "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.2.8.tar.xz",
+  "archive_sha256": "12e8d5a973d1ad7c5a5c69882e4022b131ed715db7003fdcd760ddf8c3e51941",
+  "purpose": "unmodified modern cache, CPU probe and TLB references with original licenses for focused forward-port validation",
+  "files": [
+    {
+      "path": "arch/mips/include/asm/r4kcache.h",
+      "bytes": 11468,
+      "sha256": "385933d4dbd120bcbfbff6dd691b2551a95d1f3ea33a347d677067320d07a705"
+    },
+    {
+      "path": "COPYING",
+      "bytes": 496,
+      "sha256": "fb5a425bd3b3cd6071a3a9aff9909a859e7c1158d54d32e07658398cd67eb6a0"
+    },
+    {
+      "path": "LICENSES/preferred/GPL-2.0",
+      "bytes": 18600,
+      "sha256": "8780e78a1a737e127f25a65f6d95269bffd36158dc261114de7859b490bfc5aa"
+    },
+    {
+      "path": "arch/mips/kernel/cpu-probe.c",
+      "bytes": 53635,
+      "sha256": "51483fb344916bc0a467cd1101a38c97bbea1846cbb32329c3e6b33a3fcd360e"
+    },
+    {
+      "path": "arch/mips/mm/tlb-r4k.c",
+      "bytes": 21459,
+      "sha256": "6e202ab61a8da57dbd4578ac5bd1a7ee1f9d7996efa601ebf761020bcb3f73a6"
+    }
+  ]
+}

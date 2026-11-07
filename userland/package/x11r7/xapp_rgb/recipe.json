@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_rgb",
+  "kind": "application",
+  "program": "rgb",
+  "version": "1.1.1",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/rgb-1.1.1.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/rgb-1.1.1.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "c80ff280a02f56c30fadc2dfa210fc6979c4ab968afa315278cb97768b64ecab",
+      "filename": "rgb-1.1.1.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "8dd40232e149105d680b5689875da8e7444942265b4f64c4f91a5018193d0eb92af4035e51c6457ea57262fe2cab39d85024f70f3f649e17af78644f00a1d0ae",
+      "filename": "rgb-1.1.1.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

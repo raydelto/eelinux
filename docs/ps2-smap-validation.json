@@ -1,0 +1,123 @@
+{
+  "date": "2026-10-03",
+  "driver_name": "ps2-smap",
+  "default_transport": "IOP SMAP / SIF",
+  "kernel_sha256": "14851357211089de33168445709c66774587dd76ad51f8e5019db06dc595e246",
+  "USB_sha256": "85b6c87b0f43ecfa10d9bae2f73658b3f3bba8d1a911d6b89103c5ae98dc7e85",
+  "rootfs_sha256": "7616cca89d9d39566d94fa7eaf8a28b848e6c4ff6592ec72991ba97a14807eb8",
+  "complete_USB_image_bytes": 135266304,
+  "matched_ELF_FAT32_ext4": true,
+  "compiled_driver_matches_reviewed_source": true,
+  "embedded_IOP_firmware_matches_reviewed_build": true,
+  "firmware_manifest_sha256": "34966206d7b87a2526f8df582474c0d873b059a1e8adb4ce57e16f9465ad88fa",
+  "root_password_eelinux_host_crypt_match": true,
+  "wrong_password_rejected": true,
+  "credential_mode_checks": true,
+  "GNU_dynamic_init_and_loader_retained": true,
+  "GNU_command_count": 200,
+  "release_contains_private_probes_or_BusyBox": false,
+  "USB_storage_input_and_SMAP_built_in": true,
+  "USB_network_drivers_disabled": true,
+  "normal_console_session_updated": true,
+  "guest_checks": {
+    "ps2: native SMAP IOP transport": true,
+    "IOP/SIF transport": true,
+    "dynamic_loader_stress=PASS executions=32": true,
+    "keyboard probe: overall=PASS": true,
+    "automatic_IPv4": true,
+    "external_ping_result=0": true,
+    "DNS_lookup_result=0": true,
+    "manual_default_config_rebind_result=0": true,
+    "final_rx_errors=0": true,
+    "final_tx_errors=0": true,
+    "video probe: overall=PASS": true,
+    "CP0 probe: complete": true
+  },
+  "guest_log_sha256": "4ef59f6e98fcd1596372e203a6ea4b3d8fa4bf430ebe0ad643a855f98d6b02f6",
+  "host_checks": {
+    "date": "2026-10-03",
+    "command": "make check",
+    "exit_code": 0,
+    "suite_counts": [
+      208,
+      31
+    ],
+    "total_tests": 239,
+    "imported_files": 437
+  },
+  "generic_patch_exports": 19,
+  "physical_drive_flashed": false,
+  "physical_network_acceptance": "SCPH-90001 dynamic IPv4, external ICMP and DNS user-confirmed; other models and sustained traffic pending",
+  "physical_network_evidence": {
+    "date": "2026-10-03",
+    "source": "user confirmation and photograph of the real PS2 console, followed by user-reported hostname ping and kernel error-log check",
+    "machine": "SCPH-90001",
+    "machine_identification_source": "user's earlier model confirmation in this session",
+    "candidate_delivery": {
+      "driver_name": "ps2-smap",
+      "default_transport": "IOP SMAP / SIF",
+      "kernel_sha256": "14851357211089de33168445709c66774587dd76ad51f8e5019db06dc595e246",
+      "kernel_hash_measured_on_console": false,
+      "association": "user reported success after delivery of this candidate; the photograph does not show a kernel hash or driver identity query"
+    },
+    "authenticated_root_shell_observed": true,
+    "interfaces_observed": [
+      "lo",
+      "eth0"
+    ],
+    "ethernet": {
+      "interface": "eth0",
+      "flags_observed": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "mtu": 1500,
+      "address": "192.168.2.112/24",
+      "address_scope": "global dynamic",
+      "dhcpcd_version_observed": "10.5.2"
+    },
+    "external_ping": {
+      "destination": "8.8.8.8",
+      "packets_transmitted": 4,
+      "packets_received": 4,
+      "packet_loss_percent": 0,
+      "reply_ttl": 116,
+      "rtt_ms": {
+        "min": 21.046,
+        "avg": 29.618,
+        "max": 55.069,
+        "mdev": 14.694
+      }
+    },
+    "physical_ethernet_packets_confirmed": true,
+    "dynamic_IPv4_configuration_observed": true,
+    "routed_external_ICMP_confirmed": true,
+    "hostname_ping": {
+      "destination": "gnu.org",
+      "successful": true,
+      "source": "user follow-up report; packet counts and timings were not supplied"
+    },
+    "kernel_error_log_check": {
+      "command": "dmesg -l err",
+      "messages_reported": 0,
+      "source": "user follow-up report",
+      "scope": "No messages returned by the err severity filter; other severity levels were not assessed by this check"
+    },
+    "physical_DNS_confirmed": true,
+    "other_models_confirmed": [],
+    "qualification_remaining": [
+      "Other Slim revisions, official Fat Network Adaptor and early PCMCIA models",
+      "Sustained bidirectional throughput and packet loss",
+      "Cable removal, PHY renegotiation and reset recovery",
+      "Concurrent ATA and USB traffic"
+    ]
+  },
+  "limitations": [
+    "Polling throughput and cable/reset recovery need physical qualification",
+    "UK map ioctl checks do not establish physical keyboard scan codes",
+    "Existing platform import gate remains incomplete"
+  ],
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xwd",
+  "kind": "application",
+  "program": "xwd",
+  "version": "1.0.10",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xwd-1.0.10.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xwd-1.0.10.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "4909eacc26c4cd5a9afcd1468aec26e7c646544639031bdad4f71173aa82f3c3",
+      "filename": "xwd-1.0.10.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "93be318bbc3d305f7786c9964376536f990b7172d0800193573697442770cf7ca47ef20d869af0c365b894ef41cc8721fd0a6d6b439fd95bf9ebf7859e2d96d6",
+      "filename": "xwd-1.0.10.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

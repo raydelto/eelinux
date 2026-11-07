@@ -1,0 +1,450 @@
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_gs_client.c
+@@ -0,0 +1,189 @@
++/* SPDX-License-Identifier: MIT */
++#define _POSIX_C_SOURCE 200809L
++#include "ps2_gs_client.h"
++#include <errno.h>
++#include <fcntl.h>
++#include <stddef.h>
++#include <string.h>
++#include <sys/ioctl.h>
++#include <time.h>
++#include <unistd.h>
++
++_Static_assert(sizeof(struct ps2gs_caps) == 80, "GS capability ABI");
++_Static_assert(sizeof(struct ps2gs_submit) == 32, "GS submission ABI");
++_Static_assert(sizeof(struct ps2gs_command) == 64, "GS command ABI");
++_Static_assert(sizeof(struct ps2gs_upload) == 48, "GS image upload ABI");
++
++static int fail(struct ps2_gs_client *gs, int error)
++{
++    if (!gs->error) gs->error = error;
++    gs->count = 0;
++    errno = gs->error;
++    return -1;
++}
++
++static int request(struct ps2_gs_client *gs, unsigned long operation, void *data)
++{
++    for (unsigned retry = 0; retry < 100; ++retry) {
++        if (!ioctl(gs->fd, operation, data)) return 0;
++        /* EAGAIN is the driver's pre-submission console-lock contention.
++         * Other errors may follow drawing, so do not retry them. */
++        if (errno != EAGAIN) return fail(gs, errno);
++        struct timespec delay = { .tv_nsec = 10000000 };
++        while (nanosleep(&delay, &delay) < 0) {
++            if (errno != EINTR) return fail(gs, errno);
++        }
++    }
++    return fail(gs, EAGAIN);
++}
++
++int ps2_gs_open(struct ps2_gs_client *gs, const char *device)
++{
++    memset(gs, 0, sizeof(*gs));
++    gs->fd = open(device, O_RDWR | O_CLOEXEC);
++    if (gs->fd < 0) return fail(gs, errno);
++    if (request(gs, PS2GS_GET_CAPS, &gs->caps)) goto error;
++    if (gs->caps.abi != PS2GS_ABI_VERSION || !gs->caps.width ||
++        !gs->caps.height || gs->caps.width > 2048 || gs->caps.height > 2048 ||
++        (gs->caps.bits_per_pixel != 16 && gs->caps.bits_per_pixel != 32) ||
++        gs->caps.max_commands != PS2GS_MAX_COMMANDS ||
++        (gs->caps.features & (PS2GS_HW_FILL | PS2GS_HW_COPY | PS2GS_HW_TRIANGLE)) !=
++            (PS2GS_HW_FILL | PS2GS_HW_COPY | PS2GS_HW_TRIANGLE)) {
++        fail(gs, ENOTSUP);
++        goto error;
++    }
++    return 0;
++error:
++    close(gs->fd); gs->fd = -1; errno = gs->error; return -1;
++}
++
++void ps2_gs_close(struct ps2_gs_client *gs)
++{
++    /* Closing a failed session discards its queue. It never draws implicitly. */
++    if (gs->fd >= 0) close(gs->fd);
++    gs->fd = -1; gs->count = 0;
++}
++
++int ps2_gs_flush(struct ps2_gs_client *gs)
++{
++    if (gs->error) return fail(gs, gs->error);
++    if (gs->fd < 0) return fail(gs, EBADF);
++    if (!gs->count) return 0;
++    struct ps2gs_submit submit = { .abi = gs->caps.abi, .count = gs->count,
++        .width = gs->caps.width, .height = gs->caps.height,
++        .bits_per_pixel = gs->caps.bits_per_pixel,
++        .commands = (uintptr_t)gs->commands };
++    if (request(gs, PS2GS_SUBMIT, &submit)) return -1;
++    gs->count = 0;
++    return 0;
++}
++
++static int enqueue(struct ps2_gs_client *gs, struct ps2gs_command command)
++{
++    if (gs->error) return fail(gs, gs->error);
++    if (gs->fd < 0) return fail(gs, EBADF);
++    if (gs->count == PS2GS_MAX_COMMANDS && ps2_gs_flush(gs)) return -1;
++    gs->commands[gs->count++] = command;
++    return 0;
++}
++
++static int rectangle(struct ps2_gs_client *gs, unsigned x, unsigned y,
++                     unsigned width, unsigned height)
++{
++    return width && height && x < gs->caps.width && y < gs->caps.height &&
++        width <= gs->caps.width - x && height <= gs->caps.height - y;
++}
++
++int ps2_gs_fill(struct ps2_gs_client *gs, unsigned x, unsigned y,
++               unsigned width, unsigned height, uint32_t rgba)
++{
++    if (!rectangle(gs, x, y, width, height)) return fail(gs, EINVAL);
++    return enqueue(gs, (struct ps2gs_command) { .op = PS2GS_FILL,
++        .width = width, .height = height,
++        .v = {{ .x = x * 16, .y = y * 16, .rgba = rgba }} });
++}
++
++int ps2_gs_copy(struct ps2_gs_client *gs, unsigned sx, unsigned sy,
++               unsigned dx, unsigned dy, unsigned width, unsigned height)
++{
++    if (!rectangle(gs, sx, sy, width, height) || !rectangle(gs, dx, dy, width, height))
++        return fail(gs, EINVAL);
++    if (width % (gs->caps.bits_per_pixel == 16 ? 4 : 2)) return fail(gs, ENOTSUP);
++    return enqueue(gs, (struct ps2gs_command) { .op = PS2GS_COPY,
++        .width = width, .height = height,
++        .v = {{ .x = sx * 16, .y = sy * 16 }, { .x = dx * 16, .y = dy * 16 }} });
++}
++
++int ps2_gs_triangle(struct ps2_gs_client *gs, const struct ps2gs_vertex vertices[3], int depth)
++{
++    if (depth != 0 && depth != 1) return fail(gs, EINVAL);
++    if (depth && !(gs->caps.features & PS2GS_HW_DEPTH16)) return fail(gs, ENOTSUP);
++    for (unsigned i = 0; i < 3; ++i) {
++        if (vertices[i].x > gs->caps.width * 16 || vertices[i].y > gs->caps.height * 16 ||
++            vertices[i].z > 65535) return fail(gs, EINVAL);
++    }
++    struct ps2gs_command command = { .op = PS2GS_TRIANGLE,
++        .flags = depth ? PS2GS_DEPTH_TEST : 0 };
++    memcpy(command.v, vertices, sizeof(command.v));
++    return enqueue(gs, command);
++}
++
++int ps2_gs_clear_depth(struct ps2_gs_client *gs)
++{
++    if (!(gs->caps.features & PS2GS_HW_DEPTH16)) return fail(gs, ENOTSUP);
++    return enqueue(gs, (struct ps2gs_command) { .op = PS2GS_CLEAR_DEPTH });
++}
++
++int ps2_gs_upload(struct ps2_gs_client *gs, unsigned x, unsigned y,
++                  unsigned width, unsigned height, const void *pixels,
++                  size_t source_bytes, size_t stride)
++{
++    if (gs->error) return fail(gs, gs->error);
++    if (gs->fd < 0) return fail(gs, EBADF);
++    if (!(gs->caps.features & PS2GS_HW_UPLOAD)) return fail(gs, ENOTSUP);
++    if (!pixels || !rectangle(gs, x, y, width, height)) return fail(gs, EINVAL);
++    unsigned bpp = gs->caps.bits_per_pixel / 8;
++    size_t row = (size_t)width * bpp;
++    if (stride < row || (height > 1 && stride > (SIZE_MAX - row) / (height - 1)))
++        return fail(gs, EINVAL);
++    size_t required = (height - 1) * stride + row;
++    if (source_bytes < required || (uintptr_t)pixels > UINTPTR_MAX - (required - 1))
++        return fail(gs, EINVAL);
++    if (ps2_gs_flush(gs)) return -1;
++    unsigned char packed[PS2GS_MAX_UPLOAD_BYTES];
++    /* Limit each ioctl, including wide rows. Padding from the source never
++     * reaches the GS, and all final quadword padding is done by the kernel. */
++    for (unsigned column = 0; column < width;) {
++        unsigned w = width - column;
++        if (w > PS2GS_MAX_UPLOAD_BYTES / bpp) w = PS2GS_MAX_UPLOAD_BYTES / bpp;
++        size_t packed_row = (size_t)w * bpp;
++        unsigned rows = PS2GS_MAX_UPLOAD_BYTES / packed_row;
++        for (unsigned line = 0; line < height;) {
++            unsigned h = height - line;
++            if (h > rows) h = rows;
++            for (unsigned i = 0; i < h; ++i)
++                memcpy(packed + i * packed_row,
++                    (const unsigned char *)pixels + (line + i) * stride + column * bpp,
++                    packed_row);
++            struct ps2gs_upload upload = { .abi = gs->caps.abi,
++                .width = gs->caps.width, .height = gs->caps.height,
++                .bits_per_pixel = gs->caps.bits_per_pixel,
++                .x = x + column, .y = y + line, .image_width = w, .image_height = h,
++                .bytes = h * packed_row, .pixels = (uintptr_t)packed };
++            if (request(gs, PS2GS_UPLOAD, &upload)) return -1;
++            line += h;
++        }
++        column += w;
++    }
++    return 0;
++}
++
++uint32_t ps2_gs_pixel_color(uint32_t pixel, unsigned bits_per_pixel)
++{
++    if (bits_per_pixel == 32) return 0x80000000 | (pixel & 0x00ffffff);
++    /* GS CT16 is RGB555, red in bits 0..4. This is not RGB565. */
++    unsigned r = ((pixel & 31) * 255 + 15) / 31;
++    unsigned g = (((pixel >> 5) & 31) * 255 + 15) / 31;
++    unsigned b = (((pixel >> 10) & 31) * 255 + 15) / 31;
++    return 0x80000000 | r | (g << 8) | (b << 16);
++}
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_gs_client.h
+@@ -0,0 +1,32 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_GS_CLIENT_H
++#define PS2_GS_CLIENT_H
++#include <stdint.h>
++#include <stddef.h>
++#include "ps2-gs.h"
++
++/* One drawing thread owns this queue. Failure is sticky: a partially executed
++ * hardware batch is never replayed and never replaced by CPU rasterization. */
++struct ps2_gs_client {
++    int fd, error;
++    unsigned count;
++    struct ps2gs_caps caps;
++    struct ps2gs_command commands[PS2GS_MAX_COMMANDS];
++};
++int ps2_gs_open(struct ps2_gs_client *, const char *device);
++void ps2_gs_close(struct ps2_gs_client *);
++int ps2_gs_flush(struct ps2_gs_client *);
++int ps2_gs_fill(struct ps2_gs_client *, unsigned x, unsigned y,
++               unsigned width, unsigned height, uint32_t rgba);
++int ps2_gs_copy(struct ps2_gs_client *, unsigned sx, unsigned sy,
++               unsigned dx, unsigned dy, unsigned width, unsigned height);
++int ps2_gs_triangle(struct ps2_gs_client *, const struct ps2gs_vertex vertices[3], int depth);
++int ps2_gs_clear_depth(struct ps2_gs_client *);
++/* Upload already existing native pixels. This is a hardware transfer, not a
++ * CPU renderer. Bounds cover all addressed rows, including caller padding.
++ * Queued drawing is fenced first. A partial upload failure is never replayed. */
++int ps2_gs_upload(struct ps2_gs_client *, unsigned x, unsigned y,
++                  unsigned width, unsigned height, const void *pixels,
++                  size_t source_bytes, size_t stride);
++uint32_t ps2_gs_pixel_color(uint32_t pixel, unsigned bits_per_pixel);
++#endif
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2-gs.h
+@@ -0,0 +1,73 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++/* Experimental bounded rendering ABI for the PS2 GS framebuffer.
++ * No raw GS register writes, DMA addresses or userspace MMIO are accepted.
++ * Rasterization always takes place in GS local memory. There is no CPU renderer.
++ */
++#ifndef _UAPI_PS2_GS_H
++#define _UAPI_PS2_GS_H
++#include <linux/types.h>
++#include <linux/ioctl.h>
++
++#define PS2GS_ABI_VERSION 1
++#define PS2GS_MAX_COMMANDS 64
++#define PS2GS_HW_FILL       (1U << 0)
++#define PS2GS_HW_COPY       (1U << 1)
++#define PS2GS_HW_TRIANGLE   (1U << 2)
++#define PS2GS_HW_DEPTH16    (1U << 3)
++#define PS2GS_HW_UPLOAD     (1U << 4)
++#define PS2GS_MAX_UPLOAD_BYTES 3072
++#define PS2GS_DEPTH_TEST    (1U << 0)
++
++enum ps2gs_operation {
++	PS2GS_FILL = 1, PS2GS_COPY, PS2GS_TRIANGLE, PS2GS_CLEAR_DEPTH
++};
++
++/* x/y are unsigned 12.4 window coordinates, z is a 16-bit depth value.
++ * Larger depth values are nearer. rgba is R | G<<8 | B<<16 | A<<24;
++ * GS opaque alpha is 128. Blending is not exposed by this ABI.
++ */
++struct ps2gs_vertex { __u32 x, y, z, rgba; };
++
++/* FILL: v[0] origin/color, width/height in pixels.
++ * COPY: v[0] source, v[1] destination, width/height in pixels.
++ * TRIANGLE: three vertices; width/height must be zero.
++ * CLEAR_DEPTH: all fields except op must be zero; clears depth to zero.
++ * All unused vertices/fields must be zero. Unsupported flags are errors.
++ */
++struct ps2gs_command {
++	__u32 op, flags;
++	struct ps2gs_vertex v[3];
++	__u32 width, height;
++};
++
++struct ps2gs_caps {
++	__u32 abi, features, width, height;
++	__u32 bits_per_pixel, max_commands, depth_base, depth_bytes;
++	__aligned_u64 completed_batches, fills, copies, triangles;
++	__aligned_u64 depth_clears, timeouts;
++};
++
++struct ps2gs_submit {
++	__u32 abi, count, width, height;
++	__u32 bits_per_pixel, reserved;
++	__aligned_u64 commands;
++};
++
++/* Packed native CT16/CT32 pixels, left to right, top to bottom. No row padding.
++ * The source is snapshotted before the first GS side effect. The destination
++ * is always the current framebuffer; users cannot select a VRAM address.
++ * CT16 is red-low RGB555/A1, CT32 is red-low RGBA8 (opaque GS alpha = 128).
++ * The final GIF quadword is zero padded by the kernel, never read from users.
++ * Mode identity and the feature bit allow old ABI-1 clients/kernels to coexist.
++ */
++struct ps2gs_upload {
++	__u32 abi, width, height, bits_per_pixel;
++	__u32 x, y, image_width, image_height;
++	__u32 bytes, reserved;
++	__aligned_u64 pixels;
++};
++
++#define PS2GS_GET_CAPS _IOR('G', 0x70, struct ps2gs_caps)
++#define PS2GS_SUBMIT   _IOW('G', 0x71, struct ps2gs_submit)
++#define PS2GS_UPLOAD   _IOW('G', 0x72, struct ps2gs_upload)
++#endif
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_exa.c
+@@ -0,0 +1,124 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_exa.h"
++#include "os.h"
++#include <errno.h>
++#include <string.h>
++
++static DevPrivateKeyRec ps2_exa_key;
++
++static struct ps2_exa *backend(PixmapPtr pixmap)
++{
++    return dixLookupPrivate(&pixmap->drawable.pScreen->devPrivates, &ps2_exa_key);
++}
++
++static Bool front(PixmapPtr pixmap)
++{
++    ScreenPtr screen = pixmap->drawable.pScreen;
++    struct ps2_exa *ps2 = backend(pixmap);
++    return ps2 && pixmap == screen->GetScreenPixmap(screen) &&
++        pixmap->drawable.width == ps2->gs->caps.width &&
++        pixmap->drawable.height == ps2->gs->caps.height &&
++        pixmap->drawable.bitsPerPixel == ps2->gs->caps.bits_per_pixel &&
++        pixmap->drawable.depth == (ps2->gs->caps.bits_per_pixel == 16 ? 15 : 24);
++}
++
++static void result(struct ps2_exa *ps2, int status)
++{
++    if (status) FatalError("PS2 GS drawing failed: %s; no CPU raster fallback\n", strerror(ps2->gs->error));
++}
++
++static Bool prepare_solid(PixmapPtr pixmap, int alu, Pixel mask, Pixel color)
++{
++    if (!front(pixmap) || alu != GXcopy ||
++        (mask & ((1UL << pixmap->drawable.depth) - 1)) != ((1UL << pixmap->drawable.depth) - 1))
++        return FALSE;
++    struct ps2_exa *ps2 = backend(pixmap);
++    ps2->color = ps2_gs_pixel_color(color, ps2->gs->caps.bits_per_pixel);
++    return TRUE;
++}
++
++static void solid(PixmapPtr pixmap, int x1, int y1, int x2, int y2)
++{
++    struct ps2_exa *ps2 = backend(pixmap);
++    if (x2 <= x1 || y2 <= y1) return;
++    if (x1 < 0 || y1 < 0) FatalError("PS2 GS: solid rectangle was not clipped\n");
++    result(ps2, ps2_gs_fill(ps2->gs, x1, y1, x2 - x1, y2 - y1, ps2->color));
++}
++
++static void done(PixmapPtr pixmap)
++{
++    struct ps2_exa *ps2 = backend(pixmap);
++    result(ps2, ps2_gs_flush(ps2->gs));
++}
++
++static Bool prepare_copy(PixmapPtr source, PixmapPtr destination, int xdir, int ydir, int alu, Pixel mask)
++{
++    (void)xdir; (void)ydir;
++    return source->drawable.pScreen == destination->drawable.pScreen &&
++        front(source) && front(destination) && alu == GXcopy &&
++        (mask & ((1UL << destination->drawable.depth) - 1)) == ((1UL << destination->drawable.depth) - 1);
++}
++
++static void copy(PixmapPtr pixmap, int sx, int sy, int dx, int dy, int width, int height)
++{
++    struct ps2_exa *ps2 = backend(pixmap);
++    if (width <= 0 || height <= 0) return;
++    if (sx < 0 || sy < 0 || dx < 0 || dy < 0) FatalError("PS2 GS: copy rectangle was not clipped\n");
++    result(ps2, ps2_gs_copy(ps2->gs, sx, sy, dx, dy, width, height));
++}
++
++static Bool prepare_access(PixmapPtr pixmap, int index)
++{
++    (void)pixmap; (void)index;
++    /* EXA otherwise silently invokes its CPU renderer for unsupported ops. */
++    FatalError("PS2 GS: unsupported X drawing operation; CPU rasterization is disabled\n");
++    return FALSE;
++}
++
++static Bool upload(PixmapPtr pixmap, int x, int y, int width, int height,
++                   char *source, int pitch)
++{
++    if (!front(pixmap)) return FALSE;
++    struct ps2_exa *ps2 = backend(pixmap);
++    if (!(ps2->gs->caps.features & PS2GS_HW_UPLOAD)) return FALSE;
++    if (width <= 0 || height <= 0) return TRUE;
++    if (x < 0 || y < 0 || !source || pitch <= 0 ||
++        (unsigned)width > ps2->gs->caps.width ||
++        (unsigned)height > ps2->gs->caps.height)
++        FatalError("PS2 GS: invalid X image upload\n");
++    size_t row = (size_t)width * (ps2->gs->caps.bits_per_pixel / 8);
++    if ((size_t)pitch < row || (size_t)(height - 1) > (SIZE_MAX - row) / (size_t)pitch)
++        FatalError("PS2 GS: invalid X image stride\n");
++    result(ps2, ps2_gs_upload(ps2->gs, x, y, width, height, source,
++        (size_t)(height - 1) * pitch + row, pitch));
++    return TRUE;
++}
++
++static void wait_marker(ScreenPtr screen, int marker)
++{
++    (void)marker; /* Submissions are fenced synchronously in the GS. */
++    struct ps2_exa *ps2 = dixLookupPrivate(&screen->devPrivates, &ps2_exa_key);
++    result(ps2, ps2_gs_flush(ps2->gs));
++}
++
++Bool ps2_exa_prepare(ScreenPtr screen, struct ps2_exa *ps2, struct ps2_gs_client *gs)
++{
++    if (!dixRegisterPrivateKey(&ps2_exa_key, PRIVATE_SCREEN, 0)) return FALSE;
++    memset(ps2, 0, sizeof(*ps2));
++    ps2->gs = gs;
++    ps2->driver.exa_major = EXA_VERSION_MAJOR;
++    ps2->driver.exa_minor = EXA_VERSION_MINOR;
++    ps2->driver.maxX = gs->caps.width;
++    ps2->driver.maxY = gs->caps.height;
++    ps2->driver.PrepareSolid = prepare_solid;
++    ps2->driver.Solid = solid;
++    ps2->driver.DoneSolid = done;
++    ps2->driver.PrepareCopy = prepare_copy;
++    ps2->driver.Copy = copy;
++    ps2->driver.DoneCopy = done;
++    ps2->driver.PrepareAccess = prepare_access;
++    ps2->driver.UploadToScreen = upload;
++    ps2->driver.WaitMarker = wait_marker;
++    dixSetPrivate(&screen->devPrivates, &ps2_exa_key, ps2);
++    return TRUE;
++}
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_exa.h
+@@ -0,0 +1,17 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_EXA_H
++#define PS2_EXA_H
++#include "xorg-server.h"
++#include "scrnintstr.h"
++#include "exa.h"
++#include "ps2_gs_client.h"
++
++/* Raster callbacks for the native DDX. Offscreen ownership, image uploads and
++ * the screen/VT lifecycle must be implemented before enabling a desktop. */
++struct ps2_exa {
++    struct ps2_gs_client *gs;
++    ExaDriverRec driver;
++    uint32_t color;
++};
++Bool ps2_exa_prepare(ScreenPtr screen, struct ps2_exa *, struct ps2_gs_client *);
++#endif

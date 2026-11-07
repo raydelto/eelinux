@@ -1,0 +1,123 @@
+/* SPDX-License-Identifier: MIT */
+#include "ps2_copy_window.h"
+#include "ps2_copy_batch.h"
+#include "ps2_gs_render.h"
+#include "windowstr.h"
+#include "regionstr.h"
+#include "os.h"
+#include <errno.h>
+#include <limits.h>
+#include <string.h>
+
+static DevPrivateKeyRec key;
+static Bool close_screen(ScreenPtr);
+static void fail(const char *reason)
+{ FatalError("PS2 GS: native CopyWindow failed: %s\n", reason); }
+static struct ps2_copy_window *owner(ScreenPtr s)
+{ return dixLookupPrivate(&s->devPrivates, &key); }
+static Bool translatable(RegionPtr region, int dx, int dy)
+{
+    if (!region || RegionBroken(region)) return FALSE;
+    BoxPtr boxes = RegionRects(region);
+    int n = RegionNumRects(region);
+    for (int i = 0; i < n; ++i) {
+        const BoxRec *b = boxes + i;
+        if (b->x1 >= b->x2 || b->y1 >= b->y2 ||
+            (int64_t)b->x1 + dx < SHRT_MIN || (int64_t)b->y1 + dy < SHRT_MIN ||
+            (int64_t)b->x2 + dx > SHRT_MAX || (int64_t)b->y2 + dy > SHRT_MAX) return FALSE;
+    }
+    return TRUE;
+}
+static void copy_window(WindowPtr window, DDXPointRec old, RegionPtr source)
+{
+    ScreenPtr screen = window ? window->drawable.pScreen : NULL;
+    struct ps2_copy_window *b = screen ? owner(screen) : NULL;
+    if (!b || !b->installed || b->screen != screen || b->exa->gs != b->gs ||
+        source == &window->borderClip) fail("invalid screen owner or source region");
+    int dx = (int)old.x - window->drawable.x, dy = (int)old.y - window->drawable.y;
+    /* pixman's 16-bit translation may silently clip overflow. Reject it before
+     * touching the caller's region, flushing Mesa or submitting GS work. */
+    if (!translatable(source, -dx, -dy) || !translatable(&window->borderClip, 0, 0))
+        fail("invalid region or translation overflow");
+    if (ps2_pipe_context_acquire(b->context)) fail("context is closed or failed");
+    ps2_pipe_context_release(b->context);
+    PixmapPtr pixmap = screen->GetWindowPixmap(window);
+    if (!pixmap || pixmap->drawable.pScreen != screen) fail("missing window storage");
+    uint32_t handle = 0;
+    if (pixmap != screen->GetScreenPixmap(screen)) {
+        const void *private = exaGetPixmapDriverPrivate(pixmap);
+        if (!private) fail("missing owned pixmap");
+        memcpy(&handle, private, sizeof(handle));
+        if (!handle) fail("unallocated pixmap");
+    }
+    const struct ps2_surface *s = ps2_surface_lookup(b->gs, handle);
+    if (!s || (s->bits_per_pixel != 16 && s->bits_per_pixel != 32) ||
+        pixmap->drawable.width != s->width || pixmap->drawable.height != s->height ||
+        pixmap->drawable.bitsPerPixel != s->bits_per_pixel ||
+        pixmap->drawable.depth != (s->bits_per_pixel == 16 ? 15 : 24) ||
+        window->drawable.bitsPerPixel != s->bits_per_pixel || window->drawable.depth != pixmap->drawable.depth)
+        fail("incompatible native storage");
+    int ox = 0, oy = 0;
+#ifdef COMPOSITE
+    ox = pixmap->screen_x; oy = pixmap->screen_y;
+#endif
+    RegionRec translated, destination;
+    RegionNull(&translated); RegionNull(&destination);
+    const char *error = NULL;
+    if (!RegionCopy(&translated, source)) { error = "source region allocation"; goto out; }
+    RegionTranslate(&translated, -dx, -dy);
+    if (!RegionIntersect(&destination, &window->borderClip, &translated)) {
+        error = "destination region allocation"; goto out;
+    }
+    int n = RegionNumRects(&destination);
+    if (n < 0 || n > (int)PS2_PIPE_MAX_COPY_BOXES) { error = "region exceeds native limit"; goto out; }
+    struct ps2_pipe_copy_box jobs[PS2_PIPE_MAX_COPY_BOXES];
+    BoxPtr boxes = RegionRects(&destination);
+    for (int i = 0; i < n; ++i) {
+        const BoxRec *r = boxes + i;
+        jobs[i] = (struct ps2_pipe_copy_box){.sx = (int)r->x1 + dx - ox, .sy = (int)r->y1 + dy - oy,
+            .dx = (int)r->x1 - ox, .dy = (int)r->y1 - oy,
+            .width = (int)r->x2 - r->x1, .height = (int)r->y2 - r->y1};
+    }
+    /* The shared Mesa batch validates every source/destination box and the
+     * total pixel budget before fencing, and orders self-overlapping bands. */
+    if (ps2_pipe_copy_boxes(b->context, handle, handle, jobs, n)) { error = strerror(errno); goto out; }
+    /* Xorg's CopyWindow contract translates the caller's region in place.
+     * Commit only after success; notifications belong to the Damage wrapper. */
+    RegionTranslate(source, -dx, -dy);
+    if (n && (dx || dy)) exaMarkSync(screen);
+out:
+    RegionUninit(&destination); RegionUninit(&translated);
+    if (error) fail(error);
+}
+Bool ps2_copy_window_prepare(ScreenPtr screen, struct ps2_copy_window *b,
+    struct ps2_surface_exa *exa, struct pipe_context *context)
+{
+    struct ps2_render_client *r = ps2_pipe_context_render(context);
+    if (!screen || !b || b->installed || !exa || !r || r->gs != exa->gs ||
+        !(exa->gs->caps.features & PS2GS_HW_COPY) || !screen->GetWindowPixmap || !screen->GetScreenPixmap ||
+        !screen->CopyWindow || screen->CopyWindow == copy_window || !screen->CloseScreen ||
+        !dixRegisterPrivateKey(&key, PRIVATE_SCREEN, 0) || owner(screen) || ps2_pipe_context_acquire(context)) return FALSE;
+    *b = (struct ps2_copy_window){.screen = screen, .exa = exa, .gs = exa->gs, .context = context,
+        .CopyWindow = screen->CopyWindow, .CloseScreen = screen->CloseScreen, .installed = TRUE};
+    dixSetPrivate(&screen->devPrivates, &key, b);
+    screen->CopyWindow = copy_window; screen->CloseScreen = close_screen;
+    return TRUE;
+}
+void ps2_copy_window_cleanup(struct ps2_copy_window *b)
+{
+    if (!b || !b->installed) return;
+    if (owner(b->screen) != b || b->screen->CopyWindow != copy_window || b->screen->CloseScreen != close_screen)
+        fail("callback cleanup order");
+    b->screen->CopyWindow = b->CopyWindow; b->screen->CloseScreen = b->CloseScreen;
+    dixSetPrivate(&b->screen->devPrivates, &key, NULL);
+    struct pipe_context *context = b->context;
+    memset(b, 0, sizeof(*b)); ps2_pipe_context_release(context);
+}
+static Bool close_screen(ScreenPtr screen)
+{
+    struct ps2_copy_window *b = owner(screen);
+    if (!b || !b->installed) fail("missing screen at close");
+    CloseScreenProcPtr lower = b->CloseScreen;
+    ps2_copy_window_cleanup(b); return lower(screen);
+}

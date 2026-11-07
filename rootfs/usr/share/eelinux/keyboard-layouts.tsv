@@ -1,0 +1,22 @@
+# id	xkb-layout	variant	model	console-map	description
+us	us	-	pc104	eelinux-us.map	English US / ANSI
+gb	gb	-	pc105	eelinux-gb.map	English UK / ISO
+pt	pt	-	pc105	eelinux-pt.map	Portuguese
+es	es	-	pc105	eelinux-es.map	Spanish
+fr	fr	-	pc105	eelinux-fr.map	French / AZERTY
+de	de	nodeadkeys	pc105	eelinux-de.map	German / QWERTZ (no dead keys)
+it	it	-	pc105	eelinux-it.map	Italian
+br	br	-	abnt2	eelinux-br.map	Brazilian Portuguese / ABNT2
+nl	nl	-	pc105	eelinux-nl.map	Dutch
+se	se	-	pc105	eelinux-se.map	Swedish
+fi	fi	-	pc105	eelinux-fi.map	Finnish
+dk	dk	-	pc105	eelinux-dk.map	Danish
+no	no	-	pc105	eelinux-no.map	Norwegian
+pl	pl	-	pc105	eelinux-pl.map	Polish
+cz	cz	-	pc105	eelinux-cz.map	Czech / QWERTZ
+hu	hu	-	pc105	eelinux-hu.map	Hungarian / QWERTZ
+tr	tr	-	pc105	eelinux-tr.map	Turkish / Q
+ro	ro	-	pc105	eelinux-ro.map	Romanian
+ru	ru	-	pc105	eelinux-ru.map	Russian
+ua	ua	-	pc105	eelinux-ua.map	Ukrainian
+us-dvorak	us	dvorak	pc104	eelinux-us-dvorak.map	English US / Dvorak

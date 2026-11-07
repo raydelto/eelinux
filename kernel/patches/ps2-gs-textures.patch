@@ -1,0 +1,253 @@
+--- a/drivers/video/fbdev/ps2fb-gs-device.h
++++ b/drivers/video/fbdev/ps2fb-gs-device.h
+@@ -8,6 +8,7 @@
+ #include "ps2fb-gs-arena.h"
+ #include "ps2fb-gs-surface-packet.h"
+ #include "ps2fb-gs-render-packet.h"
++#include "ps2fb-gs-texture-packet.h"
+ 
+ struct ps2gs_session;
+ struct ps2gs_device {
+@@ -152,6 +153,9 @@
+ 		count = ps2gs_package_surface_fill(par->package.buffer, destination, request);
+ 	} else if (operation == PS2GS_SURFACE_COPY) {
+ 		count = ps2gs_package_surface_copy(par->package.buffer, source, destination, request);
++	} else if (operation == PS2GS_TEXTURE_SUBMIT) {
++		const struct ps2gs_texture_operation *t = request;
++		count = ps2gs_package_texture(par->package.buffer, destination, source, t->texture, t->triangle);
+ 	} else if (operation == PS2GS_RENDER_SUBMIT) {
+ 		count = ps2gs_package_render(par->package.buffer, destination, source, request);
+ 	} else {
+@@ -182,6 +186,7 @@
+ 			++par->gs_stats.fills;
+ 		if (operation == PS2GS_SURFACE_COPY)
+ 			++par->gs_stats.copies;
++		if (operation == PS2GS_TEXTURE_SUBMIT) ++par->gs_stats.triangles;
+ 		if (operation == PS2GS_RENDER_SUBMIT) {
+ 			const struct ps2gs_command *c = request;
+ 			if (c->op == PS2GS_FILL) ++par->gs_stats.fills;
+@@ -236,6 +241,7 @@
+ }
+ 
+ #include "ps2fb-gs-render-device.h"
++#include "ps2fb-gs-texture-device.h"
+ 
+ static int ps2gs_surface_ioctl_locked(struct ps2gs_session *session,
+ 		struct fb_info *info, unsigned int cmd, void __user *arg)
+@@ -249,7 +255,7 @@
+ 		ps2gs_caps(info, &caps);
+ 		/* Explicitly allocated Z16/Z16S depth and bounded owned rendering. */
+ 		caps.features = PS2GS_HW_FILL | PS2GS_HW_COPY | PS2GS_HW_UPLOAD |
+-			PS2GS_HW_SURFACES | PS2GS_HW_TRIANGLE | PS2GS_HW_DEPTH16 | PS2GS_HW_OWNED_RENDER;
++			PS2GS_HW_SURFACES | PS2GS_HW_TRIANGLE | PS2GS_HW_DEPTH16 | PS2GS_HW_OWNED_RENDER | PS2GS_HW_TEXTURE;
+ 		return copy_to_user(arg, &caps, sizeof(caps)) ? -EFAULT : 0;
+ 	}
+ 	if (session->epoch != ((struct ps2fb_par *)info->par)->gs_epoch)
+@@ -259,6 +265,8 @@
+ 	if (!vc_cons[fg_console].d || vc_cons[fg_console].d->vc_mode != KD_GRAPHICS)
+ 		return -EBUSY;
+ 	switch (cmd) {
++	case PS2GS_TEXTURE_SUBMIT:
++		return ps2gs_texture_locked(session, info, arg);
+ 	case PS2GS_DEPTH_CREATE:
+ 		return ps2gs_depth_create_locked(session, info, arg);
+ 	case PS2GS_RENDER_SUBMIT:
+--- a/drivers/video/fbdev/ps2fb.c
++++ b/drivers/video/fbdev/ps2fb.c
+@@ -45,6 +45,7 @@
+ #include <linux/ps2-gs.h>
+ #include <linux/ps2-gs-surface.h>
+ #include <linux/ps2-gs-render.h>
++#include <linux/ps2-gs-texture.h>
+ #include <linux/miscdevice.h>
+ #include <linux/kref.h>
+ #include <linux/kd.h>
+--- /dev/null
++++ b/include/uapi/linux/ps2-gs-texture.h
+@@ -0,0 +1,31 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_TEXTURE_H
++#define _UAPI_PS2_GS_TEXTURE_H
++#include "ps2-gs-render.h"
++#define PS2GS_HW_TEXTURE (1U << 7)
++#define PS2GS_TEXTURE_MODULATE (1U << 1)
++/* STQ are positive IEEE-754 binary32 bit patterns, not kernel floats.
++ * S/Q and T/Q are normalized to TEX0's rounded power-of-two size, in [0,1];
++ * Q is bounded to [2^-12,2^12]. Logical region clamp bounds NPOT sampling.
++ * RGB level-zero CT16/CT32, nearest sampling, logical region clamp.
++ * RGB replace or modulate; no texture alpha, blending, mipmaps or shaders.
++ */
++struct ps2gs_texture_vertex {
++	struct ps2gs_vertex position;
++	__u32 s, t, q;
++};
++struct ps2gs_texture_triangle {
++	__u32 flags, reserved[3];
++	struct ps2gs_texture_vertex v[3];
++};
++struct ps2gs_texture_submit {
++	__u32 abi, target, depth, texture;
++	__u32 count, width, height, bits_per_pixel;
++	__aligned_u64 triangles;
++};
++/* texture must be a nonzero color handle owned by this file and must differ
++ * from target. Texture dimensions are <=1024. All triangles are snapshotted
++ * and checked before drawing; each packet invalidates the GS texture cache.
++ */
++#define PS2GS_TEXTURE_SUBMIT _IOW('G', 0x7a, struct ps2gs_texture_submit)
++#endif
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-texture-packet.h
+@@ -0,0 +1,99 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++static int ps2gs_validate_texture(const struct ps2gs_buffer *color,
++		const struct ps2gs_buffer *depth, u32 depth_role,
++		const struct ps2gs_buffer *texture,
++		const struct ps2gs_texture_triangle *triangle)
++{
++	struct ps2gs_command command = { .op = PS2GS_TRIANGLE };
++	u32 i;
++	if (!texture || texture == color || !texture->width || !texture->height ||
++	    texture->width > 1024 || texture->height > 1024 ||
++	    (texture->bits_per_pixel != 16 && texture->bits_per_pixel != 32))
++		return -EOPNOTSUPP;
++	if (triangle->reserved[0] || triangle->reserved[1] || triangle->reserved[2])
++		return -EINVAL;
++	if (triangle->flags & ~(PS2GS_DEPTH_TEST | PS2GS_TEXTURE_MODULATE))
++		return -EOPNOTSUPP;
++	command.flags = triangle->flags & PS2GS_DEPTH_TEST;
++	for (i = 0; i < 3; ++i) {
++		const struct ps2gs_texture_vertex *v = &triangle->v[i];
++		/* Positive finite floats are ordered by their unsigned bit patterns.
++		 * No FP code runs in the kernel. Bound Q and S/T before GS conversion. */
++		if (v->q < 0x39800000 || v->q > 0x45800000 ||
++		    v->s > v->q || v->t > v->q)
++			return -EINVAL;
++		command.v[i] = v->position;
++	}
++	return ps2gs_validate_render(color, depth, depth_role, &command);
++}
++static u32 ps2gs_texture_log2(u32 size)
++{
++	u32 power = 0;
++	while ((1U << power) < size)
++		++power;
++	return power;
++}
++static union package *ps2gs_texture_raw(union package *p, u32 addr, u64 value)
++{
++	*p = (union package) { };
++	p->gif.packed.ad.addr = addr;
++	memcpy(&p->gif.packed.ad.data, &value, sizeof(value));
++	return p + 1;
++}
++static size_t ps2gs_package_texture(union package *base,
++		const struct ps2gs_buffer *color, const struct ps2gs_buffer *depth,
++		const struct ps2gs_buffer *texture,
++		const struct ps2gs_texture_triangle *triangle)
++{
++	union package *p = base + 1;
++	u32 i;
++	bool tested = triangle->flags & PS2GS_DEPTH_TEST;
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_frame_2,
++		.data.frame_1 = { .fbp = color->base / 8192, .fbw = color->buffer_width / 64,
++			.psm = ps2gs_buffer_psm(color) } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_xyoffset_2, .data.xyoffset_1 = { } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_scissor_2,
++		.data.scissor_1 = { .scax1 = color->width - 1, .scay1 = color->height - 1 } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_zbuf_2,
++		.data.zbuf = { .zbp = depth ? depth->base / 8192 : 0,
++			.psm = color->bits_per_pixel == 16 ? 2 : 0xa,
++			.zmsk = tested ? gs_zbuf_on : gs_zbuf_off } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_test_2,
++		.data.test_1 = { .zte = gs_depth_test_on,
++			.ztst = tested ? gs_depth_gequal : gs_depth_pass } };
++	/* FINISH in the preceding operation completes uploads/copies/draws.
++	 * Explicitly invalidate before sampling, including render-to-texture. */
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_texflush };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_tex0_2,
++		.data.tex0 = { .tbp0 = texture->base / 256, .tbw = texture->buffer_width / 64,
++			.psm = ps2gs_buffer_psm(texture), .tw = ps2gs_texture_log2(texture->width),
++			.th = ps2gs_texture_log2(texture->height), .tcc = gs_tcc_rgb,
++			.tfx = triangle->flags & PS2GS_TEXTURE_MODULATE ? gs_tfx_modulate : gs_tfx_decal } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_tex1_2,
++		.data.tex1 = { .lcm = gs_lcm_fixed, .mmin = gs_lod_nearest, .mmag = gs_lod_nearest } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_clamp_2,
++		.data.clamp_2 = { .wms = gs_clamp_region_clamp, .wmt = gs_clamp_region_clamp,
++			.maxu = texture->width - 1, .maxv = texture->height - 1 } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_prmodecont, .data.prmodecont = { .ac = 1 } };
++	p = ps2gs_texture_raw(p, gs_addr_colclamp, 1);
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_prim,
++		.data.prim = { .prim = gs_triangle, .ctxt = gs_context_2,
++			.iip = gs_gouraud_shading, .tme = gs_texturing_on, .fst = gs_texturing_stq } };
++	for (i = 0; i < 3; ++i) {
++		const struct ps2gs_texture_vertex *v = &triangle->v[i];
++		GIF_PACKAGE_AD(p) { .addr = gs_addr_rgbaq,
++			.data.rgbaq = { .r = v->position.rgba & 255, .g = (v->position.rgba >> 8) & 255,
++				.b = (v->position.rgba >> 16) & 255, .a = v->position.rgba >> 24, .q = v->q } };
++		p = ps2gs_texture_raw(p, gs_addr_st, (u64)v->s | (u64)v->t << 32);
++		GIF_PACKAGE_AD(p) { .addr = gs_addr_xyz2,
++			.data.xyz2 = { .x = v->position.x, .y = v->position.y, .z = v->position.z } };
++	}
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_finish };
++	base->gif.tag = (struct gif_tag) { .flg = gif_packed_mode, .reg0 = gif_reg_ad,
++		.nreg = 1, .nloop = p - base - 1, .eop = 1 };
++	return p - base;
++}
++struct ps2gs_texture_operation {
++	const struct ps2gs_buffer *texture;
++	const struct ps2gs_texture_triangle *triangle;
++};
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-texture-device.h
+@@ -0,0 +1,50 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++static int ps2gs_texture_locked(struct ps2gs_session *session,
++		struct fb_info *info, void __user *arg)
++{
++	struct ps2gs_texture_submit request;
++	struct ps2gs_buffer front, *color, *depth = NULL, *texture;
++	struct ps2gs_texture_triangle *triangles;
++	u32 i, role = 0;
++	int ret;
++	if (copy_from_user(&request, arg, sizeof(request)))
++		return -EFAULT;
++	if (request.abi != PS2GS_ABI_VERSION || !request.count || request.count > PS2GS_MAX_COMMANDS)
++		return -EINVAL;
++	color = ps2gs_session_buffer(session, info, request.target, &front);
++	texture = ps2gs_arena_lookup(&session->arena, request.texture);
++	if (!color || !texture || ps2gs_depth_role(session, request.texture))
++		return -ENOENT;
++	if (color == texture)
++		return -EOPNOTSUPP;
++	if (request.width != color->width || request.height != color->height ||
++	    request.bits_per_pixel != color->bits_per_pixel)
++		return -ESTALE;
++	if (request.depth) {
++		depth = ps2gs_arena_lookup(&session->arena, request.depth);
++		role = ps2gs_depth_role(session, request.depth);
++		if (!depth || !role)
++			return -ENOENT;
++	}
++	if (request.triangles >> 32)
++		return -EFAULT;
++	triangles = memdup_user(u64_to_user_ptr(request.triangles), request.count * sizeof(*triangles));
++	if (IS_ERR(triangles))
++		return PTR_ERR(triangles);
++	for (i = 0; i < request.count; ++i) {
++		ret = ps2gs_validate_texture(color, depth, role, texture, &triangles[i]);
++		if (ret)
++			goto out;
++	}
++	for (i = 0; i < request.count; ++i) {
++		struct ps2gs_texture_operation operation = { .texture = texture, .triangle = &triangles[i] };
++		ret = ps2gs_surface_execute(info, PS2GS_TEXTURE_SUBMIT, depth, color, &operation, NULL);
++		if (ret) {
++			session->failed = ret;
++			goto out;
++		}
++	}
++out:
++	kfree(triangles);
++	return ret;
++}

@@ -1,0 +1,131 @@
+{
+  "schema": 1,
+  "date": "2026-10-04",
+  "recorded_at": "2026-10-04T15:58:31.848442+00:00",
+  "scope": "actual EXA PrepareCopy/Copy/DoneCopy callbacks sharing Mesa native GS region copies; component integration",
+  "compiled_components": {
+    "sha256": "8857989c7b83d74f12b722c152f7638c04e3f343de8b2e347496c3afbb00ae67"
+  },
+  "native_test_log": {
+    "sha256": "046099a85931d0fd0879f86eb5d777dbf1eca4187a8232904d3f8ff96145fcc4"
+  },
+  "host_checks": {
+    "schema": 1,
+    "cases": 24,
+    "new_cases": 8,
+    "result": "passed",
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "groups": [
+      {
+        "suite": "test_ps2_copy_exa.py",
+        "cases": 8,
+        "result": "passed"
+      },
+      {
+        "suite": "test_ps2_resource_copy.py",
+        "cases": 7,
+        "result": "passed"
+      },
+      {
+        "suite": "test_ps2_copy.py",
+        "cases": 9,
+        "result": "passed"
+      }
+    ],
+    "log": {
+      "sha256": "2599486f77e12a8f004f593dd5d6b2137e0fb46b08f3b3ecec7e4dc28003c93c"
+    },
+    "production_source_sha256": "18ae4c1187609bfff65d049623040874922690f76f7ca39561b1d864ece129a3"
+  },
+  "patches": {
+    "sha256": "72d7eb7460517e6454f8052f2c76119ec99abbdc1c9a54fa309561519f099a25"
+  },
+  "archives": {
+    "libps2-gallium-exa-copy.a": {
+      "sha256": "f163855da6ba50d7ff1e98f794ef6ead0e72e343d7aa164bed6b2bb1e409143f"
+    },
+    "libps2-xorg-exa-copy.a": {
+      "sha256": "955361a90297fe142ef0334e4d37965fc55533f0269a8d543778e199fe9a67fa"
+    }
+  },
+  "EXA_contract": {
+    "path": "/home/machaddr/.cache/eelinux/desktop-xorg/output-desktop/staging/usr/include/xorg/exa.h",
+    "sha256": "4cff9a95798d2f1ab9d5bd61a4ce0bf22ac29151669bbf237caf8f63204d5180"
+  },
+  "checks": {
+    "host_sanitizer_cases": 24,
+    "R5900_Linux_user_cases": 24,
+    "new_EXA_cases": 8,
+    "shared_Gallium_regressions": 7,
+    "shared_GC_CopyArea_regressions": 9,
+    "result": "passed",
+    "production_NDEBUG": true,
+    "test_assertions_enabled": true,
+    "GPU_pixels_tested": false
+  },
+  "formats": [
+    "native RGBX/depth24/CT32",
+    "native RGB555/depth15/CT16"
+  ],
+  "copy_states": [
+    "GXcopy with full native RGB plane mask",
+    "GXnoop",
+    "zero native RGB plane mask"
+  ],
+  "tests": {
+    "widths_per_color_format": 137,
+    "tiny_RGB555_source": [
+      3,
+      40
+    ],
+    "front_to_owned_and_owned_to_front": true,
+    "ordered_multi_rectangle_overlap_directions": 8,
+    "invalid_rectangle_state_and_owner_variants": 17,
+    "retired_native_source_rejected": true,
+    "unsupported_ALUs_masks_depth_screen_and_directions_rejected": true,
+    "noops_and_empty_identity_copies_leave_pending_queue_intact": true,
+    "sampler_and_color_depth_bindings_references_preserved": true,
+    "closed_context_and_callback_restoration_before_file_close": true,
+    "registration_failure_and_wrong_cleanup_order": true,
+    "capacity_failure_before_flush": true,
+    "sticky_device_failure_without_replay": true
+  },
+  "integration": {
+    "install": "after context/texture/logic EXA bridges, before exaDriverInit",
+    "cleanup": "restore copy callbacks before the outer context bridge",
+    "single_submission_thread": true,
+    "whole_series_preflight": false,
+    "preflight_scope": "each EXA Copy rectangle; EXA supplies ordered, clipped rectangles",
+    "CPU_fallback": "existing native PrepareAccess terminates unsupported rasterization",
+    "full_X_server_started": false,
+    "upstream_CopyWindow_execution_tested": false
+  },
+  "native_Mesa_copy_batch_and_kernel_ABI_changed": false,
+  "software_pixel_renderer": false,
+  "GPU_pixel_readback": false,
+  "preceding_CopyArea_image": {
+    "sha256": "d1e48f620013bc7a524fb34d8d546b09fc861f5797de7c05c9a084b219f97dac"
+  },
+  "preceding_Gallium_components_preserved": true,
+  "earlier_physical_report": "docs/graphics-hardware-validation.json",
+  "new_EXA_callback_PCSX2_verified": false,
+  "new_EXA_callback_physical_hardware_verified": false,
+  "new_USB_image_packaged": false,
+  "physical_devices_written": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL_GLX": false,
+  "shader_caps": 0,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "remaining": [
+    "new EXA callback runtime pixel qualification",
+    "complete native DDX and upstream window lifecycle",
+    "source-pixmap ALUs/partial masks and further raster states",
+    "Mesa shader/vertex pipeline and draw_vbo",
+    "GLX and existing OpenGL applications",
+    "first startx/TWM and physical idle/peak RAM measurements"
+  ],
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

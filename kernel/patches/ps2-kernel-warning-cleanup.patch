@@ -1,0 +1,383 @@
+--- a/arch/mips/ps2/memory.c
++++ b/arch/mips/ps2/memory.c
+@@ -15,6 +15,7 @@
+ #include <asm/io.h>
+ 
+ #include <asm/mach-ps2/iop.h>
++#include <asm/mach-ps2/memory.h>
+ #include <asm/mach-ps2/rom.h>
+ 
+ int valid_phys_addr_range(phys_addr_t addr, size_t size)
+--- a/arch/mips/ps2/scmd.c
++++ b/arch/mips/ps2/scmd.c
+@@ -331,7 +331,7 @@
+  * of the region of the machine. This is adjusted in the driver so that the
+  * clock to the kernel appears to be kept in coordinated universal time (UTC).
+  * Tools such as hwclock should therefore set the clock in the UTC timescale.
+-
++ *
+  * Context: sleep
+  * Return: 0 on success, else a negative error number
+  */
+--- a/arch/mips/ps2/rom-sysfs.c
++++ b/arch/mips/ps2/rom-sysfs.c
+@@ -163,7 +163,7 @@
+ 	struct kobj_attribute *attr, char *buf)
+ {
+ 	return scnprintf(buf, PAGE_SIZE, "0x%lx\n",
+-		virt_to_phys(rom_file_from_kobj(kobj->parent).extinfo.data));
++		(unsigned long)virt_to_phys(rom_file_from_kobj(kobj->parent).extinfo.data));
+ }
+ 
+ static ssize_t rom_extinfo_version_show(struct kobject *kobj,
+@@ -218,7 +218,7 @@
+ 	struct kobj_attribute *attr, char *buf)
+ {
+ 	return scnprintf(buf, PAGE_SIZE, "0x%lx\n",
+-		virt_to_phys(rom_file_from_kobj(kobj).data));
++		(unsigned long)virt_to_phys(rom_file_from_kobj(kobj).data));
+ }
+ 
+ #define DEFINE_ROM_FIELD_ATTR(prefix, field)				\
+--- a/arch/mips/kernel/traps.c
++++ b/arch/mips/kernel/traps.c
+@@ -1617,9 +1617,8 @@
+ asmlinkage void do_mcheck(struct pt_regs *regs)
+ {
+ 	int multi_match = regs->cp0_status & ST0_TS;
+-	enum ctx_state prev_state;
+-
+-	prev_state = exception_enter();
++
++	exception_enter();
+ 	show_regs(regs);
+ 
+ 	if (multi_match) {
+--- a/kernel/sched/rt.c
++++ b/kernel/sched/rt.c
+@@ -8,8 +8,10 @@
+ #include "pelt.h"
+ 
+ int sched_rr_timeslice = RR_TIMESLICE;
++#if defined(CONFIG_RT_GROUP_SCHED) || defined(CONFIG_SYSCTL)
+ /* More than 4 hours if BW_SHIFT equals 20. */
+ static const u64 max_rt_runtime = MAX_BW;
++#endif
+ 
+ /*
+  * period over which we measure -rt task CPU usage in us.
+--- a/net/ipv4/igmp.c
++++ b/net/ipv4/igmp.c
+@@ -2079,7 +2079,9 @@
+ 			 int sfcount, __be32 *psfsrc, int delta)
+ {
+ 	struct ip_mc_list *pmc;
++#ifdef CONFIG_IP_MULTICAST
+ 	int	changerec = 0;
++#endif
+ 	int	i, err;
+ 
+ 	if (!in_dev)
+@@ -2109,7 +2111,9 @@
+ 	for (i = 0; i < sfcount; i++) {
+ 		int rv = ip_mc_del1_src(pmc, sfmode, &psfsrc[i]);
+ 
++#ifdef CONFIG_IP_MULTICAST
+ 		changerec |= rv > 0;
++#endif
+ 		if (!err && rv < 0)
+ 			err = rv;
+ 	}
+--- a/ipc/sem.c
++++ b/ipc/sem.c
+@@ -627,7 +627,7 @@
+ }
+ 
+ /**
+- * perform_atomic_semop[_slow] - Attempt to perform semaphore
++ * perform_atomic_semop_slow - Attempt to perform semaphore
+  *                               operations on a given array.
+  * @sma: semaphore array
+  * @q: struct sem_queue that describes the operation
+--- a/fs/inode.c
++++ b/fs/inode.c
+@@ -1285,7 +1285,6 @@
+  * @test:	callback used for comparisons between inodes
+  * @set:	callback used to initialize a new struct inode
+  * @data:	opaque data pointer to pass to @test and @set
+- * @isnew:	pointer to a bool which will indicate whether I_NEW is set
+  *
+  * Search for the inode specified by @hashval and @data in the inode cache,
+  * and if present return it with an increased reference count. This is a
+--- a/block/blk-map.c
++++ b/block/blk-map.c
+@@ -356,7 +356,6 @@
+  *	@rq: request to fill
+  *	@data: pointer to buffer to copy
+  *	@len: length in bytes
+- *	@op: bio/request operation
+  *	@gfp_mask: allocation flags for bio and page allocation
+  *
+  *	copy the kernel address into a bio suitable for io to a block
+--- a/block/blk-mq-dma.c
++++ b/block/blk-mq-dma.c
+@@ -361,7 +361,6 @@
+  * 					 a request
+  * @req:	request to map
+  * @dma_dev:	device to map to
+- * @state:	DMA IOVA state
+  * @iter:	block layer DMA iterator
+  *
+  * Iterate to the next integrity mapping after a previous call to
+--- a/lib/rhashtable.c
++++ b/lib/rhashtable.c
+@@ -1119,9 +1119,10 @@
+ }
+ 
+ /**
+- * rhashtable_init - initialize a new hash table
++ * __rhashtable_init - initialize a new hash table
+  * @ht:		hash table to be initialized
+  * @params:	configuration parameters
++ * @key: lock class key for table locks
+  *
+  * Initializes a new hash table based on the provided configuration
+  * parameters. A table can be configured either with a variable or
+@@ -1227,9 +1228,10 @@
+ EXPORT_SYMBOL_GPL(__rhashtable_init_noprof);
+ 
+ /**
+- * rhltable_init - initialize a new hash list table
++ * __rhltable_init - initialize a new hash list table
+  * @hlt:	hash list table to be initialized
+  * @params:	configuration parameters
++ * @key: lock class key for table locks
+  *
+  * Initializes a new hash list table.
+  *
+--- a/fs/iomap/iter.c
++++ b/fs/iomap/iter.c
+@@ -51,6 +51,7 @@
+  * @iter: iteration structure
+  * @iomap: the mapping that was just processed
+  * @srcmap: the source mapping that was just processed
++ * @ret: result of producing the preceding mapping
+  *
+  * Helper normally called via iomap_iter_next(). Called after the previous
+  * mapping has been finished to determine whether there is more of the file
+--- a/drivers/video/fbdev/ps2fb.c
++++ b/drivers/video/fbdev/ps2fb.c
+@@ -106,6 +106,7 @@
+  * @block_count: number of frame buffer blocks
+  * @bg: background color index
+  * @fg: foreground color index
++ * @cursor: cursor position, dimensions, visibility and foreground colour
+  * @tile: tile dimensions
+  * @tile.width: width in pixels
+  * @tile.height: height in pixels
+@@ -149,6 +150,16 @@
+ /**
+  * struct ps2fb_par - driver specific structure
+  * @lock: spin lock to be taken for all structure operations
++ * @shadow_pages: RAM pages for the deferred framebuffer view
++ * @shadow_io: deferred I/O state for the shadow view
++ * @gs_font_blocks: GS blocks occupied by console fonts
++ * @gs_stats: native GS capability and submission statistics
++ * @gs_owned: ownership count for native graphics sessions
++ * @gs_epoch: graphics ownership generation
++ * @gs_device: native GS command device
++ * @shadow_maps: active shadow mappings
++ * @shadow_vm_original: lower mapping operations
++ * @shadow_vm_wrapped: mapping operations with ownership tracking
+  * @mode: frame buffer video mode
+  * @pseudo_palette: pseudo palette, used for texture colouring
+  * @grayscale: perform grayscale colour conversion if %true
+@@ -356,7 +367,7 @@
+ 
+ /**
+  * var_to_block_count - number of frame buffer blocks for a given video mode
+- * @var: screen info object to compute the number of blocks for
++ * @info: framebuffer info object to compute the number of blocks for
+  *
+  * The Graphics Synthesizer frame buffer is subdivided into rectangular pages,
+  * from left to right, top to bottom. Pages are further subdivided into blocks,
+@@ -533,6 +544,9 @@
+ 
+ /**
+  * display_buffer_size - display buffer size for a given video resolution
++ * @xres_virtual: virtual width in pixels
++ * @yres_virtual: virtual height in pixels
++ * @bits_per_pixel: framebuffer pixel depth
+  *
+  * This calculation is a lower bound estimate. A precise calculation would have
+  * to take memory pages, blocks and column arrangements into account. To choose
+@@ -736,7 +750,7 @@
+  * example texture information and drawing attributes set by the PRIM register.
+  * The environment remains in effect for multiple primitives until it is reset.
+  */
+-void write_cb_environment(struct fb_info *info)
++static void write_cb_environment(struct fb_info *info)
+ {
+         if (gif_wait()) {
+ 		struct ps2fb_par *par = info->par;
+@@ -810,7 +824,7 @@
+  * @area: area to copy
+  * @info: frame buffer info object
+  */
+-void ps2fb_cb_copyarea(const struct fb_copyarea *area, struct fb_info *info)
++static void ps2fb_cb_copyarea(const struct fb_copyarea *area, struct fb_info *info)
+ {
+ 	const enum gs_psm psm = var_to_psm(&info->var, info);
+ 	struct ps2fb_par *par = info->par;
+--- a/drivers/tty/serial/ps2_uart.c
++++ b/drivers/tty/serial/ps2_uart.c
+@@ -380,7 +380,7 @@
+ 	return result;
+ };
+ 
+-void __exit ps2_uart_exit(void)
++static void __exit ps2_uart_exit(void)
+ {
+ 	platform_driver_unregister(&ps2_uart_platform_driver);
+ 	platform_device_unregister(ps2_uart_plat_devs);
+--- a/drivers/ps2/gs.c
++++ b/drivers/ps2/gs.c
+@@ -53,9 +53,9 @@
+ 
+ /**
+  * gs_video_clock - video clock (VCK) frequency given SMODE1 bit fields
+- * @t1248 - &gs_smode1.t1248 PLL output divider
+- * @lc - &gs_smode1.lc PLL loop divider
+- * @rc - &gs_smode1.rc PLL reference divider
++ * @t1248: &gs_smode1.t1248 PLL output divider
++ * @lc: &gs_smode1.lc PLL loop divider
++ * @rc: &gs_smode1.rc PLL reference divider
+  *
+  * Return: video clock (VCK)
+  */
+@@ -279,6 +279,7 @@
+ 
+ /**
+  * gs_rfsh_from_synch_gen - DRAM refresh for the given synchronization registers
++ * @sg: synchronization register values
+  *
+  * Return: DRAM refresh register value
+  */
+--- a/drivers/ps2/sif.c
++++ b/drivers/ps2/sif.c
+@@ -866,6 +866,15 @@
+ }
+ EXPORT_SYMBOL_GPL(iop_error_message);
+ 
++static bool sif_ready;
++
++bool sif_is_ready(void)
++{
++	return READ_ONCE(sif_ready);
++}
++EXPORT_SYMBOL_GPL(sif_is_ready);
++
++
+ /**
+  * sif_init - initialise the SIF with a reset
+  *
+@@ -908,13 +917,6 @@
+  *
+  * Return: 0 on success, otherwise a negative error number
+  */
+-static bool sif_ready;
+-
+-bool sif_is_ready(void)
+-{
+-	return READ_ONCE(sif_ready);
+-}
+-EXPORT_SYMBOL_GPL(sif_is_ready);
+ 
+ static int __init sif_init(void)
+ {
+--- a/drivers/ps2/iop-module-request.c
++++ b/drivers/ps2/iop-module-request.c
+@@ -518,7 +518,7 @@
+ /**
+  * version_compatible - is the version compatible with the requested version?
+  * @version: version to check
+- * @version_request: requested version
++ * @requested_version: requested version
+  *
+  * Return: %true if the major versions match and the version to check is at
+  * 	least of the same minor as the requested version, otherwise %false
+--- a/arch/mips/include/asm/mach-ps2/iop-module.h
++++ b/arch/mips/include/asm/mach-ps2/iop-module.h
+@@ -45,6 +45,8 @@
+ }
+ 
+ int iop_module_request(const char *name, int version, const char *arg);
++int iop_module_load_rom_arg(const char *filepath, const char *arg);
++int iop_module_load_rom(const char *filepath);
+ 
+ int iop_readb(u8 * const data, const iop_addr_t addr);
+ int iop_readw(u16 * const data, const iop_addr_t addr);
+--- a/drivers/ps2/iop-irq.c
++++ b/drivers/ps2/iop-irq.c
+@@ -29,9 +29,9 @@
+ 
+ /**
+  * struct iop_rpc_relay_map - IOP IRQ relay mapping
+- * @u8 iop: IOP IRQ map source
+- * @u8 map: main IRQ map target
+- * @u8 rpc: %true for RPC relay, %false for SMFLAG relay
++ * @iop: IOP IRQ map source
++ * @map: main IRQ map target
++ * @rpc: %true for RPC relay, %false for SMFLAG relay
+  */
+ struct iop_rpc_relay_map {
+ 	u8 iop;
+--- a/drivers/ps2/iop-module-sysfs.c
++++ b/drivers/ps2/iop-module-sysfs.c
+@@ -18,7 +18,7 @@
+ 
+ static struct kobject *modules_kobj;	/* FIXME: Private device pointer */
+ 
+-const struct iop_module_info *iop_module_from_kobj(const struct kobject *kobj)
++static const struct iop_module_info *iop_module_from_kobj(const struct kobject *kobj)
+ {
+ 	const int id = simple_strtoull(kobj->name, NULL, 0);
+ 	const struct iop_module_info *module;
+@@ -240,4 +240,5 @@
+ module_init(iop_init);
+ module_exit(iop_exit);
+ 
++MODULE_DESCRIPTION("PlayStation 2 IOP firmware module information");
+ MODULE_LICENSE("GPL");
+--- a/drivers/ps2/iop-dev9.c
++++ b/drivers/ps2/iop-dev9.c
+@@ -346,4 +346,5 @@
+ module_init(iop_dev9_init);
+ module_exit(iop_dev9_exit);
+ 
++MODULE_DESCRIPTION("PlayStation 2 DEV9 IOP module loader");
+ MODULE_LICENSE("GPL");
+--- a/drivers/ata/pata_ps2.c
++++ b/drivers/ata/pata_ps2.c
+@@ -29,7 +29,7 @@
+ #define MAX_ATA_SIF_SG (SIF_CMD_PACKET_DATA_MAX / sizeof(struct ata_sif_payload_sg))
+ 
+ /**
+- * enum iop_ata_ops - IOP ATA remote operations
++ * enum iop_ata_rops - IOP ATA remote operations
+  * @rop_bb: Announce bounce buffer for unaligned addresses and sizes
+  * @rop_sg: Request scatter-gather transfers
+  * @rop_rd: Read request
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ps2/memory.h
+@@ -0,0 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
++#ifndef __ASM_MACH_PS2_MEMORY_H
++#define __ASM_MACH_PS2_MEMORY_H
++
++#include <linux/types.h>
++
++int valid_phys_addr_range(phys_addr_t addr, size_t size);
++int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
++
++#endif

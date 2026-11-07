@@ -1,0 +1,138 @@
+{
+  "date": "2026-10-02",
+  "physical_console": "SCPH-90001 / Tuna / PAL / PS2-to-HDMI",
+  "user_reported_candidate": "relay-v2",
+  "user_measured_image_hash": false,
+  "observed": "Kernel Oops trace followed by Attempted to kill init, exitcode=0x0000000b",
+  "upper_registers_available": false,
+  "user_cannot_recover_scrolled_output": true,
+  "matching_copy_instruction_suffix": [
+    "8ca80018",
+    "8ca9001c",
+    "24a50020",
+    "24840020"
+  ],
+  "candidate_EPC": "0x803b8a74",
+  "candidate_function": "shared memcpy / raw user-copy implementation",
+  "candidate_EPC_confirmed": false,
+  "caller_or_fault_address_confirmed": false,
+  "physical_panic_cause_confirmed": false,
+  "changes": {
+    "receive_cache_ownership": "Prepare dedicated receive pages before IOP writes; barriers and post-completion invalidation retained",
+    "regression_test": "Actual old/new RPC code under ASan/UBSan and noncoherent dirty-page model: stale old reply reproduced, new reply correct",
+    "fault_summary": "After stack/code dump: task, EPC/RA, BadVA/Cause, a0/a1/a2/sp and named last initcall",
+    "boot_drivers_built_in": true
+  },
+  "new_kernel_sha256": "f3806b784a2aa0261304e0eac29831c1814e69163ad4c2a69453d01bd775b8d6",
+  "new_USB_sha256": "5a76f9aaf5fec436b5d21153de3a62ae598d3f8176165c07b450409974bafb60",
+  "guest_boot_evidence": "network-runtime-validation.json",
+  "physical_new_candidate_retest": "pending",
+  "host_checks": {
+    "date": "2026-10-02",
+    "command": "make check",
+    "exit_code": 0,
+    "suite_counts": [
+      188,
+      31
+    ],
+    "total_tests": 219,
+    "imported_files": 437
+  },
+  "private_exception_tests": [
+    {
+      "test": "invalid memcpy source",
+      "result": "stalled after probe entry; no Oops summary observed"
+    },
+    {
+      "test": "deliberate BUG trap",
+      "result": "stalled after probe entry; stopped by 180-second timeout"
+    }
+  ],
+  "emulator_exception_path_qualified": false,
+  "private_probes_in_release": false,
+  "source_reference": "https://docs.kernel.org/core-api/dma-api-howto.html",
+  "actual_register_reporter_test": {
+    "scope": "Actual kernel show_registers called with synthetic valid registers; no exception injected",
+    "checks": {
+      "eeLinux private report probe: complete": true,
+      "eeLinux fault relay-v3: task=": true,
+      "eeLinux fault: epc=": true,
+      "eeLinux fault: bad=12345678 cause=00000008": true,
+      "eeLinux fault: a0=81234000 a1=87654320": true,
+      "eeLinux fault: a2=00000080 sp=": true,
+      "eeLinux fault: EPC memcpy": true,
+      "eeLinux fault: RA eelinux_fault_probe_init": true,
+      "eeLinux fault: last init eelinux_fault_probe_init": true
+    },
+    "summary_after_stack_and_code": true,
+    "log_sha256": "13028ebf084c861aa9d1bfa0237cb3c3fcd218814a7a684f8279fd11506b9419",
+    "process_result": {
+      "pcsx2_version": "PCSX2 v2.6.3",
+      "runtime_selection": {
+        "requested_program": "C:\\Program Files\\PCSX2\\pcsx2-qt.exe",
+        "executable_sha256": "c8e14d5a0c9f8d2c4f687b94d6806226f698e46a5cfea3a9b92f2a36c84c5a91",
+        "runtime_manifest_sha256": "b0f82fade9089c2af2281312937cf2c2fbbcfff5773a12ef6cf48509392117db",
+        "mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85"
+      },
+      "last_invocation": "kernel boot attempt",
+      "configuration_method": "portable runtime copy",
+      "configuration_sha256_before_launch": "ced35481b09d0879ea81034d2a9fc92ce8726e22e19a234716e9e7377ef76c4b",
+      "bios_configured": true,
+      "audio_backend": "Null",
+      "log_file": "pcsx2-profile/PCSX2/logs/emulog.txt",
+      "log_mode": "normal",
+      "ee_cpu_mode": "interpreter",
+      "iop_cpu_mode": "interpreter",
+      "cli_capabilities": {
+        "version": "PCSX2 v2.6.3",
+        "options": [
+          "-batch",
+          "-bigpicture",
+          "-bios",
+          "-debugger",
+          "-disc",
+          "-earlyconsolelog",
+          "-elf",
+          "-fastboot",
+          "-fullscreen",
+          "-gameargs",
+          "-help",
+          "-logfile",
+          "-nofullscreen",
+          "-nogui",
+          "-portable",
+          "-raintegration",
+          "-setupwizard",
+          "-slowboot",
+          "-state",
+          "-statefile",
+          "-testconfig",
+          "-version"
+        ],
+        "help_exit_code": 1
+      },
+      "pcsx2_arguments": [
+        "-portable",
+        "-batch",
+        "-elf"
+      ],
+      "pcsx2_exit_code": null,
+      "timed_out": true,
+      "configuration_check_only": false,
+      "linux_boot_pass": null,
+      "note": "exit code/configuration check is not a Linux boot result"
+    }
+  },
+  "later_hardware_loader_wait": {
+    "candidate": "relay-v3",
+    "RPC": 6,
+    "server": "0x1ca68",
+    "DMA": "0x200044",
+    "SMAP_probe_error": -145,
+    "current_candidate": "relay-v5",
+    "current_kernel_sha256": "dd8a5bce87d18c450526e4121dfc40dcf8bb28df54ca95ccdf08bcd46f629d96",
+    "startup_evidence": "iop-startup-validation.json",
+    "physical_retest": "pending"
+  },
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

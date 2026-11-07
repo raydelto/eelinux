@@ -1,0 +1,67 @@
+################################################################################
+#
+# lz4
+#
+################################################################################
+
+LZ4_VERSION = 1.11.0
+LZ4_SITE = https://github.com/lz4/lz4/releases/download/v1.11.0
+LZ4_INSTALL_STAGING = YES
+LZ4_LICENSE = BSD-2-Clause (library), GPL-2.0+ (programs)
+LZ4_LICENSE_FILES = lib/LICENSE programs/COPYING
+LZ4_CPE_ID_VALID = YES
+
+# LZ4 1.11's default lib-release goal unconditionally requires both library
+# forms. Select the real library goal matching the requested linkage profile.
+LZ4_LIBRARY_TARGET = lib
+ifeq ($(BR2_STATIC_LIBS),y)
+LZ4_MAKE_OPTS += BUILD_SHARED=no
+LZ4_LIBRARY_TARGET = liblz4.a
+else
+# The full native SDK needs the matching current archive as well as the
+# runtime .so, including when the normal root profile is shared-library only.
+LZ4_MAKE_OPTS += BUILD_SHARED=yes BUILD_STATIC=yes
+endif
+
+define HOST_LZ4_BUILD_CMDS
+	$(HOST_MAKE_ENV) $(HOST_CONFIGURE_OPTS) $(MAKE) -C $(@D) lib
+	$(HOST_MAKE_ENV) $(HOST_CONFIGURE_OPTS) $(MAKE) -C $(@D) lz4
+endef
+
+define HOST_LZ4_INSTALL_CMDS
+	$(HOST_MAKE_ENV) $(HOST_CONFIGURE_OPTS) $(MAKE) PREFIX=$(HOST_DIR) \
+		install -C $(@D)
+endef
+
+LZ4_DIRS = lib
+
+ifeq ($(BR2_PACKAGE_LZ4_PROGS),y)
+LZ4_DIRS += programs
+endif
+
+define LZ4_BUILD_CMDS
+	$(foreach dir,$(LZ4_DIRS),\
+		$(TARGET_MAKE_ENV) $(TARGET_CONFIGURE_OPTS) $(MAKE) $(LZ4_MAKE_OPTS) \
+			-C $(@D)/$(dir) \
+			$(if $(filter lib,$(dir)),$(LZ4_LIBRARY_TARGET) liblz4.pc DEBUGFLAGS=)
+	)
+endef
+
+define LZ4_INSTALL_STAGING_CMDS
+	$(foreach dir,$(LZ4_DIRS),\
+		$(TARGET_MAKE_ENV) $(TARGET_CONFIGURE_OPTS) $(MAKE) DESTDIR=$(STAGING_DIR) \
+			PREFIX=/usr $(LZ4_MAKE_OPTS) -C $(@D)/$(dir) install
+	)
+endef
+
+define LZ4_INSTALL_TARGET_CMDS
+	$(foreach dir,$(LZ4_DIRS),\
+		$(TARGET_MAKE_ENV) $(TARGET_CONFIGURE_OPTS) $(MAKE) DESTDIR=$(TARGET_DIR) \
+			PREFIX=/usr $(LZ4_MAKE_OPTS) -C $(@D)/$(dir) install
+	)
+endef
+
+LZ4_SOURCE = lz4-1.11.0.tar.gz
+LZ4_SITE_METHOD = wget
+$(eval $(generic-package))
+$(eval $(host-generic-package))

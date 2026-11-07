@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "wpa_supplicant",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.wpa_supplicant",
+  "symbol": "BR2_PACKAGE_WPA_SUPPLICANT",
+  "version": "2.12",
+  "recipe": "package/wpa_supplicant/wpa_supplicant.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "08e23937e16d0155e55cab2b51f51fbe10d80a1aa91c4e15442645059b737ef6",
+      "filename": "wpa_supplicant-2.12.tar.gz"
+    }
+  ],
+  "release_url": "https://w1.fi/releases/"
+}

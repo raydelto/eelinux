@@ -1,0 +1,194 @@
+--- a/drivers/video/fbdev/ps2fb-gs-device.h
++++ b/drivers/video/fbdev/ps2fb-gs-device.h
+@@ -11,6 +11,7 @@
+ #include "ps2fb-gs-texture-packet.h"
+ #include "ps2fb-gs-logic-packet.h"
+ #include "ps2fb-gs-transfer-packet.h"
++#include "ps2fb-gs-readback-packet.h"
+ 
+ struct ps2gs_session;
+ struct ps2gs_device {
+@@ -251,6 +252,7 @@
+ #include "ps2fb-gs-texture-device.h"
+ #include "ps2fb-gs-logic-device.h"
+ #include "ps2fb-gs-transfer-device.h"
++#include "ps2fb-gs-readback-device.h"
+ 
+ static int ps2gs_surface_ioctl_locked(struct ps2gs_session *session,
+ 		struct fb_info *info, unsigned int cmd, void __user *arg)
+@@ -264,7 +266,7 @@
+ 		ps2gs_caps(info, &caps);
+ 		/* Explicitly allocated Z16/Z16S depth and bounded owned rendering. */
+ 		caps.features = PS2GS_HW_FILL | PS2GS_HW_COPY | PS2GS_HW_UPLOAD |
+-			PS2GS_HW_SURFACES | PS2GS_HW_TRIANGLE | PS2GS_HW_DEPTH16 | PS2GS_HW_OWNED_RENDER | PS2GS_HW_TEXTURE | PS2GS_HW_SOLID_LOGIC | PS2GS_HW_TEXTURE_TRANSFER;
++			PS2GS_HW_SURFACES | PS2GS_HW_TRIANGLE | PS2GS_HW_DEPTH16 | PS2GS_HW_OWNED_RENDER | PS2GS_HW_TEXTURE | PS2GS_HW_SOLID_LOGIC | PS2GS_HW_TEXTURE_TRANSFER | PS2GS_HW_READBACK;
+ 		return copy_to_user(arg, &caps, sizeof(caps)) ? -EFAULT : 0;
+ 	}
+ 	if (session->epoch != ((struct ps2fb_par *)info->par)->gs_epoch)
+@@ -274,6 +276,8 @@
+ 	if (!vc_cons[fg_console].d || vc_cons[fg_console].d->vc_mode != KD_GRAPHICS)
+ 		return -EBUSY;
+ 	switch (cmd) {
++	case PS2GS_SURFACE_DOWNLOAD:
++		return ps2gs_download_locked(session, info, arg);
+ 	case PS2GS_TEXTURE_TRANSFER:
+ 		return ps2gs_transfer_locked(session, info, arg);
+ 	case PS2GS_SOLID_LOGIC:
+--- a/drivers/video/fbdev/ps2fb.c
++++ b/drivers/video/fbdev/ps2fb.c
+@@ -48,6 +48,7 @@
+ #include <linux/ps2-gs-texture.h>
+ #include <linux/ps2-gs-logic.h>
+ #include <linux/ps2-gs-transfer.h>
++#include <linux/ps2-gs-readback.h>
+ #include <linux/miscdevice.h>
+ #include <linux/kref.h>
+ #include <linux/kd.h>
+--- /dev/null
++++ b/include/uapi/linux/ps2-gs-readback.h
+@@ -0,0 +1,17 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_READBACK_H
++#define _UAPI_PS2_GS_READBACK_H
++#include "ps2-gs-surface.h"
++#define PS2GS_HW_READBACK (1U << 10)
++#define PS2GS_MAX_READBACK_BYTES 8192U
++/* Read-only local-to-host transfer, tightly packed native CT16/CT32 pixels.
++ * Width has local-transfer alignment (4/2 pixels); total bytes are a multiple
++ * of 128. Arbitrary client rectangles are staged/masked on GS by userspace.
++ * No CPU rendering or writable VRAM mapping. Handle ownership and VT/epoch
++ * rules are identical to drawing. A hardware timeout poisons the session. */
++struct ps2gs_surface_download {
++	__u32 abi, handle, x, y, width, height, bytes, reserved;
++	__aligned_u64 pixels;
++};
++#define PS2GS_SURFACE_DOWNLOAD _IOW('G', 0x7d, struct ps2gs_surface_download)
++#endif
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-readback-packet.h
+@@ -0,0 +1,30 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++static int ps2gs_validate_download(const struct ps2gs_buffer *buffer,
++		const struct ps2gs_surface_download *r)
++{
++	u32 cpp = buffer->bits_per_pixel / 8;
++	if (r->abi != PS2GS_ABI_VERSION || r->reserved ||
++	    !ps2gs_buffer_rect(buffer, r->x, r->y, r->width, r->height) ||
++	    r->width % (buffer->bits_per_pixel == 16 ? 4 : 2) ||
++	    !r->bytes || r->bytes > PS2GS_MAX_READBACK_BYTES || r->bytes % 128 ||
++	    r->width * r->height * cpp != r->bytes)
++		return -EINVAL;
++	return 0;
++}
++static size_t ps2gs_package_download(union package *base,
++		const struct ps2gs_buffer *buffer, const struct ps2gs_surface_download *r)
++{
++	union package *p = base + 1;
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_bitbltbuf,
++		.data.bitbltbuf = { .sbp = buffer->base / 256,
++			.sbw = buffer->buffer_width / 64, .spsm = ps2gs_buffer_psm(buffer) } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_trxpos, .data.trxpos = { .ssax = r->x, .ssay = r->y } };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_trxreg, .data.trxreg = { .rrw = r->width, .rrh = r->height } };
++	/* FINISH precedes TRXDIR: the receive path must not wait for a FINISH
++	 * command queued behind the local-to-host stream it is about to drain. */
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_finish };
++	GIF_PACKAGE_AD(p) { .addr = gs_addr_trxdir, .data.trxdir = { .xdir = gs_trxdir_local_to_host } };
++	base->gif.tag = (struct gif_tag) { .flg = gif_packed_mode,
++		.reg0 = gif_reg_ad, .nreg = 1, .nloop = p - base - 1, .eop = 1 };
++	return p - base;
++}
+--- /dev/null
++++ b/drivers/video/fbdev/ps2fb-gs-readback-device.h
+@@ -0,0 +1,92 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#define PS2GS_VIF1_STAT 0x10003c00U
++#define PS2GS_VIF1_CHCR 0x10009000U
++#define PS2GS_VIF1_FDR (1U << 23)
++#define PS2GS_VIF1_FQC (31U << 24)
++/* Programmed reads avoid DMA ownership and cache hazards on timeout. Each
++ * FIFO operation is a native aligned 128-bit R5900 access. */
++static void ps2gs_read_fifo(void *destination)
++{
++	void *fifo = (void *)CKSEG1ADDR(0x10005000U);
++	__asm__ __volatile__(".set push\n.set arch=r5900\nlq $8, 0(%1)\nsq $8, 0(%0)\n.set pop\n"
++		: : "r"(destination), "r"(fifo) : "$8", "memory");
++}
++static int ps2gs_download_execute(struct fb_info *info,
++		const struct ps2gs_buffer *buffer, const struct ps2gs_surface_download *r, u8 *pixels)
++{
++	struct ps2fb_par *par = info->par;
++	unsigned long flags;
++	u32 budget = 1000000, offset;
++	int ret = 0;
++	spin_lock_irqsave(&par->lock, flags);
++	if ((inl(PS2GS_VIF1_CHCR) & (1U << 8)) ||
++	    (inl(PS2GS_VIF1_STAT) & (PS2GS_VIF1_FDR | PS2GS_VIF1_FQC))) {
++		ret = -EBUSY;
++		goto out;
++	}
++	if (!gif_wait()) {
++		ret = -ETIMEDOUT;
++		goto out;
++	}
++	gs_write_csr((struct gs_csr) { .finish = 1 });
++	gif_write(&par->package.buffer->gif, ps2gs_package_download(par->package.buffer, buffer, r));
++	if (!gif_wait()) {
++		ret = -ETIMEDOUT;
++		goto out;
++	}
++	while (!gs_read_csr().finish && --budget)
++		cpu_relax();
++	if (!budget) {
++		ret = -ETIMEDOUT;
++		goto out;
++	}
++	outl(PS2GS_VIF1_FDR, PS2GS_VIF1_STAT);
++	gs_write_busdir((struct gs_busdir) { .dir = gs_dir_local_to_host });
++	for (offset = 0; offset < r->bytes; offset += 16) {
++		while (!(inl(PS2GS_VIF1_STAT) & PS2GS_VIF1_FQC) && --budget)
++			cpu_relax();
++		if (!budget) {
++			ret = -ETIMEDOUT;
++			break;
++		}
++		ps2gs_read_fifo(pixels + offset);
++	}
++	/* Restore send direction on every path after switching, before releasing
++	 * the console/GIF locks. Failed sessions cannot submit another packet. */
++	gs_write_busdir((struct gs_busdir) { .dir = gs_dir_host_to_local });
++	outl(0, PS2GS_VIF1_STAT);
++out:
++	if (ret == -ETIMEDOUT)
++		++par->gs_stats.timeouts;
++	spin_unlock_irqrestore(&par->lock, flags);
++	return ret;
++}
++static int ps2gs_download_locked(struct ps2gs_session *session,
++		struct fb_info *info, void __user *arg)
++{
++	struct ps2gs_surface_download request;
++	struct ps2gs_buffer front, *buffer;
++	u8 *pixels;
++	int ret;
++	if (copy_from_user(&request, arg, sizeof(request)))
++		return -EFAULT;
++	buffer = ps2gs_session_buffer(session, info, request.handle, &front);
++	if (!buffer || ps2gs_depth_role(session, request.handle))
++		return -ENOENT;
++	ret = ps2gs_validate_download(buffer, &request);
++	if (ret)
++		return ret;
++	if (request.pixels >> 32 || !request.pixels ||
++	    request.pixels > U32_MAX - (request.bytes - 1))
++		return -EFAULT;
++	pixels = kzalloc(request.bytes, GFP_KERNEL);
++	if (!pixels)
++		return -ENOMEM;
++	ret = ps2gs_download_execute(info, buffer, &request, pixels);
++	if (ret == -ETIMEDOUT)
++		session->failed = ret;
++	if (!ret && copy_to_user(u64_to_user_ptr(request.pixels), pixels, request.bytes))
++		ret = -EFAULT;
++	kfree(pixels);
++	return ret;
++}

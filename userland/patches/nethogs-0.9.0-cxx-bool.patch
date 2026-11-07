@@ -1,0 +1,28 @@
+Subject: [PATCH] Scope the ncurses ABI bool macro before C++ declarations
+
+--- a/src/process.cpp
++++ b/src/process.cpp
+@@ -22,6 +22,10 @@
+ 
+ #include <iostream>
+ #include <ncurses.h>
++/* Keep ncurses declarations intact, then restore the C++ bool keyword. */
++#ifdef bool
++#undef bool
++#endif
+ #include <set>
+ #include <string>
+ #include <strings.h>
+--- a/src/cui.cpp
++++ b/src/cui.cpp
+@@ -32,6 +32,10 @@
+ #include "nethogs.h"
+ #include "process.h"
+ #include <ncurses.h>
++/* Keep ncurses declarations intact, then restore the C++ bool keyword. */
++#ifdef bool
++#undef bool
++#endif
+ 
+ std::string *caption;
+ static int cursOrig;

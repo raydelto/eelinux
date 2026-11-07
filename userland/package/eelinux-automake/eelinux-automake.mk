@@ -1,0 +1,8 @@
+EELINUX_AUTOMAKE_VERSION = 1.16.5
+EELINUX_AUTOMAKE_SOURCE = automake-$(EELINUX_AUTOMAKE_VERSION).tar.xz
+EELINUX_AUTOMAKE_SITE = https://ftp.gnu.org/gnu/automake
+EELINUX_AUTOMAKE_LICENSE = GPL-2.0+
+EELINUX_AUTOMAKE_LICENSE_FILES = COPYING
+EELINUX_AUTOMAKE_DEPENDENCIES = eelinux-autoconf perl host-autoconf
+EELINUX_AUTOMAKE_CONF_ENV = ac_cv_path_PERL=/usr/bin/perl
+$(eval $(autotools-package))

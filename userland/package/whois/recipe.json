@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "whois",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.whois",
+  "symbol": "BR2_PACKAGE_WHOIS",
+  "version": "5.6.6",
+  "recipe": "package/whois/whois.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "43d3b3cc64c75e8bd10aee6feff3906e9488ed335076d206e70f3b25bf644969",
+      "filename": "whois-5.6.6.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/rfc1036/whois/tags"
+}

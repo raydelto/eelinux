@@ -1,0 +1,110 @@
+--- a/src/gallium/drivers/ps2/ps2_tile.c
++++ b/src/gallium/drivers/ps2/ps2_tile.c
+@@ -206,35 +206,38 @@
+  * order, including overlapping rectangles with non-idempotent Boolean ALUs. */
+ static int mono_runs(const struct ps2_pipe_mono_pattern *mono,const uint16_t *heights,
+     const struct ps2_pipe_solid_box *boxes,unsigned count,int32_t ox,int32_t oy,
+-    struct ps2_render_client *render,uint32_t color,uint32_t mask,unsigned alu,
+-    int fast,unsigned limit,unsigned *runs)
++    struct ps2_render_client *render,uint32_t color,uint32_t background,uint32_t mask,unsigned alu,
++    int opaque,int uniform,int fast,unsigned limit,unsigned *runs)
+ {
+     unsigned used=0;
+     for(unsigned i=0;i<count;++i) {
+         const struct ps2_pipe_solid_box *b=boxes+i;
+         for(int y=b->y1;y<b->y2;) {
+             unsigned sy=phase(y,oy,mono->height),h=heights[sy];
+-            if(h==mono->height || h>(unsigned)(b->y2-y)) h=b->y2-y;
++            if(uniform || h==mono->height || h>(unsigned)(b->y2-y)) h=b->y2-y;
+             unsigned sx=phase(b->x1,ox,mono->width);
+             int x=b->x1;
+             while(x<b->x2) {
+-                int left=x,value=mono_bit(mono,sx,sy);
+-                do { ++x;if(++sx==mono->width) sx=0; }
++                int left=x,value=uniform ? 1 : mono_bit(mono,sx,sy);
++                if(uniform) x=b->x2;
++                else do { ++x;if(++sx==mono->width) sx=0; }
+                 while(x<b->x2 && value==mono_bit(mono,sx,sy));
+-                if(!value) continue;
++                if(!opaque && !value) continue;
+                 if(used==limit) { errno=E2BIG;return -1; }
+                 ++used;
+-                if(render && (fast ? ps2_render_fill(render,left,y,x-left,h,color) :
+-                    ps2_surface_solid_logic(render->gs,render->target,left,y,x-left,h,color,mask,alu))) return -1;
++                uint32_t source=value ? color : background;
++                if(render && (fast ? ps2_render_fill(render,left,y,x-left,h,source) :
++                    ps2_surface_solid_logic(render->gs,render->target,left,y,x-left,h,source,mask,alu))) return -1;
+             }
+             y+=h;
+         }
+     }
+     *runs=used;return 0;
+ }
+-int ps2_pipe_stipple_rectangles(struct pipe_context *context,uint32_t destination,
++static int stipple_runs(struct pipe_context *context,uint32_t destination,
+     const struct ps2_pipe_mono_pattern *mono,const struct ps2_pipe_solid_box *boxes,unsigned count,
+-    int32_t ox,int32_t oy,uint32_t foreground,uint32_t mask,unsigned alu,unsigned *emitted)
++    int32_t ox,int32_t oy,uint32_t foreground,uint32_t background,uint32_t mask,unsigned alu,
++    int opaque,unsigned *emitted)
+ {
+     if(emitted) *emitted=0;
+     if(!mono || count>PS2_PIPE_MAX_TILE_BOXES || (count && !boxes) || alu>15) { errno=EINVAL;return -1; }
+@@ -247,7 +250,7 @@
+         !mono->bits || !mono->width || !mono->height || mono->width>256 || mono->height>256 ||
+         (mono->msb_first!=0 && mono->msb_first!=1)) goto out;
+     uint32_t bits=d->bits_per_pixel==16 ? 0x7fff : 0xffffff;
+-    if((foreground|mask)&~bits) goto out;
++    if((foreground|mask|(opaque ? background : 0))&~bits) goto out;
+     size_t row=(mono->width+7)/8;
+     if(mono->stride<row || mono->height-1>(SIZE_MAX-row)/mono->stride) goto out;
+     size_t bytes=(mono->height-1)*mono->stride+row;
+@@ -269,12 +272,14 @@
+     struct ps2_pipe_mono_pattern saved=*mono;saved.bits=snapshot;saved.stride=row;saved.bytes=row*mono->height;
+     uint16_t heights[256];mono_bands(&saved,heights);
+     unsigned runs=0,limit=fast ? PS2_PIPE_MAX_STIPPLE_RUNS : PS2_PIPE_MAX_STIPPLE_LOGIC_RUNS;
+-    if(mono_runs(&saved,heights,boxes,count,ox,oy,NULL,0,mask,alu,fast,limit,&runs)) { error=errno;goto out; }
++    int uniform=opaque && !((foreground^background)&mask);
++    if(mono_runs(&saved,heights,boxes,count,ox,oy,NULL,0,0,mask,alu,opaque,uniform,fast,limit,&runs)) { error=errno;goto out; }
+     if(!runs) { status=0;goto out; }
+     struct ps2_render_client temporary={.gs=gs,.target=destination};
+     uint32_t color=fast ? ps2_gs_pixel_color(foreground,d->bits_per_pixel) : foreground;
++    uint32_t bg=fast ? ps2_gs_pixel_color(background,d->bits_per_pixel) : background;
+     status=ps2_render_flush(original);
+-    if(!status) status=mono_runs(&saved,heights,boxes,count,ox,oy,&temporary,color,mask,alu,fast,limit,&runs);
++    if(!status) status=mono_runs(&saved,heights,boxes,count,ox,oy,&temporary,color,bg,mask,alu,opaque,uniform,fast,limit,&runs);
+     if(!status && fast) status=ps2_render_flush(&temporary);
+     error=errno;
+     if(!status && emitted) *emitted=runs;
+@@ -283,3 +288,15 @@
+     if(status) errno=error;
+     return status;
+ }
++int ps2_pipe_stipple_rectangles(struct pipe_context *context,uint32_t destination,
++    const struct ps2_pipe_mono_pattern *mono,const struct ps2_pipe_solid_box *boxes,unsigned count,
++    int32_t ox,int32_t oy,uint32_t foreground,uint32_t mask,unsigned alu,unsigned *emitted)
++{
++    return stipple_runs(context,destination,mono,boxes,count,ox,oy,foreground,0,mask,alu,0,emitted);
++}
++int ps2_pipe_opaque_stipple_logic_rectangles(struct pipe_context *context,uint32_t destination,
++    const struct ps2_pipe_mono_pattern *mono,const struct ps2_pipe_solid_box *boxes,unsigned count,
++    int32_t ox,int32_t oy,uint32_t foreground,uint32_t background,uint32_t mask,unsigned alu,unsigned *emitted)
++{
++    return stipple_runs(context,destination,mono,boxes,count,ox,oy,foreground,background,mask,alu,1,emitted);
++}
+--- a/src/gallium/drivers/ps2/ps2_tile.h
++++ b/src/gallium/drivers/ps2/ps2_tile.h
+@@ -44,4 +44,14 @@
+     const struct ps2_pipe_mono_pattern *, const struct ps2_pipe_solid_box *, unsigned count,
+     int32_t origin_x, int32_t origin_y, uint32_t foreground, uint32_t plane_mask,
+     unsigned alu, unsigned *emitted);
++/* General opaque stipple: partition each box into disjoint zero/one runs so
++ * every destination pixel applies exactly one background/foreground ALU.
++ * All sixteen Boolean ALUs and RGB masks; request order is retained on overlap.
++ * Equal source colours under the active mask collapse to one rectangle per box.
++ * Same snapshot/preflight/run limits as transparent stipples. The existing
++ * opaque GXcopy/full-mask tile adapter remains the efficient repeat path. */
++int ps2_pipe_opaque_stipple_logic_rectangles(struct pipe_context *, uint32_t destination,
++    const struct ps2_pipe_mono_pattern *, const struct ps2_pipe_solid_box *, unsigned count,
++    int32_t origin_x, int32_t origin_y, uint32_t foreground, uint32_t background,
++    uint32_t plane_mask, unsigned alu, unsigned *emitted);
+ #endif

@@ -1,0 +1,18 @@
+Subject: [PATCH] build-lua: use the selected compiler's archive tools
+
+Bundled Lua otherwise defaults to the host ar and ranlib. Select the
+matching tools through CC, as is already done for compiling Lua. Keep
+these overrides local to the Lua submake so other archive recipes keep
+their expected flag conventions. No target program is executed.
+
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -163,7 +163,7 @@
+ 	cd $(NCATDIR) && $(MAKE)
+ 
+ build-lua: $(LIBLUADIR)/Makefile
+-	@echo Compiling liblua; cd $(LIBLUADIR) && $(MAKE) liblua.a CC="$(CC)" MYCFLAGS="$(CFLAGS) @LUA_CFLAGS@"
++	@echo Compiling liblua; cd $(LIBLUADIR) && $(MAKE) liblua.a CC="$(CC)" AR="$(shell $(CC) -print-prog-name=ar) rcu" RANLIB="$(shell $(CC) -print-prog-name=ranlib)" MYCFLAGS="$(CFLAGS) @LUA_CFLAGS@"
+ 
+ build-liblinear: $(LIBLINEARDIR)/Makefile
+ # -Wno-uninitialized avoids the warning "'Gnorm1_init' may be used uninitialized in this function"

@@ -1,0 +1,99 @@
+# PS2 / Emotion Engine. Core bitmap fonts, static drawing, no compositor.
+NoGrabServer
+NoBackingStore
+NoSaveUnders
+OpaqueMove
+AutoRelativeResize
+DecorateTransients
+RestartPreviousState
+RandomPlacement
+BorderWidth 4
+FramePadding 3
+TitlePadding 5
+ButtonIndent 0
+MoveDelta 3
+Zoom 0
+TitleFont "7x13bold"
+ResizeFont "6x13"
+MenuFont "7x13"
+IconFont "6x13"
+IconManagerFont "6x13"
+IconDirectory "/usr/share/ps2/twm"
+# Width 1 fits the panel to its title text and window buttons.
+IconManagerGeometry "1x1-12-12" 1
+ShowIconManager
+SortIconManager
+IconifyByUnmapping
+Color {
+    BorderColor "#479ee8"
+    BorderTileForeground "#20385f"
+    BorderTileBackground "#111c37"
+    DefaultBackground "#0d1933"
+    DefaultForeground "#dbeaff"
+    TitleBackground "#173964"
+    TitleForeground "#e7f4ff"
+    MenuBackground "#0c1833"
+    MenuForeground "#dbeaff"
+    MenuTitleBackground "#244c80"
+    MenuTitleForeground "#8ce5ff"
+    MenuShadowColor "#020610"
+    IconBackground "#10274a"
+    IconForeground "#8ce5ff"
+    IconBorderColor "#479ee8"
+    IconManagerBackground "#0c1833"
+    IconManagerForeground "#dbeaff"
+    IconManagerHighlight "#62d6ff"
+}
+NoDefaults
+# Triangle rolls the body up; the other buttons are minimize, maximize, close.
+LeftTitleButton "triangle.xbm" = f.shade
+RightTitleButton "square.xbm" = f.iconify
+RightTitleButton "circle.xbm" = f.fullzoom
+RightTitleButton "cross.xbm" = f.close
+# Root menus stay open after release; click an entry, outside, or Escape.
+Button1 = : root : f.menu "main"
+Button3 = : root : f.menu "TwmWindows"
+Button1 = : title : f.move
+Button2 = : title : f.raise
+# Context menus use the same click-to-select behavior as desktop menus.
+Button3 = : title : f.menu "window"
+Button1 = : frame : f.resize
+Button1 = : icon : f.deiconify
+Button1 = : iconmgr : f.iconify
+Button2 = : iconmgr : f.raiselower
+Button3 = : iconmgr : f.menu "window"
+Button1 = m : window|frame : f.move
+Button3 = m : window|frame : f.resize
+"F1" = : all : f.menu "main"
+"Return" = m : all : f.exec "xterm -name ps2-terminal -title 'Emotion Engine | Terminal' &"
+"Tab" = m : all : f.circleup
+"F4" = m : window|title|frame : f.close
+"F9" = m : window|title|frame : f.iconify
+"F10" = m : window|title|frame : f.fullzoom
+"F11" = m : window|title|frame : f.shade
+"Escape" = m : all : f.menu "session"
+menu "main" {
+    "PS2 | Emotion Engine" f.title
+    "Terminal" f.exec "xterm -name ps2-terminal -title 'Emotion Engine | Terminal' &"
+    "Applications" f.menu "applications"
+    "Windows" f.menu "TwmWindows"
+    "Show window list" f.showiconmgr
+    "Hide window list" f.hideiconmgr
+    "Session" f.menu "session"
+}
+menu "window" {
+    "Window" f.title
+    "Move" f.move
+    "Resize" f.resize
+    "Raise" f.raise
+    "Lower" f.lower
+    "Shade / unshade" f.shade
+    "Minimize" f.iconify
+    "Maximize / restore" f.fullzoom
+    "Close" f.close
+}
+menu "session" {
+    "Session" f.title
+    "Reload settings" f.restart
+    "Return to console" f.quit
+}

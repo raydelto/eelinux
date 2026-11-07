@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "version": "10.5.2",
+  "archive": {
+    "name": "dhcpcd-10.5.2.tar.xz",
+    "root": "dhcpcd-10.5.2",
+    "url": "https://github.com/NetworkConfiguration/dhcpcd/releases/download/v10.5.2/dhcpcd-10.5.2.tar.xz",
+    "sha256": "3e476657fdb6eeb38b277da3a48d0ac0113ecce5858ebdcddff2b629faed52b4",
+    "bytes": 289084
+  },
+  "checksum_provenance": "Publisher's release checksum, checked 2026-10-02",
+  "release": "https://github.com/NetworkConfiguration/dhcpcd/releases/tag/v10.5.2",
+  "license": "BSD-2-Clause",
+  "license_sha256": "3aeab006b01c1573b42d4440d7edad0adfe61ad05848ca82e02e745424a2b4fa",
+  "configuration": [
+    "--prefix=/usr",
+    "--sbindir=/sbin",
+    "--sysconfdir=/etc",
+    "--libexecdir=/usr/lib/dhcpcd",
+    "--mandir=/usr/share/man",
+    "--rundir=/run/dhcpcd",
+    "--dbdir=/var/lib/dhcpcd",
+    "--privsepuser=dhcpcd",
+    "--enable-privsep",
+    "--disable-seccomp",
+    "--disable-ipv6",
+    "--without-dev",
+    "--without-openssl",
+    "--without-libpcap"
+  ],
+  "configuration_notes": "IPv4 matches the PS2 kernel configuration. Privilege separation is retained; seccomp is disabled because this R5900 kernel does not provide it. Linux netlink handles carrier and interface events without a udev plugin. Full embedded DHCP option definitions are retained.",
+  "patches": [
+    {
+      "path": "userland/package/eelinux-dhcpcd/0001-linux-machinearch-multiword-cpuinfo.patch",
+      "sha256": "3107f1b8ac54add519068b85c47e8026db0387a3cfec539c0a2dd09ec049046d",
+      "purpose": "parse complete colon-separated cpuinfo keys instead of whitespace tokens; preserve privilege separation"
+    }
+  ]
+}

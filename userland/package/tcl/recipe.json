@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "tcl",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.tcl",
+  "symbol": "BR2_PACKAGE_TCL",
+  "version": "9.1.0",
+  "recipe": "package/tcl/tcl.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "536c45543f64d6eb11832d97ba3494aacff046fbc5040273bd55258d0e448ff1",
+      "filename": "tcl9.1.0-src.tar.gz"
+    }
+  ],
+  "release_url": "https://www.tcl-lang.org/software/tcltk/download.html"
+}

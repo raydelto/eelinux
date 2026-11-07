@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "unbound",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.unbound",
+  "symbol": "BR2_PACKAGE_UNBOUND",
+  "version": "1.26.2",
+  "recipe": "package/unbound/unbound.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "d8ee7aa6bbb3ff1be7d9e57637d0d0ec2f18273a8efff1a0afe2c665858b96f7",
+      "filename": "unbound-1.26.2.tar.gz"
+    }
+  ],
+  "release_url": "https://nlnetlabs.nl/projects/unbound/download/"
+}

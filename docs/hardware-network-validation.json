@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-03",
+  "source": "user confirmation and photograph of the real PS2 console, followed by user-reported hostname ping and kernel error-log check",
+  "machine": "SCPH-90001",
+  "machine_identification_source": "user's earlier model confirmation in this session",
+  "candidate_delivery": {
+    "driver_name": "ps2-smap",
+    "default_transport": "IOP SMAP / SIF",
+    "kernel_sha256": "14851357211089de33168445709c66774587dd76ad51f8e5019db06dc595e246",
+    "kernel_hash_measured_on_console": false,
+    "association": "user reported success after delivery of this candidate; the photograph does not show a kernel hash or driver identity query"
+  },
+  "authenticated_root_shell_observed": true,
+  "interfaces_observed": ["lo", "eth0"],
+  "ethernet": {
+    "interface": "eth0",
+    "flags_observed": ["BROADCAST", "MULTICAST", "UP", "LOWER_UP"],
+    "mtu": 1500,
+    "address": "192.168.2.112/24",
+    "address_scope": "global dynamic",
+    "dhcpcd_version_observed": "10.5.2"
+  },
+  "external_ping": {
+    "destination": "8.8.8.8",
+    "packets_transmitted": 4,
+    "packets_received": 4,
+    "packet_loss_percent": 0,
+    "reply_ttl": 116,
+    "rtt_ms": {
+      "min": 21.046,
+      "avg": 29.618,
+      "max": 55.069,
+      "mdev": 14.694
+    }
+  },
+  "physical_ethernet_packets_confirmed": true,
+  "dynamic_IPv4_configuration_observed": true,
+  "routed_external_ICMP_confirmed": true,
+  "hostname_ping": {
+    "destination": "gnu.org",
+    "successful": true,
+    "source": "user follow-up report; packet counts and timings were not supplied"
+  },
+  "kernel_error_log_check": {
+    "command": "dmesg -l err",
+    "messages_reported": 0,
+    "source": "user follow-up report",
+    "scope": "No messages returned by the err severity filter; other severity levels were not assessed by this check"
+  },
+  "physical_DNS_confirmed": true,
+  "other_models_confirmed": [],
+  "qualification_remaining": [
+    "Other Slim revisions, official Fat Network Adaptor and early PCMCIA models",
+    "Sustained bidirectional throughput and packet loss",
+    "Cable removal, PHY renegotiation and reset recovery",
+    "Concurrent ATA and USB traffic"
+  ]
+}

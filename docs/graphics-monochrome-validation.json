@@ -1,0 +1,145 @@
+{
+  "schema": 1,
+  "updated": "2026-10-04",
+  "milestone": "owned source-only monochrome pixmaps feeding native Mesa stipple fills",
+  "implementation": [
+    "desktop/xorg/ps2_surface_exa.c",
+    "desktop/xorg/ps2_surface_exa.h",
+    "desktop/xorg/ps2_gc.c",
+    "desktop/xorg/ps2_fill.c"
+  ],
+  "build": {
+    "sha256": "7e8006a1f953663249202f4724e95c7b544083f908ad0f8523a8b618fc117801"
+  },
+  "host": {
+    "sha256": "f22347945acc536618d1ca05369718ab4a92308a4aed3facd919bcf057611943"
+  },
+  "build_log": {
+    "sha256": "5a8a90853491f65ec76bfa675beb4b7b2df2b65d9fea5fc81872ccb9fa18f8eb"
+  },
+  "archives": {
+    "libps2-gallium-mono.a": "5ea7342711feeb1439b69f834249f4c73f11b3ecb143f4829f5f44a7885800f1",
+    "libps2-xorg-mono.a": "b0db27bd70404a4f36c7d9e88e7580ebf2ca986d9f1c9a1404a795d94c4028c5"
+  },
+  "patches": [
+    {
+      "patch": "userland/patches/xorg-ps2-monochrome.patch",
+      "sha256": "98780bf85c524fbdf3372bc99a9956b607e10117b77a1df44a2410d517e58a5f",
+      "after": "xorg-ps2-stippled-gc.patch",
+      "prerequisite_patches": [
+        "xorg-ps2-raster.patch",
+        "xorg-ps2-surfaces.patch",
+        "xorg-ps2-rendering.patch",
+        "xorg-ps2-textures.patch",
+        "xorg-ps2-contexts.patch",
+        "xorg-ps2-glyphs.patch",
+        "xorg-ps2-gc.patch",
+        "xorg-ps2-logic.patch",
+        "xorg-ps2-solid-gc.patch",
+        "xorg-ps2-copy.patch",
+        "xorg-ps2-exa-copy.patch",
+        "xorg-ps2-blit.patch",
+        "xorg-ps2-copy-window.patch",
+        "xorg-ps2-paint-window.patch",
+        "xorg-ps2-tiled-paint.patch",
+        "xorg-ps2-tiled-gc.patch",
+        "xorg-ps2-stippled-gc.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    }
+  ],
+  "upstream_contracts": [
+    {
+      "sha256": "671a98fe3d6bfe893e6ad2d789c32944b0a3cc0f4c556195cff7357966b6beee"
+    },
+    {
+      "sha256": "b93d7b144bdb7a6624a904860cd9806d6055d16555e6310172a40a79f3fbb3c1"
+    },
+    {
+      "sha256": "53ede613ad3d51762e083eb535b9ae474b9de4154de9466c5f1c5ed4566712e4"
+    },
+    {
+      "sha256": "4e46c97a39ca816e943e4a11f7ebdc914a06f3fbc3a0d1f8201e22206a3de2b3"
+    },
+    {
+      "sha256": "c02a72316fca7149694a58f3d89d654ab99060ce215346590bfc3fc2410e6492"
+    }
+  ],
+  "host_sanitizer_cases": 98,
+  "R5900_cases": 98,
+  "new_cases_per_environment": 10,
+  "regression_cases_per_environment": 88,
+  "checks": [
+    "allocation",
+    "budget",
+    "count",
+    "headers",
+    "access",
+    "pixels",
+    "source-edit",
+    "gc",
+    "failure",
+    "foreign"
+  ],
+  "native_path": "EXA owned 1bpp source -> stable source view while devPrivate.ptr is hidden -> Mesa monochrome snapshot -> GS native pattern/repeat",
+  "source_bitmap_editing": "depth-1 GC operations retain lower EXA/fb callbacks; fixture lower drawing/table replacement is modeled, actual fb/EXA server execution remains pending",
+  "limits": {
+    "max_source_dimension": 2048,
+    "source_bitmap_pixel_bytes_per_screen": 1048576,
+    "source_bitmap_count_per_screen": 1024,
+    "native_stipple_source_max_dimension": 256,
+    "native_stipple_snapshot_max_bytes": 8192
+  },
+  "zero_initialized_bitmap_bytes": true,
+  "scanline_padding": "server BitmapBytePad / BITMAP_SCANLINE_PAD",
+  "color_destination_CPU_access": "fatal; remains unavailable",
+  "color_pixel_uploads_used_by_probe": false,
+  "new_Gallium_capabilities_advertised": false,
+  "actual_full_EXA_fb_server_executed": false,
+  "actual_Damage_subsystem_executed": false,
+  "GPU_pixel_readback": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL_GLX": false,
+  "shader_caps": 0,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "prior_qualified_stipple_evidence": {
+    "path": "docs/graphics-stippled-gc-validation.json",
+    "sha256": "c797282f73cd25776bfafa8c88cff2c94aa11306cacad1432dd1b0f6e188b652"
+  },
+  "new_USB_image_packaged": true,
+  "new_PCSX2_pixels_verified": true,
+  "new_physical_PS2_pixels_verified": false,
+  "limitations": [
+    "full EXA/fb source bitmap editing and client use still require a real X server session",
+    "transparent stipples, opaque stipple ALUs/partial masks and tile-pixmap ALUs remain unsupported",
+    "source bitmap budget excludes metadata, GC allocations and other process memory; full desktop RAM remains unmeasured",
+    "full DDX VT/input/cursor/presentation and Mesa shader/draw_vbo/GLX remain unfinished"
+  ],
+  "runtime_validation": {
+    "path": "docs/graphics-monochrome-runtime-validation.json",
+    "sha256": "4af89d89a6c0587db065098785cdedb3d1d037d209c6326e2ae2b3379c3a65ac"
+  },
+  "probe_build": {
+    "sha256": "acf0e6e3228a05add74f8c1c8f99c1186b515b76c3c2a8fe2eeb34207b03a16f"
+  },
+  "probe_host_checks": {
+    "schema": 1,
+    "result": "passed",
+    "cases": 5,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "log_sha256": "784937dc79254e0f7235501dcbde55ec8565304a1da1ea21eb6a7dc3ad732d32",
+    "probe_source_sha256": "4d0b8c062c3b75d8a2b9ca78c032a3e0ced66632fdde105cd228a61d591f3827",
+    "pixel_qualification": false
+  },
+  "PCSX2_command_fence_exit": 0,
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

@@ -1,0 +1,61 @@
+--- a/src/add_window.c
++++ b/src/add_window.c
+@@ -343,6 +343,10 @@
+     else {
+         tmp_win->frame_bw = Scr->BorderWidth;
+     }
++    /* The title and list entries share one outer edge.  An external
++     * frame border would make the title wider than the entry outlines. */
++    if (tmp_win->iconmgr)
++        tmp_win->frame_bw = 0;
+     bw2 = tmp_win->frame_bw * 2;
+ 
+     tmp_win->title_height = Scr->TitleHeight + tmp_win->frame_bw;
+--- a/src/iconmgr.c
++++ b/src/iconmgr.c
+@@ -569,24 +569,12 @@
+ void
+ DrawIconManagerBorder(WList *tmp)
+ {
+-    {
+-        XSetForeground(dpy, Scr->NormalGC, tmp->fore);
+-        XDrawRectangle(dpy, tmp->w, Scr->NormalGC, 2, 2,
+-                       (unsigned) (tmp->width - 5),
+-                       (unsigned) (tmp->height - 5));
+-
+-        if (tmp->active && Scr->Highlight)
+-            XSetForeground(dpy, Scr->NormalGC, tmp->highlight);
+-        else
+-            XSetForeground(dpy, Scr->NormalGC, tmp->back);
+-
+-        XDrawRectangle(dpy, tmp->w, Scr->NormalGC, 0, 0,
+-                       (unsigned) (tmp->width - 1),
+-                       (unsigned) (tmp->height - 1));
+-        XDrawRectangle(dpy, tmp->w, Scr->NormalGC, 1, 1,
+-                       (unsigned) (tmp->width - 3),
+-                       (unsigned) (tmp->height - 3));
+-    }
++    /* Paint inactive and active entries to the same full width. */
++    XSetForeground(dpy, Scr->NormalGC,
++                   tmp->active && Scr->Highlight ? tmp->highlight : tmp->fore);
++    XDrawRectangle(dpy, tmp->w, Scr->NormalGC, 0, 0,
++                   (unsigned) (tmp->width - 1),
++                   (unsigned) (tmp->height - 1));
+ }
+ 
+ /**
+--- a/src/events.c
++++ b/src/events.c
+@@ -1086,6 +1086,12 @@
+                               Scr->NormalGC, Scr->TBInfo.titlex,
+                               Scr->TitleBarFont.y, Tmp_win->name,
+                               (int) strlen(Tmp_win->name));
++            if (Tmp_win->iconmgr) {
++                XSetForeground(dpy, Scr->NormalGC, Tmp_win->title.fore);
++                XDrawRectangle(dpy, Tmp_win->title_w, Scr->NormalGC, 0, 0,
++                               (unsigned) (Tmp_win->title_width - 1),
++                               (unsigned) (Tmp_win->title_height - 1));
++            }
+             flush_expose(Event.xany.window);
+         }
+         else if (Event.xany.window == Tmp_win->icon_w) {

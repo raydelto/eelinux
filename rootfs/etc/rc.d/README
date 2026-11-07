@@ -1,0 +1,8 @@
+The image assembler installs real relative service symlinks from runlevels.json.
+rcS mounts essential filesystems before running rcS.d early services.
+SysVinit /etc/inittab runs rc0.d .. rc6.d for actual runlevel transitions.
+KNNservice links receive stop, then SNNservice links receive start, in name order.
+Services shared by consecutive multiuser runlevels remain running.
+0 powers off; 1 uses authenticated sulogin; 2..5 are text multiuser; 6 reboots.
+Xorg is always manually launched with startx-ps2.
+Change existing runlevel symlinks on the target, or edit runlevels.json and rebuild.

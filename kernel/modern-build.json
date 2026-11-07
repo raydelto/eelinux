@@ -1,0 +1,244 @@
+{
+  "compiler": {
+    "prefix": "mipsel-linux-gnu-",
+    "version": "gcc (Debian 14.2.0-13) 14.2.0",
+    "target_flags": "-march=r5900; ELF32 little-endian o32 kernel configuration",
+    "purpose": "freestanding compile audit; GNU Linux userland toolchain is built separately"
+  },
+  "artifacts": {
+    "vmlinux": {
+      "path": "/home/machaddr/.cache/eelinux/kernel-audit-7.2.8/vmlinux",
+      "bytes": 5547776,
+      "sha256": "6ac55059db8f7289862ea108aedb5ed7fa68dfccef28035b1caed0ea25b23183",
+      "release_ready": false
+    },
+    "vmlinuz": {
+      "path": "/home/machaddr/.cache/eelinux/kernel-audit-7.2.8/vmlinuz",
+      "bytes": 1915656,
+      "sha256": "cf384bf2005b4ddd875803ccd0c80ff7cccd5f8577141ef40b2d7b7a35b095a6",
+      "release_ready": false
+    }
+  },
+  "modules": [
+    {
+      "path": "arch/mips/ps2/rom-sysfs.ko",
+      "bytes": 11196,
+      "sha256": "ca6a9f11394e2326ffd966de97048bb07060ecaf8ddf8bbc998116f7a70cba11"
+    },
+    {
+      "path": "drivers/ata/pata_platform.ko",
+      "bytes": 8632,
+      "sha256": "86ffad6a57abbbdf09e19e517080c1368ff66e252f25067594fd33fd621a1619"
+    },
+    {
+      "path": "drivers/ata/pata_ps2.ko",
+      "bytes": 10332,
+      "sha256": "7fe3310a49ec103ee8a3789cc94db6a00e16d4e92e9116713795ce4fd6da0b89"
+    },
+    {
+      "path": "drivers/hid/hid-generic.ko",
+      "bytes": 5148,
+      "sha256": "09c44c392a1e8acf5b49fe3a28c1e40a7a4d63c48d152a0155d96a7629a28f4b"
+    },
+    {
+      "path": "drivers/hid/hid.ko",
+      "bytes": 102892,
+      "sha256": "008e00e0d7b225790960fed04eb81153e3136e2663e27b5921ac7dd7c8769934"
+    },
+    {
+      "path": "drivers/hid/usbhid/usbhid.ko",
+      "bytes": 29196,
+      "sha256": "113449cf940571f6d5faea76ea72c08b2b8e9a02359d87d915eb5878f326db9c"
+    },
+    {
+      "path": "drivers/input/evdev.ko",
+      "bytes": 21416,
+      "sha256": "82bf0ad676d3c8cf409c3f0e1ec238873f61457090419cc5a7c83d64646babdc"
+    },
+    {
+      "path": "drivers/input/mousedev.ko",
+      "bytes": 19836,
+      "sha256": "312985a536e9e1786d0fb9a6be8d82f55adef365c9cb449f199304304440fc7a"
+    },
+    {
+      "path": "drivers/net/mii.ko",
+      "bytes": 10804,
+      "sha256": "7177b4437590cf58e4d1ad884b09b4dd690bf554d3745f91f3996863fe56c8b7"
+    },
+    {
+      "path": "drivers/net/phy/ax88796b.ko",
+      "bytes": 6356,
+      "sha256": "74ee3102b5a527f4e0a0d6a859c57962966416770f7b9c559bd8f47162155cc5"
+    },
+    {
+      "path": "drivers/net/phy/libphy.ko",
+      "bytes": 174728,
+      "sha256": "5f2d9884c151dd6483e9014d20c61e0bdb79244f9ee93736959641e1cc071e7e"
+    },
+    {
+      "path": "drivers/net/phy/mdio_bus.ko",
+      "bytes": 11888,
+      "sha256": "872d7d5920783090e098adf436f7f93ca9c9896c3b22c1b04984643de2747855"
+    },
+    {
+      "path": "drivers/net/phy/mdio_devres.ko",
+      "bytes": 4716,
+      "sha256": "b163479071d21e048166544a5d74c31d96482f91d26513b7e1a6ced3db87ae19"
+    },
+    {
+      "path": "drivers/net/phy/phylink.ko",
+      "bytes": 58612,
+      "sha256": "250d5b78008054013e8d1044b6f460dafd68f387f6d915c173136fbf883f2554"
+    },
+    {
+      "path": "drivers/net/usb/asix.ko",
+      "bytes": 46572,
+      "sha256": "846ec8db746ad5d11d2024461702d37b5c8e939a985ca7d0a6ee127e18cb9bde"
+    },
+    {
+      "path": "drivers/net/usb/ax88179_178a.ko",
+      "bytes": 29156,
+      "sha256": "8bc74b8d3e9b7762318b9635355470a2373ebaeb44784d55fd7f7aca2fe99c27"
+    },
+    {
+      "path": "drivers/net/usb/cdc_ether.ko",
+      "bytes": 18284,
+      "sha256": "349ae5f39139c5e84babe593a0de644c6d94f771cefdb3bf0b7329dbd2338107"
+    },
+    {
+      "path": "drivers/net/usb/dm9601.ko",
+      "bytes": 14200,
+      "sha256": "076a03771d123df8aa0fb6effc0afb291ef95d18c8c63d46cef9d4be20179a33"
+    },
+    {
+      "path": "drivers/net/usb/r8152.ko",
+      "bytes": 136348,
+      "sha256": "654e4f8e03cc3cad23a5563e517f8c268abade11bb258e012304f06fb9d2a685"
+    },
+    {
+      "path": "drivers/net/usb/r8153_ecm.ko",
+      "bytes": 6344,
+      "sha256": "e6e9571b0a6354c4b6a6a9cf1181686ccab8e5f2ef8bb4165eafef0cab12675e"
+    },
+    {
+      "path": "drivers/net/usb/usbnet.ko",
+      "bytes": 42720,
+      "sha256": "425cbf31fb0c4ed3fe39a168cc5f90ddcad832cd6fafc0a82c449491abc8952e"
+    },
+    {
+      "path": "drivers/ps2/gamepad.ko",
+      "bytes": 4820,
+      "sha256": "1726864ef90f661b2b97b392e349cf045f42237c6179cd57af247d1cffc2ef18"
+    },
+    {
+      "path": "drivers/ps2/iop-dev9.ko",
+      "bytes": 3348,
+      "sha256": "a61d25cbaa88256fac9ca021cafc218bac41688ed57fa71c8c169e4283e7fe48"
+    },
+    {
+      "path": "drivers/ps2/iop-heap.ko",
+      "bytes": 4696,
+      "sha256": "8a3acef2f441a40a5e8e9aec2402b30245f3faa1b96365e8148db46676264e27"
+    },
+    {
+      "path": "drivers/ps2/iop-irq.ko",
+      "bytes": 13696,
+      "sha256": "3f4210d6a08ea7183a2df349d160b85cd7750cbdbd47b2ea5d84d102085ddd18"
+    },
+    {
+      "path": "drivers/ps2/iop-memory.ko",
+      "bytes": 3656,
+      "sha256": "300406da02383ba89eecea130fa24fc3e5f009b7241e70106382df130b749a02"
+    },
+    {
+      "path": "drivers/ps2/iop-module-sysfs.ko",
+      "bytes": 8764,
+      "sha256": "20bca5a4191deec3dd2f1d11628e9a3debb292561503c28d99fb230307c37203"
+    },
+    {
+      "path": "drivers/ps2/iop-module.ko",
+      "bytes": 15980,
+      "sha256": "15fd13b9b3488863fca66d7a898484a1c543eacea86994498799469c4bc0ab1f"
+    },
+    {
+      "path": "drivers/ps2/iop-registers.ko",
+      "bytes": 3872,
+      "sha256": "6f01aba53bcffac931bae69eb8dea4bad5d90dc776789d7ad65df6a2ae4709e1"
+    },
+    {
+      "path": "drivers/ps2/sif.ko",
+      "bytes": 20360,
+      "sha256": "1d2377833c729ca12277341d1c26009bd973318968bb39f811f1ab1c6244047b"
+    },
+    {
+      "path": "drivers/scsi/sd_mod.ko",
+      "bytes": 66004,
+      "sha256": "f38fc071615b1c5d6a47b209e9892203842d3ca790258a206ed8704c439a440c"
+    },
+    {
+      "path": "drivers/usb/common/usb-common.ko",
+      "bytes": 9544,
+      "sha256": "352a0f26fedc4ba9704db66ca43968778611a80ee3766de64bda6b22f26a706a"
+    },
+    {
+      "path": "drivers/usb/core/usbcore.ko",
+      "bytes": 277568,
+      "sha256": "b91a3c75b00516ade67a61846a87d2c63e3fcba5462f4304dddcc8e083c855bf"
+    },
+    {
+      "path": "drivers/usb/host/ohci-hcd.ko",
+      "bytes": 27824,
+      "sha256": "505797d047dc92ad556d31cac992cb48be445a091ae0bbce410253b1214bcf1b"
+    },
+    {
+      "path": "drivers/usb/host/ohci-ps2.ko",
+      "bytes": 8172,
+      "sha256": "9caab76539f64c749cbf15152142e01fedbaf971916a2f1ee9127b22134b8523"
+    },
+    {
+      "path": "drivers/usb/storage/usb-storage.ko",
+      "bytes": 108284,
+      "sha256": "898bc65146079219a704228e2248212222aa841e6ae01c0c2d5ee64c4f808ed3"
+    },
+    {
+      "path": "drivers/video/fbdev/ps2fb.ko",
+      "bytes": 29060,
+      "sha256": "847b7b5ef2e34ec04dbae9c7ecb69b754be35e75e7331d6e0012b0380a432761"
+    },
+    {
+      "path": "fs/fat/fat.ko",
+      "bytes": 98776,
+      "sha256": "24f7a2abf6af7c17e486de8dda68d9e4f00d71d65ba0f058bbee09cca44ef28f"
+    },
+    {
+      "path": "fs/fat/vfat.ko",
+      "bytes": 19984,
+      "sha256": "a6ca3269a47afd4d23a6ecf7c274df6761cd656f084d4fe36862c4bd17552519"
+    },
+    {
+      "path": "fs/nls/nls_cp437.ko",
+      "bytes": 8240,
+      "sha256": "c054151f67287d7f4cc1adb9cd947e20035c624f63f6f1e1a6076c2ea78c3813"
+    },
+    {
+      "path": "fs/nls/nls_iso8859-1.ko",
+      "bytes": 6548,
+      "sha256": "b958f77bbf8b362739e2430258a813b4914ac000ca66b5259162be7ea9a050ed"
+    },
+    {
+      "path": "fs/nls/nls_utf8.ko",
+      "bytes": 4156,
+      "sha256": "61701e6a20ff10e0db47a6857f0a6b6ae56b6bb4e93c4e7bb5a7600d91fa1655"
+    },
+    {
+      "path": "net/core/selftests.ko",
+      "bytes": 10432,
+      "sha256": "15235dafe1eef10e7b9d213eeed20ffe2b6e2e32d4f82e2647a92f90e78eda37"
+    }
+  ],
+  "placeholder_initramfs": true,
+  "hardware_validated": false,
+  "release_ready": false,
+  "adapter_patch_sha256_at_build": "26405f00c6c0b23b020c521d3ef925ea55fb80da3fa37c0b41fd7464bd08d007",
+  "followup_console_audit": "emulator/pcsx2-console-validation.json"
+}

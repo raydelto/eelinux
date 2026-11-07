@@ -1,0 +1,52 @@
+--- a/hw/xfree86/drivers/ps2/ps2_fill.c
++++ b/hw/xfree86/drivers/ps2/ps2_fill.c
+@@ -78,8 +78,6 @@
+     uint32_t bits=s->bits_per_pixel==16?0x7fff:0xffffff;
+     p->mask=gc->planemask&bits; p->color=gc->tile.pixel&bits;
+     if (gc->fillStyle==FillOpaqueStippled || gc->fillStyle==FillStippled) {
+-        if (gc->fillStyle==FillOpaqueStippled && p->mask && gc->alu!=GXnoop && (gc->alu!=GXcopy || p->mask!=bits))
+-            fail(p,"unsupported opaque stipple ALU or RGB mask");
+         PixmapPtr mono=gc->stipple;
+         if (!mono || mono->drawable.pScreen!=screen) fail(p,"missing or foreign monochrome stipple");
+         struct ps2_mono_source owned={0};
+@@ -153,6 +151,10 @@
+     int status=p->gc->fillStyle==FillStippled ?
+         ps2_pipe_stipple_rectangles(p->owner->context,p->destination,&p->mono,p->boxes,p->count,
+             p->pattern_x,p->pattern_y,p->color,p->mask,p->gc->alu,&emitted) :
++        p->gc->fillStyle==FillOpaqueStippled &&
++        (p->gc->alu!=GXcopy || p->mask!=(p->drawable->depth==15 ? 0x7fffU : 0xffffffU)) ?
++        ps2_pipe_opaque_stipple_logic_rectangles(p->owner->context,p->destination,&p->mono,p->boxes,p->count,
++            p->pattern_x,p->pattern_y,p->color,p->background,p->mask,p->gc->alu,&emitted) :
+         p->gc->fillStyle==FillOpaqueStippled ?
+         ps2_pipe_opaque_stipple_rectangles(p->owner->context,p->destination,&p->mono,p->boxes,p->count,
+             p->pattern_x,p->pattern_y,p->color,p->background) :
+--- a/hw/xfree86/drivers/ps2/ps2_fill.h
++++ b/hw/xfree86/drivers/ps2/ps2_fill.h
+@@ -16,7 +16,9 @@
+  * uses native Boolean solid drawing with all sixteen ALUs and RGB masks.
+  * FillOpaqueStippled reads an existing server-format 1bpp bitmap <=256x256;
+  * GXcopy/full RGB masks construct its foreground/background pattern on GS.
+- * Transparent stipples and opaque stipple ALUs/partial masks are unsupported.
++ * Transparent and opaque stipples support all Boolean ALUs and RGB masks
++ * through bounded native source runs. Zero transparent bits preserve pixels;
++ * opaque runs partition foreground/background without repeated ALUs per pixel.
+  * Pattern origin is drawable origin + patOrg, independent of miTranslate;
+  * FillSpans coordinates are already translated. Redirected origins are removed.
+  * At most 4096 inputs, 256 clip/paint boxes and a 4096-byte heap plan.
+--- a/hw/xfree86/drivers/ps2/ps2_tile.h
++++ b/hw/xfree86/drivers/ps2/ps2_tile.h
+@@ -44,4 +44,14 @@
+     const struct ps2_pipe_mono_pattern *, const struct ps2_pipe_solid_box *, unsigned count,
+     int32_t origin_x, int32_t origin_y, uint32_t foreground, uint32_t plane_mask,
+     unsigned alu, unsigned *emitted);
++/* General opaque stipple: partition each box into disjoint zero/one runs so
++ * every destination pixel applies exactly one background/foreground ALU.
++ * All sixteen Boolean ALUs and RGB masks; request order is retained on overlap.
++ * Equal source colours under the active mask collapse to one rectangle per box.
++ * Same snapshot/preflight/run limits as transparent stipples. The existing
++ * opaque GXcopy/full-mask tile adapter remains the efficient repeat path. */
++int ps2_pipe_opaque_stipple_logic_rectangles(struct pipe_context *, uint32_t destination,
++    const struct ps2_pipe_mono_pattern *, const struct ps2_pipe_solid_box *, unsigned count,
++    int32_t origin_x, int32_t origin_y, uint32_t foreground, uint32_t background,
++    uint32_t plane_mask, unsigned alu, unsigned *emitted);
+ #endif

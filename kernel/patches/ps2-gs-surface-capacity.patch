@@ -1,0 +1,14 @@
+--- a/include/uapi/linux/ps2-gs-surface.h
++++ b/include/uapi/linux/ps2-gs-surface.h
+@@ -14,7 +14,10 @@
+  * when no session owns the GS. Text console rendering retains context 1.
+  */
+ #define PS2GS_HW_SURFACES (1U << 5)
+-#define PS2GS_MAX_SURFACES 64
++/* Wide Render arithmetic and simultaneous packed-format codecs need more
++ * handles than the original desktop subset. VRAM remains bounded by the
++ * arena's 512 8 KiB pages and its reserved front/font/depth ranges. */
++#define PS2GS_MAX_SURFACES 128
+ 
+ struct ps2gs_surface_create {
+ 	__u32 abi, width, height, bits_per_pixel;

@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-09",
+  "result": "passed for supported native operations and reported display regressions",
+  "full_2D_complete": false,
+  "GPU_only_rendering": true,
+  "CPU_destination_rendering": false,
+  "guest_RAM_MiB": 32,
+  "physical_hardware_qualified": false,
+  "runtime": {
+    "image_sha256": "59052867d254a175af5a83f246fd2b19b4f4ed5544412c75e8353614eabf89ab",
+    "module_sha256": "50e02738c4c2e093caf4fd2762d90b22fb8304fe55ecbd1190bc7deea90a8b41",
+    "kernel_sha256": "335a6b845be74b9c8457a9a5e46be86e388b785098195b5b78c3f1e98a8ebcd9",
+    "pixel_checks": 141,
+    "all_four_scene_readbacks_complete": true,
+    "managed_resize_repaint": true,
+    "xterm_scrolling": true,
+    "interactive_typing_and_backspace": true,
+    "verified_keyboard_focus_before_and_after_injection": true,
+    "keyboard_marker": "ps2-input-ok",
+    "client_errors": 0,
+    "Xorg_exit_code": 0
+  },
+  "display": {
+    "visual_observation_image": "ps2-xorg-gpu2d-r9",
+    "same_graphics_module_as_final_image": true,
+    "user_confirms_clean_window_backgrounds_and_title_bars": true,
+    "user_confirms_black_square_gone": true,
+    "supplied_dashed_line_and_ellipse_screenshot": "clean background, title bar, complete label; no black square",
+    "renderer": "OpenGL hardware (12)",
+    "disable_PCSX2_clear_shortcuts": true,
+    "disable_partial_invalidation": false,
+    "cursor_restore": "two GS textured triangles sampling the native 64x64 save-under surface"
+  },
+  "checks": {
+    "cursor_host_ASan_UBSan": 18,
+    "cursor_R5900": 18,
+    "launcher_unit_tests": 11,
+    "module_cross_build": "warning-clean with -Wall -Wextra -Werror",
+    "patch_series": "clean application; COMPOSITE enabled/disabled compilation passed"
+  },
+  "prior_results": {
+    "attempt4": "89 pixel/protocol checks passed, user presentation failed; report corrected",
+    "attempt8": "141 pixels and complete desktop passed; black square remained",
+    "attempt9": "141 pixels and visual fix passed; typing did not reach the shell"
+  },
+  "remaining": [
+    "colour-source CopyPlane",
+    "XRender alpha/masks/transforms",
+    "other formats",
+    "Mesa shader/OpenGL/GLX execution",
+    "physical hardware qualification"
+  ],
+  "logs": {
+    "client.log": "ee90c5f03374a2efd8b7022991214c4b7f291089bebcf04f9772531e189df351",
+    "serial.log": "f3a347fe109d03fabcfb93dadc8eb53d51fddeca00a28bbe7cad9dde4032ef34",
+    "Xorg.log": "5119d0178452d43267e26029f510ca2dc07fa3a7638502bf3bd7c7b576e6a6bf"
+  },
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

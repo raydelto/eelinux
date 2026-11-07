@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "wireless_tools",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.wireless_tools",
+  "symbol": "BR2_PACKAGE_WIRELESS_TOOLS",
+  "version": "30.pre9",
+  "recipe": "package/wireless_tools/wireless_tools.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "abd9c5c98abf1fdd11892ac2f8a56737544fe101e1be27c6241a564948f34c63",
+      "filename": "wireless_tools.30.pre9.tar.gz"
+    }
+  ],
+  "release_url": "https://hewlettpackard.github.io/wireless-tools/"
+}

@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "ntp",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.ntp",
+  "symbol": "BR2_PACKAGE_NTP",
+  "version": "4.2.8p18",
+  "recipe": "package/ntp/ntp.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "cf84c5f3fb1a295284942624d823fffa634144e096cfc4f9969ac98ef5f468e5",
+      "filename": "ntp-4.2.8p18.tar.gz"
+    }
+  ],
+  "release_url": "https://www.ntp.org/downloads/"
+}

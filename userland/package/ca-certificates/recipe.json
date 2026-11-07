@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "name": "ca-certificates",
+  "engine": "Buildroot 2025.02.18 external tree",
+  "manifest_entry": "configs/packages.json:packages.ca-certificates",
+  "symbol": "BR2_PACKAGE_CA_CERTIFICATES",
+  "version": "20260223",
+  "recipe": "package/ca-certificates/ca-certificates.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "2fa2b00d4360f0d14ec51640ae8aea9e563956b95ea786e3c3c01c4eead42b56",
+      "filename": "ca-certificates_20260223.tar.xz"
+    }
+  ]
+}

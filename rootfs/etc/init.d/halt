@@ -1,0 +1,8 @@
+#!/bin/bash
+set -eu
+[[ ${1:-} == start ]] || { printf 'Usage: halt start (runlevels 0/6 only)\n' >&2; exit 2; }
+case ${RUNLEVEL:-} in
+    0) exec /sbin/halt -d -f -p ;;
+    6) exec /sbin/reboot -d -f ;;
+    *) printf 'eeLinux: halt service requires runlevel 0 or 6\n' >&2; exit 2 ;;
+esac

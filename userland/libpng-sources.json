@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "name": "x11r7/xlib_libpng",
+  "kind": "library",
+  "program": "libpng",
+  "version": "1.6.59",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/libpng-1.6.59.tar.xz",
+  "upstream": "https://download.sourceforge.net/libpng/libpng-1.6.59.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "d80dd2a38a37f803cb9b6ac7b14bd6e74ddc3b654780a8380bdf93523fdb4389",
+      "filename": "libpng-1.6.59.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "e7d9d1b5f7648213ff5daf20789eda9400da7a23af9c9b0a6668e72dae69bd8944fc71c76a5ff2ed70dcb2cb74bb680020763a0a5914120ee5a3910df575fbf6",
+      "filename": "libpng-1.6.59.tar.xz"
+    }
+  ],
+  "official_checksum_page": "https://www.libpng.org/pub/png/libpng.html",
+  "license": "libpng-2.0",
+  "license_file": "LICENSE",
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": true,
+  "runtime_qualification": {
+    "scope": "emulator application smoke checks; not exhaustive feature qualification",
+    "record": "docs/desktop-applications-r41-validation.json"
+  }
+}

@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "date": "2026-10-03",
+  "recorded_at": "2026-10-03T20:00:35.524430+00:00",
+  "scope": "bounded native RGB sampling, Mesa sampler/reference/final stage and EXA texture-copy components; full desktop unfinished",
+  "reference": "https://psi-rockin.github.io/ps2tek/",
+  "kernel": {
+    "sha256": "27dd812c8ec9d1eccc4532fe04f928fb33ff7cdbf8b46e5623f304983c5eddc7"
+  },
+  "kernel_build_log": {
+    "sha256": "bc2575044858f0896864698ca55f18c9284349f8e12e43ef14942fe6ff2b0ae1"
+  },
+  "compiled_components": {
+    "sha256": "20fa0c2f0ff0853c3aaac1c678b582fd4dc1029d939cc055bbe17f5b436a33e1"
+  },
+  "native_test_log": {
+    "sha256": "1801fce8b262c11b6d60643ad7dd5b886079fafc825d5a09be31dae7a8ed78d9"
+  },
+  "patches": {
+    "sha256": "068a9dc380760a30634034d278c7618025b530294b92d7ba73756af3ddb2eebe"
+  },
+  "image": {
+    "sha256": "530979771bb5ac81dc09df04396a545872c27ed9f083bc2598ed54e59c3f124e"
+  },
+  "image_assembly": {
+    "sha256": "7591c60c52a50b2e3dd5151f7465f0e6d6f1d55ed1c4b62ce6fe5538e20b7fc6"
+  },
+  "image_checks": {
+    "diagnostic_fat_readback_byte_exact": {},
+    "fat32_bpb_and_cluster_count": "passed",
+    "fsck_fat_read_only": "passed",
+    "kernel_fat_readback_byte_exact": true,
+    "readme_fat_readback_byte_exact": true,
+    "root_payload_byte_exact": true,
+    "source_inputs_unchanged": true
+  },
+  "packaged_probe_matches_tested_binary": true,
+  "probe": {
+    "sha256": "c37634607fa89ad08848b7d5597e70bffa7e907e137d917cbb49854664c68d8d"
+  },
+  "probe_source": {
+    "sha256": "d58f5ddcc42e8dc367c2b4e352f692d9cf70f7a2cd107f89dade40fdb4119d8f"
+  },
+  "host_checks": {
+    "cases": 11,
+    "result": "passed",
+    "sanitizers": [
+      "ASan",
+      "UBSan"
+    ],
+    "evidence_kind": "transcription of successful tool output; no additional run",
+    "groups": {
+      "kernel_texture_path": 4,
+      "Mesa_Xorg_sampler_components": 4,
+      "actual_probe_lifecycle": 3
+    }
+  },
+  "R5900_Linux_user_checks": {
+    "cases": 11,
+    "result": "passed",
+    "scope": "real Mesa sampler/reference/stage and Xorg callbacks; wrapped GPU syscalls and reduced kernel scaffold",
+    "actual_GNU_atomic_view_resource_references": true,
+    "kernel_lockdep_or_GPU_pixel_qualification": false
+  },
+  "controlled_PCSX2_run": {
+    "session": {
+      "sha256": "89796e69a55d8c3a7b7a4c42a66fbde8b77ca3bb556db0b7e911fee79418fe26"
+    },
+    "process_result": {
+      "sha256": "1e7deb713f38fa98b9ae7836348a1367664bb2e92ceb26c5059e0d5cdef3ce54"
+    },
+    "runtime": {
+      "requested_program": "C:\\Program Files\\PCSX2\\pcsx2-qt.exe",
+      "executable_sha256": "4d2a4d9c0db3cb2e9760e2d34bcd29150b53d56a1a87ae8e6fb4556796b40f58",
+      "runtime_manifest_sha256": "b7bf008375c55020bfb3287e0a100d1ff001323706bc2e18b3bf2d0e183ed478",
+      "mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85"
+    },
+    "log_snapshot": {
+      "sha256": "8290c859fe076f73afdcb79925619d6ce8312e294d6380406ccc4a77eb913266"
+    },
+    "milestones": [
+      "EXT4-fs (sda2): mounted filesystem",
+      "ps2-gs: command/fence test PASSED",
+      "ps2-gs: image transfer/fence PASSED",
+      "ps2-gs: offscreen transfer/fence PASSED",
+      "ps2-gs: owned Mesa transfer/fence PASSED",
+      "ps2-gs: Mesa owned render probe exit=0",
+      "ps2-gs: Mesa texture sampling 720x576 features=ff",
+      "ps2-gs: texture sampling/fence PASSED",
+      "ps2-gs: Mesa texture probe exit=0",
+      "ps2-smap ps2-smap eth0: Link is Up"
+    ],
+    "automatic_timeout_seconds": 120,
+    "timed_out": true,
+    "timeout_is_a_boot_result": false,
+    "kernel_panic_or_user_segfault_in_log": false,
+    "authenticated_login_tested": false,
+    "visual_observation": {
+      "source": null,
+      "expected_scene": "original RGB bars/checker square left; updated blue/green/red/white bars and perspective checker trapezoid right; then text",
+      "user_confirmed_expected_scene": false,
+      "pixel_readback_or_format_sweep": false
+    }
+  },
+  "interactive_PCSX2_visual_observation": {
+    "session": {
+      "sha256": "6d5fb2202c0df9ec1ce363bef63769d10b9fd4464c933a50ea86268439504e2c"
+    },
+    "log_snapshot": {
+      "sha256": "38a270eb3a0ad96476479f5df39dbe6c432c5bbbcab1def733f3ef23df673589"
+    },
+    "kernel_sha256": "31308ea5c311d0f4e0a495e6006046c137e2ae4a1aa06001651c188e274b3eb7",
+    "source": "user report and attached PCSX2 screenshot in this conversation",
+    "expected_scene": "original RGB bars/checker square left; updated blue/green/red/white bars and perspective checker trapezoid right; then text",
+    "user_confirmed_panels_and_text_return": true,
+    "observed_colors": "RGBW left; BGRW right; checkerboard and trapezoid visible",
+    "checker_geometry_concern": "User questions warped right-hand cells; diagnostic top width and reciprocal depth mismatch requires correction",
+    "pixel_readback_or_format_sweep": false,
+    "physical_hardware": false
+  },
+  "native_sampling": {
+    "RGB_formats": [
+      "CT16",
+      "CT32"
+    ],
+    "filter": "nearest",
+    "wrap": "logical region clamp",
+    "coordinates": "bounded perspective STQ, NPOT scaled to TEX0 size",
+    "texture_cache_invalidation": true,
+    "color_target_feedback_rejected": true,
+    "whole_batch_validation": true,
+    "texture_alpha": false,
+    "EXA_operator": "PictOpSrc",
+    "EXA_preserves_Mesa_binding": true
+  },
+  "physical_sampled_pixels_tested": false,
+  "physical_devices_written": false,
+  "software_pixel_renderer": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL": false,
+  "remaining": [
+    "physical sampling/NPOT/CT16 pixels and recovery",
+    "further sampler states and texture alpha",
+    "glyph/composite operators and complete DDX screen/cursor/VT setup",
+    "complete Mesa screen/context, GLX and existing OpenGL applications",
+    "pixel readback, double buffering and RAM measurements"
+  ],
+  "physical_hardware_followup": {
+    "date": "2026-10-04",
+    "evidence": "docs/graphics-hardware-validation.json",
+    "evidence_sha256": "ef10249c0b5c23f171d1bc7390788c271086b4caaeff929984f5f6c0fe42e1f3",
+    "diagnostics": [
+      "ps2-gs-texture-test"
+    ],
+    "diagnostic_scenes_tested_on_physical_hardware": true,
+    "result": "passed according to the user on real PlayStation 2 hardware",
+    "evidence_kind": "explicit user verification report; device logs not captured",
+    "earlier_fields_preserved": true,
+    "scope": "normal diagnostic scenes on the user's PS2; not all host/mock cases or a complete desktop",
+    "artifact_hash_read_back_on_console": false,
+    "GPU_pixel_readback": false,
+    "complete_Xorg_TWM_or_OpenGL_session_tested": false
+  },
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

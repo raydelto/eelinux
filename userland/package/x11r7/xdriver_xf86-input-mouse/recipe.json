@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "name": "x11r7/xdriver_xf86-input-mouse",
+  "engine": "Buildroot 2025.02.18 external tree",
+  "manifest_entry": "configs/packages.json:packages.x11r7/xdriver_xf86-input-mouse",
+  "symbol": "BR2_PACKAGE_XDRIVER_XF86_INPUT_MOUSE",
+  "version": "1.9.5",
+  "recipe": "package/x11r7/xdriver_xf86-input-mouse/xdriver_xf86-input-mouse.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "4fde8ae9b44352e2a208584c36528ee3ed13cf5fe4417208a9785daccefd9968",
+      "filename": "xf86-input-mouse-1.9.5.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "ed9bd9cb9a05dac0ff1bfb4e4704cb2e94117afb400aa9e0b7ccdbb102bc6db1b0d3af7cb6f99d0892f8fc306f1643286291c0fa7114af8e65864412bd6c1afa",
+      "filename": "xf86-input-mouse-1.9.5.tar.xz"
+    }
+  ]
+}

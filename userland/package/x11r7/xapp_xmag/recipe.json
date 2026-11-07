@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xmag",
+  "kind": "application",
+  "program": "xmag",
+  "version": "1.0.8",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xmag-1.0.8.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xmag-1.0.8.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "326d3c583d795bb53ac609d144e7f7fb1499baba7eaec14b8e6cd232ea069532",
+      "filename": "xmag-1.0.8.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "d4dbf6bf60a5a3ac88309cdc8f07284a20bd3b044795cd54e002ee5956fa317a09e5f21a9469a6fd9a786f109d8592d8b8e5128ac86850391a6445ccc1f7a11c",
+      "filename": "xmag-1.0.8.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xdpyinfo",
+  "kind": "application",
+  "program": "xdpyinfo",
+  "version": "1.4.0",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xdpyinfo-1.4.0.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xdpyinfo-1.4.0.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "dc1de6e6e091ed46c4837b0ae9811e8182f7be0d2af638cab3e530ff081a48b6",
+      "filename": "xdpyinfo-1.4.0.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "478dd3de58950eeca213a51820445e62a5a63b2fa9ff3505f22802a7980f855fc11f1465e57ff4c34cdf8df0a0ff3c576804ef44f11f3b52c1c9da4ecc5a62d3",
+      "filename": "xdpyinfo-1.4.0.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

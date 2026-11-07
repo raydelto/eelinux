@@ -1,0 +1,70 @@
+#!/bin/bash
+# Discover the installed GNU/Linux tools without loading an interpreter or daemon.
+set -u
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+catalog=${PS2_TOOLS_CATALOG:-/usr/share/eelinux/tools.tsv}
+mode=groups
+suite_filter=
+usage() {
+    printf '%s\n' \
+        'Usage: ps2-tools [SUITE | --list | --check | --help]' \
+        'Show installed commands grouped by upstream suite (for example util-linux,' \
+        'openssh, e2fsprogs, mtools, or coreutils).' \
+        '  --list   Print each installed command and its executable path.' \
+        '  --check  Report commands missing from the installed system; fail if any.' \
+        '  --help   Show this help.' \
+        'Use COMMAND --help for usage. Some operations require root or kernel support.'
+}
+if (( $# > 1 )); then usage >&2; exit 2; fi
+case ${1:-} in
+    --help|-h) usage; exit 0 ;;
+    --list) mode=list ;;
+    --check) mode=check ;;
+    --*) usage >&2; exit 2 ;;
+    *) suite_filter=${1:-} ;;
+esac
+if [[ ! -r $catalog ]]; then
+    printf 'ps2-tools: installed command catalog is missing: %s\n' "$catalog" >&2
+    exit 1
+fi
+total=0 available=0 missing=0 suites=0
+while IFS=$'\t' read -r suite commands; do
+    [[ -n $suite && $suite != \#* ]] || continue
+    [[ -z $suite_filter || $suite == "$suite_filter" ]] || continue
+    ((suites+=1))
+    installed=()
+    # The catalog contains plain command names, never shell fragments.
+    read -r -a names <<< "$commands"
+    for name in "${names[@]}"; do
+        ((total+=1))
+        executable=
+        for directory in /usr/sbin /usr/bin /sbin /bin; do
+            if [[ -f $directory/$name && -x $directory/$name ]]; then
+                executable=$directory/$name
+                break
+            fi
+        done
+        if [[ -n $executable ]]; then
+            ((available+=1))
+            installed+=("$name")
+            [[ $mode != list ]] || printf '%s\t%s\n' "$name" "$executable"
+        else
+            ((missing+=1))
+            [[ $mode != check ]] || printf 'Missing: %s (%s)\n' "$name" "$suite" >&2
+        fi
+    done
+    if [[ $mode == groups ]]; then
+        printf '\n%s\n' "$suite"
+        if (( ${#installed[@]} )); then printf '  %s\n' "${installed[*]}"; else printf '  No commands installed.\n'; fi
+    fi
+done < "$catalog"
+if (( suites == 0 )); then
+    printf 'ps2-tools: unknown suite: %s\n' "$suite_filter" >&2
+    exit 2
+fi
+if [[ $mode != list ]]; then
+    printf '\n%d of %d catalogued commands installed' "$available" "$total"
+    (( missing == 0 )) || printf '; %d missing (run ps2-tools --check)' "$missing"
+    printf '.\n'
+fi
+if [[ $mode == check && $missing != 0 ]]; then exit 1; fi

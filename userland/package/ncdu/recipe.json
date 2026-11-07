@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "ncdu",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.ncdu",
+  "symbol": "BR2_PACKAGE_NCDU",
+  "version": "1.22",
+  "recipe": "package/ncdu/ncdu.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "0ad6c096dc04d5120581104760c01b8f4e97d4191d6c9ef79654fa3c691a176b",
+      "filename": "ncdu-1.22.tar.gz"
+    }
+  ],
+  "release_url": "https://dev.yorhel.nl/ncdu"
+}

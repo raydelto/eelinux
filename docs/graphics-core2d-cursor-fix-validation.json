@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-05",
+  "component_checks_per_target": 272,
+  "targets": [
+    "host ASan/UBSan",
+    "R5900 Linux o32 soft-float"
+  ],
+  "emulator": {
+    "result": "passed",
+    "scope": "actual native Xorg/TWM four-scene, attached mouse slave motion, cursor edges, window resize, CopyPlane and xterm integration",
+    "all_four_scene_protocol_errors": 0,
+    "client_completed": true,
+    "Xorg_exit_code": 0,
+    "guest_main_RAM_MiB": 32,
+    "physical_hardware": false,
+    "full_2D_complete": false,
+    "remaining_Xorg_warnings": [
+      "[    12.335] (WW) Falling back to old probe method for ps2",
+      "[    12.336] (WW) VGA arbiter: cannot open kernel arbiter, no multi-card support"
+    ],
+    "logs": {
+      "Xorg.log": "26bbf0aa2da878b6763b56eb96ea158523a286ba8386f730eb5c064487d5fc77",
+      "client.log": "38be380364b21104250e974bbcb6227c0371c55158b3281f73a99126e8f2ba7c",
+      "serial.log": "87d5c3ac0a0742e0a20e1cb6e4978b63c9544019a0889eebfb72016f2dad8d34"
+    },
+    "additional_checks": {
+      "monochrome CopyPlane synchronized": true,
+      "cursor warp and edge checks": true,
+      "attached mouse slave motion": true,
+      "managed window move/resize": true,
+      "xterm core-font scrolling completed": true
+    },
+    "user_visual_observation": "User reports the tests appear good; no separate physical Xorg pass for this image."
+  },
+  "image_sha256": "b6f851edd472a91ca668f781db5893a9a0f31d2c27e904d22d0d54d136bc67b4",
+  "module_sha256": "dadabb45bf6d5b09249b68d2e0fe33fdf31a7a4ff59be97f8c9300e2675c01cc",
+  "client_sha256": "b62c17b3e51e9ba74c04604576301b6f4315b010664c294616862edc14503cec",
+  "kernel_sha256": "3c6a4e63afc39acd61a95bc83b605caf476181dbe8e4405a96c816ed906732e5",
+  "physical_boot": {
+    "user_identified_image": "ps2-xorg-core2d-hardware-cursor-fix",
+    "reported_machine": "SCPH-90004",
+    "result": "freeze before Xorg",
+    "last_message": "SIF: IOP reply stalled (RPC 0); keeping DMA memory owned",
+    "inferred_call": "IOP LOADFILE ROM ADDDRV during module initialization",
+    "cold_or_warm_boot": "not specified",
+    "cause_confirmed": false
+  },
+  "cursor_fix": "Resolve master pointer ownership for attached slave callbacks; preserve cursor through slave cleanup.",
+  "full_2D_complete": false,
+  "physical_Xorg_acceptance": "pending",
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

@@ -1,0 +1,216 @@
+{
+  "schema": 1,
+  "updated": "2026-10-05",
+  "milestone": "explicit MVP transformation and homogeneous clipping to native GS opaque triangles/Z16, presented by shared Xorg EXA Copy",
+  "implementation": [
+    "mesa/ps2/ps2_transform.c",
+    "mesa/ps2/ps2_transform.h"
+  ],
+  "build": {
+    "sha256": "50892c44a0175238935ffef122089833ecdfabcd5707df4f9334f47a13c18f6c"
+  },
+  "host": {
+    "sha256": "58c58a5d88f1d73da918b284b4fd50aa8562a888903d1a9d6310e95fdb3ed5a5"
+  },
+  "build_log": {
+    "sha256": "62db0c2e39af2cd7cc3da61b9d8e19c993c7de0df9a61f5e67810ea7fceece41"
+  },
+  "host_log": {
+    "sha256": "62db0c2e39af2cd7cc3da61b9d8e19c993c7de0df9a61f5e67810ea7fceece41"
+  },
+  "archives": {
+    "libps2-gallium-transform.a": "e5b4d8721c9b20c4292f3f3dcbf3d0f1565baf598cb966ab48f992980444c8ac",
+    "libps2-xorg-transform.a": "dfbae2121024561121945f359087c10fa0105f0ac3c590b614c63491d305f929"
+  },
+  "patches": [
+    {
+      "patch": "userland/patches/mesa-ps2-transformed-triangles.patch",
+      "sha256": "582678d693854606523821d3e26ee7cfe7cac467fc03fe54d1d37ff1be7510dc",
+      "after": "mesa-ps2-stippled-polygons.patch",
+      "prerequisite_patches": [
+        "mesa-ps2-raster.patch",
+        "mesa-ps2-surfaces.patch",
+        "mesa-ps2-rendering.patch",
+        "mesa-ps2-textures.patch",
+        "mesa-ps2-contexts.patch",
+        "mesa-ps2-logic.patch",
+        "mesa-ps2-solid-batch.patch",
+        "mesa-ps2-copy-batch.patch",
+        "mesa-ps2-resource-copy.patch",
+        "mesa-ps2-blit.patch",
+        "mesa-ps2-tile.patch",
+        "mesa-ps2-stipple.patch",
+        "mesa-ps2-transparent-stipple.patch",
+        "mesa-ps2-opaque-stipple-logic.patch",
+        "mesa-ps2-thin-lines.patch",
+        "mesa-ps2-thin-dashes.patch",
+        "mesa-ps2-native-cursor.patch",
+        "mesa-ps2-client-images.patch",
+        "mesa-ps2-planar-images.patch",
+        "mesa-ps2-filled-polygons.patch",
+        "mesa-ps2-stippled-polygons.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    }
+  ],
+  "host_sanitizer_cases": 261,
+  "R5900_cases": 261,
+  "new_cases_per_environment": 19,
+  "regression_cases_per_environment": 242,
+  "checks": [
+    "transform",
+    "matrix",
+    "perspective",
+    "clip",
+    "near",
+    "eye",
+    "viewport",
+    "colours",
+    "noop",
+    "preflight",
+    "allocation",
+    "budget",
+    "snapshot",
+    "target",
+    "xorg",
+    "failure",
+    "rgb555",
+    "lifetime",
+    "random"
+  ],
+  "row_major_MVP": true,
+  "clip_volume": "-w <= x,y,z <= w; w >= 2^-16",
+  "scalar_R5900_geometry": true,
+  "VU_transformation_program": false,
+  "viewport_positive_NDC_y_up": true,
+  "GS_reversed_Z16_GEQUAL": true,
+  "unit_range_opaque_RGBA": true,
+  "GS_affine_Gouraud_interpolation": true,
+  "perspective_correct_colour_varyings": false,
+  "CPU_fragment_renderer": false,
+  "GPU_fragment_rasterization": true,
+  "GPU_pixel_readback": false,
+  "whole_output_plan_before_fence": true,
+  "invalid_geometry_preserves_original_queue": true,
+  "shared_Xorg_target_restored": true,
+  "framebuffer_sampler_resource_references_preserved": true,
+  "actual_Xorg_EXA_Copy_callbacks": true,
+  "sticky_late_hardware_failure_without_replay": true,
+  "component_RGBX_RGB555_tested": true,
+  "limits": {
+    "schema": 1,
+    "R5900_vertex_bytes": 32,
+    "R5900_clip_vertex_bytes": 64,
+    "R5900_plan_triangle_bytes": 96,
+    "R5900_viewport_bytes": 24,
+    "input_triangle_limit": 256,
+    "clipped_polygon_vertex_limit": 10,
+    "output_triangle_limit": 2048,
+    "driver_request_heap_upper_bound_bytes": 196608,
+    "clip_array_stack_bytes": 1280,
+    "R5900_stack_frames": {
+      "ps2_pipe_transform_triangles": 1624
+    },
+    "allocator_overhead_included": false,
+    "original_client_buffer_included": false,
+    "full_desktop_peak_RAM_measured": false,
+    "component_build_sha256": "50892c44a0175238935ffef122089833ecdfabcd5707df4f9334f47a13c18f6c",
+    "measurement_source_sha256": "83483c0f03f939cdc3fbea69e0c1e8acbb6392cbfbdca79bfb4bfedfaa8eaaf1",
+    "object_sha256": "3ad19153844e29102de601662c381df8178d292e0f37718ede84fa8768bb0e20",
+    "compiler_flags": [
+      "-march=r5900",
+      "-mabi=32",
+      "-msoft-float",
+      "-mno-llsc",
+      "-mfix-r5900",
+      "--sysroot=/home/machaddr/.cache/eelinux/desktop-xorg/output-desktop/staging",
+      "-Os",
+      "-std=gnu17",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-DNDEBUG",
+      "-DUSE_GCC_ATOMIC_BUILTINS",
+      "-DHAVE_ENDIAN_H",
+      "-DHAVE_STRUCT_TIMESPEC",
+      "-DHAVE_PTHREAD",
+      "-I/home/machaddr/.cache/eelinux/desktop-xorg/output-desktop/staging/usr/include/xorg",
+      "-I/home/machaddr/.cache/eelinux/desktop-xorg/output-desktop/staging/usr/include/pixman-1",
+      "-isystem/home/machaddr/.cache/eelinux/mesa-xlib/mesa-24.0.9/mesa-24.0.9/src",
+      "-isystem/home/machaddr/.cache/eelinux/mesa-xlib/mesa-24.0.9/mesa-24.0.9/include",
+      "-isystem/home/machaddr/.cache/eelinux/mesa-xlib/mesa-24.0.9/mesa-24.0.9/src/gallium/include",
+      "-isystem/home/machaddr/.cache/eelinux/mesa-xlib/mesa-24.0.9/mesa-24.0.9/src/gallium/auxiliary",
+      "-I/mnt/c/Users/sedzc/Documents/EEOS-Linux/graphics",
+      "-I/mnt/c/Users/sedzc/Documents/EEOS-Linux/kernel/new-drivers",
+      "-I/mnt/c/Users/sedzc/Documents/EEOS-Linux/desktop/xorg",
+      "-I/mnt/c/Users/sedzc/Documents/EEOS-Linux/mesa/ps2",
+      "-isystem/home/machaddr/.cache/eelinux/mesa-xlib/mesa-24.0.9/mesa-24.0.9/src/compiler/nir",
+      "-isystem/home/machaddr/.cache/eelinux/mesa-xlib/mesa-24.0.9/mesa-24.0.9/src/compiler",
+      "-idirafter/home/machaddr/.cache/eelinux/desktop-xorg/output-desktop/staging/usr/include",
+      "-include",
+      "xorg-server.h",
+      "-DCOMPOSITE"
+    ],
+    "nm_records": [
+      "00000078 00000040 B clip_vertex_size",
+      "00000018 00000060 B plan_size",
+      "000000b8 00000020 B vertex_size",
+      "00000000 00000018 B viewport_size"
+    ],
+    "helper_sha256": "039e2cea1ae76af9d466ad62c0f42605e1238f7ae69106c3e36b57fe467a0d6b"
+  },
+  "memory_measurement": {
+    "sha256": "cac4f6fd9c7fb389c35177b55356a06f0faf0ba7cdc2622878167edbaa9a9585"
+  },
+  "prior_qualified_2D_evidence": {
+    "path": "docs/graphics-stippled-polygons-validation.json",
+    "sha256": "de9bbd576e0767d9ea05d90ec6147d37f9c9812def36219a22553da5a7fc9321"
+  },
+  "prior_qualified_evidence_hashes": {
+    "sha256": "f26316ce37e5a0934a152d606062560ef8554a1c691e33923fb5d61637ba7984"
+  },
+  "qualified_earlier_snapshots_unchanged": true,
+  "new_USB_image_packaged": true,
+  "new_PCSX2_pixels_verified": true,
+  "new_physical_PS2_pixels_verified": false,
+  "kernel_ABI_changed": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL_GLX": false,
+  "draw_vbo_implemented": false,
+  "shader_caps": 0,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "limitations": [
+    "explicit opaque triangle-list geometry API; shader/state execution, draw_vbo, GLX and real Xorg DDX remain unfinished",
+    "scalar R5900 geometry uses double intermediates; VU execution and performance qualification remain separate work",
+    "GS Gouraud colours interpolate affinely in screen space; no perspective-correct colour varying contract",
+    "physical/RGB555 runtime pixels, full DDX/input/VT/Damage and full Mesa/GLX/TWM/RAM remain unqualified"
+  ],
+  "runtime_validation": {
+    "path": "docs/graphics-transformed-triangles-runtime-validation.json",
+    "sha256": "7ea4dc0923e8ce240aa48444360c6d9b6ad56dc7fffbc5c0d23d935279990f9e"
+  },
+  "probe_build": {
+    "sha256": "0ce43ea84e5fb59b05c8c12baeb36b9812fc4d77510cf211c550338ed2099cdd"
+  },
+  "probe_host_checks": {
+    "schema": 1,
+    "result": "passed",
+    "cases": 6,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "log_sha256": "f4ecd03ce75eac3f4b9c95f320e5c9aec3bd3f0897a1d82a2e03bda0dcbc5848",
+    "probe_source_sha256": "2edfb2eb7b8afbb060f4125506e4e448032cc5fd5d14a2ec8f8eff9e364a06d5",
+    "pixel_qualification": false
+  },
+  "probe_cases_per_environment": 6,
+  "PCSX2_command_depth_presentation_exit": 0,
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

@@ -1,0 +1,28 @@
+--- a/lib/md5-stream.c
++++ b/lib/md5-stream.c
+@@ -21,11 +21,8 @@
+ 
+ #include <config.h>
+ 
+ /* Specification.  */
+-#if HAVE_OPENSSL_MD5
+-# define GL_OPENSSL_INLINE _GL_EXTERN_INLINE
+-#endif
+ #include "md5.h"
+ 
+ #include <stdlib.h>
+ 
+--- a/lib/sha1-stream.c
++++ b/lib/sha1-stream.c
+@@ -23,11 +23,8 @@
+ 
+ #include <config.h>
+ 
+ /* Specification.  */
+-#if HAVE_OPENSSL_SHA1
+-# define GL_OPENSSL_INLINE _GL_EXTERN_INLINE
+-#endif
+ #include "sha1.h"
+ 
+ #include <stdlib.h>
+ 

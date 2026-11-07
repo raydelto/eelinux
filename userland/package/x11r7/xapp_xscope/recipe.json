@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xscope",
+  "kind": "application",
+  "program": "xscope",
+  "version": "1.4.5",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xscope-1.4.5.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xscope-1.4.5.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "5f125d4c94e19e4be48edc43691e46df0b82f0b6ead95453dc7ac775a0d70066",
+      "filename": "xscope-1.4.5.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "f880d25e92ebebaa41fd08e801c8766d0452d57cc6e807df83c45e5fc9dc51c2dd82efe14f2f8c011ddce3172a0130caac939953d519ef516ea6e09e1bf1f2e9",
+      "filename": "xscope-1.4.5.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

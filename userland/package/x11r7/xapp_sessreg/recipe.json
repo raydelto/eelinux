@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_sessreg",
+  "kind": "application",
+  "program": "sessreg",
+  "version": "1.1.4",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/sessreg-1.1.4.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/sessreg-1.1.4.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "4e85b52f4f65a93449753bfb00ceb5d77f3317e24d07dc23147f2f116c785350",
+      "filename": "sessreg-1.1.4.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "836d2cfa60448de9b4af1b79693905854ba5c1135d623654bba627d125271eb74111bac2b4437a86f4cbd362695e796fc0279d4f4684f2cd5080cdd953318686",
+      "filename": "sessreg-1.1.4.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": true,
+  "runtime_qualification": {
+    "scope": "emulator application smoke checks; not exhaustive feature qualification",
+    "record": "docs/desktop-applications-r41-validation.json"
+  }
+}

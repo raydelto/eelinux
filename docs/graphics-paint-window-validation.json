@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "updated": "2026-10-04",
+  "milestone": "native Xorg solid window backgrounds and borders",
+  "implementation": [
+    "desktop/xorg/ps2_paint_window.c",
+    "desktop/xorg/ps2_paint_window.h"
+  ],
+  "build": {
+    "sha256": "0a45973c31bc80069427e09b035794735ffb5838135562065351cfc086dd0699"
+  },
+  "host": {
+    "sha256": "81ef1ec3927186ce7d2233d87faf70bdd45a8b519dfd153a57ebfa00239c09a1"
+  },
+  "build_log": {
+    "sha256": "4dd8436da6e803bdc54f480d6cebd2a53cc3b4fbf7a06ccd1fe53fe3b0908d00"
+  },
+  "archives": {
+    "libps2-gallium-paint-window.a": "8b92e7152c155389118ee606137aae8c923cc408cdaa1f0fe56924e058bc0e5a",
+    "libps2-xorg-paint-window.a": "cb7b23fa46fc1541d3dcd40e7c84d00783e25204d1db51258c76b048889e7687"
+  },
+  "patches": [
+    {
+      "patch": "userland/patches/xorg-ps2-paint-window.patch",
+      "sha256": "dc3128e66d0d6faef8f5813eef0e72402344d1e4e74b0d0b91e61b8eb7e8848a",
+      "after": "xorg-ps2-copy-window.patch",
+      "prerequisite_patches": [
+        "xorg-ps2-raster.patch",
+        "xorg-ps2-surfaces.patch",
+        "xorg-ps2-rendering.patch",
+        "xorg-ps2-textures.patch",
+        "xorg-ps2-contexts.patch",
+        "xorg-ps2-glyphs.patch",
+        "xorg-ps2-gc.patch",
+        "xorg-ps2-logic.patch",
+        "xorg-ps2-solid-gc.patch",
+        "xorg-ps2-copy.patch",
+        "xorg-ps2-exa-copy.patch",
+        "xorg-ps2-blit.patch",
+        "xorg-ps2-copy-window.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    }
+  ],
+  "upstream_PaintWindow": {
+    "sha256": "0e26db377df34b6c06ed3fd413b06eb5bbff64dce3786c92be9db1e1292662ab"
+  },
+  "upstream_Damage": {
+    "sha256": "922aa2f0c7927bddb38e2327cf6c77530ddaad19cc17080a441f6b289c585242"
+  },
+  "host_sanitizer_cases": 38,
+  "R5900_cases": 38,
+  "new_cases_per_environment": 11,
+  "regression_cases_per_environment": 27,
+  "checks": [
+    "background",
+    "border",
+    "inherited",
+    "redirected",
+    "noop",
+    "preflight",
+    "ownership",
+    "lifetime",
+    "failure",
+    "installation",
+    "random"
+  ],
+  "native_path": "ScreenRec.PaintWindow -> ps2_pipe_solid_rectangles -> PS2 GS Boolean drawing",
+  "supported": [
+    "solid background pixels",
+    "nested ParentRelative solid backgrounds",
+    "None and inherited inhibition no-ops",
+    "child clipList background clipping",
+    "solid borders clipped to backing pixmap bounds",
+    "redirected RGBX/RGB555",
+    "exact window-screen and border-pixmap Damage coordinates",
+    "shared context ordering and reverse hook teardown"
+  ],
+  "bounded_region_boxes": 256,
+  "maximum_heap_plan_bytes": 4096,
+  "whole_plan_preflight_before_flush": true,
+  "software_destination_rasterizer": false,
+  "GPU_pixel_readback": false,
+  "actual_Damage_subsystem_executed": false,
+  "new_PCSX2_pixels_verified": false,
+  "new_physical_PS2_pixels_verified": false,
+  "new_USB_image_packaged": false,
+  "earlier_images_and_hardware_evidence_preserved": true,
+  "limitations": [
+    "tiled background and border painting remains unsupported",
+    "region bookkeeping, private registry and Damage notifications use component test fixtures",
+    "full DDX ScreenInit, cursor, input, VT and presentation remain unfinished",
+    "Mesa shaders, draw_vbo, GLX and existing OpenGL applications remain unfinished",
+    "complete Xorg/Mesa/TWM RAM usage remains unmeasured"
+  ],
+  "result": "component checks passed; new emulator/hardware runtime qualification pending",
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

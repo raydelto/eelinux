@@ -1,0 +1,291 @@
+--- a/hw/xfree86/drivers/ps2/ps2_surface_exa.c
++++ b/hw/xfree86/drivers/ps2/ps2_surface_exa.c
+@@ -2,16 +2,45 @@
+ #include "ps2_surface_exa.h"
+ #include "ps2_gs_client.h"
+ #include "os.h"
++#include "servermd.h"
+ #include <errno.h>
+ #include <stdlib.h>
+ #include <string.h>
+ 
+ static DevPrivateKeyRec ps2_surface_exa_key;
+-struct ps2_exa_pixmap { uint32_t handle; };
++#define MAX_MONO_BYTES (1024U * 1024U)
++#define MAX_MONO_PIXMAPS 1024U
++/* Keep the color handle first for the native adapters. Monochrome storage
++ * contains source bits only, has no GS handle, and is never a color target. */
++struct ps2_exa_pixmap {
++    uint32_t handle;
++    unsigned char *mono;
++    unsigned width, height, stride;
++    size_t bytes;
++    struct ps2_exa_pixmap *next, **previous;
++};
+ 
+ static struct ps2_surface_exa *backend(ScreenPtr screen)
+ {
++    if (!screen || !screen->devPrivates) return NULL;
+     return dixLookupPrivate(&screen->devPrivates, &ps2_surface_exa_key);
++}
++int ps2_surface_exa_mono_source(PixmapPtr pixmap, struct ps2_mono_source *source)
++{
++    if (!pixmap || !source || !pixmap->drawable.pScreen) return -1;
++    struct ps2_surface_exa *ps2 = backend(pixmap->drawable.pScreen);
++    if (!ps2) return 0;
++    void *data = exaGetPixmapDriverPrivate(pixmap);
++    for (struct ps2_exa_pixmap *p = ps2->monochrome; p; p = p->next) {
++        if (p != data) continue;
++        if (pixmap->drawable.type != DRAWABLE_PIXMAP || pixmap->drawable.depth != 1 ||
++            pixmap->drawable.bitsPerPixel != 1 || pixmap->drawable.width != p->width ||
++            pixmap->drawable.height != p->height || pixmap->devKind != (int)p->stride ||
++            (pixmap->devPrivate.ptr && pixmap->devPrivate.ptr != p->mono)) return -1;
++        *source = (struct ps2_mono_source){p->mono, p->bytes, p->stride, p->width, p->height};
++        return 1;
++    }
++    return 0;
+ }
+ static const struct ps2_surface *storage(PixmapPtr pixmap)
+ {
+@@ -38,14 +67,29 @@
+                           int usage, int bpp, int *pitch)
+ {
+     (void)usage;
+-    if (width < 0 || height < 0 || width > 2048 || height > 2048 ||
+-        (bpp != 16 && bpp != 32) || depth != (bpp == 16 ? 15 : 24)) return NULL;
++    if (!pitch || width < 0 || height < 0 || width > 2048 || height > 2048 ||
++        !((bpp == 1 && depth == 1) || (bpp == 16 && depth == 15) ||
++          (bpp == 32 && depth == 24))) return NULL;
++    struct ps2_surface_exa *ps2 = backend(screen);
++    if (!ps2) return NULL;
++    size_t stride = bpp == 1 ? (size_t)BitmapBytePad(width) : 0;
++    size_t bytes = stride * height;
++    if (bpp == 1 && (ps2->monochrome_count == MAX_MONO_PIXMAPS ||
++        bytes > MAX_MONO_BYTES - ps2->monochrome_bytes)) return NULL;
+     struct ps2_exa_pixmap *priv = calloc(1, sizeof(*priv));
+     if (!priv) return NULL;
+     *pitch = 0;
++    if (bpp == 1) {
++        if (bytes && !(priv->mono = calloc(1, bytes))) { free(priv); return NULL; }
++        priv->width = width; priv->height = height; priv->stride = stride; priv->bytes = bytes;
++        priv->next = ps2->monochrome; priv->previous = &ps2->monochrome;
++        if (priv->next) priv->next->previous = &priv->next;
++        ps2->monochrome = priv; ++ps2->monochrome_count; ps2->monochrome_bytes += bytes;
++        *pitch = stride;
++        return priv;
++    }
+     /* A zero-sized header can later name the front pixmap, with no allocation. */
+     if (!width || !height) return priv;
+-    struct ps2_surface_exa *ps2 = backend(screen);
+     if (ps2_surface_create(ps2->gs, width, height, bpp, &priv->handle)) {
+         free(priv); return NULL;
+     }
+@@ -57,6 +101,12 @@
+ {
+     struct ps2_exa_pixmap *priv = data;
+     struct ps2_surface_exa *ps2 = backend(screen);
++    if (priv && priv->previous) {
++        *priv->previous = priv->next;
++        if (priv->next) priv->next->previous = priv->previous;
++        --ps2->monochrome_count; ps2->monochrome_bytes -= priv->bytes;
++        free(priv->mono);
++    }
+     if (priv && priv->handle && ps2->gs->fd >= 0 && !ps2->gs->error)
+         ps2_surface_destroy(ps2->gs, priv->handle);
+     free(priv);
+@@ -67,6 +117,16 @@
+     ScreenPtr screen = pixmap->drawable.pScreen;
+     struct ps2_surface_exa *ps2 = backend(screen);
+     struct ps2_exa_pixmap *priv = exaGetPixmapDriverPrivate(pixmap);
++    if (priv && priv->previous) {
++        if ((width > 0 && (unsigned)width != priv->width) ||
++            (height > 0 && (unsigned)height != priv->height) ||
++            (depth > 0 && depth != 1) || (bpp > 0 && bpp != 1) ||
++            (pitch > 0 && (unsigned)pitch != priv->stride) || (pixels && pixels != priv->mono)) return FALSE;
++        pixmap->drawable.width = priv->width; pixmap->drawable.height = priv->height;
++        pixmap->drawable.depth = 1; pixmap->drawable.bitsPerPixel = 1;
++        pixmap->devKind = priv->stride; pixmap->devPrivate.ptr = priv->mono;
++        return TRUE;
++    }
+     const struct ps2_surface *buffer = NULL;
+     if (pixmap == screen->GetScreenPixmap(screen))
+         buffer = &ps2->gs->front;
+@@ -142,9 +202,19 @@
+ }
+ static Bool prepare_access(PixmapPtr pixmap, int index)
+ {
+-    (void)pixmap; (void)index;
++    (void)index;
++    struct ps2_mono_source source;
++    if (ps2_surface_exa_mono_source(pixmap, &source) == 1) {
++        pixmap->devPrivate.ptr = (void *)source.bits;
++        return TRUE;
++    }
+     FatalError("PS2 GS: unsupported X drawing operation; CPU rasterization is disabled\n");
+     return FALSE;
++}
++static void finish_access(PixmapPtr pixmap, int index)
++{
++    (void)index;
++    pixmap->devPrivate.ptr = NULL;
+ }
+ static void done(PixmapPtr pixmap) { (void)pixmap; /* Every surface operation is synchronous. */ }
+ static void wait_marker(ScreenPtr screen, int marker) { (void)screen; (void)marker; }
+@@ -161,6 +231,7 @@
+     ps2->driver.PrepareSolid = prepare_solid; ps2->driver.Solid = solid; ps2->driver.DoneSolid = done;
+     ps2->driver.PrepareCopy = prepare_copy; ps2->driver.Copy = copy; ps2->driver.DoneCopy = done;
+     ps2->driver.UploadToScreen = upload; ps2->driver.PrepareAccess = prepare_access;
++    ps2->driver.FinishAccess = finish_access;
+     ps2->driver.WaitMarker = wait_marker;
+     dixSetPrivate(&screen->devPrivates, &ps2_surface_exa_key, ps2);
+     return TRUE;
+--- a/hw/xfree86/drivers/ps2/ps2_surface_exa.h
++++ b/hw/xfree86/drivers/ps2/ps2_surface_exa.h
+@@ -10,7 +10,19 @@
+     struct ps2_surface_client *gs;
+     ExaDriverRec driver;
+     uint32_t color, source;
++    struct ps2_exa_pixmap *monochrome;
++    size_t monochrome_bytes;
++    unsigned monochrome_count;
+ };
++struct ps2_mono_source {
++    const unsigned char *bits;
++    size_t bytes, stride;
++    unsigned width, height;
++};
++/* 1: valid owned source-only bitmap, 0: not owned here, -1: invalid owned
++ * header. EXA hides devPrivate.ptr between accesses; this view remains owned
++ * by the pixmap and must be consumed synchronously before its destruction. */
++int ps2_surface_exa_mono_source(PixmapPtr, struct ps2_mono_source *);
+ /* EXA storage/drawing callbacks for an owned GS session. Screen setup, front
+  * pixmap binding, cursor, glyph/composite and VT lifecycle are still DDX work.
+  * These callbacks are compiled/tested, not installed as ps2_drv.so. */
+--- a/hw/xfree86/drivers/ps2/ps2_gc.c
++++ b/hw/xfree86/drivers/ps2/ps2_gc.c
+@@ -13,6 +13,7 @@
+     struct ps2_gc_private *next, **previous;
+     GCPtr gc;
+     const GCFuncs *funcs;
++    const GCOps *mono_lower;
+     struct ps2_glyph_gc glyph;
+ };
+ static DevPrivateKeyRec screen_key, gc_key;
+@@ -43,6 +44,7 @@
+     struct ps2_gc_private *p = lookup(gc);
+     if (gc->funcs != &funcs) fail("GC funcs changed without unwrapping");
+     ps2_glyph_gc_detach(&p->glyph);
++    if (p->mono_lower) { gc->ops = p->mono_lower; p->mono_lower = NULL; }
+     gc->funcs = p->funcs;
+     return p;
+ }
+@@ -138,6 +140,10 @@
+ FORWARD_VOID(PolyFillArc, (DrawablePtr d, GCPtr gc, int n, xArc *arcs), (d, gc, n, arcs))
+ FORWARD_VOID(PushPixels, (GCPtr gc, PixmapPtr bitmap, DrawablePtr d, int w, int h, int x, int y),
+              (gc, bitmap, d, w, h, x, y))
++FORWARD_VOID(PolyGlyphBlt, (DrawablePtr d, GCPtr gc, int x, int y, unsigned n, CharInfoPtr *glyphs, void *base),
++             (d, gc, x, y, n, glyphs, base))
++FORWARD_VOID(ImageGlyphBlt, (DrawablePtr d, GCPtr gc, int x, int y, unsigned n, CharInfoPtr *glyphs, void *base),
++             (d, gc, x, y, n, glyphs, base))
+ #undef FORWARD_VOID
+ #define FORWARD_REGION(name, signature, arguments) \
+ static RegionPtr forward_##name signature { \
+@@ -182,13 +188,33 @@
+     return end;
+ }
+ static int poly8(DrawablePtr d, GCPtr gc, int x, int y, int n, char *chars)
+-{ return text(d, gc, x, y, n, (unsigned char *)chars, FALSE, FALSE); }
++{
++    if (gc->depth != 1) return text(d, gc, x, y, n, (unsigned char *)chars, FALSE, FALSE);
++    live(lookup(gc)); struct ps2_gc_private *p = begin(gc);
++    if (!gc->ops->PolyText8) fail("missing monochrome PolyText8");
++    int result = gc->ops->PolyText8(d,gc,x,y,n,chars); finish(gc,p,TRUE); return result;
++}
+ static int poly16(DrawablePtr d, GCPtr gc, int x, int y, int n, unsigned short *chars)
+-{ return text(d, gc, x, y, n, (unsigned char *)chars, TRUE, FALSE); }
++{
++    if (gc->depth != 1) return text(d, gc, x, y, n, (unsigned char *)chars, TRUE, FALSE);
++    live(lookup(gc)); struct ps2_gc_private *p = begin(gc);
++    if (!gc->ops->PolyText16) fail("missing monochrome PolyText16");
++    int result = gc->ops->PolyText16(d,gc,x,y,n,chars); finish(gc,p,TRUE); return result;
++}
+ static void image8(DrawablePtr d, GCPtr gc, int x, int y, int n, char *chars)
+-{ (void)text(d, gc, x, y, n, (unsigned char *)chars, FALSE, TRUE); }
++{
++    if (gc->depth != 1) { (void)text(d,gc,x,y,n,(unsigned char *)chars,FALSE,TRUE); return; }
++    live(lookup(gc)); struct ps2_gc_private *p = begin(gc);
++    if (!gc->ops->ImageText8) fail("missing monochrome ImageText8");
++    gc->ops->ImageText8(d,gc,x,y,n,chars); finish(gc,p,TRUE);
++}
+ static void image16(DrawablePtr d, GCPtr gc, int x, int y, int n, unsigned short *chars)
+-{ (void)text(d, gc, x, y, n, (unsigned char *)chars, TRUE, TRUE); }
++{
++    if (gc->depth != 1) { (void)text(d,gc,x,y,n,(unsigned char *)chars,TRUE,TRUE); return; }
++    live(lookup(gc)); struct ps2_gc_private *p = begin(gc);
++    if (!gc->ops->ImageText16) fail("missing monochrome ImageText16");
++    gc->ops->ImageText16(d,gc,x,y,n,chars); finish(gc,p,TRUE);
++}
+ static void solid_ops(struct ps2_gc_private *p)
+ {
+     const GCOps *native = p->owner->solid_ops;
+@@ -234,16 +260,22 @@
+ }
+ static void install_ops(GCPtr gc, struct ps2_gc_private *p)
+ {
+-    if (!ps2_glyph_gc_attach(gc, &p->glyph, p->owner->exa, p->owner->context))
++    if (gc->depth == 1) {
++        p->mono_lower = gc->ops;
++        p->glyph.ops = *gc->ops;
++        gc->ops = &p->glyph.ops;
++    } else if (!ps2_glyph_gc_attach(gc, &p->glyph, p->owner->exa, p->owner->context))
+         fail("cannot attach native glyph operations");
+ #define FORWARD(name) p->glyph.ops.name = forward_##name
+     FORWARD(FillSpans); FORWARD(SetSpans); FORWARD(PutImage);
+     FORWARD(CopyArea); FORWARD(CopyPlane); FORWARD(PolyPoint); FORWARD(Polylines);
+     FORWARD(PolySegment); FORWARD(PolyRectangle); FORWARD(PolyArc);
+     FORWARD(FillPolygon); FORWARD(PolyFillRect); FORWARD(PolyFillArc); FORWARD(PushPixels);
++    if (gc->depth == 1) { FORWARD(PolyGlyphBlt); FORWARD(ImageGlyphBlt); }
+ #undef FORWARD
+-    solid_ops(p);
+-    copy_ops(p);
++    /* Only monochrome source bits use lower EXA/fb editing. Color operations
++     * retain native GC hooks and the fatal PrepareAccess policy. */
++    if (gc->depth != 1) { solid_ops(p); copy_ops(p); }
+     p->glyph.ops.PolyText8 = poly8; p->glyph.ops.PolyText16 = poly16;
+     p->glyph.ops.ImageText8 = image8; p->glyph.ops.ImageText16 = image16;
+ }
+@@ -311,6 +343,7 @@
+     while (b->gcs) {
+         struct ps2_gc_private *p = b->gcs;
+         ps2_glyph_gc_detach(&p->glyph);
++        if (p->mono_lower) p->gc->ops = p->mono_lower;
+         if (p->gc->funcs == &funcs) p->gc->funcs = p->funcs;
+         remove_gc(p);
+         free(p);
+--- a/hw/xfree86/drivers/ps2/ps2_fill.c
++++ b/hw/xfree86/drivers/ps2/ps2_fill.c
+@@ -80,16 +80,21 @@
+         if (p->mask && gc->alu!=GXnoop && (gc->alu!=GXcopy || p->mask!=bits))
+             fail(p,"unsupported opaque stipple ALU or RGB mask");
+         PixmapPtr mono=gc->stipple;
++        if (!mono || mono->drawable.pScreen!=screen) fail(p,"missing or foreign monochrome stipple");
++        struct ps2_mono_source owned={0};
++        int mono_owned=ps2_surface_exa_mono_source(mono,&owned);
++        if (mono_owned<0) fail(p,"invalid owned monochrome stipple header");
++        const unsigned char *source_bits=mono_owned ? owned.bits : mono ? mono->devPrivate.ptr : NULL;
+         if (!mono || mono->drawable.pScreen!=screen || mono->drawable.type!=DRAWABLE_PIXMAP ||
+-            mono->drawable.depth!=1 || mono->drawable.bitsPerPixel!=1 || !mono->devPrivate.ptr ||
++            mono->drawable.depth!=1 || mono->drawable.bitsPerPixel!=1 || !source_bits ||
+             !mono->drawable.width || !mono->drawable.height || mono->drawable.width>256 ||
+             mono->drawable.height>256 || mono->devKind<=0 || mono->devKind<(mono->drawable.width+7)/8)
+             fail(p,"invalid server monochrome stipple");
+         size_t row=(mono->drawable.width+7)/8, stride=mono->devKind;
+         if ((size_t)mono->drawable.height-1>(SIZE_MAX-row)/stride) fail(p,"stipple stride overflow");
+         size_t bytes=(mono->drawable.height-1)*stride+row;
+-        if ((uintptr_t)mono->devPrivate.ptr>UINTPTR_MAX-(bytes-1)) fail(p,"stipple address overflow");
+-        p->mono=(struct ps2_pipe_mono_pattern){.bits=mono->devPrivate.ptr,
++        if ((uintptr_t)source_bits>UINTPTR_MAX-(bytes-1)) fail(p,"stipple address overflow");
++        p->mono=(struct ps2_pipe_mono_pattern){.bits=source_bits,
+             .stride=stride,.bytes=bytes,
+             .width=mono->drawable.width,.height=mono->drawable.height,.msb_first=SERVER_MSB_FIRST};
+         p->color=gc->fgPixel&bits; p->background=gc->bgPixel&bits;

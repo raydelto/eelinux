@@ -1,0 +1,29 @@
+################################################################################
+# Current lsof uses the upstream Autotools build and installation interfaces.
+################################################################################
+LSOF_VERSION = 4.99.7
+LSOF_SOURCE = lsof-$(LSOF_VERSION).tar.gz
+LSOF_SITE = https://github.com/lsof-org/lsof/releases/download/$(LSOF_VERSION)
+LSOF_LICENSE = lsof license
+LSOF_LICENSE_FILES = COPYING
+LSOF_CPE_ID_VALID = YES
+LSOF_INSTALL_STAGING = YES
+LSOF_DEPENDENCIES = host-pkgconf
+
+ifeq ($(BR2_PACKAGE_LIBTIRPC),y)
+LSOF_DEPENDENCIES += libtirpc
+LSOF_CONF_OPTS += --with-libtirpc
+else
+LSOF_CONF_OPTS += --without-libtirpc
+endif
+
+ifeq ($(BR2_PACKAGE_LIBSELINUX),y)
+LSOF_DEPENDENCIES += libselinux
+LSOF_CONF_OPTS += --with-selinux
+else
+LSOF_CONF_OPTS += --without-selinux
+endif
+
+# Preserve upstream's liblsof SDK and CLI defaults; build tools configure the
+# target wchar/locale support from the external glibc headers directly.
+$(eval $(autotools-package))

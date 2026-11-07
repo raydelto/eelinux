@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "iperf3",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.iperf3",
+  "symbol": "BR2_PACKAGE_IPERF3",
+  "version": "3.22",
+  "recipe": "package/iperf3/iperf3.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "1c0d0fb02c52626111d6e132db80edfbf27bbaff8bd9245df2a371dcb0b35a92",
+      "filename": "iperf-3.22.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/esnet/iperf/releases/tag/3.22"
+}

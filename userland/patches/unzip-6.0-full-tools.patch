@@ -1,0 +1,24 @@
+Subject: [PATCH] cmake: build the upstream filter and self-extractor too
+
+Use the source lists and FUNZIP/SFX definitions from unix/Makefile instead
+of limiting the CMake installation to unzip alone.
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -16,3 +16,16 @@
+ include_directories(.)
+ add_executable(unzip ${UNZIP_SOURCES})
+ install(TARGETS unzip DESTINATION bin)
++
++set(FUNZIP_SOURCES funzip.c crc32.c crypt.c globals.c inflate.c ttyio.c)
++add_executable(funzip ${FUNZIP_SOURCES})
++set_target_properties(funzip PROPERTIES COMPILE_DEFINITIONS "FUNZIP")
++
++set(UNZIPSFX_SOURCES unzip.c crc32.c crypt.c extract.c fileio.c globals.c
++  inflate.c match.c process.c ttyio.c ubz2err.c unix/unix.c)
++add_executable(unzipsfx ${UNZIPSFX_SOURCES})
++set_target_properties(unzipsfx PROPERTIES COMPILE_DEFINITIONS "SFX")
++
++install(TARGETS funzip unzipsfx DESTINATION bin)
++# zipinfo uses unzip's built-in listing mode; the package install hook adds
++# the executable alias without storing a second copy of the binary.

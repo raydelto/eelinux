@@ -1,0 +1,4 @@
+config BR2_PACKAGE_EELINUX_M4
+	bool "GNU m4 on the target"
+	depends on BR2_USE_MMU
+	depends on BR2_USE_WCHAR

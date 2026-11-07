@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "name": "x11r7/xdriver_xf86-video-fbdev",
+  "engine": "Buildroot 2025.02.18 external tree",
+  "manifest_entry": "configs/packages.json:packages.x11r7/xdriver_xf86-video-fbdev",
+  "symbol": "BR2_PACKAGE_XDRIVER_XF86_VIDEO_FBDEV",
+  "version": "0.5.0",
+  "recipe": "package/x11r7/xdriver_xf86-video-fbdev/xdriver_xf86-video-fbdev.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "dcc3d85f378022180e437a9ec00a59b6cb7680ff79c40394d695060af2374699",
+      "filename": "xf86-video-fbdev-0.5.0.tar.bz2"
+    }
+  ]
+}

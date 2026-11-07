@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_ico",
+  "kind": "application",
+  "program": "ico",
+  "version": "1.0.7",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/ico-1.0.7.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/ico-1.0.7.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "56a96d6429c387e54aec23b522f548487d5db8296092f21bb289b67845069915",
+      "filename": "ico-1.0.7.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "274b87e943de4f5b27a51971a89ad48340a024eba174805370e4560d9807be32c93698493f4e060d8a8f6e97133dc5e656716784cc2167a3834575688addcba1",
+      "filename": "ico-1.0.7.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

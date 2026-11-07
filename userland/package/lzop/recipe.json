@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "lzop",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.lzop",
+  "symbol": "BR2_PACKAGE_LZOP",
+  "version": "1.04",
+  "recipe": "package/lzop/lzop.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "7e72b62a8a60aff5200a047eea0773a8fb205caf7acbe1774d95147f305a2f41",
+      "filename": "lzop-1.04.tar.gz"
+    }
+  ],
+  "release_url": "https://www.lzop.org/download/"
+}

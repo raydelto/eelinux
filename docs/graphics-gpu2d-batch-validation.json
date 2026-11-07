@@ -1,0 +1,112 @@
+{
+  "date": "2026-10-09",
+  "result": "passed",
+  "native_run": "r13",
+  "guest_RAM_MiB": 32,
+  "GPU_only_pixel_processing": true,
+  "CPU_destination_rendering": false,
+  "full_2D_complete": false,
+  "physical_hardware_qualified": false,
+  "native_pixel_checks": 141,
+  "all_scenes_readback_passed": true,
+  "cursor_mouse_resize_terminal_scroll_and_typing": "passed",
+  "native_Xorg_exit": 0,
+  "diagnostic_module_sha256": "150cadde1caaed6514f1710dff403a5c0733c694f00b889f1eed753c6dba4079",
+  "kernel_sha256": "18468baf86014a930d8fa5323906659a24f3892cd2273981f68e9be02032fa30",
+  "kernel_patch": "kernel/patches/ps2-gs-batch.patch",
+  "kernel_patch_sha256": "2076c3ff7455bf9316cbaa3e00b95187514552299dd7eb5baa3bed1fca75aa38",
+  "bounded_DMA_group_operations": 8,
+  "64_solid_operations_DMA_count": 8,
+  "prior_DMA_count": 64,
+  "new_sanitizer_checks": {
+    "GS_batch_provider": 4,
+    "Mesa_Xorg_solid": 11,
+    "XDG_menu": 2,
+    "USB_packaging": 11
+  },
+  "scene_drawing_milliseconds": [
+    {
+      "scene": 1,
+      "milliseconds": 132.422
+    },
+    {
+      "scene": 2,
+      "milliseconds": 129.767
+    },
+    {
+      "scene": 3,
+      "milliseconds": 76.242
+    },
+    {
+      "scene": 4,
+      "milliseconds": 20.562
+    },
+    {
+      "scene": 4,
+      "milliseconds": 24.653
+    },
+    {
+      "scene": 4,
+      "milliseconds": 49.517
+    }
+  ],
+  "logs": {
+    "client.log": "302758d278685b068f60c13cd59641f453c6ca0b0b06b671fe5f468d809a2f09",
+    "serial.log": "74749ed993224135c1e9659728c125578b92ecf78cda4dadb6c1a1c2330da611",
+    "Xorg.log": "9fbf380f3783ddd3aa15dae6a643b1bf89b6b9b6d8e2fc48f4b44ba2792a9151"
+  },
+  "shipping_images_do_not_include_qualification_clients": true,
+  "limitations": [
+    "colour-source CopyPlane",
+    "general XRender alpha/masks/transforms",
+    "OpenGL/GLX"
+  ],
+  "source_sha256": {
+    "graphics/ps2_gs_client.c": "28335120a075b84246981763d3e5bd285e7d8d3af619bdeeef1017749eb10de2",
+    "graphics/ps2_gs_surface.c": "00c148d970c752a76968311209b4ea45bda4711ae7bc34a7715c468672c7ec93",
+    "graphics/ps2_gs_render.c": "bcf37b6f8fffcff58d7dbd61f057cbbfd7af1a10ea23f632f56c70ad0880f1b9",
+    "graphics/ps2_gs_texture.c": "1f9d174d7bed07a8fe7708d4eceb4424a24006f580687a5301af5767fdb89c52",
+    "graphics/ps2_gs_bitmap.c": "435ab0f8123389b871ff0a5c08a24ee2d6fec1b077a48ad0edd0c38f6ce7eeff",
+    "graphics/ps2_gs_logic.c": "2625851e1fc8df975491965037b5452dc6a85ecf60ab1a9800c3dc2a78fb4fba",
+    "graphics/ps2_gs_transfer.c": "e6825bae51be524eb14a5b9502d685443123a767d7de3ad8626c71b694af0fca",
+    "mesa/ps2/ps2_resource.c": "281d834abab2d0b3d26ce2e557ec3b087975280e7736aaa405f1e26e3b3a384f",
+    "mesa/ps2/ps2_render_target.c": "0a3d30b1f5047c74aa10836dd0d5ab6315cb165245655d5e2923f9f43a92f94d",
+    "mesa/ps2/ps2_owned_draw.c": "be45433bc6c359b53dca02f517014e67027ece53b7df8a3dd3514c3f6a4a9223",
+    "mesa/ps2/ps2_sampler.c": "1fc304d86b77c7165a4598a46664c19d11a8c1948b4ae2b73f29a1b8101fe4f4",
+    "mesa/ps2/ps2_textured_draw.c": "4eefe5568facd853194c07fad5061d11b0587e9cc16d2a3b848a41dc1d64caae",
+    "mesa/ps2/ps2_pipe.c": "e03019d00bc6b788b12fae65cca3281f1fea1333fa68170ed97cc72eb3a41c6b",
+    "mesa/ps2/ps2_logic.c": "64fdf3906f336b5c846c3f3afaa5e1bfe9484603ffd91d71d189c5e2cb8cee4b",
+    "mesa/ps2/ps2_solid_batch.c": "ebf40535ede82d63b04a8ac21f50f193c559be350de822c15ff71ad77fcfd29a",
+    "mesa/ps2/ps2_copy_batch.c": "c6d7bdddf32f53744e63dda18ea6e8999d6f29f84fb40ce0244430ee7ec19685",
+    "mesa/ps2/ps2_rop.c": "1db9aa69ca49ddf70e0ca5a96838f1c4043fcd3d21f9df8c80117ba1fb4967cd",
+    "mesa/ps2/ps2_blit.c": "4744bf522f8a90940691225051e914771d793b346bd0936dc5fb1b6a236f6cb7",
+    "mesa/ps2/ps2_tile.c": "1de341865895ade9c6ebcef01c03b7591337689ef3b78c40e5a319d73d76ef16",
+    "mesa/ps2/ps2_cursor.c": "6357bb5e2895e1f5a60a0ee98b0dfcb86a1972a009ae1df1d218add5704c30bb",
+    "mesa/ps2/ps2_image.c": "c106d75cb06d1a9289c0ade9632fe16004a67699479a0f770aa18b91fe933aee",
+    "mesa/ps2/ps2_planar.c": "b50fd54941679c8543317643b8ac97bf007b43c9d3084af0f00fef8e231f380d",
+    "mesa/ps2/ps2_polygon.c": "8ed632610fb825eb0579e5a0ac58b96f92e3ceff9518f440d694d0aedd2a0236",
+    "mesa/ps2/ps2_polygon_stipple.c": "fe37a4dfaf61bf025c78d19e4159aea038d75693797f9b8107e27930cf5e213e",
+    "mesa/ps2/ps2_polygon_tile.c": "fd9108d105bbb17438c11a8095d2890c374b19473d3f0dd68824e6829e3866ed",
+    "mesa/ps2/ps2_transform.c": "8283a40c8fb3b663677d77d820bcbe8a51f3e8eb29e6e098642c0f7ac64aa579",
+    "desktop/xorg/ps2_surface_exa.c": "300e7571686f48fb411d51bfd100648617da38648452440db1660e2a1a7fb63b",
+    "desktop/xorg/ps2_render_bridge.c": "f4bf7606a21e83a538b78fe246ef1b0e91687258a02cbad9f63685602da2c4f5",
+    "desktop/xorg/ps2_texture_exa.c": "e4447b44fbe3a03f2ed2856110aeccb3b848dc3c3c564bb681dac55d3eef3568",
+    "desktop/xorg/ps2_context_bridge.c": "10fcfdaa7891fd9015212f338074350ab8cf6688702b1bcaf9e2d16fd0133dc5",
+    "desktop/xorg/ps2_glyph.c": "0fcd5935bc0eac2b287ca0ee04687a6033eb4d5f5935ecca81f96f317cc160b6",
+    "desktop/xorg/ps2_gc.c": "df5caa34f493a2b5646eac5efe3e0a1ba793c3fd83abb4702c5bcb28d12ae6cb",
+    "desktop/xorg/ps2_solid.c": "ebf64a067b5de1a5eb201dbac8aee799745e31b7f4b3fbee9a84bb5aba4b077e",
+    "desktop/xorg/ps2_copy.c": "635ac9e2ad416fe3ecbf3eb179ee56d371920ef7909341207046d0fbc868de92",
+    "desktop/xorg/ps2_copy_exa.c": "c1e7bdb8c3cde12c939b630da2702926087b60e138bfe76bdc887db18330758c",
+    "desktop/xorg/ps2_blit_exa.c": "189c1c776ee475a092bf775e2223498c4e62d04909d31dfdbf32cf9070077958",
+    "desktop/xorg/ps2_copy_window.c": "e89917fe9a9efda8d0463953b2dda8737255e60e54a152015e1fe0030059c817",
+    "desktop/xorg/ps2_paint_window.c": "eb93dd5b2ff41d62a68942b014ac2f5b2c16b1a6bc8790e6bac0c214c8b9f1dc",
+    "desktop/xorg/ps2_fill.c": "795ce67f8bacac062905ffe6d290a06e0396970636c6d03d7d4f7741ac10a687",
+    "desktop/xorg/ps2_cursor_screen.c": "f94e3f77db684e422fef542491887248dac88d54efcb4a38b62c18662d7bb97c",
+    "desktop/xorg/ps2_image_gc.c": "e8facbee72f3eaedb1be09a5855f3a408cfa2c7241d4f0c29d4ede2f7a7f4c33",
+    "desktop/xorg/ps2_polygon_gc.c": "6b3678dee1ed346da86b5b8ecaa8be906d6b99b079eebb68fc0aec57406e8c00",
+    "desktop/xorg/ps2_geometry.c": "67d46099cd048cb977caf58e40722e0936143b519f3c654b78ec8ba83ad17215",
+    "desktop/xorg/ps2_readback.c": "a203afd729e1d816c8cd6a887ddc217decb84b0fd96d463c525accfd44283262",
+    "desktop/xorg/ps2_driver.c": "28f8ac1c62afa14abb1dc6afb21414d12829703fc6aa80e325b20a20dc96af86",
+    "desktop/xorg/ps2_logic_exa.c": "1b7a530499c41f2ce71df10eeb2f82ec363bfb09d1e35757049c77f90f7500e9"
+  }
+}

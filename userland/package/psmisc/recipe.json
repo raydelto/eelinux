@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "psmisc",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.psmisc",
+  "symbol": "BR2_PACKAGE_PSMISC",
+  "version": "23.7",
+  "recipe": "package/psmisc/psmisc.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "58c55d9c1402474065adae669511c191de374b0871eec781239ab400b907c327",
+      "filename": "psmisc-23.7.tar.xz"
+    }
+  ],
+  "release_url": "https://sourceforge.net/projects/psmisc/rss?path=%2Fpsmisc%2F"
+}

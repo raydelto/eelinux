@@ -1,0 +1,42 @@
+--- a/src/gallium/drivers/ps2/ps2_pipe.c
++++ b/src/gallium/drivers/ps2/ps2_pipe.c
+@@ -1,5 +1,6 @@
+ /* SPDX-License-Identifier: MIT */
+ #include "ps2_pipe.h"
++#include "ps2_copy_batch.h"
+ #include "util/u_inlines.h"
+ #include <errno.h>
+ #include <math.h>
+@@ -270,11 +271,29 @@
+ {
+     struct ps2_pipe_context *c=(void*)base;
+     if (ready(c)) return;
+-    if (!src || !dst || src->screen!=base->screen || dst->screen!=base->screen ||
+-        src->format!=dst->format || src->format==PIPE_FORMAT_Z16_UNORM || level || src_level || dz) {
++    if (!src || !dst || !box) { reject(c,EINVAL); return; }
++    if (src->screen!=base->screen || dst->screen!=base->screen ||
++        src->target!=PIPE_TEXTURE_2D || dst->target!=PIPE_TEXTURE_2D ||
++        src->format!=dst->format ||
++        (src->format!=PIPE_FORMAT_R8G8B8X8_UNORM && src->format!=PIPE_FORMAT_R5G5B5X1_UNORM) ||
++        level || src_level || dz || box->z || box->depth!=1) {
+         reject(c,ENOTSUP); return;
+     }
+-    if (ps2_render_flush(c->screen->render) || ps2_resource_copy(dst,dx,dy,src,box)) reject(c,errno);
++    struct ps2_resource *s=(void*)src,*d=(void*)dst;
++    if (s->owner!=c->screen->render->gs || d->owner!=s->owner) { reject(c,EXDEV); return; }
++    /* Check signed box coordinates and unsigned destinations before narrowing
++     * to the native batch ABI. A rejected copy must not submit pending draws. */
++    if (box->x<0 || box->y<0 || box->width<=0 || box->height<=0 ||
++        (uint64_t)box->x+box->width>src->width0 ||
++        (uint64_t)box->y+box->height>src->height0 ||
++        (uint64_t)dx+box->width>dst->width0 ||
++        (uint64_t)dy+box->height>dst->height0 || dx>INT32_MAX || dy>INT32_MAX) {
++        reject(c,EINVAL); return;
++    }
++    const struct ps2_pipe_copy_box copy={box->x,box->y,(int32_t)dx,(int32_t)dy,box->width,box->height};
++    /* The batch handles fencing, odd-width scratch and overlap ordering while
++     * preserving the live framebuffer, sampler and resource references. */
++    if (ps2_pipe_copy_boxes(base,s->handle,d->handle,&copy,1)) reject(c,errno);
+ }
+ static void flush_resource(struct pipe_context *base,struct pipe_resource *r)
+ {

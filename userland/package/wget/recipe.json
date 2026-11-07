@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "name": "wget",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "1.25.0",
+    "url": "https://ftp.gnu.org/gnu/wget/wget-1.25.0.tar.gz",
+    "gnu": true,
+    "filename": "wget-1.25.0.tar.gz",
+    "sha256": "766e48423e79359ea31e41db9e5c289675947a7fcf2efdcedb726ac9d0da3784",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Sun 10 Nov 2024 09:32:38 PM WET\ngpgv:                using RSA key 6B98F637D879C5236E277C5C64FF90AAE8C70AF9\ngpgv:                issuer \"darnir@gnu.org\"\ngpgv: Good signature from \"Darshit Shah <darnir@gmail.com>\"\ngpgv:                 aka \"Darshit Shah <s8dashah@stud.uni-saarland.de>\"\ngpgv:                 aka \"Darshit Shah <darnir@gnu.org>\"\n"
+  },
+  "source_archive": "../../sources/wget-1.25.0.tar.gz",
+  "configure_options": [
+    "--with-ssl=openssl",
+    "--without-libpsl",
+    "--disable-iri"
+  ],
+  "configure_environment": {},
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false
+}

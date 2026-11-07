@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_twm",
+  "kind": "application",
+  "program": "twm",
+  "version": "1.0.13",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/twm-1.0.13.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/twm-1.0.13.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "966c4df15757645943a916c1beee4ff4065b44fde00cf01f8477d8c1d0cba2b6",
+      "filename": "twm-1.0.13.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "bab61865b798869d64fdf6e65ac9affee7ae0acf5523e4dc36e5fc65664ed83fb6ba8f1f7f495c29340e9e3dd00a386a81dcccfa11fc7adf3edda505db2f52b9",
+      "filename": "twm-1.0.13.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

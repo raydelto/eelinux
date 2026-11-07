@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "name": "gcc",
+  "engine": "userland/package/eelinux-gcc/eelinux-gcc.mk",
+  "source": {
+    "name": "gcc",
+    "version": "16.2.0",
+    "url": "https://ftp.gnu.org/gnu/gcc/gcc-16.2.0/gcc-16.2.0.tar.xz",
+    "algorithm": "sha512",
+    "digest": "c51c30ca7422d0cbecf504b2e0f33c3aca31e0f90a76b65217f465163fa6fa17b3f5de39e145c47e5bab90ac0ce7fff3b03c8d553ae36e01faaea5a50f8648d1",
+    "hash_source": "https://gcc.gnu.org/pub/gcc/releases/gcc-16.2.0/sha512.sum",
+    "release_source": "https://gcc.gnu.org/gcc-16/",
+    "patches": [
+      {
+        "path": "toolchain/patches/gcc-16.2.0-libatomic-tas.patch",
+        "sha256": "1fea253f8ae836136433eb924f69613594f33894326903f969004d2618e95fb3",
+        "origin": "https://gcc.gnu.org/pipermail/gcc-patches/2025-November/699826.html",
+        "status": "downstream adaptation of proposed upstream PR122078 fix; adds shared-library version export",
+        "files": {
+          "libatomic/tas_n.c": {
+            "before_sha256": "8e5afb0ac98038f8f13f099742b5484f519bf91e2e92e97a6476644975c0b746",
+            "after_sha256": "c4ea2d0445ed207ea7bbc7cb65fab99142130fcb641e636fc74a44b9afe58ef8"
+          },
+          "libatomic/libatomic.map": {
+            "before_sha256": "450a646d892de1cfc3be77248f7851edb6226e98ea5423aae6e19171461472eb",
+            "after_sha256": "c3c945404d3e9a191c42701d8df6ee48be241661283b4f4a673808f7061183ba"
+          }
+        }
+      }
+    ]
+  },
+  "source_archive": "../../sources/gcc-16.2.0.tar.xz"
+}

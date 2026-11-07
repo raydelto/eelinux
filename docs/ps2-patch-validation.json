@@ -1,0 +1,108 @@
+{
+  "date": "2026-10-03",
+  "patch_count": 19,
+  "patches": {
+    "ps2-smap.patch": {
+      "apply_checked": true,
+      "files": 17,
+      "syntax_checked": true,
+      "sha256": "b3a1f956b86c5311679cfde39b678f31916fe9865dcb8ab0a89cb724b1a5c83c"
+    },
+    "7.2.8-r5900-cp0.patch": {
+      "apply_checked": true,
+      "fresh_recipe_checked": true,
+      "syntax_checked": true,
+      "sha256": "f3414004ae9540786772e20d1cfefd5b9739ea822130e73bc21abfc91aefffa2"
+    },
+    "ps2-intc-mask.patch": {
+      "apply_checked": true,
+      "fresh_recipe_checked": true,
+      "syntax_checked": true,
+      "sha256": "5676221d28b72b23a5fab4273f45cd942a1c7fc103d7f3af39d433ed938e8789"
+    },
+    "ps2-usb-builtin.patch": {
+      "apply_checked": true,
+      "fresh_recipe_checked": true,
+      "syntax_checked": true,
+      "sha256": "b986b7f3a17e6bc3165f1a19362b36c95090eb3476ba928339fa735465b3de3b"
+    },
+    "ps2-sif-usb-order.patch": {
+      "apply_checked": true,
+      "fresh_recipe_checked": true,
+      "syntax_checked": true,
+      "sha256": "5e332d3e9f07cd2211ab1d512df20b568ce12d2994bf5dd3257c41d42b207438"
+    },
+    "ps2-dma-fault.patch": {
+      "apply_checked": true,
+      "fresh_recipe_checked": true,
+      "syntax_checked": true,
+      "sha256": "782393b5ccd1424c88cd6a0b51defe0fc6e2adf96bc3aa3eeb543e4acbf296ff"
+    },
+    "ps2-iop-upload.patch": {
+      "apply_checked": true,
+      "fresh_recipe_checked": true,
+      "syntax_checked": true,
+      "sha256": "d8c01b72e5601520e65d28ba9971882f88581f625843e22e8c3d77e01ad63253"
+    },
+    "ps2-user-vm.patch": {
+      "apply_checked": true,
+      "fresh_recipe_checked": true,
+      "syntax_checked": true,
+      "sha256": "8229fac4c7952e76939757c4f33fd219ed2f93962ce98eac73f380ac0e9c2d27"
+    },
+    "ps2-video-memory.patch": {
+      "apply_checked": true,
+      "fresh_recipe_checked": true,
+      "syntax_checked": true,
+      "sha256": "6eed4177c80dce7675c8c04d51483b89a66b01328ebd8c912d1f6298a3b20063"
+    },
+    "ps2-page-cache.patch": {
+      "apply_checked": true,
+      "fresh_recipe_checked": true,
+      "syntax_checked": true,
+      "sha256": "3d442da294e692f558681f7339bae59537f9e6e4cf7501fe00e8b7a13d6f2d51"
+    },
+    "ps2-smap-iop.patch": {
+      "apply_checked": true,
+      "files": 11,
+      "syntax_checked": true,
+      "sha256": "7b428032028853f84ec856869b0e58c67fee8437a4a5e76c88061f6f3d3dbb19"
+    },
+    "ps2-smap-firmware.patch": {
+      "apply_checked": true,
+      "files": 11,
+      "syntax_checked": true,
+      "sha256": "b7a9a8461f9223950a49a360fdd64fd7aee44bb3006d84d018d0189d588ccac4"
+    },
+    "7.2.8-api.patch": {
+      "syntax_checked": true,
+      "sha256": "938d14893ed72828e47398321a12094f92055e8245761e67ab8ba885103ef5e6"
+    },
+    "7.2.8-r5900-head-sync-candidate.patch": {
+      "syntax_checked": true,
+      "sha256": "9f69c08dd4b9cc7acfb6b85efe57d47d7ff0e400f50af26a8d6aeab08625cba5"
+    },
+    "driver-correctness.patch": {
+      "syntax_checked": true,
+      "sha256": "f06d627b3a2e7ce64a9ec76b3204c6deae5045db9e2a072059ad40f3943e118f"
+    },
+    "ps2-smap-startup.patch": {
+      "syntax_checked": true,
+      "sha256": "15233b8f21b960ba6c1fa17a7b8136da78e40da4b1fe7c6719c5fdfd0c8350e2"
+    },
+    "pcsx2-2.6.3-mmu.patch": {
+      "syntax_checked": true,
+      "sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85"
+    },
+    "pcsx2-2.6.3-windows-compat.patch": {
+      "syntax_checked": true,
+      "sha256": "07e2ddf185b448194a878e31824cb127e35580f58592caf399d333dddbdb9b2b"
+    },
+    "pcsx2-2.6.3-windows-headers.patch": {
+      "syntax_checked": true,
+      "sha256": "af8c7cac5fe4d44aa0f66671c86556c62f009263a907c8b3e925062aeb89dcd3"
+    }
+  },
+  "driver_name": "ps2-smap",
+  "physical_ethernet_evidence": "docs/hardware-network-validation.json"
+}

@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xmodmap",
+  "kind": "application",
+  "program": "xmodmap",
+  "version": "1.0.12",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xmodmap-1.0.12.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xmodmap-1.0.12.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "fc54b9b5bbf2ae58ba8f9d42bd051c41c7438377400c42c17d7496d19e1bb3ce",
+      "filename": "xmodmap-1.0.12.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "2319f1b7eee54d650930c9e16c06e8db5a0c19eaef1902d6196d666bcab8bc288baaea65d3b561e117fc98b918cbcd9c2660c91c556f3fa08e0f57a8f0d38f82",
+      "filename": "xmodmap-1.0.12.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

@@ -1,0 +1,29 @@
+#!/bin/bash
+set -u
+case ${1:-} in
+    start)
+        # DVD lower filesystem is read-only; its swapfile cannot back writes.
+        if [[ -r /.dvd/session ]]; then
+            # Bounded compressed RAM swap supports the desktop without USB.
+            # Never use the immutable /swapfile carried on the DVD.
+            [[ -w /sys/block/zram0/disksize && -b /dev/zram0 ]] || exit 0
+            printf '4194304\n' > /sys/block/zram0/mem_limit || exit 1
+            printf '16777216\n' > /sys/block/zram0/disksize || exit 1
+            /sbin/mkswap /dev/zram0 >/dev/null || exit 1
+            /sbin/swapon -p 100 /dev/zram0 || exit 1
+            exit 0
+        fi
+        [[ -r /etc/default/swap ]] || exit 0
+        while IFS='=' read -r key value; do
+            [[ $key == SWAP_DEVICE && -n $value ]] || continue
+            if [[ $value == /dev/* && -b $value ]] || [[ $value == /swapfile && -f $value && ! -L $value ]]; then
+                /sbin/swapon -- "$value" || exit 1
+            else
+                printf 'eeLinux: ignoring invalid swap configuration\n' >&2; exit 1
+            fi
+        done < /etc/default/swap
+        ;;
+    stop) exec /sbin/swapoff -a ;;
+    status) exec /sbin/swapon --show ;;
+    *) printf 'Usage: swap {start|stop|status}\n' >&2; exit 2 ;;
+esac

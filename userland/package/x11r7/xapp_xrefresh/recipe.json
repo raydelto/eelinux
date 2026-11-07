@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xrefresh",
+  "kind": "application",
+  "program": "xrefresh",
+  "version": "1.1.1",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xrefresh-1.1.1.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xrefresh-1.1.1.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "e947048130f6300e8be86573af8f225b486884fac14fcfe01bd913b41fa73bd3",
+      "filename": "xrefresh-1.1.1.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "9b064bc63216a52fc768068a11d32a6327907033ae69aaf99f2944503931da2d418550c1165713a20fc3690cd034533df977ec1831e9a618e2daed2796782d35",
+      "filename": "xrefresh-1.1.1.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

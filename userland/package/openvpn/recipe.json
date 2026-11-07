@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "openvpn",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.openvpn",
+  "symbol": "BR2_PACKAGE_OPENVPN",
+  "version": "2.7.9",
+  "recipe": "package/openvpn/openvpn.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "c42a6ed892ddfe2d6e3317a5040f19bec5827564affb2fe3f2b3904a94daacb1",
+      "filename": "openvpn-2.7.9.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/OpenVPN/openvpn/releases/tag/v2.7.9"
+}

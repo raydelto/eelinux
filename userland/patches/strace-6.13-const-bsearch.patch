@@ -1,0 +1,16 @@
+Subject: [PATCH] ioctl: preserve the const qualifier of the ioctl table
+
+The search result points into a const table. glibc 2.44 can preserve that
+qualification in its bsearch interface; the lookup never modifies entries.
+
+--- a/src/ioctl.c
++++ b/src/ioctl.c
+@@ -47,7 +47,7 @@
+ static const struct_ioctlent *
+ ioctl_lookup(const unsigned int code)
+ {
+-	struct_ioctlent *iop;
++	const struct_ioctlent *iop;
+ 
+ 	iop = bsearch((const void *) (const uintptr_t) code, ioctlent,
+ 			nioctlents, sizeof(ioctlent[0]), compare);

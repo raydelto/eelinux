@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xlib_libXScrnSaver",
+  "kind": "library",
+  "program": "libXScrnSaver",
+  "version": "1.2.5",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/libXScrnSaver-1.2.5.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/lib/libXScrnSaver-1.2.5.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "5057365f847253e0e275871441e10ff7846c8322a5d88e1e187d326de1cd8d00",
+      "filename": "libXScrnSaver-1.2.5.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "1c0be0d15c5e7b50a3eb4a239e2c833c44b693b111c7f64c409f9abf8051356572acadebc8b295555683ff6bd4895acdbe32b15a538c971f15d8aa4e6b7fd51b",
+      "filename": "libXScrnSaver-1.2.5.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

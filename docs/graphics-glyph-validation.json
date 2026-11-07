@@ -1,0 +1,216 @@
+{
+  "schema": 1,
+  "date": "2026-10-04",
+  "recorded_at": "2026-10-04T14:32:01.349794+00:00",
+  "scope": "native core Xorg glyph callbacks and GS bitmap plans with shared Mesa lifetime; complete desktop unfinished",
+  "references": [
+    "https://psi-rockin.github.io/ps2tek/",
+    "https://docs.mesa3d.org/gallium/context.html"
+  ],
+  "compiled_components": {
+    "sha256": "7ec1392f1a667360d220e3a21f7300d2cfcbc37c1498be0ddd613d9920c5b4b7"
+  },
+  "preserved_source_inputs": {
+    "sha256": "788e583ca6c05733f426548bcab44328e32b325bc547c7195e91b10509a4ec1d"
+  },
+  "native_test_log": {
+    "sha256": "decc36aae18d52ff827599cc3958da681bf802aeaa9999a32fb3d7dc43a14ae4"
+  },
+  "patches": {
+    "sha256": "b763f7cb992bbdb71a0f40bff60673b0d95a7d8eb30a23ea3fed2e655010a26f"
+  },
+  "image": {
+    "sha256": "1bfb9bb9ca481364d55eb6b187167fe11f625060e497e9423f434fbf84614e3d"
+  },
+  "image_assembly": {
+    "sha256": "0b626c74b890168e96027afeeff34e03ed3e23b689f11e9d794086e29b1bc272"
+  },
+  "image_checks": {
+    "diagnostic_fat_readback_byte_exact": {},
+    "fat32_bpb_and_cluster_count": "passed",
+    "fsck_fat_read_only": "passed",
+    "kernel_fat_readback_byte_exact": true,
+    "readme_fat_readback_byte_exact": true,
+    "root_payload_byte_exact": true,
+    "source_inputs_unchanged": true
+  },
+  "probe": {
+    "sha256": "de6f70c90092bf7cbc13e2759457082e48cbd7e9f95b2abd60f1aabb4a89e113"
+  },
+  "probe_source": {
+    "sha256": "0dfdd5f45f54a061591bbc0459c8955a071bc1b0f945dea4dc437059ad8e46fe"
+  },
+  "kernel": {
+    "sha256": "27dd812c8ec9d1eccc4532fe04f928fb33ff7cdbf8b46e5623f304983c5eddc7"
+  },
+  "unchanged_kernel_sha256": "31308ea5c311d0f4e0a495e6006046c137e2ae4a1aa06001651c188e274b3eb7",
+  "packaged_probe_matches_tested_binary": true,
+  "host_checks": {
+    "cases": 11,
+    "result": "passed",
+    "sanitizers": [
+      "ASan",
+      "UBSan"
+    ],
+    "evidence_kind": "transcription of successful tool output",
+    "groups": {
+      "actual_glyph_callbacks_and_bitmap_plans": 8,
+      "actual_probe_lifecycle": 3
+    },
+    "coverage": [
+      "both font bit orders and padded odd widths against an independent pixel reference",
+      "whole-plan preflight, overflow, empty and outside clipping",
+      "PolyGlyphBlt signed metrics, translation, composite clips and damage",
+      "ImageGlyphBlt negative advance, background and forced-copy semantics",
+      "owned offscreen pixmaps and Mesa color/depth restoration",
+      "GC context lease, deferred close and drawing rejected after destroy",
+      "unsupported masks/ALU/fonts reject before GPU operations",
+      "hardware failure prevents further submission or replay",
+      "probe success/failure/SIGINT restore text after GS release"
+    ],
+    "redirected_case_name": "historical fixture label; actual pinned configuration tests an owned pixmap without Composite",
+    "software_pixel_reference_is_production": false
+  },
+  "R5900_Linux_user_checks": {
+    "cases": 11,
+    "result": "passed",
+    "scope": "core Xorg glyph callbacks, native bitmap command plans and shared Mesa lifetime; wrapped GPU syscalls",
+    "actual_GNU_atomic_references": true,
+    "actual_pixman_regions": true,
+    "GPU_pixels_tested": false
+  },
+  "controlled_PCSX2_run": {
+    "session": {
+      "sha256": "009af8e62657f00565cef07fe2ab80d65883f7cf05d43eba7c4cf79fde003925"
+    },
+    "process_result": {
+      "sha256": "3b24666d3045be6b918d9523d6132ba8d998dabeaf6667f95010a25527661866"
+    },
+    "runtime": {
+      "requested_program": "C:\\Program Files\\PCSX2\\pcsx2-qt.exe",
+      "executable_sha256": "4d2a4d9c0db3cb2e9760e2d34bcd29150b53d56a1a87ae8e6fb4556796b40f58",
+      "runtime_manifest_sha256": "b7bf008375c55020bfb3287e0a100d1ff001323706bc2e18b3bf2d0e183ed478",
+      "mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85"
+    },
+    "log_snapshot": {
+      "sha256": "0f42ca461e18fc408666231694bee87dce11d60dbf734f13f6471684e23d528d"
+    },
+    "milestones": [
+      "EXT4-fs (sda2): mounted filesystem",
+      "ps2-gs: command/fence test PASSED",
+      "ps2-gs: image transfer/fence PASSED",
+      "ps2-gs: offscreen transfer/fence PASSED",
+      "ps2-gs: owned Mesa transfer/fence PASSED",
+      "ps2-gs: texture sampling/fence PASSED",
+      "ps2-gs: Mesa texture probe exit=0",
+      "ps2-gs: screen/context transfer/fence PASSED",
+      "ps2-gs: Mesa screen/context probe exit=0",
+      "ps2-gs: starting native Xorg glyph probe",
+      "ps2-gs: native Xorg core glyphs 720x576 features=ff",
+      "ps2-gs: native glyph command/fence PASSED",
+      "ps2-gs: native Xorg glyph probe exit=0",
+      "ps2-smap ps2-smap eth0: Link is Up"
+    ],
+    "glyph_probe_exit": 0,
+    "automatic_timeout_seconds": 150,
+    "timed_out": true,
+    "timeout_is_a_boot_result": false,
+    "kernel_panic_or_user_segfault_in_log": false,
+    "authenticated_login_tested": false
+  },
+  "visual_observation": {
+    "source": "user-supplied three-row screenshot during this controlled emulator run",
+    "user_report": "This is the Test; Does it display good? This test have a hidden S character in the bottom, is it normal?",
+    "expected_scene": "PLAYSTATION 2: cyan transparent row; white row with background; cyan row with a gap from window clipping; then text console",
+    "assistant_screenshot_assessment": "cyan PLAYSTATION 2; white text on blue background; cyan text with the intended central clip gap, all on navy",
+    "exact_probe_pattern_matched": true,
+    "intentional_clip_hides": [
+      "S",
+      "following T"
+    ],
+    "intentional_clip_explained_to_user": true,
+    "platform_explicitly_named_by_user": false,
+    "console_return_user_confirmed": false,
+    "pixel_readback_or_format_sweep": false,
+    "physical_hardware_qualification": false
+  },
+  "implemented_callbacks": [
+    "PolyGlyphBlt",
+    "ImageGlyphBlt",
+    "GC attach/detach and context lease"
+  ],
+  "restrictions": {
+    "submission": "one context/submission thread per screen",
+    "formats": "native CT16/depth15 and CT32/depth24; core monochrome font bits",
+    "raster": "full plane mask; transparent text solid GXcopy; image text forced copy/solid",
+    "Composite_enabled": false,
+    "Render_alpha_glyphs": false,
+    "shader_caps": 0,
+    "native_probe_is_X_server": false,
+    "limits": {
+      "glyphs": 4096,
+      "glyph_width_height": 256,
+      "clips": 256,
+      "decoded_source_pixels": 1048576,
+      "planned_spans": 32768
+    }
+  },
+  "memory": {
+    "acceptance_target_main_RAM_MiB": 32,
+    "reported_console_baseline_MiB": 7,
+    "console_baseline_is_measured_by_this_work": false,
+    "complete_desktop_total_and_peak_measured": false,
+    "separate_GS_VRAM_MiB": 4,
+    "glyph_payload_bounds_from_o32_source_layout": {
+      "span_record_bytes": 12,
+      "span_storage_KiB": 384,
+      "moving_realloc_old_plus_new_span_blocks_KiB": 576,
+      "glyph_job_record_bytes": 28,
+      "glyph_job_storage_KiB": 112,
+      "excludes": [
+        "allocator overhead",
+        "existing font bitmaps",
+        "other process allocations"
+      ]
+    },
+    "root_filesystem_is_loaded_wholesale_into_RAM": false,
+    "acceptance_stages": [
+      "console idle",
+      "startx peak",
+      "TWM and xterm idle",
+      "supported OpenGL application peak",
+      "X shutdown"
+    ],
+    "acceptance_requires_swap_disabled": true
+  },
+  "physical_glyph_pixels_tested": false,
+  "physical_devices_written": false,
+  "software_pixel_renderer": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL": false,
+  "remaining": [
+    "full DDX GC hooks, screen/cursor/VT integration and other raster states",
+    "Render alpha glyphs",
+    "shader/state pipeline and draw_vbo",
+    "GLX and existing OpenGL applications",
+    "presentation/readback/double buffering",
+    "physical pixel and memory qualification"
+  ],
+  "physical_hardware_followup": {
+    "date": "2026-10-04",
+    "evidence": "docs/graphics-hardware-validation.json",
+    "evidence_sha256": "ef10249c0b5c23f171d1bc7390788c271086b4caaeff929984f5f6c0fe42e1f3",
+    "diagnostics": [
+      "ps2-gs-glyph-test"
+    ],
+    "diagnostic_scenes_tested_on_physical_hardware": true,
+    "result": "passed according to the user on real PlayStation 2 hardware",
+    "evidence_kind": "explicit user verification report; device logs not captured",
+    "earlier_fields_preserved": true,
+    "scope": "normal diagnostic scenes on the user's PS2; not all host/mock cases or a complete desktop",
+    "artifact_hash_read_back_on_console": false,
+    "GPU_pixel_readback": false,
+    "complete_Xorg_TWM_or_OpenGL_session_tested": false
+  },
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

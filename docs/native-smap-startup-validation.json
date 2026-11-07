@@ -1,0 +1,50 @@
+{
+  "date": "2026-10-02",
+  "kernel_sha256": "1a1d01b0488b47279de30606c9069260dbf33cc51e20dcb5c04e9eddcdadc284",
+  "USB_sha256": "31dfda2805cc3d57eb57447dbe12ccdee65909fc354e24204410b7b5ebbbff42",
+  "previous_kernel_preserved_sha256": "d4f30e03f2e8201691014fa4a45c7279f5f2007d9e5015c2a3d81a5d3128b3fa",
+  "driver_matches_actual_compiled_source": true,
+  "tested_startup_functions_match_actual_source": true,
+  "cross_compiled_driver_without_warnings": true,
+  "cold_MDIO_initial_DONE_not_required": true,
+  "timed_out_MDIO_not_overwritten": true,
+  "FIFO_reset_before_EMAC": true,
+  "probe_phase_diagnostics": true,
+  "factory_MAC_checks_unchanged": true,
+  "IOP_firmware_unchanged_from_working_USB_v8": true,
+  "actual_guest_checks": {
+    "relay-v9 SMAP cold-start kernel": true,
+    "native SMAP 00:04:1f:82:b6:9c": true,
+    "dynamic_loader_stress=PASS executions=32": true,
+    "keyboard probe: overall=PASS": true,
+    "automatic_IPv4": true,
+    "external_ping_result=0": true,
+    "DNS_lookup_result=0": true,
+    "manual_default_config_rebind_result=0": true,
+    "final_rx_errors=0": true,
+    "final_tx_errors=0": true,
+    "eeLinux video probe: overall=PASS": true,
+    "eeLinux CP0 probe: complete": true
+  },
+  "guest_log_sha256": "2ed974566be1d2b694b78d0e9ac4ae05ac412756d559f0d0d9bfa321a6a988b4",
+  "host_checks": {
+    "date": "2026-10-02",
+    "command": "make check",
+    "exit_code": 0,
+    "suite_counts": [
+      207,
+      31
+    ],
+    "total_tests": 238,
+    "imported_files": 437
+  },
+  "physical_v8_result": "boot and GNU root shell user-confirmed; SMAP probe ETIMEDOUT (-145); only loopback",
+  "physical_v9_network_result": "pending; old generic error does not establish which timeout failed",
+  "physical_drive_flashed": false,
+  "keyboard": "signed UK map retained; physical backslash/pipe issue unresolved",
+  "sources": [
+    "https://github.com/ps2dev/ps2sdk/blob/c318b136294ed225863b580e115988b05751cf59/iop/dev9/dev9/src/ps2dev9.c",
+    "https://github.com/frno7/linux/blob/f3285c0c4bbfb4b6c97d0d0a261dab92148e1d35/drivers/ps2/smap.c"
+  ],
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

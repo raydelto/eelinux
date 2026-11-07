@@ -1,0 +1,7 @@
+#!/bin/bash
+set -u
+case ${1:-} in
+    start|status) exit 0 ;;
+    stop) /bin/sync; exec /bin/umount -a -r ;;
+    *) printf 'Usage: umount {start|stop|status}\n' >&2; exit 2 ;;
+esac

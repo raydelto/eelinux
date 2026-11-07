@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "name": "cpio",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "2.15",
+    "url": "https://ftp.gnu.org/gnu/cpio/cpio-2.15.tar.bz2",
+    "gnu": true,
+    "filename": "cpio-2.15.tar.bz2",
+    "sha256": "937610b97c329a1ec9268553fb780037bcfff0dcffe9725ebc4fd9c1aa9075db",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Sun 14 Jan 2024 11:59:30 AM WET\ngpgv:                using DSA key 325F650C4C2B6AD58807327A3602B07F55D0C732\ngpgv: Good signature from \"Sergey Poznyakoff <gray@gnu.org>\"\ngpgv:                 aka \"Sergey Poznyakoff (Gray) <gray@mirddin.farlep.net>\"\ngpgv:                 aka \"Sergey Poznyakoff <gray@gnu.org.ua>\"\n"
+  },
+  "source_archive": "../../sources/cpio-2.15.tar.bz2",
+  "configure_options": [],
+  "configure_environment": {},
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false
+}

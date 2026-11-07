@@ -1,0 +1,530 @@
+{
+  "schema": 1,
+  "date": "2026-10-05",
+  "qualification": "initial visual failure; command/fence success does not qualify scene 4",
+  "scene_panels_match_expected": [
+    true,
+    true,
+    true,
+    false
+  ],
+  "observations": [
+    "Matching cyan/yellow diamond bands.",
+    "White/blue clipped hatching and red gap.",
+    "Matching multicolour XOR steps and green bar.",
+    "Left orange/cyan zigzags are correct; right backing panel is black instead of matching."
+  ],
+  "PCSX2_command_fence_exit": 0,
+  "PCSX2_exit_guest_seconds": 176.279,
+  "guest_main_ram_mib": 32,
+  "console_restoration_command_passed": true,
+  "console_return_user_confirmed": false,
+  "component_build": {
+    "sha256": "478fbad72be75305a9e503db7afa6e81cb77e3add6588ba58857d27765fb9b40"
+  },
+  "component_host": {
+    "sha256": "84cc0ecacc4e20d88fafcfcf2cd5348f800e18a71be88dc2bfa685ecf95649cb"
+  },
+  "probe_build": {
+    "sha256": "4bcb670ff206f4c3801180b5e4f62bee2436ef4b6c6c86a5dcdec25008364712"
+  },
+  "probe_host": {
+    "sha256": "68b7e320bfea50ded7871a4622d5e1486002657e882001eeaaba18643c385075"
+  },
+  "sources": {
+    "desktop/ps2-gs-context-test.c": {
+      "sha256": "9ac2e8cc2031817d4105e39f807835c9964ab8ac854ee243ae4d6b87796b89c6"
+    },
+    "desktop/ps2-gs-copy-test.c": {
+      "sha256": "ea0a3290a33f0da93afb06816709dd2a6bed3b786c9767e94b7d98d027aab84c"
+    },
+    "desktop/ps2-gs-gc-test.c": {
+      "sha256": "13a175724fbe3cf0fe3d8773835ecf6d84191a730327eb388414227501acea6e"
+    },
+    "desktop/ps2-gs-solid-test.c": {
+      "sha256": "76cebb83fa66c3d7bc93eede5d89c3c5a0b627b2fc6189b9692438031d848cfd"
+    },
+    "desktop/xorg/ps2_blit_exa.c": {
+      "sha256": "189c1c776ee475a092bf775e2223498c4e62d04909d31dfdbf32cf9070077958"
+    },
+    "desktop/xorg/ps2_blit_exa.h": {
+      "sha256": "67b294631f5fb2732617bf1bcf5235a3169d5f766bedce5c641ea74963b22f0e"
+    },
+    "desktop/xorg/ps2_context_bridge.c": {
+      "sha256": "10fcfdaa7891fd9015212f338074350ab8cf6688702b1bcaf9e2d16fd0133dc5"
+    },
+    "desktop/xorg/ps2_context_bridge.h": {
+      "sha256": "ad3e9e9663b33cacb75e36acfed97ba7ad867c9bc8f2667872506c86479a7418"
+    },
+    "desktop/xorg/ps2_copy.c": {
+      "sha256": "5e7d91a3517cb766601fc4b3013a0230eabfa4b404f24b39fee69baa77995498"
+    },
+    "desktop/xorg/ps2_copy.h": {
+      "sha256": "a94dfa9aab8009c391c680189f9b22dbd17c9c2d39797a011bafefe0fe232862"
+    },
+    "desktop/xorg/ps2_copy_exa.c": {
+      "sha256": "18ae4c1187609bfff65d049623040874922690f76f7ca39561b1d864ece129a3"
+    },
+    "desktop/xorg/ps2_copy_exa.h": {
+      "sha256": "a6363aa643a506c0a5acdc6a827863e8a287a5187ff3eedf8f4b4e3a0599ea72"
+    },
+    "desktop/xorg/ps2_copy_window.c": {
+      "sha256": "e89917fe9a9efda8d0463953b2dda8737255e60e54a152015e1fe0030059c817"
+    },
+    "desktop/xorg/ps2_copy_window.h": {
+      "sha256": "a09c5d7a248c54632fc582a92618471082c0499bfee309ad7c03add75cab54a8"
+    },
+    "desktop/xorg/ps2_cursor_screen.c": {
+      "sha256": "578c0824a35585e4f046e6e660ff994804c619ab059cb06ebb9234a820575435"
+    },
+    "desktop/xorg/ps2_cursor_screen.h": {
+      "sha256": "18d3798900f3d100ebc1d4fc2df883be2c74dab5598910a37a35f88fef17bdd6"
+    },
+    "desktop/xorg/ps2_exa.h": {
+      "sha256": "bf43bd794b91c95be9b7a273eeb83f468704a857403d8e461d67e9e50b21c09a"
+    },
+    "desktop/xorg/ps2_fill.c": {
+      "sha256": "456e36d325d8e63970ef4dde8911955e0093c7ecabd10e273932edcc83f7142f"
+    },
+    "desktop/xorg/ps2_fill.h": {
+      "sha256": "24a3a1c726fa34b79969ccc24dbb6ec803a7fb240baef36eba967bec96105329"
+    },
+    "desktop/xorg/ps2_gc.c": {
+      "sha256": "bfd85d2b6205274f2d18c4b7ed0417622d2aa0bbbbb557b779deb7927347257d"
+    },
+    "desktop/xorg/ps2_gc.h": {
+      "sha256": "9fe8e844d0e8224fbb699b808b43bf3cefd84f3bf66a4807b693ab07e51f8345"
+    },
+    "desktop/xorg/ps2_glyph.c": {
+      "sha256": "0fcd5935bc0eac2b287ca0ee04687a6033eb4d5f5935ecca81f96f317cc160b6"
+    },
+    "desktop/xorg/ps2_glyph.h": {
+      "sha256": "61f430526506c8d1af891896b0af745258e198c1f9d56a92b2731825f96e7dfa"
+    },
+    "desktop/xorg/ps2_image_gc.c": {
+      "sha256": "123565114e09157847fbfe74e994dcc7abaa65a3b08f9cbf7d803589c7f5e1e3"
+    },
+    "desktop/xorg/ps2_image_gc.h": {
+      "sha256": "a33f834e7a96d613da73eaf8958234d23657267e0b376c6e3436ff37b942081a"
+    },
+    "desktop/xorg/ps2_logic_exa.h": {
+      "sha256": "d15a833750499eda6b1991cfbab6b6a8cce521804638590a2415d843df3f398a"
+    },
+    "desktop/xorg/ps2_paint_window.c": {
+      "sha256": "eb93dd5b2ff41d62a68942b014ac2f5b2c16b1a6bc8790e6bac0c214c8b9f1dc"
+    },
+    "desktop/xorg/ps2_paint_window.h": {
+      "sha256": "ee157e88862f74db79f0d5bc4cff410c622d6e2f9d72296208875153aa6acb39"
+    },
+    "desktop/xorg/ps2_render_bridge.c": {
+      "sha256": "f4bf7606a21e83a538b78fe246ef1b0e91687258a02cbad9f63685602da2c4f5"
+    },
+    "desktop/xorg/ps2_render_bridge.h": {
+      "sha256": "c43c37fee2ea6fa2cb1bda1e572ab00d9f693dfe42681ddc446d048d092cb973"
+    },
+    "desktop/xorg/ps2_solid.c": {
+      "sha256": "ebf64a067b5de1a5eb201dbac8aee799745e31b7f4b3fbee9a84bb5aba4b077e"
+    },
+    "desktop/xorg/ps2_solid.h": {
+      "sha256": "41f392733f16cf9051feff749f0eb02f443fd3c617f347c127a050da16879aea"
+    },
+    "desktop/xorg/ps2_surface_exa.c": {
+      "sha256": "347753cf63370e0be02e495135a3df6aabe29611f6ff5c5284f83cf3da412671"
+    },
+    "desktop/xorg/ps2_surface_exa.h": {
+      "sha256": "cfeee74dc308ec32d60b86800f8ae35ba3c6273d94cdd959009b7f0ed99fdf85"
+    },
+    "desktop/xorg/ps2_texture_exa.c": {
+      "sha256": "e4447b44fbe3a03f2ed2856110aeccb3b848dc3c3c564bb681dac55d3eef3568"
+    },
+    "desktop/xorg/ps2_texture_exa.h": {
+      "sha256": "d3f072572df10099eeef237315314454b4e2ecab8a449a602fd5a3b77922b1e1"
+    },
+    "graphics/ps2_context_link.h": {
+      "sha256": "1506a0a6d9b4d810d8ffe6efee7bc00c64bd21b76f83a3c4e30c58cbc9d8b3de"
+    },
+    "graphics/ps2_gs_bitmap.c": {
+      "sha256": "435ab0f8123389b871ff0a5c08a24ee2d6fec1b077a48ad0edd0c38f6ce7eeff"
+    },
+    "graphics/ps2_gs_bitmap.h": {
+      "sha256": "a561eade913bad90f6ba4ddb0aefa371d88f40e8b56966ad9aee580cfd3a203c"
+    },
+    "graphics/ps2_gs_client.c": {
+      "sha256": "28335120a075b84246981763d3e5bd285e7d8d3af619bdeeef1017749eb10de2"
+    },
+    "graphics/ps2_gs_client.h": {
+      "sha256": "b11d17f721b51dd81165015abe9c639a3049b333cbaab7da80aa824a10e7e448"
+    },
+    "graphics/ps2_gs_logic.c": {
+      "sha256": "bee473127764d5e48f667dccec46a1bbfa05afd4c6c461a440b25fb6633007b1"
+    },
+    "graphics/ps2_gs_logic.h": {
+      "sha256": "0fe344492ac8d61bba6ffb0b9745a3ec7a1de886fdad45ede9c65ea88d71cbcf"
+    },
+    "graphics/ps2_gs_render.c": {
+      "sha256": "20fc0b150bc4de807f1cae8e3e0e00d01cb21ca1b2454c2251ae777f67f33dad"
+    },
+    "graphics/ps2_gs_render.h": {
+      "sha256": "f1711ec4a5dbc037ae3ec34a80cdfdaaa1d3d69a73b76075ea66cfa1d5de203c"
+    },
+    "graphics/ps2_gs_surface.c": {
+      "sha256": "81a40124faac4ea1080b07a39593ba6e025c9c9c347e6c12bf60585382cc27da"
+    },
+    "graphics/ps2_gs_surface.h": {
+      "sha256": "13e1003db47d80bb36427c9c7a4b96902e85d0ab566956b0bce98bc660f89d74"
+    },
+    "graphics/ps2_gs_texture.c": {
+      "sha256": "2c9a52d724d901ef6d1d02e4f1d5c7a6341ddcbccb9fc4e9929e340280739852"
+    },
+    "graphics/ps2_gs_texture.h": {
+      "sha256": "4b892afc32fc4584083cdf91b55c3c5c1e0fcbb3cb2bde0e8a9b42ca0939a8d1"
+    },
+    "kernel/new-drivers/ps2-gs-logic.h": {
+      "sha256": "6358a8c756b79c8b33c38c057f760c67b1c51209a30f48042b71e9121df35381"
+    },
+    "kernel/new-drivers/ps2-gs-render.h": {
+      "sha256": "313b938b8da76e21c7aa0461bc308534ff1d0cf337c08e4a5c501eaa835b341c"
+    },
+    "kernel/new-drivers/ps2-gs-surface.h": {
+      "sha256": "e0548702a75624c96aa74c32382b53978c1b2f093437404ebb93b937b0ce3b9f"
+    },
+    "kernel/new-drivers/ps2-gs-texture.h": {
+      "sha256": "168a4662b1d802c298aef4da369de7499de68cab339dff304dfb2e661b887636"
+    },
+    "kernel/new-drivers/ps2-gs.h": {
+      "sha256": "5e7e0e97021db4d90b164a56dcbbef599f8d7d37ff694d61a95c88b890ae2cd7"
+    },
+    "kernel/new-drivers/ps2fb-gs-arena.h": {
+      "sha256": "cf785cf0c82f8b058594bbc84d400de78ef07c7494ba1aabe1d3f3292dc4e469"
+    },
+    "kernel/new-drivers/ps2fb-gs-device.h": {
+      "sha256": "d3c1c8b1929eb3ff2e2750479289777d87d8d1f6532f4c1c3805a8302bc5cb24"
+    },
+    "kernel/new-drivers/ps2fb-gs-image.h": {
+      "sha256": "9a3a67d79e94775a137d79ce83c11cbb5da5c1b5a61aef2d0371e86ad3518665"
+    },
+    "kernel/new-drivers/ps2fb-gs-logic-device.h": {
+      "sha256": "2ae2db47556ad834d4276ed2a28e130550522bc66ee29306d5eb4b4c8423eab3"
+    },
+    "kernel/new-drivers/ps2fb-gs-logic-packet.h": {
+      "sha256": "d0c35e1257905825e7e16f523e7b3952045019547aa0b9fa2795ef8d43ffd6d7"
+    },
+    "kernel/new-drivers/ps2fb-gs-render-device.h": {
+      "sha256": "b8c3c721b039fa9259112e2a7a38e3003cd039d6343784e03887ea2227114eaf"
+    },
+    "kernel/new-drivers/ps2fb-gs-render-packet.h": {
+      "sha256": "9415a7b9fd18bf8bc3a1d22a529f5867b3a1569efc636eedb1435b3d21804dec"
+    },
+    "kernel/new-drivers/ps2fb-gs-surface-packet.h": {
+      "sha256": "aa93b67f82dfff8c7eaf41bd268b424f13004414a73ffc872b42663395d7b50e"
+    },
+    "kernel/new-drivers/ps2fb-gs-texture-device.h": {
+      "sha256": "67b576fc9e261ae364d7ee3e5e3e3c22d3f133a975f904b4b3940e48b20f8b64"
+    },
+    "kernel/new-drivers/ps2fb-gs-texture-packet.h": {
+      "sha256": "a124a957f11cf4bb90e24f19694b5f70a591c917bbb22e37b6fe47f5f4841392"
+    },
+    "kernel/new-drivers/ps2fb-gs.h": {
+      "sha256": "870127417a38999420da6c7603266ab27266eee26219561b12b388dedec7ddf8"
+    },
+    "kernel/new-drivers/ps2fb-shadow.h": {
+      "sha256": "47f0564d9ebfa73c973e42d6a4fc719c43078ca2f9b563383e4caf2fdf546807"
+    },
+    "mesa/ps2/ps2_blit.c": {
+      "sha256": "4744bf522f8a90940691225051e914771d793b346bd0936dc5fb1b6a236f6cb7"
+    },
+    "mesa/ps2/ps2_blit.h": {
+      "sha256": "6917b2aa3c068ec9dc028acca8e3540e229cb7a358ca703cc89ebbee5cca608a"
+    },
+    "mesa/ps2/ps2_copy_batch.c": {
+      "sha256": "c6d7bdddf32f53744e63dda18ea6e8999d6f29f84fb40ce0244430ee7ec19685"
+    },
+    "mesa/ps2/ps2_copy_batch.h": {
+      "sha256": "31053d27ea7ecf84879a9769bb5dee737d88590e9f6babbd5355cf640a3a4a7a"
+    },
+    "mesa/ps2/ps2_cursor.c": {
+      "sha256": "be70240b642773ef068a8ffea5f5dfa3c07672590dc573262087a5f101eea397"
+    },
+    "mesa/ps2/ps2_cursor.h": {
+      "sha256": "edfe9f1ba1bfafe0556351f7eb446545dfeb090e75be27690aac52eaed61dada"
+    },
+    "mesa/ps2/ps2_draw.h": {
+      "sha256": "fae4e95f2c217d6460fcca314f0cffa31b55e042c6799658429ce7ec5db483b6"
+    },
+    "mesa/ps2/ps2_image.c": {
+      "sha256": "c106d75cb06d1a9289c0ade9632fe16004a67699479a0f770aa18b91fe933aee"
+    },
+    "mesa/ps2/ps2_image.h": {
+      "sha256": "a29d9cdc31599bac6922a5a48112d7ed218b72ebe0752623a65fa9b2343c9a57"
+    },
+    "mesa/ps2/ps2_logic.c": {
+      "sha256": "64fdf3906f336b5c846c3f3afaa5e1bfe9484603ffd91d71d189c5e2cb8cee4b"
+    },
+    "mesa/ps2/ps2_logic.h": {
+      "sha256": "ba8a90b30e814e5661926ed3a0f163270c353301f46bc026582eefb79bb94038"
+    },
+    "mesa/ps2/ps2_owned_draw.c": {
+      "sha256": "be45433bc6c359b53dca02f517014e67027ece53b7df8a3dd3514c3f6a4a9223"
+    },
+    "mesa/ps2/ps2_pipe.c": {
+      "sha256": "e03019d00bc6b788b12fae65cca3281f1fea1333fa68170ed97cc72eb3a41c6b"
+    },
+    "mesa/ps2/ps2_pipe.h": {
+      "sha256": "cc34cde2ea064278ca136274b95b4b8c54c444b8e7080808c104b286b8d6a36b"
+    },
+    "mesa/ps2/ps2_planar.c": {
+      "sha256": "78640a0b479fb1b29489edc70aee37a8a57280a90048a6e78c81c1dfc2b140a1"
+    },
+    "mesa/ps2/ps2_planar.h": {
+      "sha256": "876227dfb88d287157ccb879a0d95a7d0fec0c224753e6fb947b9b8e8e70de80"
+    },
+    "mesa/ps2/ps2_raster.h": {
+      "sha256": "f91436248e86cfc47a78bedaba17bd374e01ee6c7fc194bf94b872f7cea4538c"
+    },
+    "mesa/ps2/ps2_render_target.c": {
+      "sha256": "0a3d30b1f5047c74aa10836dd0d5ab6315cb165245655d5e2923f9f43a92f94d"
+    },
+    "mesa/ps2/ps2_render_target.h": {
+      "sha256": "3b1958ea1c49d230ce04a3e1fb6e4af6a4ce3f5df7ffcfbcaa0e2cb63ccd0ca4"
+    },
+    "mesa/ps2/ps2_resource.c": {
+      "sha256": "281d834abab2d0b3d26ce2e557ec3b087975280e7736aaa405f1e26e3b3a384f"
+    },
+    "mesa/ps2/ps2_resource.h": {
+      "sha256": "6c4b22eb103da591b923270e3581c8d13a59f7681d262e229ed65cfac88e59dd"
+    },
+    "mesa/ps2/ps2_sampler.c": {
+      "sha256": "1fc304d86b77c7165a4598a46664c19d11a8c1948b4ae2b73f29a1b8101fe4f4"
+    },
+    "mesa/ps2/ps2_sampler.h": {
+      "sha256": "f0525fc6212fb5dc92401701260a26565a7625d8f92a429a08f9a61850932a3d"
+    },
+    "mesa/ps2/ps2_solid_batch.c": {
+      "sha256": "e31d975570aef0ef356eb9745835ad557b44311057053bc558c72c66c14b9259"
+    },
+    "mesa/ps2/ps2_solid_batch.h": {
+      "sha256": "73cb93344334e2495b2609f4c5e5200817ea8a2a16c4b61cb125d21e314fc6d2"
+    },
+    "mesa/ps2/ps2_textured_draw.c": {
+      "sha256": "4eefe5568facd853194c07fad5061d11b0587e9cc16d2a3b848a41dc1d64caae"
+    },
+    "mesa/ps2/ps2_tile.c": {
+      "sha256": "3064a169c9f92fcf25b1e57a4f033b944c678ef1aeda2cbb86b1bc49740e9cf2"
+    },
+    "mesa/ps2/ps2_tile.h": {
+      "sha256": "cafb84fc89d6146e48b7d4740dab8e50bf1c7981a66bb944b6850601735f7de3"
+    },
+    "tests/graphics/ps2-blit.c": {
+      "sha256": "cf12193570162c9a0c80872fadb402bab8cd7626458f6b2b23e275e622a6dfbc"
+    },
+    "tests/graphics/ps2-copy-exa.c": {
+      "sha256": "1f8887ea78f0a53ab7ad06195e045828dd78119db0c310d639fe43d587591f86"
+    },
+    "tests/graphics/ps2-copy-probe.c": {
+      "sha256": "845e05eb83a790c37ec3722fb2529bb0a6d97c7f35abdb22f2ed854b010e909c"
+    },
+    "tests/graphics/ps2-copy-window.c": {
+      "sha256": "dd36ef0a099d14052cbeb43bc04a230ca631883d1630fa0de64b66c4eb0ab2d9"
+    },
+    "tests/graphics/ps2-copy.c": {
+      "sha256": "b6ef3a6b002a1d698db01ac723fd77ebfcc1bf4d3a9fad28683c5fc9b54c2593"
+    },
+    "tests/graphics/ps2-cursor.c": {
+      "sha256": "aaf457faaae0da384c398867038a148482a4f523ca038c6bd7999e0ac65bf413"
+    },
+    "tests/graphics/ps2-dash-fb-stubs.h": {
+      "sha256": "1760f87bceecb048d4096cbef36152cf032bc42e48d59df42e72d351d1c88f0e"
+    },
+    "tests/graphics/ps2-dash.c": {
+      "sha256": "9e0226ef508be70218a199de7c047a9e2dc3b174a0b850cf86fd8a9e76369a2b"
+    },
+    "tests/graphics/ps2-fill.c": {
+      "sha256": "a51943d3c2b9fb96f77d1133207c835c00f71a01b86d6441b400b53b2124c7e5"
+    },
+    "tests/graphics/ps2-gc.c": {
+      "sha256": "374112fd35632e5c708e2284bcc5af254e00c7f03bd9fdb6d45ffd6faefc3bd5"
+    },
+    "tests/graphics/ps2-glyph-probe.c": {
+      "sha256": "ee0a13a057b419517d13bf82aeca0557e0da52027984fb67a1e990eaaa7837f3"
+    },
+    "tests/graphics/ps2-glyph.c": {
+      "sha256": "4a90a19a3e74eb2db56e32acf098b3a603af09305c87ddee701eb272014d60a6"
+    },
+    "tests/graphics/ps2-image-gc.c": {
+      "sha256": "2b0076b98873fa58946667ac3c05bbcd247614fee1b5da615677266d76dd5f23"
+    },
+    "tests/graphics/ps2-line-bias-stub.h": {
+      "sha256": "97748429226843eca8a5e28cca99b4c1ca6482f6269c1768b17d2372536ac5ee"
+    },
+    "tests/graphics/ps2-lines.c": {
+      "sha256": "c03c07bf5deaa6accef82eca06fbaa7fd804740cf0582711701f15191a56e44a"
+    },
+    "tests/graphics/ps2-mono.c": {
+      "sha256": "b932820d5d62d9a45866b6930bf1dce755b0859eadc691d09f01f6cd0e0568b3"
+    },
+    "tests/graphics/ps2-opaque-logic.c": {
+      "sha256": "4d7f5fdbdb1cd85dac515fd313943275bbed9444197d066546bb2087980e5a79"
+    },
+    "tests/graphics/ps2-paint-window.c": {
+      "sha256": "5c3696e976024a6755f67eeaca71a28f7992cc48156540ef376c367aa57d87eb"
+    },
+    "tests/graphics/ps2-pipe.c": {
+      "sha256": "edac2e8e991fac8f8441a0069c317c7f2ac0ec0b176f9892de8d154f17f32332"
+    },
+    "tests/graphics/ps2-planar.c": {
+      "sha256": "7dc21f5fbeb194577ee2afe0934c969ac48169e882229d74496a726868b521e3"
+    },
+    "tests/graphics/ps2-render-backends.c": {
+      "sha256": "16da3fcf06b052ad8c21be3c709d022b16e72c096cc1eeb7c19cbd87cab1d9ae"
+    },
+    "tests/graphics/ps2-resource-copy.c": {
+      "sha256": "d51c0ace8113f0d157965d2f1d0f06bdcb4a99d74e120895737fe24d224dfbe2"
+    },
+    "tests/graphics/ps2-sampler.c": {
+      "sha256": "e01e26b3c5dd59cfd4274f7f3a840d75964581456800922bd9285ac3295392e5"
+    },
+    "tests/graphics/ps2-solid-probe.c": {
+      "sha256": "ae710a59e59e6648634f13694d5ea264c2cb36a4f14f796550dc555b7784d6b1"
+    },
+    "tests/graphics/ps2-solid.c": {
+      "sha256": "2aa12243566563cb9c42ef11682b0f332bd30f43d2035262c373f1844c5d0368"
+    },
+    "tests/graphics/ps2-stipple.c": {
+      "sha256": "9cd279885c9f7465767ddef70dd9db474498e46ebce0ac5cd1c89bf4bd3b4a31"
+    },
+    "tests/graphics/ps2-surface-backends.c": {
+      "sha256": "f5fd57aaf74bedd7e02c84caa8a67237ef95db724b0f3b596fcf78ad85a1dd6d"
+    },
+    "tests/graphics/ps2-texture-probe.c": {
+      "sha256": "41e2ef7514de18589637d777f15dd08548cf14138afa2a95580e8b00f719e240"
+    },
+    "tests/graphics/ps2-tiled-paint.c": {
+      "sha256": "88236d05cc070f683819f57826ada46a868c6ed5dd279f02e513e8320032ed90"
+    },
+    "tests/graphics/ps2-transparent.c": {
+      "sha256": "f8f92fd6169cc3a9071c07d1d3cadd193828de76a650cac4170701f8a199797e"
+    },
+    "tests/test_ps2_blit.py": {
+      "sha256": "dee6495285f8f38672048b46587f44008f5265ec5dbe3f2b38871f4cc57193f7"
+    },
+    "tests/test_ps2_context_probe.py": {
+      "sha256": "d0e561905f440891b065e68d81344bda8399ddc5f2a1b1226d64dfb6f12831a8"
+    },
+    "tests/test_ps2_copy.py": {
+      "sha256": "6ee8893ab9e856b6ee8ae487da47d652215b1657877890b95bdcdade3dfc27e4"
+    },
+    "tests/test_ps2_copy_exa.py": {
+      "sha256": "e596e62247a491728c34071cdd69e0a3bc3d488766d378429d5417b188eeb5b4"
+    },
+    "tests/test_ps2_copy_probe.py": {
+      "sha256": "59a1fd42443c61c2fdb8c60f3dd28736e8a0e57af3b3631ab0ffcfee042175e8"
+    },
+    "tests/test_ps2_copy_window.py": {
+      "sha256": "311f40760722764be007c39d88d78a7425a969627a6407c9de83c6e2f3a85943"
+    },
+    "tests/test_ps2_cursor.py": {
+      "sha256": "66f54cf718fc5f92f6d75537cabb576c487122c2e45dfc78103c29eb36332a41"
+    },
+    "tests/test_ps2_dash.py": {
+      "sha256": "04415562a7929f618e42fcb9ee72509ca0f978a959eba7d253b0335856e7f986"
+    },
+    "tests/test_ps2_fill.py": {
+      "sha256": "00d85fc07ed0c4496b57e5934b94e9fff7091503f82589d3e4ae3ebc101b7004"
+    },
+    "tests/test_ps2_gc.py": {
+      "sha256": "7335fa5abeb22c8add502414460c76fe1a89c32e801411003605297c8a4fec16"
+    },
+    "tests/test_ps2_gc_probe.py": {
+      "sha256": "6d35c9502b09cb255270f5f8c5269a69bd6418ed825c80c7a477e8294e02128f"
+    },
+    "tests/test_ps2_glyph.py": {
+      "sha256": "5587c2f0ebb5593e1af0980b14da80dd7c88e99a86634a95ff390370d142102d"
+    },
+    "tests/test_ps2_image_gc.py": {
+      "sha256": "41d0b09bfbb081bdba119cafa038faac3ae9bd925c35a8a3b1079d1fe198c5eb"
+    },
+    "tests/test_ps2_lines.py": {
+      "sha256": "f41922d144cd9d34e3dcde0d6874d24acce26f6fd1164a2429c0411082536bf1"
+    },
+    "tests/test_ps2_mono.py": {
+      "sha256": "8cda7e65f64d6247d2a8bee8b63c5c4a89682ed74d4b8d106f3a090a2129ec5f"
+    },
+    "tests/test_ps2_opaque_logic.py": {
+      "sha256": "0e71e7f147e8d09cef251bc1bc4270540dae9485cd2ef1b7d82827fcdc0dc941"
+    },
+    "tests/test_ps2_paint_window.py": {
+      "sha256": "dab7a4c49bfd13315d6a70fecc2acac6c05eb0b865f5ca12725cd524970e1fe5"
+    },
+    "tests/test_ps2_pipe.py": {
+      "sha256": "5f9ceaa35f627df4b07eba7b10883db588c69cd4f28048cbf9204b39f99eaa6c"
+    },
+    "tests/test_ps2_planar.py": {
+      "sha256": "f9f7ce72dc475031159eb5876317ed142f01cb540b92848587013dce062a7a4d"
+    },
+    "tests/test_ps2_render_backends.py": {
+      "sha256": "8ccdd8439ea32029b2ca72ae99f0775f6f20afeaee7ebc75fe5a408f446beaff"
+    },
+    "tests/test_ps2_resource_copy.py": {
+      "sha256": "696e5a990f6a5b3125341376aa8702d93db986507cf7bbc380f7c7245b46f1a7"
+    },
+    "tests/test_ps2_sampler.py": {
+      "sha256": "10f39b84951c64419f8018e2d08c8aade6564e27dce16b140ef9c523cdf850e3"
+    },
+    "tests/test_ps2_solid.py": {
+      "sha256": "1c2bd5a78d2e77370e03af556f3e6c6f417896f27c445c300d04e7c7dc210c3d"
+    },
+    "tests/test_ps2_solid_probe.py": {
+      "sha256": "fe202b37234e868852df8c3b714181ce479fb2d435ea033ed231ad00d929c294"
+    },
+    "tests/test_ps2_stipple.py": {
+      "sha256": "20ae3f6cb971af924451ff2fe09fa08e8483e97de3bdfd22ffd3505162a415ef"
+    },
+    "tests/test_ps2_surface_backends.py": {
+      "sha256": "c0e7fdafd83dc89306cca97a143c0fcdb3bbceaf0bfb58342d78c389662fc753"
+    },
+    "tests/test_ps2_tiled_paint.py": {
+      "sha256": "0e22285be1692dee1dc0d45d4d64d31bc7807036362f1b8a28e954b18d588a44"
+    },
+    "tests/test_ps2_transparent.py": {
+      "sha256": "ccd95b1523c8063a68b7005933b5156c969c8b2cb987a1c80b9cf53c70fc92bc"
+    }
+  },
+  "probe_sources": {
+    "desktop/ps2-gs-planar-test.c": {
+      "sha256": "50fca62d2cb10da1972d29291358023212794a9fcb7da8b795204ba6c6b76519"
+    },
+    "tests/graphics/ps2-planar-probe.c": {
+      "sha256": "44e989caf71bc9ad0798b2b4c64c8761f054eb002acd8d2fdcc39e7ad617a4d4"
+    },
+    "tests/test_ps2_planar_probe.py": {
+      "sha256": "f09e1920ac81f8ff9ff5368450da37cd696f0c9371bcb623e6808799533ede4b"
+    }
+  },
+  "archives": {
+    "libps2-gallium-planar.a": {
+      "sha256": "aaffdb992b352fbf4161f0fd19a14e34882fc285a4d497591b8b99ed7d1c12c6"
+    },
+    "libps2-xorg-planar.a": {
+      "sha256": "1e5eb37aa80c835d6fc3f49a21103346f2a5ca29fdf36dfef87dfbda56ab46a4"
+    }
+  },
+  "probe": {
+    "sha256": "bdd4b9e6721e0bdf7944d70caf4bac896db8f0ad184759ff44a86e483250dc9c"
+  },
+  "PCSX2_log": {
+    "sha256": "8ffb542722efb27dff5fc83caf432489e5c2199e478097df8e786f76b1d03046"
+  },
+  "PCSX2_session": {
+    "sha256": "bbc47fd46d41f5a17600969574d3a61b5d12b6c9aab3e7cfccae8a74ef6a3f63"
+  },
+  "USB_image": {
+    "sha256": "482d990ca4744e88b5f8d53a1347d98b01e8759ea36d7ec8ec39cca688195aad"
+  },
+  "image_package": {
+    "sha256": "27a1252b2806f4f445bc378a67cd26717ba6b725dfa07b2ce045f07928409673"
+  },
+  "physical_hardware_verified": false,
+  "GPU_pixel_readback": false,
+  "repository_images_added": false,
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

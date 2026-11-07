@@ -1,0 +1,205 @@
+{
+  "schema": 1,
+  "updated": "2026-10-05",
+  "milestone": "native zero-width on/off and double-dashed lines",
+  "implementation": [
+    "desktop/xorg/ps2_solid.c",
+    "desktop/xorg/ps2_solid.h",
+    "mesa/ps2/ps2_solid_batch.c",
+    "mesa/ps2/ps2_solid_batch.h"
+  ],
+  "build": {
+    "sha256": "df53104a57e8da407e98d14768ca58a724a6485273725456505519588d6e4beb"
+  },
+  "host": {
+    "sha256": "214c48e0cbd7b16420744f73cf51c71d4359aae8cbfc5a25d3fec12f19527391"
+  },
+  "build_log": {
+    "sha256": "c7c307f578d4f4dc172508997e1a35357e925033a90309948669d3865969db5a"
+  },
+  "archives": {
+    "libps2-gallium-dash.a": "37fbb9eca678b3fa3f988fb8e34f199e935c61bd741bc376887a2895d2b7dfb6",
+    "libps2-xorg-dash.a": "346a365d47229b9e95d89247fee2ccb028bb3ae86b2fd583d27fcef0c582f327"
+  },
+  "patches": [
+    {
+      "patch": "userland/patches/xorg-ps2-thin-dashes.patch",
+      "sha256": "5889751bca7feb4c990306bf057fd0d3a466af999ce4289e18051e2160851c76",
+      "after": "xorg-ps2-thin-lines.patch",
+      "prerequisite_patches": [
+        "xorg-ps2-raster.patch",
+        "xorg-ps2-surfaces.patch",
+        "xorg-ps2-rendering.patch",
+        "xorg-ps2-textures.patch",
+        "xorg-ps2-contexts.patch",
+        "xorg-ps2-glyphs.patch",
+        "xorg-ps2-gc.patch",
+        "xorg-ps2-logic.patch",
+        "xorg-ps2-solid-gc.patch",
+        "xorg-ps2-copy.patch",
+        "xorg-ps2-exa-copy.patch",
+        "xorg-ps2-blit.patch",
+        "xorg-ps2-copy-window.patch",
+        "xorg-ps2-paint-window.patch",
+        "xorg-ps2-tiled-paint.patch",
+        "xorg-ps2-tiled-gc.patch",
+        "xorg-ps2-stippled-gc.patch",
+        "xorg-ps2-monochrome.patch",
+        "xorg-ps2-transparent-stipple.patch",
+        "xorg-ps2-opaque-stipple-logic.patch",
+        "xorg-ps2-thin-lines.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    },
+    {
+      "patch": "userland/patches/mesa-ps2-thin-dashes.patch",
+      "sha256": "8688d1dc9b7ec205dcbd794200cc4f1dd789933b3df565bc074bb7a25619ace8",
+      "after": "mesa-ps2-thin-lines.patch",
+      "prerequisite_patches": [
+        "mesa-ps2-raster.patch",
+        "mesa-ps2-surfaces.patch",
+        "mesa-ps2-rendering.patch",
+        "mesa-ps2-textures.patch",
+        "mesa-ps2-contexts.patch",
+        "mesa-ps2-logic.patch",
+        "mesa-ps2-solid-batch.patch",
+        "mesa-ps2-copy-batch.patch",
+        "mesa-ps2-resource-copy.patch",
+        "mesa-ps2-blit.patch",
+        "mesa-ps2-tile.patch",
+        "mesa-ps2-stipple.patch",
+        "mesa-ps2-transparent-stipple.patch",
+        "mesa-ps2-opaque-stipple-logic.patch",
+        "mesa-ps2-thin-lines.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    }
+  ],
+  "host_sanitizer_cases": 158,
+  "R5900_cases": 158,
+  "new_cases_per_environment": 16,
+  "regression_cases_per_environment": 142,
+  "checks": [
+    "onoff",
+    "double",
+    "offsets",
+    "clipping",
+    "joins",
+    "rectangles",
+    "caps",
+    "owned",
+    "fillstyle",
+    "noop",
+    "preflight",
+    "budget",
+    "allocation",
+    "snapshot",
+    "failure",
+    "direct"
+  ],
+  "upstream_reference_dash_segment": {
+    "sha256": "65131d6038a7dccc43628780b564ace52511641ed1880d3caef3179460deada1"
+  },
+  "upstream_reference_zero_line": {
+    "sha256": "c09315fe2f38a159e55bb5f6beb29ea8755cac781be7e3d17cc1c63dea16393a"
+  },
+  "upstream_reference_zero_clip": {
+    "sha256": "c3be8bc9acba695191351cc4704c03e71e066383c53fe50eb6fb672875fa6aed"
+  },
+  "actual_unmodified_upstream_fbSegment_fbBresDash_executed": true,
+  "all_256_screen_biases_tested": true,
+  "native_path": "CPU geometry-only dash coverage -> complete coloured run plan -> shared Mesa fence -> native GS Boolean rectangles",
+  "CPU_colour_destination_renderer": false,
+  "colour_destination_CPU_access": "fatal; remains unavailable",
+  "all_8_octants": true,
+  "all_16_Boolean_ALUs": true,
+  "partial_RGB_masks": true,
+  "redirected_RGBX_RGB555": true,
+  "original_dash_phase_preserved_when_clipped": true,
+  "dash_phase_continuous_across_polyline_joins": true,
+  "independent_segments_and_rectangles_reset_dash_offset": true,
+  "onoff_gaps_emit_no_destination_operation": true,
+  "double_dash_foreground_background_runs_disjoint": true,
+  "GC_dash_list_and_colours_snapshotted_before_fence": true,
+  "GC_dash_lists_require_positive_even_DIX_normalized_entries": true,
+  "shared_geometry_accepts_positive_odd_lists": true,
+  "dashed_lines_require_FillSolid": true,
+  "solid_line_foreground_remains_independent_of_fillStyle": true,
+  "shared_geometry_full_signed32_endpoints_and_uint64_offset": true,
+  "geometry_iteration_bounded_by_visible_major_axis_extent": true,
+  "request_preflight_before_original_queue_fence": true,
+  "work_and_allocation_failure_leave_pending_queue_unchanged": true,
+  "later_device_failure_is_sticky_without_Damage_or_replay": true,
+  "limits": {
+    "max_inputs": 4096,
+    "max_composite_clip_boxes": 256,
+    "max_dash_list_entries": 256,
+    "max_clipped_coloured_runs": 16384,
+    "max_heap_plan_bytes": 327680,
+    "compiled_R5900_geometry_planner_stack_bytes": 440,
+    "compiled_R5900_GC_Polylines_stack_bytes": 4568,
+    "compiled_R5900_GC_PolySegment_stack_bytes": 4552,
+    "compiled_R5900_GC_PolyRectangle_stack_bytes": 4568,
+    "full_desktop_peak_RAM_measured": false
+  },
+  "new_Gallium_capabilities_advertised": false,
+  "actual_full_EXA_fb_server_executed": false,
+  "actual_Damage_subsystem_executed": false,
+  "GPU_pixel_readback": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL_GLX": false,
+  "shader_caps": 0,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "prior_qualified_thin_solid_line_evidence": {
+    "path": "docs/graphics-thin-lines-validation.json",
+    "sha256": "407a8c9331dba549e67964de30f6283c5d6b0761c6f8cec2ede7c7593d7c2e46"
+  },
+  "legacy_probe_compatibility": {
+    "path": "docs/graphics-thin-dashes-legacy-probe-validation.json",
+    "sha256": "b22270a2a5be75a5ee968ae2864cbc5fad9e2c20e11887648cc25681c5c627e7"
+  },
+  "additional_host_legacy_probe_cases": 39,
+  "qualified_earlier_component_snapshots_unchanged": true,
+  "new_USB_image_packaged": true,
+  "new_PCSX2_pixels_verified": true,
+  "new_physical_PS2_pixels_verified": false,
+  "limitations": [
+    "dash coverage uses native Boolean rectangles; direct GS line primitives are not used",
+    "wide lines, arcs, non-FillSolid dash fill and further tile/copy/composite states remain unfinished",
+    "actual EXA/fb bitmap editing and X server/Damage lifecycle require complete DDX integration",
+    "Mesa shaders/vertex/draw_vbo/GLX, TWM session and desktop RAM remain unfinished"
+  ],
+  "runtime_validation": {
+    "path": "docs/graphics-thin-dashes-runtime-validation.json",
+    "sha256": "69e54ae93fa978bebee07792518fea5b17a9f4a0fab7de3a24a7a2ada7bdf3f8"
+  },
+  "probe_build": {
+    "sha256": "3572916787ccfecce64424bbc7808674fd54890082da5ae64f6d853369ba096d"
+  },
+  "probe_host_checks": {
+    "schema": 1,
+    "result": "passed",
+    "cases": 6,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "log_sha256": "4e4dcf352d55a8874a5f19084a2feeb6378fd08f270f77cf5f59396c76e174ed",
+    "probe_source_sha256": "625162aac93d82e9866a274ae21f6c6b9cb896f686e93726ef6770a9979b08fb",
+    "pixel_qualification": false
+  },
+  "PCSX2_command_fence_exit": 0,
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

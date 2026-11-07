@@ -1,0 +1,422 @@
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_gs_render.c
+@@ -0,0 +1,141 @@
++/* SPDX-License-Identifier: MIT */
++#define _POSIX_C_SOURCE 200809L
++#include "ps2_gs_render.h"
++#include <errno.h>
++#include <string.h>
++#include <sys/ioctl.h>
++#include <time.h>
++
++_Static_assert(sizeof(struct ps2gs_depth_create) == 32, "depth ABI");
++_Static_assert(sizeof(struct ps2gs_render_submit) == 40, "render ABI");
++static int fail(struct ps2_render_client *r, int error)
++{
++    if (!r->gs->error) r->gs->error = error;
++    r->count = 0;
++    errno = r->gs->error;
++    return -1;
++}
++static int request(struct ps2_render_client *r, unsigned long op, void *data)
++{
++    if (r->gs->error) return fail(r, r->gs->error);
++    if (r->gs->fd < 0) return fail(r, EBADF);
++    for (unsigned attempt = 0; attempt < 100; ++attempt) {
++        if (!ioctl(r->gs->fd, op, data)) return 0;
++        if (errno != EAGAIN) return fail(r, errno);
++        struct timespec delay = { .tv_nsec = 10000000 };
++        while (nanosleep(&delay, &delay) < 0)
++            if (errno != EINTR) return fail(r, errno);
++    }
++    return fail(r, EAGAIN);
++}
++static struct ps2_depth *depth_lookup(struct ps2_render_client *r, uint32_t handle)
++{
++    if (!handle) return NULL;
++    for (unsigned i = 0; i < PS2GS_MAX_SURFACES; ++i)
++        if (r->depths[i].handle == handle) return &r->depths[i];
++    return NULL;
++}
++int ps2_render_init(struct ps2_render_client *r, struct ps2_surface_client *gs)
++{
++    if (!r || !gs) { errno = EINVAL; return -1; }
++    memset(r, 0, sizeof(*r)); r->gs = gs;
++    if (gs->fd < 0 || gs->error) return fail(r, gs->error ? gs->error : EBADF);
++    if (!(gs->caps.features & PS2GS_HW_OWNED_RENDER)) return fail(r, ENOTSUP);
++    return 0;
++}
++int ps2_render_flush(struct ps2_render_client *r)
++{
++    if (r->gs->error) return fail(r, r->gs->error);
++    if (!r->count) return 0;
++    const struct ps2_surface *color = ps2_surface_lookup(r->gs, r->target);
++    if (!color || (r->depth && !depth_lookup(r, r->depth))) return fail(r, EINVAL);
++    struct ps2gs_render_submit submit = { .abi = PS2GS_ABI_VERSION,
++        .target = r->target, .depth = r->depth, .count = r->count,
++        .width = color->width, .height = color->height, .bits_per_pixel = color->bits_per_pixel,
++        .commands = (uintptr_t)r->commands };
++    if (request(r, PS2GS_RENDER_SUBMIT, &submit)) return -1;
++    r->count = 0;
++    return 0;
++}
++int ps2_render_depth_create(struct ps2_render_client *r, unsigned width, unsigned height,
++                            unsigned bpp, uint32_t *handle)
++{
++    if (handle) *handle = 0;
++    if (!handle || !width || !height || width > 2048 || height > 2048 ||
++        (bpp != 16 && bpp != 32)) return fail(r, EINVAL);
++    if (ps2_render_flush(r)) return -1;
++    unsigned slot;
++    for (slot = 0; slot < PS2GS_MAX_SURFACES && r->depths[slot].handle; ++slot) {}
++    if (slot == PS2GS_MAX_SURFACES) return fail(r, ENOSPC);
++    struct ps2gs_depth_create c = { .abi = PS2GS_ABI_VERSION,
++        .width = width, .height = height, .color_bits_per_pixel = bpp };
++    if (request(r, PS2GS_DEPTH_CREATE, &c)) return -1;
++    unsigned bw = (width + 63) & ~63U, rows = (height + 63) & ~63U;
++    if (!c.handle || ps2_surface_lookup(r->gs, c.handle) || depth_lookup(r, c.handle) ||
++        c.abi != PS2GS_ABI_VERSION || c.width != width || c.height != height ||
++        c.color_bits_per_pixel != bpp || c.reserved || c.buffer_width != bw ||
++        c.allocated_bytes != bw * rows * 2 || c.allocated_bytes > 4U * 1024 * 1024)
++        return fail(r, EPROTO);
++    r->depths[slot] = (struct ps2_depth) { .handle = c.handle, .width = width,
++        .height = height, .color_bpp = bpp, .buffer_width = bw, .bytes = c.allocated_bytes };
++    *handle = c.handle;
++    return 0;
++}
++int ps2_render_depth_destroy(struct ps2_render_client *r, uint32_t handle)
++{
++    struct ps2_depth *d = depth_lookup(r, handle);
++    if (!d) return fail(r, EINVAL);
++    if (ps2_render_flush(r)) return -1;
++    struct ps2gs_surface_destroy destroy = { .abi = PS2GS_ABI_VERSION, .handle = handle };
++    if (request(r, PS2GS_SURFACE_DESTROY, &destroy)) return -1;
++    memset(d, 0, sizeof(*d));
++    if (r->depth == handle) r->depth = 0;
++    return 0;
++}
++int ps2_render_bind(struct ps2_render_client *r, uint32_t color_handle, uint32_t depth_handle)
++{
++    const struct ps2_surface *color = ps2_surface_lookup(r->gs, color_handle);
++    struct ps2_depth *depth = depth_lookup(r, depth_handle);
++    if (!color || (depth_handle && (!depth || depth->width != color->width ||
++        depth->height != color->height || depth->color_bpp != color->bits_per_pixel ||
++        depth->buffer_width != ((color->width + 63) & ~63U)))) return fail(r, EINVAL);
++    if (ps2_render_flush(r)) return -1;
++    r->target = color_handle; r->depth = depth_handle;
++    return 0;
++}
++static int queue(struct ps2_render_client *r, const struct ps2gs_command *c)
++{
++    if (r->gs->error) return fail(r, r->gs->error);
++    if (r->count == PS2GS_MAX_COMMANDS && ps2_render_flush(r)) return -1;
++    r->commands[r->count++] = *c;
++    return 0;
++}
++int ps2_render_clear_depth(struct ps2_render_client *r)
++{
++    if (!r->depth || !depth_lookup(r, r->depth)) return fail(r, ENOTSUP);
++    struct ps2gs_command command = { .op = PS2GS_CLEAR_DEPTH };
++    return queue(r, &command);
++}
++int ps2_render_fill(struct ps2_render_client *r, unsigned x, unsigned y,
++                    unsigned width, unsigned height, uint32_t rgba)
++{
++    const struct ps2_surface *c = ps2_surface_lookup(r->gs, r->target);
++    if (!c || !width || !height || x >= c->width || y >= c->height ||
++        width > c->width - x || height > c->height - y) return fail(r, EINVAL);
++    struct ps2gs_command command = { .op = PS2GS_FILL, .width = width, .height = height,
++        .v = { { .x = x * 16, .y = y * 16, .rgba = rgba } } };
++    return queue(r, &command);
++}
++int ps2_render_triangle(struct ps2_render_client *r, const struct ps2gs_vertex vertices[3], int depth_test)
++{
++    const struct ps2_surface *c = ps2_surface_lookup(r->gs, r->target);
++    if (!c || !vertices || (depth_test != 0 && depth_test != 1)) return fail(r, EINVAL);
++    if (depth_test && (!r->depth || !depth_lookup(r, r->depth))) return fail(r, ENOTSUP);
++    for (unsigned i = 0; i < 3; ++i)
++        if (vertices[i].x > c->width * 16 || vertices[i].y > c->height * 16 || vertices[i].z > 65535)
++            return fail(r, EINVAL);
++    struct ps2gs_command command = { .op = PS2GS_TRIANGLE,
++        .flags = depth_test ? PS2GS_DEPTH_TEST : 0 };
++    memcpy(command.v, vertices, sizeof(command.v));
++    return queue(r, &command);
++}
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_gs_render.h
+@@ -0,0 +1,28 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_GS_RENDER_CLIENT_H
++#define PS2_GS_RENDER_CLIENT_H
++#include "ps2_gs_surface.h"
++#include "ps2-gs-render.h"
++struct ps2_depth {
++    uint32_t handle, width, height, color_bpp, buffer_width, bytes;
++};
++struct ps2_render_client {
++    struct ps2_surface_client *gs;
++    struct ps2_depth depths[PS2GS_MAX_SURFACES];
++    uint32_t target, depth, count;
++    struct ps2gs_command commands[PS2GS_MAX_COMMANDS];
++};
++/* Shares an existing exclusive GS file, not a new open or a CPU framebuffer.
++ * One submission thread; callers fence before direct surface uploads/copies
++ * and destroy all resources before closing the owning surface client. */
++int ps2_render_init(struct ps2_render_client *, struct ps2_surface_client *);
++int ps2_render_depth_create(struct ps2_render_client *, unsigned width, unsigned height,
++                            unsigned color_bpp, uint32_t *handle);
++int ps2_render_depth_destroy(struct ps2_render_client *, uint32_t handle);
++int ps2_render_bind(struct ps2_render_client *, uint32_t color, uint32_t depth);
++int ps2_render_flush(struct ps2_render_client *);
++int ps2_render_clear_depth(struct ps2_render_client *);
++int ps2_render_fill(struct ps2_render_client *, unsigned x, unsigned y,
++                    unsigned width, unsigned height, uint32_t rgba);
++int ps2_render_triangle(struct ps2_render_client *, const struct ps2gs_vertex[3], int depth_test);
++#endif
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2-gs-render.h
+@@ -0,0 +1,29 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_RENDER_H
++#define _UAPI_PS2_GS_RENDER_H
++#include "ps2-gs-surface.h"
++
++#define PS2GS_HW_OWNED_RENDER (1U << 6)
++/* Depth objects use the same handle namespace, ownership and destroy ioctl.
++ * color_bits_per_pixel selects Z16 for CT16 or Z16S for CT32. They cannot
++ * be filled/copied/uploaded as color. Storage is zeroed before publication.
++ */
++struct ps2gs_depth_create {
++	__u32 abi, width, height, color_bits_per_pixel;
++	__u32 handle, buffer_width, allocated_bytes, reserved;
++};
++/* Snapshot and validate the entire batch before drawing. target=0 is front;
++ * depth=0 disables depth storage. All selected buffers must belong to this
++ * file. Depth dimensions and padded width must match the color target.
++ * Commands are existing ABI-1 FILL/TRIANGLE/CLEAR_DEPTH, not COPY. No blending,
++ * textures or arbitrary depth functions are implied. Larger Z is nearer;
++ * tested triangles use GEQUAL and update Z. CLEAR_DEPTH writes zero.
++ */
++struct ps2gs_render_submit {
++	__u32 abi, target, depth, count;
++	__u32 width, height, bits_per_pixel, reserved;
++	__aligned_u64 commands;
++};
++#define PS2GS_DEPTH_CREATE _IOWR('G', 0x78, struct ps2gs_depth_create)
++#define PS2GS_RENDER_SUBMIT _IOW('G', 0x79, struct ps2gs_render_submit)
++#endif
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_render_target.c
+@@ -0,0 +1,116 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_render_target.h"
++#include "util/u_inlines.h"
++#include <errno.h>
++#include <math.h>
++#include <stdlib.h>
++#include <string.h>
++
++struct ps2_depth_resource {
++    struct pipe_resource base;
++    struct ps2_render_client *owner;
++    uint32_t handle;
++};
++static int reject(struct ps2_render_target *target, int error)
++{
++    if (!target->render->gs->error) target->render->gs->error = error;
++    target->render->count = 0; errno = target->render->gs->error; return -1;
++}
++struct pipe_resource *ps2_depth_resource_create(struct pipe_screen *screen, struct ps2_render_client *render,
++                                                const struct pipe_resource *t, unsigned color_bpp)
++{
++    if (!screen || !render || !t || t->target != PIPE_TEXTURE_2D || t->format != PIPE_FORMAT_Z16_UNORM ||
++        !t->width0 || !t->height0 || t->width0 > 2048 || t->height0 > 2048 || t->depth0 != 1 ||
++        t->array_size != 1 || t->last_level || t->nr_samples > 1 || t->nr_storage_samples > 1 ||
++        t->nr_sparse_levels || t->flags || t->next || t->bind != PIPE_BIND_DEPTH_STENCIL ||
++        (color_bpp != 16 && color_bpp != 32)) { errno = ENOTSUP; return NULL; }
++    struct ps2_depth_resource *r = calloc(1, sizeof(*r));
++    if (!r) return NULL;
++    if (ps2_render_depth_create(render, t->width0, t->height0, color_bpp, &r->handle)) { free(r); return NULL; }
++    r->base = *t; pipe_reference_init(&r->base.reference, 1);
++    r->base.screen = screen; r->owner = render;
++    return &r->base;
++}
++void ps2_depth_resource_destroy(struct pipe_resource *base)
++{
++    if (!base) return;
++    struct ps2_depth_resource *r = (struct ps2_depth_resource *)base;
++    if (r->owner->gs->fd >= 0 && !r->owner->gs->error)
++        ps2_render_depth_destroy(r->owner, r->handle);
++    free(r);
++}
++int ps2_render_target_init(struct ps2_render_target *t, struct pipe_screen *screen, struct ps2_render_client *r)
++{
++    if (!t || !screen || !r || !r->gs) { errno = EINVAL; return -1; }
++    memset(t, 0, sizeof(*t)); t->screen = screen; t->render = r; return 0;
++}
++int ps2_render_target_bind(struct ps2_render_target *t, struct pipe_resource *color, struct pipe_resource *depth)
++{
++    if (!color || color->screen != t->screen || !(color->bind & PIPE_BIND_RENDER_TARGET) ||
++        (color->format != PIPE_FORMAT_R8G8B8X8_UNORM && color->format != PIPE_FORMAT_R5G5B5X1_UNORM))
++        return reject(t, EINVAL);
++    struct ps2_resource *c = (struct ps2_resource *)color;
++    if (c->owner != t->render->gs) return reject(t, EXDEV);
++    uint32_t depth_handle = 0;
++    if (depth) {
++        if (depth->screen != t->screen || depth->format != PIPE_FORMAT_Z16_UNORM ||
++            !(depth->bind & PIPE_BIND_DEPTH_STENCIL)) return reject(t, EINVAL);
++        struct ps2_depth_resource *d = (struct ps2_depth_resource *)depth;
++        if (d->owner != t->render) return reject(t, EXDEV);
++        depth_handle = d->handle;
++    }
++    if (ps2_render_bind(t->render, c->handle, depth_handle)) return -1;
++    pipe_resource_reference(&t->color, color);
++    pipe_resource_reference(&t->depth, depth);
++    return 0;
++}
++void ps2_render_target_cleanup(struct ps2_render_target *t)
++{
++    if (!t || !t->render) return;
++    ps2_render_flush(t->render);
++    pipe_resource_reference(&t->color, NULL);
++    pipe_resource_reference(&t->depth, NULL);
++    t->render->target = 0; t->render->depth = 0;
++}
++static unsigned channel(float v, unsigned maximum)
++{ return v <= 0 ? 0 : v >= 1 ? maximum : (unsigned)(v * maximum + 0.5f); }
++static int rgba(const float color[4], uint32_t *packed)
++{
++    for (unsigned i = 0; i < 4; ++i) if (!isfinite(color[i])) return -1;
++    *packed = channel(color[0],255) | channel(color[1],255)<<8 |
++        channel(color[2],255)<<16 | channel(color[3],128)<<24;
++    return 0;
++}
++int ps2_render_target_clear(struct ps2_render_target *t, const struct pipe_scissor_state *s,
++                            const union pipe_color_union *color, int clear_depth)
++{
++    if (!t->color || (clear_depth != 0 && clear_depth != 1)) return reject(t, EINVAL);
++    unsigned x = s ? s->minx : 0, y = s ? s->miny : 0;
++    unsigned right = s ? s->maxx : t->color->width0, bottom = s ? s->maxy : t->color->height0;
++    /* This depth command clears the full target only. A partial depth clear
++     * needs an explicit bounded ABI rather than silently clearing extra pixels. */
++    if (clear_depth && (!t->depth || x || y || right != t->color->width0 || bottom != t->color->height0))
++        return reject(t, ENOTSUP);
++    uint32_t packed = 0;
++    if (color && rgba(color->f, &packed)) return reject(t, EINVAL);
++    if (right <= x || bottom <= y) return 0;
++    if (color && ps2_render_fill(t->render, x, y, right-x, bottom-y, packed)) return -1;
++    return clear_depth ? ps2_render_clear_depth(t->render) : 0;
++}
++int ps2_render_target_triangle(struct ps2_render_target *t, const float position[3][4],
++                               const float color[3][4], int depth_test)
++{
++    if (!t->color || !position || !color) return reject(t, EINVAL);
++    struct ps2gs_vertex vertices[3];
++    for (unsigned i = 0; i < 3; ++i) {
++        for (unsigned j = 0; j < 4; ++j) if (!isfinite(position[i][j])) return reject(t, EINVAL);
++        if (position[i][0] < 0 || position[i][0] > t->color->width0 ||
++            position[i][1] < 0 || position[i][1] > t->color->height0 ||
++            position[i][2] < 0 || position[i][2] > 1) return reject(t, ENOTSUP);
++        vertices[i].x = position[i][0] * 16 + 0.5f;
++        vertices[i].y = position[i][1] * 16 + 0.5f;
++        vertices[i].z = (1-position[i][2]) * 65535 + 0.5f;
++        if (rgba(color[i], &vertices[i].rgba)) return reject(t, EINVAL);
++    }
++    return ps2_render_triangle(t->render, vertices, depth_test);
++}
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_render_target.h
+@@ -0,0 +1,31 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_RENDER_TARGET_H
++#define PS2_RENDER_TARGET_H
++#include "pipe/p_state.h"
++#include "draw/draw_pipe.h"
++#include "ps2_resource.h"
++#include "ps2_gs_render.h"
++
++/* Framebuffer adapter for a future pipe_context. It retains pipe_resource
++ * references while bound and fences before rebinding/destroying them. Color
++ * resources use the existing owned storage factory; depth uses Z16_UNORM.
++ * No GL profile, shader, texture sampler or complete context is advertised. */
++struct ps2_render_target {
++    struct ps2_render_client *render;
++    struct pipe_screen *screen;
++    struct pipe_resource *color, *depth;
++};
++struct pipe_resource *ps2_depth_resource_create(struct pipe_screen *, struct ps2_render_client *,
++                                                const struct pipe_resource *template, unsigned color_bpp);
++void ps2_depth_resource_destroy(struct pipe_resource *);
++int ps2_render_target_init(struct ps2_render_target *, struct pipe_screen *, struct ps2_render_client *);
++int ps2_render_target_bind(struct ps2_render_target *, struct pipe_resource *color, struct pipe_resource *depth);
++void ps2_render_target_cleanup(struct ps2_render_target *);
++int ps2_render_target_clear(struct ps2_render_target *, const struct pipe_scissor_state *,
++                            const union pipe_color_union *, int clear_depth);
++int ps2_render_target_triangle(struct ps2_render_target *, const float position[3][4],
++                               const float color[3][4], int depth_test);
++struct draw_stage *ps2_owned_draw_stage_create(struct draw_context *, struct ps2_render_target *);
++int ps2_owned_draw_stage_outputs(struct draw_stage *, unsigned outputs,
++                                 unsigned position_slot, unsigned color_slot, int depth_test);
++#endif
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_owned_draw.c
+@@ -0,0 +1,59 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_render_target.h"
++#include <errno.h>
++#include <stdlib.h>
++#include <string.h>
++struct ps2_owned_stage {
++    struct draw_stage base;
++    struct ps2_render_target *target;
++    unsigned outputs, position, color;
++    int depth;
++};
++static void reject(struct ps2_owned_stage *s, int error)
++{
++    if (!s->target->render->gs->error) s->target->render->gs->error = error;
++    s->target->render->count = 0;
++}
++static void triangle(struct draw_stage *base, struct prim_header *p)
++{
++    struct ps2_owned_stage *s = (struct ps2_owned_stage *)base;
++    if (s->target->render->gs->error) return;
++    if (!s->outputs || !p) { reject(s, EINVAL); return; }
++    float positions[3][4], colors[3][4];
++    for (unsigned i = 0; i < 3; ++i) {
++        if (!p->v[i] || p->v[i]->clipmask) { reject(s, ENOTSUP); return; }
++        memcpy(positions[i], p->v[i]->data[s->position], sizeof(positions[i]));
++        memcpy(colors[i], p->v[i]->data[s->color], sizeof(colors[i]));
++    }
++    ps2_render_target_triangle(s->target, positions, colors, s->depth);
++}
++static void unsupported(struct draw_stage *b, struct prim_header *p)
++{ (void)p; reject((struct ps2_owned_stage *)b, ENOTSUP); }
++static void flush(struct draw_stage *b, unsigned flags)
++{ (void)flags; ps2_render_flush(((struct ps2_owned_stage *)b)->target->render); }
++static void reset(struct draw_stage *b) { (void)b; }
++static void destroy(struct draw_stage *b) { free(b); }
++struct draw_stage *ps2_owned_draw_stage_create(struct draw_context *draw, struct ps2_render_target *target)
++{
++    if (!draw || !target || !target->render || !target->color || target->render->gs->error) {
++        errno = EINVAL; return NULL;
++    }
++    struct ps2_owned_stage *s = calloc(1, sizeof(*s));
++    if (!s) return NULL;
++    s->target = target; s->base.draw = draw; s->base.name = "ps2-gs-owned";
++    s->base.tri = triangle; s->base.point = unsupported; s->base.line = unsupported;
++    s->base.flush = flush; s->base.reset_stipple_counter = reset; s->base.destroy = destroy;
++    return &s->base;
++}
++int ps2_owned_draw_stage_outputs(struct draw_stage *b, unsigned outputs, unsigned position, unsigned color, int depth)
++{
++    if (!b) { errno = EINVAL; return -1; }
++    struct ps2_owned_stage *s = (struct ps2_owned_stage *)b;
++    if (!outputs || outputs > PIPE_MAX_SHADER_OUTPUTS || position >= outputs || color >= outputs ||
++        position == color || (depth != 0 && depth != 1) || (depth && !s->target->depth)) {
++        reject(s, EINVAL); errno = s->target->render->gs->error; return -1;
++    }
++    if (ps2_render_flush(s->target->render)) return -1;
++    s->outputs = outputs; s->position = position; s->color = color; s->depth = depth;
++    return 0;
++}

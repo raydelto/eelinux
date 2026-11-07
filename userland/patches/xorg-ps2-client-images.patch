@@ -1,0 +1,251 @@
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_image_gc.c
+@@ -0,0 +1,151 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_image_gc.h"
++#include "ps2_image.h"
++#include "ps2_gs_logic.h"
++#include "windowstr.h"
++#include "regionstr.h"
++#include "damage.h"
++#include "servermd.h"
++#include "os.h"
++#include <errno.h>
++#include <limits.h>
++#include <stdlib.h>
++#include <string.h>
++static DevPrivateKeyRec key;
++static const GCOps operations;
++static Bool close_screen(ScreenPtr);
++struct plan {
++    struct ps2_image_screen *owner;
++    DrawablePtr drawable;
++    GCPtr gc;
++    struct ps2_pipe_image_box *boxes;
++    unsigned count,width,height,bpp;
++    uint32_t destination,mask;
++    int64_t ox,oy;
++};
++static void fail(struct plan *p,const char *reason)
++{if(p)free(p->boxes);FatalError("PS2 GS: native client image failed: %s\n",reason);}
++static void begin(struct plan *p,DrawablePtr d,GCPtr gc)
++{
++    *p=(struct plan){.drawable=d,.gc=gc};
++    if(!d || !gc || !d->pScreen || d->pScreen!=gc->pScreen || !gc->pCompositeClip ||
++       RegionBroken(gc->pCompositeClip) || gc->alu>GXset)fail(p,"invalid drawable or GC");
++    p->owner=dixLookupPrivate(&d->pScreen->devPrivates,&key);
++    struct ps2_image_screen *b=p->owner;
++    if(!b || !b->installed || !b->gc->installed || b->gc->image_ops!=&operations ||
++       ps2_pipe_context_acquire(b->context))fail(p,"missing or closed image owner");
++    ps2_pipe_context_release(b->context);
++    ScreenPtr screen=d->pScreen;
++    PixmapPtr pixmap=d->type==DRAWABLE_PIXMAP?(PixmapPtr)d:
++        d->type==DRAWABLE_WINDOW && screen->GetWindowPixmap?screen->GetWindowPixmap((WindowPtr)d):NULL;
++    if(!pixmap || pixmap->drawable.pScreen!=screen || !screen->GetScreenPixmap || pixmap->devPrivate.ptr)
++        fail(p,"missing native colour storage");
++    if(pixmap!=screen->GetScreenPixmap(screen)){
++        const void *private=exaGetPixmapDriverPrivate(pixmap);
++        if(!private)fail(p,"missing owned destination");
++        memcpy(&p->destination,private,4);
++        if(!p->destination)fail(p,"unallocated destination");
++    }
++    struct ps2_render_client *r=ps2_pipe_context_render(b->context);
++    const struct ps2_surface *s=r?ps2_surface_lookup(r->gs,p->destination):NULL;
++    if(!s || r->gs!=b->gc->exa->gs || (s->bits_per_pixel!=16 && s->bits_per_pixel!=32) ||
++       pixmap->drawable.width!=s->width || pixmap->drawable.height!=s->height ||
++       pixmap->drawable.bitsPerPixel!=s->bits_per_pixel || d->bitsPerPixel!=s->bits_per_pixel ||
++       d->depth!=(s->bits_per_pixel==16?15:24) || pixmap->drawable.depth!=d->depth)
++        fail(p,"incompatible image destination");
++    p->width=s->width;p->height=s->height;p->bpp=s->bits_per_pixel;
++    p->mask=gc->planemask&(p->bpp==16?0x7fff:0xffffff);
++#ifdef COMPOSITE
++    if(d->type==DRAWABLE_WINDOW){p->ox=pixmap->screen_x;p->oy=pixmap->screen_y;}
++#endif
++    int n=RegionNumRects(gc->pCompositeClip);const BoxRec *boxes=RegionRects(gc->pCompositeClip);
++    if(n<0 || n>256)fail(p,"clip complexity exceeds native limit");
++    for(int i=0;i<n;++i)if(boxes[i].x2<boxes[i].x1 || boxes[i].y2<boxes[i].y1)
++        fail(p,"invalid image clip box");
++}
++static int64_t maximum(int64_t a,int64_t b){return a>b?a:b;}
++static int64_t minimum(int64_t a,int64_t b){return a<b?a:b;}
++static void append(struct plan *p,int64_t x,int64_t y,unsigned w,unsigned h,size_t offset,size_t stride)
++{
++    if(x<INT32_MIN || y<INT32_MIN || x+w>INT32_MAX || y+h>INT32_MAX)
++        fail(p,"image coordinate overflow");
++    if(!w || !h)return;
++    const BoxRec *clips=RegionRects(p->gc->pCompositeClip);int n=RegionNumRects(p->gc->pCompositeClip);
++    for(int i=0;i<n;++i){
++        int64_t a=maximum(maximum(x,clips[i].x1-p->ox),0),b=maximum(maximum(y,clips[i].y1-p->oy),0);
++        int64_t c=minimum(minimum(x+w,clips[i].x2-p->ox),p->width),d=minimum(minimum(y+h,clips[i].y2-p->oy),p->height);
++        if(a>=c || b>=d)continue;
++        if(p->count==PS2_PIPE_MAX_IMAGE_BOXES)fail(p,"clipped image plan exceeds limit");
++        if(!p->boxes && !(p->boxes=calloc(PS2_PIPE_MAX_IMAGE_BOXES,sizeof(*p->boxes))))
++            fail(p,"image plan allocation");
++        p->boxes[p->count++]=(struct ps2_pipe_image_box){offset+(b-y)*stride+(a-x)*(p->bpp/8),stride,a,b,c-a,d-b};
++    }
++}
++static void finish(struct plan *p,const void *source,size_t bytes)
++{
++    if(bytes>PS2_PIPE_MAX_IMAGE_BYTES || (bytes && (!source || (uintptr_t)source>UINTPTR_MAX-(bytes-1))))
++        fail(p,"image source length or address overflow");
++    if(!p->count || !p->mask || p->gc->alu==GXnoop){free(p->boxes);return;}
++    int status=ps2_pipe_image_boxes(p->owner->context,p->destination,p->bpp,source,bytes,
++        p->boxes,p->count,p->mask,p->gc->alu);
++    if(status)fail(p,strerror(errno));
++    free(p->boxes);
++    exaMarkSync(p->drawable->pScreen);
++    DamageRegionAppend(p->drawable,p->gc->pCompositeClip);DamageRegionProcessPending(p->drawable);
++}
++static void put_image(DrawablePtr d,GCPtr gc,int depth,int x,int y,int w,int h,int pad,int format,char *source)
++{
++    struct plan p;begin(&p,d,gc);
++    if(depth!=d->depth || format!=ZPixmap || pad || w<0 || h<0 || w>2048 || h>2048)
++        fail(&p,"unsupported image format or dimensions");
++    size_t stride=((size_t)w*(p.bpp/8)+3)&~(size_t)3;
++    size_t bytes=stride*h;
++    if(bytes>PS2_PIPE_MAX_IMAGE_BYTES)fail(&p,"image source budget exceeded");
++    /* PutImage is drawable-relative even when miTranslate is false. */
++    append(&p,(int64_t)x+d->x-p.ox,(int64_t)y+d->y-p.oy,w,h,0,stride);
++    finish(&p,source,bytes);
++}
++static void set_spans(DrawablePtr d,GCPtr gc,char *source,DDXPointPtr points,int *widths,int n,int sorted)
++{
++    (void)sorted;struct plan p;begin(&p,d,gc);
++    if(n<0 || n>4096 || (n && (!points || !widths)))fail(&p,"invalid span inputs");
++    size_t bytes=0;
++    for(int i=0;i<n;++i){
++        if(widths[i]<0 || widths[i]>2048)fail(&p,"invalid source span width");
++        size_t stride=((size_t)widths[i]*(p.bpp/8)+3)&~(size_t)3;
++        if(stride>PS2_PIPE_MAX_IMAGE_BYTES-bytes)fail(&p,"span source budget exceeded");
++        /* SetSpans points are already translated; preserve input overlap order. */
++        append(&p,(int64_t)points[i].x-p.ox,(int64_t)points[i].y-p.oy,widths[i],1,bytes,stride);
++        bytes+=stride;
++    }
++    finish(&p,source,bytes);
++}
++static const GCOps operations={.PutImage=put_image,.SetSpans=set_spans};
++Bool ps2_image_screen_prepare(ScreenPtr screen,struct ps2_image_screen *b,struct ps2_gc_screen *gc)
++{
++    struct ps2_render_client *r=gc?ps2_pipe_context_render(gc->context):NULL;
++    if(!screen || !b || b->installed || !gc || !gc->installed || gc->screen!=screen || gc->image_ops ||
++       !screen->CloseScreen || screen->CloseScreen==close_screen || !r || r->gs!=gc->exa->gs ||
++       !(r->gs->caps.features&PS2GS_HW_UPLOAD) || !(r->gs->caps.features&PS2GS_HW_SOLID_LOGIC) ||
++       !dixRegisterPrivateKey(&key,PRIVATE_SCREEN,0) || dixLookupPrivate(&screen->devPrivates,&key) ||
++       ps2_pipe_context_acquire(gc->context))return FALSE;
++    *b=(struct ps2_image_screen){.screen=screen,.gc=gc,.context=gc->context,.CloseScreen=screen->CloseScreen,.installed=TRUE};
++    dixSetPrivate(&screen->devPrivates,&key,b);screen->CloseScreen=close_screen;
++    if(!ps2_gc_screen_set_image_ops(gc,&operations))FatalError("PS2 GS: image GC installation failed\n");
++    return TRUE;
++}
++void ps2_image_screen_cleanup(struct ps2_image_screen *b)
++{
++    if(!b || !b->installed)return;
++    if(b->screen->CloseScreen!=close_screen || b->gc->image_ops!=&operations ||
++       dixLookupPrivate(&b->screen->devPrivates,&key)!=b || !ps2_gc_screen_set_image_ops(b->gc,NULL))
++        FatalError("PS2 GS: image GC cleanup order\n");
++    b->screen->CloseScreen=b->CloseScreen;dixSetPrivate(&b->screen->devPrivates,&key,NULL);
++    struct pipe_context *context=b->context;memset(b,0,sizeof(*b));ps2_pipe_context_release(context);
++}
++static Bool close_screen(ScreenPtr screen)
++{
++    struct ps2_image_screen *b=dixLookupPrivate(&screen->devPrivates,&key);
++    if(!b || !b->installed)FatalError("PS2 GS: missing image screen owner\n");
++    CloseScreenProcPtr lower=b->CloseScreen;ps2_image_screen_cleanup(b);return lower(screen);
++}
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_image_gc.h
+@@ -0,0 +1,19 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_XORG_IMAGE_GC_H
++#define PS2_XORG_IMAGE_GC_H
++#include "ps2_gc.h"
++struct ps2_image_screen {
++    ScreenPtr screen;
++    struct ps2_gc_screen *gc;
++    struct pipe_context *context;
++    CloseScreenProcPtr CloseScreen;
++    Bool installed;
++};
++/* Native ZPixmap PutImage and already-translated SetSpans, RGBX/RGB555.
++ * Install after native GC and before outer cursor/screen wrappers. Source
++ * buffers are server-validated client input; their padded length is inferred
++ * from request dimensions/widths. XY image formats reject; depth-1 GC editing
++ * keeps its existing source-only lower path. State outlives registration. */
++Bool ps2_image_screen_prepare(ScreenPtr,struct ps2_image_screen *,struct ps2_gc_screen *);
++void ps2_image_screen_cleanup(struct ps2_image_screen *);
++#endif
+--- a/hw/xfree86/drivers/ps2/ps2_gc.c
++++ b/hw/xfree86/drivers/ps2/ps2_gc.c
+@@ -232,6 +232,20 @@
+     const GCOps *native=p->owner->copy_ops;
+     p->glyph.ops.CopyArea=native ? native->CopyArea : forward_CopyArea;
+ }
++static void image_ops(struct ps2_gc_private *p)
++{
++    const GCOps *native=p->owner->image_ops;
++    p->glyph.ops.PutImage=native?native->PutImage:forward_PutImage;
++    p->glyph.ops.SetSpans=native?native->SetSpans:forward_SetSpans;
++}
++Bool ps2_gc_screen_set_image_ops(struct ps2_gc_screen *b,const GCOps *ops)
++{
++    if(!b || !b->installed || (ops && (!ops->PutImage || !ops->SetSpans)))return FALSE;
++    b->image_ops=ops;
++    for(struct ps2_gc_private *p=b->gcs;p;p=p->next)
++        if(p->glyph.gc)image_ops(p);
++    return TRUE;
++}
+ Bool ps2_gc_screen_set_copy_ops(struct ps2_gc_screen *b,const GCOps *ops)
+ {
+     if(!b || !b->installed || (ops && !ops->CopyArea)) return FALSE;
+@@ -275,7 +289,7 @@
+ #undef FORWARD
+     /* Only monochrome source bits use lower EXA/fb editing. Color operations
+      * retain native GC hooks and the fatal PrepareAccess policy. */
+-    if (gc->depth != 1) { solid_ops(p); copy_ops(p); }
++    if (gc->depth != 1) { solid_ops(p); copy_ops(p); image_ops(p); }
+     p->glyph.ops.PolyText8 = poly8; p->glyph.ops.PolyText16 = poly16;
+     p->glyph.ops.ImageText8 = image8; p->glyph.ops.ImageText16 = image16;
+ }
+--- a/hw/xfree86/drivers/ps2/ps2_gc.h
++++ b/hw/xfree86/drivers/ps2/ps2_gc.h
+@@ -14,6 +14,7 @@
+     const GCOps *solid_ops;
+     const GCOps *copy_ops;
+     const GCOps *fill_ops;
++    const GCOps *image_ops;
+     unsigned count;
+     Bool installed;
+ };
+@@ -37,4 +38,6 @@
+ /* Optional FillSpans/PolyFillRect override, above native solid dispatch.
+  * Both callbacks are required; NULL restores solid/lower dispatch. */
+ Bool ps2_gc_screen_set_fill_ops(struct ps2_gc_screen *, const GCOps *);
++/* Optional native PutImage/SetSpans override, for colour GCs only. */
++Bool ps2_gc_screen_set_image_ops(struct ps2_gc_screen *, const GCOps *);
+ #endif
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_image.h
+@@ -0,0 +1,23 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_PIPE_IMAGE_H
++#define PS2_PIPE_IMAGE_H
++#include "ps2_context_link.h"
++#include <stdint.h>
++#include <stddef.h>
++#define PS2_PIPE_MAX_IMAGE_BYTES (2U * 1024U * 1024U)
++#define PS2_PIPE_MAX_IMAGE_BOXES 4096U
++#define PS2_PIPE_MAX_IMAGE_PIXELS 524288U
++struct ps2_pipe_image_box {
++    size_t offset, stride;
++    unsigned x, y, width, height;
++};
++/* Source-only client pixels, in the native RGBX/32 or RGB555/16 layout.
++ * Snapshot source and ordered boxes before fencing the original queue.
++ * GXcopy/full RGB mask uses native uploads; other ALUs/masks use at most
++ * 16384 coloured Boolean runs. Overlapping boxes retain input order.
++ * Invalid, empty, noop, allocation and work-limit requests do not flush.
++ * No destination mapping or readback. One submission thread. */
++int ps2_pipe_image_boxes(struct pipe_context *, uint32_t destination,
++    unsigned bpp, const void *source, size_t bytes,
++    const struct ps2_pipe_image_box *, unsigned count, uint32_t mask, unsigned alu);
++#endif

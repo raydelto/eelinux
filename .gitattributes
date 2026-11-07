@@ -1,0 +1,10 @@
+* text=auto eol=lf
+# Imported source and patch locks identify exact bytes, including line endings.
+kernel/vendor/** -text
+userland/sysvinit/** -text
+*.patch -text
+*.png binary
+*.gz binary
+*.xz binary
+*.elf binary
+*.ext2 binary

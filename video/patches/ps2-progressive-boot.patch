@@ -1,0 +1,40 @@
+--- a/configs/video-modes.json
++++ b/configs/video-modes.json
+@@ -1,16 +1,16 @@
+ [
+   {"id":"pal", "spec":"576x460i@50", "sysfs":"U:576x460i-50", "width":576, "height":460, "hz":50, "interlaced":true, "family":"component"},
+   {"id":"ntsc", "spec":"576x384i@60", "sysfs":"U:576x384i-60", "width":576, "height":384, "hz":60, "interlaced":true, "family":"component"},
+-  {"id":"640x480", "spec":"640x480@60", "sysfs":"V:640x480p-60", "width":640, "height":480, "hz":60, "interlaced":false, "family":"rgb-sog"},
+-  {"id":"800x600", "spec":"800x600@60", "sysfs":"V:800x600p-60", "width":800, "height":600, "hz":60, "interlaced":false, "family":"rgb-sog"},
+-  {"id":"1024x768", "spec":"1024x768@60", "sysfs":"V:1024x768p-60", "width":1024, "height":768, "hz":60, "interlaced":false, "family":"rgb-sog"},
+-  {"id":"1280x1024", "spec":"1280x1024-16@60", "sysfs":"V:1280x1024p-60", "width":1280, "height":1024, "hz":60, "interlaced":false, "family":"rgb-sog"},
+-  {"id":"480p", "spec":"720x480@60", "sysfs":"S:720x480p-60", "width":720, "height":480, "hz":60, "interlaced":false, "family":"component"},
+-  {"id":"576p", "spec":"720x576@50", "sysfs":"S:720x576p-50", "width":720, "height":576, "hz":50, "interlaced":false, "family":"component"},
+-  {"id":"720p", "spec":"1280x720@50", "sysfs":"S:1280x720p-50", "width":1280, "height":720, "hz":50, "interlaced":false, "family":"component"},
+-  {"id":"720p60", "spec":"1280x720@60", "sysfs":"S:1280x720p-60", "width":1280, "height":720, "hz":60, "interlaced":false, "family":"component"},
++  {"id":"640x480", "spec":"640x480p@60", "sysfs":"V:640x480p-60", "width":640, "height":480, "hz":60, "interlaced":false, "family":"rgb-sog"},
++  {"id":"800x600", "spec":"800x600p@60", "sysfs":"V:800x600p-60", "width":800, "height":600, "hz":60, "interlaced":false, "family":"rgb-sog"},
++  {"id":"1024x768", "spec":"1024x768p@60", "sysfs":"V:1024x768p-60", "width":1024, "height":768, "hz":60, "interlaced":false, "family":"rgb-sog"},
++  {"id":"1280x1024", "spec":"1280x1024p-16@60", "sysfs":"V:1280x1024p-60", "width":1280, "height":1024, "hz":60, "interlaced":false, "family":"rgb-sog"},
++  {"id":"480p", "spec":"720x480p@60", "sysfs":"S:720x480p-60", "width":720, "height":480, "hz":60, "interlaced":false, "family":"component"},
++  {"id":"576p", "spec":"720x576p@50", "sysfs":"S:720x576p-50", "width":720, "height":576, "hz":50, "interlaced":false, "family":"component"},
++  {"id":"720p", "spec":"1280x720p@50", "sysfs":"S:1280x720p-50", "width":1280, "height":720, "hz":50, "interlaced":false, "family":"component"},
++  {"id":"720p60", "spec":"1280x720p@60", "sysfs":"S:1280x720p-60", "width":1280, "height":720, "hz":60, "interlaced":false, "family":"component"},
+   {"id":"1080i", "spec":"1920x1080i-16@50", "sysfs":"S:1920x1080i-50", "width":1920, "height":1080, "hz":50, "interlaced":true, "family":"component"},
+   {"id":"1080i60", "spec":"1920x1080i-16@60", "sysfs":"S:1920x1080i-60", "width":1920, "height":1080, "hz":60, "interlaced":true, "family":"component"},
+-  {"id":"1080p", "spec":"1920x1080-16@50", "sysfs":"S:1920x1080p-50", "width":1920, "height":1080, "hz":50, "interlaced":false, "family":"component", "experimental":true},
+-  {"id":"1080p60", "spec":"1920x1080-16@60", "sysfs":"S:1920x1080p-60", "width":1920, "height":1080, "hz":60, "interlaced":false, "family":"component", "experimental":true}
++  {"id":"1080p", "spec":"1920x1080p-16@50", "sysfs":"S:1920x1080p-50", "width":1920, "height":1080, "hz":50, "interlaced":false, "family":"component", "experimental":true},
++  {"id":"1080p60", "spec":"1920x1080p-16@60", "sysfs":"S:1920x1080p-60", "width":1920, "height":1080, "hz":60, "interlaced":false, "family":"component", "experimental":true}
+ ]
+--- a/configs/kernel.config
++++ b/configs/kernel.config
+@@ -44,7 +44,7 @@
+ CONFIG_INITRAMFS_COMPRESSION_GZIP=y
+ CONFIG_KERNEL_GZIP=y
+ CONFIG_CMDLINE_BOOL=y
+-CONFIG_CMDLINE="console=ttyS0,115200 console=tty0 root=/dev/sda1 rootfstype=ext4 rw rootwait video=ps2fb:720x576@50"
++CONFIG_CMDLINE="console=ttyS0,115200 console=tty0 root=/dev/sda1 rootfstype=ext4 rw rootwait video=ps2fb:720x576p@50"
+ CONFIG_MIPS_CMDLINE_FROM_BOOTLOADER=y
+ # CONFIG_CMDLINE_OVERRIDE is not set
+ CONFIG_DEVTMPFS=y

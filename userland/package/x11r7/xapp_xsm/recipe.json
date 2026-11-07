@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xsm",
+  "kind": "application",
+  "program": "xsm",
+  "version": "1.0.6",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xsm-1.0.6.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xsm-1.0.6.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "b74cc774c6060c37592f68a90dbd31b0f2a62fb14e562769434f79be284a63ce",
+      "filename": "xsm-1.0.6.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "ee4e9b4ab6be6773e53685540f807b03d553bfecc26c4e85fe12daca486fdeb66c594c6eab54043a8c149112c7a3ed18e463d68d7aee62e93a06c091ce39c268",
+      "filename": "xsm-1.0.6.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

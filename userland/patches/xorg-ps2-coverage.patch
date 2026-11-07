@@ -1,0 +1,202 @@
+--- a/hw/xfree86/drivers/ps2/ps2_blit_exa.c
++++ b/hw/xfree86/drivers/ps2/ps2_blit_exa.c
+@@ -3,9 +3,11 @@
+ #include "os.h"
+ #include "servermd.h"
+ #include "ps2_tile.h"
++#include "ps2_gs_lut.h"
+ #include "ps2-gs-map.h"
+ #include "ps2-gs-map-blit.h"
+ #include <errno.h>
++#include <stdlib.h>
+ #include <string.h>
+ static DevPrivateKeyRec key;
+ static struct ps2_blit_exa *backend(ScreenPtr screen)
+@@ -102,15 +104,16 @@
+ static Bool check(int op, PicturePtr source, PicturePtr mask, PicturePtr destination)
+ {
+     if(op>=PictOpClear && op<=PictOpSaturate && coverage_target(destination) && destination->pDrawable->pScreen &&
+-        (bitmap_picture(source) || (picture(source,TRUE) && !source->pDrawable)) &&
++        (bitmap_picture(source) || picture(source,TRUE)) &&
+         (!mask || bitmap_picture(mask)) &&
+         (!source->pDrawable || source->pDrawable->pScreen==destination->pDrawable->pScreen) &&
+         (!mask || mask->pDrawable->pScreen==destination->pDrawable->pScreen)){
+         struct ps2_blit_exa *b=backend(destination->pDrawable->pScreen);
+-        return b && b->attached;
++        return b && b->attached && (!argb(source) ||
++            ((b->gs->caps.features&PS2GS_HW_CHANNEL_MAP_BLIT) && (b->gs->caps.features&PS2GS_HW_READBACK)));
+     }
+     if (operation(op,argb(destination))<0 || (mask && !bitmap_picture(mask)) ||
+-        !picture(source,TRUE) || !picture(destination,FALSE) ||
++        !(picture(source,TRUE) || bitmap_picture(source)) || !picture(destination,FALSE) ||
+         !destination->pDrawable->pScreen || (source->pDrawable && source->pDrawable->pScreen != destination->pDrawable->pScreen) ||
+         (mask && mask->pDrawable->pScreen!=destination->pDrawable->pScreen)) return FALSE;
+     struct ps2_blit_exa *b = backend(destination->pDrawable->pScreen);
+@@ -120,7 +123,7 @@
+         (!(argb(source) || argb(destination)) ||
+          ((b->gs->caps.features&PS2GS_HW_CHANNEL_MAP_BLIT) && (b->gs->caps.features&PS2GS_HW_READBACK)));
+ }
+-static pixman_image_t *coverage_image(PicturePtr picture,PixmapPtr pixmap)
++static pixman_image_t *coverage_image(PicturePtr picture,PixmapPtr pixmap,struct ps2_blit_exa *b,Bool native_source)
+ {
+     pixman_image_t *image;
+     if(!picture->pDrawable){
+@@ -130,9 +133,23 @@
+         image=pixman_image_create_solid_fill(&color);
+     }else{
+         struct ps2_alpha_source source;
+-        if(ps2_surface_exa_alpha_source(pixmap,&source)!=1)return NULL;
+-        image=pixman_image_create_bits(source.bits_per_pixel==8?PIXMAN_a8:PIXMAN_a1,
+-            source.width,source.height,(uint32_t*)source.bits,source.stride);
++        if(ps2_surface_exa_alpha_source(pixmap,&source)==1){
++            image=pixman_image_create_bits(source.bits_per_pixel==8?PIXMAN_a8:PIXMAN_a1,
++                source.width,source.height,(uint32_t*)source.bits,source.stride);
++        }else{
++            const struct ps2_surface *s=native_source?storage(pixmap,b):NULL;
++            if(!s || s->width>1024 || s->height>1024 || b->source_coverage_bits)return NULL;
++            size_t stride=(s->width+3)&~3U,bytes=stride*s->height;
++            b->source_coverage_bits=malloc(bytes);if(!b->source_coverage_bits)return NULL;
++            if(argb(picture)){
++                if(ps2_surface_alpha_read(b->gs,s->handle,0,0,s->width,s->height,b->source_coverage_bits,bytes))return NULL;
++                /* Alpha isolation returns packed rows. Expand backwards to
++                 * pixman's aligned stride without another image allocation. */
++                for(unsigned y=s->height;y--;)memmove(b->source_coverage_bits+y*stride,
++                    b->source_coverage_bits+y*s->width,s->width);
++            }else memset(b->source_coverage_bits,255,bytes);
++            image=pixman_image_create_bits(PIXMAN_a8,s->width,s->height,(uint32_t*)b->source_coverage_bits,stride);
++        }
+     }
+     if(!image)return NULL;
+     if(picture->transform){pixman_transform_t transform;memcpy(&transform,picture->transform,sizeof(transform));
+@@ -151,6 +168,9 @@
+     if(b->coverage_mask)pixman_image_unref(b->coverage_mask);
+     if(b->coverage_destination)pixman_image_unref(b->coverage_destination);
+     b->coverage_source=b->coverage_mask=b->coverage_destination=NULL;
++    free(b->source_coverage_bits);b->source_coverage_bits=NULL;
++    b->coverage_colour_source=FALSE;
++    memset(&b->source_coverage,0,sizeof(b->source_coverage));
+     memset(&b->coverage,0,sizeof(b->coverage));
+ }
+ static void live(struct ps2_blit_exa *b)
+@@ -166,23 +186,33 @@
+     struct ps2_blit_exa *b = backend(destination->pDrawable->pScreen);
+     if(coverage_target(destination)){
+         if(b->prepared || ps2_surface_exa_alpha_source(destination_pixmap,&b->coverage)!=1)return FALSE;
+-        b->coverage_source=coverage_image(source,source_pixmap);
+-        b->coverage_mask=mask?coverage_image(mask,mask_pixmap):NULL;
+-        b->coverage_destination=coverage_image(destination,destination_pixmap);
++        live(b);
++        if(source->pDrawable && !bitmap_picture(source) && ps2_render_flush(ps2_pipe_context_render(b->context)))
++            FatalError("PS2 GS: coverage source fence failed\n");
++        b->coverage_source=coverage_image(source,source_pixmap,b,TRUE);
++        b->coverage_mask=mask?coverage_image(mask,mask_pixmap,b,FALSE):NULL;
++        b->coverage_destination=coverage_image(destination,destination_pixmap,b,FALSE);
+         if(!b->coverage_source || (mask && !b->coverage_mask) || !b->coverage_destination){release_coverage(b);return FALSE;}
+         b->destination_pixmap=destination_pixmap;b->over=op;b->prepared=TRUE;return TRUE;
+     }
+-    Bool constant=!source->pDrawable;
+-    const struct ps2_surface *s = constant?NULL:storage(source_pixmap, b), *d = storage(destination_pixmap, b);
+-    if (b->prepared || !d || (constant?source_pixmap!=NULL:(!s ||
+-        source_pixmap->drawable.depth != source->pDrawable->depth)) ||
++    Bool bitmap=bitmap_picture(source),constant=!source->pDrawable;
++    const struct ps2_surface *s = constant || bitmap?NULL:storage(source_pixmap, b), *d = storage(destination_pixmap, b);
++    if (b->prepared || !d || (constant?source_pixmap!=NULL:(!bitmap && (!s ||
++        source_pixmap->drawable.depth != source->pDrawable->depth))) ||
+         destination_pixmap->drawable.depth != destination->pDrawable->depth) return FALSE;
+     live(b);
+     struct ps2_alpha_source mono={0};
+     if(mask && ps2_surface_exa_alpha_source(mask_pixmap,&mono)!=1)return FALSE;
+-    if(constant){
+-        if(ps2_surface_create(b->gs,1,1,32,&b->solid))return FALSE;
+-        uint32_t c=source->pSourcePict->solidFill.color;
++    if(bitmap){
++        if(ps2_surface_exa_alpha_source(source_pixmap,&b->source_coverage)!=1)return FALSE;
++        b->coverage_source=coverage_image(source,source_pixmap,b,FALSE);
++        b->coverage_mask=mask?coverage_image(mask,mask_pixmap,b,FALSE):NULL;
++        if(!b->coverage_source || (mask && !b->coverage_mask)){release_coverage(b);return FALSE;}
++        b->coverage_colour_source=TRUE;
++    }
++    if(constant || bitmap){
++        if(ps2_surface_create(b->gs,1,1,32,&b->solid)){release_coverage(b);return FALSE;}
++        uint32_t c=bitmap?0:source->pSourcePict->solidFill.color;
+         uint32_t native=(c&0xff00ff00U)|((c&255)<<16)|((c>>16)&255);
+         if(ps2_render_flush(ps2_pipe_context_render(b->context)) ||
+             ps2_surface_fill(b->gs,b->solid,0,0,1,1,native))
+@@ -191,8 +221,8 @@
+     }
+     b->source_pixmap = source_pixmap; b->destination_pixmap = destination_pixmap;
+     b->source = *s; b->destination = *d; b->prepared = TRUE;
+-    b->sample=constant?(struct ps2_picture_sample){.repeat=PS2_REPEAT_NORMAL,
+-        .has_alpha=1,.alpha=source->pSourcePict->solidFill.color>>24}:sample(source);
++    b->sample=constant || bitmap?(struct ps2_picture_sample){.repeat=PS2_REPEAT_NORMAL,
++        .has_alpha=1,.alpha=bitmap?255:source->pSourcePict->solidFill.color>>24}:sample(source);
+     b->sample.source_swap=!constant && (source->format==PICT_x8r8g8b8 || source->format==PICT_a8r8g8b8 || source->format==PICT_x1r5g5b5);
+     b->sample.destination_swap=destination->format==PICT_x8r8g8b8 || destination->format==PICT_a8r8g8b8 || destination->format==PICT_x1r5g5b5;
+     b->sample.source_argb=argb(source);b->sample.destination_argb=argb(destination);
+@@ -221,6 +251,30 @@
+         !same_storage(b->solid?ps2_surface_lookup(b->gs,b->solid):storage(b->source_pixmap, b), &b->source) ||
+         !same_storage(storage(destination, b), &b->destination))
+         FatalError("PS2 GS: invalid prepared composite storage\n");
++    if(b->coverage_colour_source){
++        struct ps2_alpha_source live;
++        if(ps2_surface_exa_alpha_source(b->source_pixmap,&live)!=1 || live.bits!=b->source_coverage.bits ||
++            live.bytes!=b->source_coverage.bytes || live.stride!=b->source_coverage.stride ||
++            live.width!=b->source_coverage.width || live.height!=b->source_coverage.height ||
++            dx<0 || dy<0 || width<0 || height<0 || (int64_t)dx+width>b->destination.width ||
++            (int64_t)dy+height>b->destination.height || (uint64_t)width*height>PS2_PIPE_MAX_COPY_PIXELS)
++            FatalError("PS2 GS: invalid prepared coverage source\n");
++        if(!width || !height)return;
++        size_t stride=((size_t)width+3)&~3U,bytes=stride*height;
++        unsigned char *bits=calloc(1,bytes);
++        pixman_image_t *image=bits?pixman_image_create_bits(PIXMAN_a8,width,height,(uint32_t*)bits,stride):NULL;
++        if(!image){free(bits);FatalError("PS2 GS: coverage source allocation failed\n");}
++        pixman_image_composite32(PIXMAN_OP_SRC,b->coverage_source,b->coverage_mask,image,
++            sx,sy,mx,my,0,0,width,height);
++        struct ps2_picture_bitmap coverage={.bits=bits,.bytes=bytes,.stride=stride,.width=width,
++            .height=height,.bits_per_pixel=8};
++        struct ps2_pipe_copy_box rect={0,0,dx,dy,width,height};
++        int status=ps2_pipe_composite_rect(b->context,b->source.handle,b->destination.handle,&rect,
++            &b->sample,&coverage,b->over);
++        pixman_image_unref(image);free(bits);
++        if(status)FatalError("PS2 GS: coverage source composite failed: %s\n",strerror(errno));
++        return;
++    }
+     const struct ps2_pipe_blit_rect box = {.sx = sx, .sy = sy, .sw = width, .sh = height,
+         .dx = dx, .dy = dy, .dw = width, .dh = height};
+     int status;
+--- a/hw/xfree86/drivers/ps2/ps2_blit_exa.h
++++ b/hw/xfree86/drivers/ps2/ps2_blit_exa.h
+@@ -22,14 +22,16 @@
+     uint32_t solid;
+     pixman_image_t *coverage_source,*coverage_mask,*coverage_destination;
+     struct ps2_alpha_source coverage;
++    unsigned char *source_coverage_bits;
++    struct ps2_alpha_source source_coverage;
++    Bool coverage_colour_source;
+     Bool masked;
+     Bool attached, prepared;
+ };
+-/* Install after the context/texture EXA bridge, before exaDriverInit. Basic
+- * Porter-Duff operations to native opaque RGB, premultiplied solid sources,
+- * nearest affine/projective colour, repeats and nearest/bilinear A1/A8 masks.
+- * Varying source alpha, component alpha, colour bilinear and other formats
+- * require further native implementations.
++/* Install after the context/texture EXA bridge, before exaDriverInit. Native
++ * RGB/ARGB colour, owned A1/A8 sources/destinations and solid sources support
++ * transforms, repeats and nearest/bilinear/convolution. CPU processing is
++ * confined to coverage; all colour arithmetic and writes execute on GS.
+  * Restore these callbacks before the outer context bridge. One submission
+  * thread; retain screen state and prepared pixmaps through DoneComposite. */
+ Bool ps2_blit_exa_prepare(ScreenPtr, struct ps2_blit_exa *, struct ps2_surface_exa *, struct pipe_context *);
+--- a/hw/xfree86/drivers/ps2/ps2_rop.h
++++ b/hw/xfree86/drivers/ps2/ps2_rop.h
+@@ -3,7 +3,8 @@
+ #define PS2_PIPE_ROP_H
+ #include "ps2_copy_batch.h"
+ #include "ps2_gs_transfer.h"
+-/* At most 56 KiB of GS VRAM: two native snapshots and three CT32 bit planes.
++/* 56 KiB of GS VRAM, or 80 KiB with the optional raw32 alpha planes/palette:
++ * two native snapshots and three CT32 bit planes.
+  * No CPU pixel storage. Reserve once before fencing the original queue. */
+ struct ps2_rop_workspace {
+     struct ps2_surface_client *gs;

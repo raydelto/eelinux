@@ -1,0 +1,63 @@
+--- a/src/iconmgr.c
++++ b/src/iconmgr.c
+@@ -487,7 +487,7 @@
+     }
+     else if (Scr->SortIconMgr) {
+         for (tmp1 = ip->first; tmp1 != NULL; tmp1 = tmp1->next) {
+-            if ((*compar) (tmp_win->icon_name, tmp1->twm->icon_name) < 0) {
++            if ((*compar) (tmp_win->name, tmp1->twm->name) < 0) {
+                 tmp->next = tmp1;
+                 tmp->prev = tmp1->prev;
+                 tmp1->prev = tmp;
+@@ -609,7 +609,7 @@
+                 done = TRUE;
+                 break;
+             }
+-            if ((*compar) (tmp1->twm->icon_name, tmp2->twm->icon_name) > 0) {
++            if ((*compar) (tmp1->twm->name, tmp2->twm->name) > 0) {
+                 /* take it out and put it back in */
+                 RemoveFromIconManager(ip, tmp2);
+                 InsertInIconManager(ip, tmp2, tmp2->twm);
+--- a/src/events.c
++++ b/src/events.c
+@@ -791,6 +791,14 @@
+         if (Tmp_win->title_w)
+             XClearArea(dpy, Tmp_win->title_w, 0, 0, 0, 0, True);
+ 
++        /* The window list follows the title, independently of the
++         * separate name used for an application's desktop icon. */
++        if (Tmp_win->list) {
++            XClearArea(dpy, Tmp_win->list->w, 0, 0, 0, 0, True);
++            if (Scr->SortIconMgr)
++                SortIconManager(Tmp_win->list->iconmgr);
++        }
++
+         /*
+          * if the icon name is NoName, set the name of the icon to be
+          * the same as the window
+@@ -966,14 +974,6 @@
+ {
+     int x, y;
+ 
+-    if (Tmp_win->list) {
+-        /* let the expose event cause the repaint */
+-        XClearArea(dpy, Tmp_win->list->w, 0, 0, 0, 0, True);
+-
+-        if (Scr->SortIconMgr)
+-            SortIconManager(Tmp_win->list->iconmgr);
+-    }
+-
+     if (Tmp_win->icon_w == (Window) 0)
+         return;
+ 
+@@ -1132,8 +1132,8 @@
+                 MyFont_DrawString(dpy, Event.xany.window,
+                                   &Scr->IconManagerFont, Scr->NormalGC,
+                                   iconmgr_textx, Scr->IconManagerFont.y + 4,
+-                                  Tmp_win->icon_name,
+-                                  (int) strlen(Tmp_win->icon_name));
++                                  Tmp_win->name,
++                                  (int) strlen(Tmp_win->name));
+                 DrawIconManagerBorder(Tmp_win->list);
+                 flush_expose(Event.xany.window);
+ 

@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xmore",
+  "kind": "application",
+  "program": "xmore",
+  "version": "1.0.4",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xmore-1.0.4.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xmore-1.0.4.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "7eb560dbc1de4e43c64fe491ad73907a29d734cca82a9ad82c7d3feb9cdb0a9a",
+      "filename": "xmore-1.0.4.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "52ac9bca78431f5f830b4607ff2cc375ab90e11380e0d4d3e591689359806cc7c7ec92c713d4d65742f40407e4f407c372759e5d03e30a30dfd866e6d5c6f6f7",
+      "filename": "xmore-1.0.4.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

@@ -1,0 +1,4 @@
+config BR2_PACKAGE_EELINUX_LIBTOOL
+	bool "GNU libtool and libtoolize on the target"
+	select BR2_PACKAGE_EELINUX_AUTOCONF
+	select BR2_PACKAGE_EELINUX_AUTOMAKE

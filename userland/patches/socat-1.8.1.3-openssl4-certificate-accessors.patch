@@ -1,0 +1,90 @@
+--- a/xio-openssl.c
++++ b/xio-openssl.c
+@@ -1665,9 +1665,9 @@
+ 
+ /* read in the "name" information (from field "issuer" or "subject") and
+    create environment variable with complete info, eg:
+    SOCAT_OPENSSL_X509_SUBJECT */
+-static int openssl_setenv_cert_name(const char *field, X509_NAME *name) {
++static int openssl_setenv_cert_name(const char *field, const X509_NAME *name) {
+    BIO *bio = BIO_new(BIO_s_mem());
+    char *buf = NULL, *str;
+    size_t len;
+    X509_NAME_print_ex(bio, name, 0, XN_FLAG_ONELINE&~ASN1_STRFLGS_ESC_MSB);	/* rc not documented */
+@@ -1688,16 +1688,16 @@
+ /* read in the "name" information (from field "issuer" or "subject") and
+    create environment variables with the fields, eg:
+    SOCAT_OPENSSL_X509_COMMONNAME
+ */
+-static int openssl_setenv_cert_fields(const char *field, X509_NAME *name) {
++static int openssl_setenv_cert_fields(const char *field, const X509_NAME *name) {
+    int n, i;
+    n = X509_NAME_entry_count(name);
+    /* extract fields of cert name */
+    for (i = 0; i < n; ++i) {
+-      X509_NAME_ENTRY *entry;
+-      ASN1_OBJECT *obj;
+-      ASN1_STRING *data;
++      const X509_NAME_ENTRY *entry;
++      const ASN1_OBJECT *obj;
++      const ASN1_STRING *data;
+       const unsigned char *text;
+       int nid;
+       entry = X509_NAME_get_entry(name, i);
+       obj  = X509_NAME_ENTRY_get_object(entry);
+@@ -1765,12 +1765,12 @@
+ }
+ 
+ /* retrieves the commonName field and compares it to the peername
+    returns true on match, false otherwise */
+-static bool openssl_check_peername(X509_NAME *name, const char *peername) {
++static bool openssl_check_peername(const X509_NAME *name, const char *peername) {
+    int ind = -1;
+-   X509_NAME_ENTRY *entry;
+-   ASN1_STRING *data;
++   const X509_NAME_ENTRY *entry;
++   const ASN1_STRING *data;
+    const unsigned char *text;
+    ind = X509_NAME_get_index_by_NID(name, NID_commonName, -1);
+    if (ind < 0) {
+       Info("no COMMONNAME field in peer certificate");
+@@ -1799,9 +1799,9 @@
+ static int openssl_handle_peer_certificate(struct single *sfd,
+ 					   const char *peername,
+ 					   bool opt_ver, int level) {
+    X509 *peer_cert;
+-   X509_NAME *subjectname, *issuername;
++   const X509_NAME *subjectname, *issuername;
+    /*ASN1_TIME not_before, not_after;*/
+    int extcount, i, ok = 0;
+    int status;
+ 
+@@ -1863,9 +1863,9 @@
+    */
+    if ((extcount = X509_get_ext_count(peer_cert)) > 0) {
+       for (i = 0;  !ok && i < extcount;  ++i) {
+ 	 const char            *extstr;
+-	 X509_EXTENSION        *ext;
++	 const X509_EXTENSION  *ext;
+ 	 const X509V3_EXT_METHOD     *meth;
+ 	 ext = X509_get_ext(peer_cert, i);
+ 	 extstr = OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
+ 	 if (!strcasecmp(extstr, "subjectAltName")) {
+@@ -1897,10 +1897,15 @@
+ 
+ 		  case GEN_IPADD:
+ 		     {
+ 			/* binary address format */
+-			const unsigned char *data = pName->d.iPAddress->data;
+-			size_t len = pName->d.iPAddress->length;
++			const unsigned char *data;
++#if HAVE_ASN1_STRING_get0_data
++			data = ASN1_STRING_get0_data(pName->d.iPAddress);
++#else
++			data = ASN1_STRING_data(pName->d.iPAddress);
++#endif
++			size_t len = ASN1_STRING_length(pName->d.iPAddress);
+ 			char aBuffer[INET6_ADDRSTRLEN]; 	/* canonical peername */
+ 			struct in6_addr ip6bin;
+ 
+ 			switch (len) {

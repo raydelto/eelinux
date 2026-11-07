@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "verified_on": "2026-10-01",
+  "baseline": {
+    "kind": "git",
+    "repository": "https://github.com/frno7/linux.git",
+    "revision": "77174dd4c8958a91aa5b76fb064a60eb68119e70",
+    "version": "5.4.221",
+    "branch_hint": "ps2-main",
+    "status": "existing upstream PS2 port; project hardware validation pending"
+  },
+  "7.2.8": {
+    "kind": "archive",
+    "url": "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.2.8.tar.xz",
+    "sha256": "12e8d5a973d1ad7c5a5c69882e4022b131ed715db7003fdcd760ddf8c3e51941",
+    "checksum_source": "https://www.kernel.org/pub/linux/kernel/v7.x/sha256sums.asc",
+    "version": "7.2.8",
+    "status": "verified upstream release with partial downstream PS2 transplant; architecture integration incomplete"
+  },
+  "iopmod": {
+    "kind": "git",
+    "repository": "https://github.com/frno7/iopmod.git",
+    "revision": "12cdf14b78ed5e648ffe1d52e6754f00b3b69001",
+    "modules": ["irq", "irqrelay", "ata", "dev9", "gamepad", "printk"],
+    "status": "all six firmware modules cross-built with official PS2DEV; physical hardware validation pending"
+  }
+}

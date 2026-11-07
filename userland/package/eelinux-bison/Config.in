@@ -1,0 +1,4 @@
+config BR2_PACKAGE_EELINUX_BISON
+	bool "GNU bison on the target"
+	depends on BR2_USE_MMU
+	select BR2_PACKAGE_EELINUX_M4

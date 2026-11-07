@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "repository": "https://github.com/CTurt/FreeDVDBoot",
+  "commit": "ba7fa5bbda2ccd19c0a1c37ab99115183a2a1b27",
+  "files": {
+    "README.md": "6a33e4aea8ffcd162117b10d9b3c53a95e803cbb5d05c5c62859c401df6be060",
+    "Filesystems/All PS2 slims (3.10 + 3.11) - English language/VIDEO_TS/VIDEO_TS.IFO": "afd7f43d2f440a5afb57197e4414def88941f6e63e86cf51c70dfa9624e5f1c4",
+    "Filesystems/All PS2 slims (3.10 + 3.11) - English language/VIDEO_TS/VTS_01_0.IFO": "c26206e1e4f4405855495037eb725a9be0bb964d2d163fd712edd30e626fd3c0",
+    "Filesystems/All PS2 slims (3.10 + 3.11) - English language/VIDEO_TS/VTS_02_0.IFO": "d9f7ba9430fc5c05d0b6b2e43dda23d02f9c6f33c0b78626ea56a64ecaebd3ad",
+    "PREBUILT ISOs/3.04 only - M+maybe other regions except J - English language.iso": "ba097b076018ac8adfd8c0f1ad80b3bb40472068032e6e2017428d4b1ddc2eb1",
+    "PREBUILT ISOs/All PS2 Slims - English language.iso": "4b3fb26a746abd4544ca254240f4896e84745e83793bd9f8fb5dce055a63b7a0",
+    "PREBUILT ISOs/Some 2.10 models and all 2.12.iso": "2e232fb2de3934b0a82ee8e437f07de2ef3710bb51a3d7da0b48a0df5caf0afe"
+  }
+}

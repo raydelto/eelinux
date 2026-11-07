@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xprop",
+  "kind": "application",
+  "program": "xprop",
+  "version": "1.2.8",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xprop-1.2.8.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xprop-1.2.8.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "d689e2adb7ef7b439f6469b51cda8a7daefc83243854c2a3b8f84d0f029d67ee",
+      "filename": "xprop-1.2.8.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "bdd9b02c4ee738bb4661c3acc901330e635b9967de5efb1615297f6b0ff3cdbd0eab6f63f80a605539090e8d62c611bb603da17477e16e3c0b26ff4314d0b664",
+      "filename": "xprop-1.2.8.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

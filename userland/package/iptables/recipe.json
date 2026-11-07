@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "iptables",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.iptables",
+  "symbol": "BR2_PACKAGE_IPTABLES",
+  "version": "1.8.13",
+  "recipe": "package/iptables/iptables.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "1afcd33da9e8f913ace6a2126788162e207e26f5d5e29c6573c0e581ffc58b99",
+      "filename": "iptables-1.8.13.tar.xz"
+    }
+  ],
+  "release_url": "https://www.netfilter.org/pub/iptables/"
+}

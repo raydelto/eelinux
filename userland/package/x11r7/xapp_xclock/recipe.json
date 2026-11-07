@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xclock",
+  "kind": "application",
+  "program": "xclock",
+  "version": "1.2.1",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xclock-1.2.1.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xclock-1.2.1.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "e326cac20f7ad2af5412b9c4b70b1c3d392e08cd3cc6246e0a77b7c3935a4851",
+      "filename": "xclock-1.2.1.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "0e94fd7e6c1e1c9e914991f3a8e3bf44b055a93066a153b05ec25fa4f8b6ec2c3b836bb8e1e6bc98c38a8e55f2070f225d358e7a771a97d27e2df119e0511b41",
+      "filename": "xclock-1.2.1.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

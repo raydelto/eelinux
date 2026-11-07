@@ -1,0 +1,68 @@
+Subject: [PATCH] use declared internal helpers and Tcl channel version 2
+
+Keep the original channel callbacks in their named Tcl 8.6 slots. The
+legacy layout placed a callback in the version field, which is
+not a compatible pointer type. Include the existing helper interfaces
+and the POSIX PTY declaration instead of implicit function declarations.
+
+--- a/exp_int.h
++++ b/exp_int.h
+@@ -21,6 +21,9 @@
+ 
+ #include <errno.h>
+ 
++/* Shared by the standalone C library and Tcl extension. */
++void exp_init_tty(void);
++
+ void	exp_console_set     _ANSI_ARGS_((void));
+ void	expDiagLogPtrSet    _ANSI_ARGS_((void (*)_ANSI_ARGS_((char *))));
+ void	expDiagLogPtr       _ANSI_ARGS_((char *));
+--- a/pty_termios.c
++++ b/pty_termios.c
+@@ -102,6 +102,10 @@
+ #include "exp_tty_in.h"
+ #include "exp_rename.h"
+ #include "exp_pty.h"
++#include "exp_int.h"
++#ifdef HAVE_OPENPTY
++#include <pty.h>
++#endif
+ 
+ void expDiagLog();
+ void expDiagLogPtr();
+--- a/exp_chan.c
++++ b/exp_chan.c
+@@ -34,6 +34,7 @@
+ #include "exp_rename.h"
+ #include "exp_prog.h"
+ #include "exp_command.h"
++#include "exp_event.h"
+ #include "exp_log.h"
+ #include "tcldbg.h" /* Dbg_StdinMode */
+ 
+@@ -57,17 +58,14 @@
+  */
+ 
+ Tcl_ChannelType expChannelType = {
+-    "exp",				/* Type name. */
+-    ExpBlockModeProc,			/* Set blocking/nonblocking mode.*/
+-    ExpCloseProc,			/* Close proc. */
+-    ExpInputProc,			/* Input proc. */
+-    ExpOutputProc,			/* Output proc. */
+-    NULL,				/* Seek proc. */
+-    NULL,				/* Set option proc. */
+-    NULL,				/* Get option proc. */
+-    ExpWatchProc,			/* Initialize notifier. */
+-    ExpGetHandleProc,			/* Get OS handles out of channel. */
+-    NULL,				/* Close2 proc */
++    .typeName = "exp",
++    .version = TCL_CHANNEL_VERSION_2,
++    .closeProc = ExpCloseProc,
++    .inputProc = ExpInputProc,
++    .outputProc = ExpOutputProc,
++    .watchProc = ExpWatchProc,
++    .getHandleProc = ExpGetHandleProc,
++    .blockModeProc = ExpBlockModeProc,
+ };
+ 
+ typedef struct ThreadSpecificData {

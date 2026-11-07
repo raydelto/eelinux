@@ -1,0 +1,520 @@
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_gs_client.c
+@@ -0,0 +1,189 @@
++/* SPDX-License-Identifier: MIT */
++#define _POSIX_C_SOURCE 200809L
++#include "ps2_gs_client.h"
++#include <errno.h>
++#include <fcntl.h>
++#include <stddef.h>
++#include <string.h>
++#include <sys/ioctl.h>
++#include <time.h>
++#include <unistd.h>
++
++_Static_assert(sizeof(struct ps2gs_caps) == 80, "GS capability ABI");
++_Static_assert(sizeof(struct ps2gs_submit) == 32, "GS submission ABI");
++_Static_assert(sizeof(struct ps2gs_command) == 64, "GS command ABI");
++_Static_assert(sizeof(struct ps2gs_upload) == 48, "GS image upload ABI");
++
++static int fail(struct ps2_gs_client *gs, int error)
++{
++    if (!gs->error) gs->error = error;
++    gs->count = 0;
++    errno = gs->error;
++    return -1;
++}
++
++static int request(struct ps2_gs_client *gs, unsigned long operation, void *data)
++{
++    for (unsigned retry = 0; retry < 100; ++retry) {
++        if (!ioctl(gs->fd, operation, data)) return 0;
++        /* EAGAIN is the driver's pre-submission console-lock contention.
++         * Other errors may follow drawing, so do not retry them. */
++        if (errno != EAGAIN) return fail(gs, errno);
++        struct timespec delay = { .tv_nsec = 10000000 };
++        while (nanosleep(&delay, &delay) < 0) {
++            if (errno != EINTR) return fail(gs, errno);
++        }
++    }
++    return fail(gs, EAGAIN);
++}
++
++int ps2_gs_open(struct ps2_gs_client *gs, const char *device)
++{
++    memset(gs, 0, sizeof(*gs));
++    gs->fd = open(device, O_RDWR | O_CLOEXEC);
++    if (gs->fd < 0) return fail(gs, errno);
++    if (request(gs, PS2GS_GET_CAPS, &gs->caps)) goto error;
++    if (gs->caps.abi != PS2GS_ABI_VERSION || !gs->caps.width ||
++        !gs->caps.height || gs->caps.width > 2048 || gs->caps.height > 2048 ||
++        (gs->caps.bits_per_pixel != 16 && gs->caps.bits_per_pixel != 32) ||
++        gs->caps.max_commands != PS2GS_MAX_COMMANDS ||
++        (gs->caps.features & (PS2GS_HW_FILL | PS2GS_HW_COPY | PS2GS_HW_TRIANGLE)) !=
++            (PS2GS_HW_FILL | PS2GS_HW_COPY | PS2GS_HW_TRIANGLE)) {
++        fail(gs, ENOTSUP);
++        goto error;
++    }
++    return 0;
++error:
++    close(gs->fd); gs->fd = -1; errno = gs->error; return -1;
++}
++
++void ps2_gs_close(struct ps2_gs_client *gs)
++{
++    /* Closing a failed session discards its queue. It never draws implicitly. */
++    if (gs->fd >= 0) close(gs->fd);
++    gs->fd = -1; gs->count = 0;
++}
++
++int ps2_gs_flush(struct ps2_gs_client *gs)
++{
++    if (gs->error) return fail(gs, gs->error);
++    if (gs->fd < 0) return fail(gs, EBADF);
++    if (!gs->count) return 0;
++    struct ps2gs_submit submit = { .abi = gs->caps.abi, .count = gs->count,
++        .width = gs->caps.width, .height = gs->caps.height,
++        .bits_per_pixel = gs->caps.bits_per_pixel,
++        .commands = (uintptr_t)gs->commands };
++    if (request(gs, PS2GS_SUBMIT, &submit)) return -1;
++    gs->count = 0;
++    return 0;
++}
++
++static int enqueue(struct ps2_gs_client *gs, struct ps2gs_command command)
++{
++    if (gs->error) return fail(gs, gs->error);
++    if (gs->fd < 0) return fail(gs, EBADF);
++    if (gs->count == PS2GS_MAX_COMMANDS && ps2_gs_flush(gs)) return -1;
++    gs->commands[gs->count++] = command;
++    return 0;
++}
++
++static int rectangle(struct ps2_gs_client *gs, unsigned x, unsigned y,
++                     unsigned width, unsigned height)
++{
++    return width && height && x < gs->caps.width && y < gs->caps.height &&
++        width <= gs->caps.width - x && height <= gs->caps.height - y;
++}
++
++int ps2_gs_fill(struct ps2_gs_client *gs, unsigned x, unsigned y,
++               unsigned width, unsigned height, uint32_t rgba)
++{
++    if (!rectangle(gs, x, y, width, height)) return fail(gs, EINVAL);
++    return enqueue(gs, (struct ps2gs_command) { .op = PS2GS_FILL,
++        .width = width, .height = height,
++        .v = {{ .x = x * 16, .y = y * 16, .rgba = rgba }} });
++}
++
++int ps2_gs_copy(struct ps2_gs_client *gs, unsigned sx, unsigned sy,
++               unsigned dx, unsigned dy, unsigned width, unsigned height)
++{
++    if (!rectangle(gs, sx, sy, width, height) || !rectangle(gs, dx, dy, width, height))
++        return fail(gs, EINVAL);
++    if (width % (gs->caps.bits_per_pixel == 16 ? 4 : 2)) return fail(gs, ENOTSUP);
++    return enqueue(gs, (struct ps2gs_command) { .op = PS2GS_COPY,
++        .width = width, .height = height,
++        .v = {{ .x = sx * 16, .y = sy * 16 }, { .x = dx * 16, .y = dy * 16 }} });
++}
++
++int ps2_gs_triangle(struct ps2_gs_client *gs, const struct ps2gs_vertex vertices[3], int depth)
++{
++    if (depth != 0 && depth != 1) return fail(gs, EINVAL);
++    if (depth && !(gs->caps.features & PS2GS_HW_DEPTH16)) return fail(gs, ENOTSUP);
++    for (unsigned i = 0; i < 3; ++i) {
++        if (vertices[i].x > gs->caps.width * 16 || vertices[i].y > gs->caps.height * 16 ||
++            vertices[i].z > 65535) return fail(gs, EINVAL);
++    }
++    struct ps2gs_command command = { .op = PS2GS_TRIANGLE,
++        .flags = depth ? PS2GS_DEPTH_TEST : 0 };
++    memcpy(command.v, vertices, sizeof(command.v));
++    return enqueue(gs, command);
++}
++
++int ps2_gs_clear_depth(struct ps2_gs_client *gs)
++{
++    if (!(gs->caps.features & PS2GS_HW_DEPTH16)) return fail(gs, ENOTSUP);
++    return enqueue(gs, (struct ps2gs_command) { .op = PS2GS_CLEAR_DEPTH });
++}
++
++int ps2_gs_upload(struct ps2_gs_client *gs, unsigned x, unsigned y,
++                  unsigned width, unsigned height, const void *pixels,
++                  size_t source_bytes, size_t stride)
++{
++    if (gs->error) return fail(gs, gs->error);
++    if (gs->fd < 0) return fail(gs, EBADF);
++    if (!(gs->caps.features & PS2GS_HW_UPLOAD)) return fail(gs, ENOTSUP);
++    if (!pixels || !rectangle(gs, x, y, width, height)) return fail(gs, EINVAL);
++    unsigned bpp = gs->caps.bits_per_pixel / 8;
++    size_t row = (size_t)width * bpp;
++    if (stride < row || (height > 1 && stride > (SIZE_MAX - row) / (height - 1)))
++        return fail(gs, EINVAL);
++    size_t required = (height - 1) * stride + row;
++    if (source_bytes < required || (uintptr_t)pixels > UINTPTR_MAX - (required - 1))
++        return fail(gs, EINVAL);
++    if (ps2_gs_flush(gs)) return -1;
++    unsigned char packed[PS2GS_MAX_UPLOAD_BYTES];
++    /* Limit each ioctl, including wide rows. Padding from the source never
++     * reaches the GS, and all final quadword padding is done by the kernel. */
++    for (unsigned column = 0; column < width;) {
++        unsigned w = width - column;
++        if (w > PS2GS_MAX_UPLOAD_BYTES / bpp) w = PS2GS_MAX_UPLOAD_BYTES / bpp;
++        size_t packed_row = (size_t)w * bpp;
++        unsigned rows = PS2GS_MAX_UPLOAD_BYTES / packed_row;
++        for (unsigned line = 0; line < height;) {
++            unsigned h = height - line;
++            if (h > rows) h = rows;
++            for (unsigned i = 0; i < h; ++i)
++                memcpy(packed + i * packed_row,
++                    (const unsigned char *)pixels + (line + i) * stride + column * bpp,
++                    packed_row);
++            struct ps2gs_upload upload = { .abi = gs->caps.abi,
++                .width = gs->caps.width, .height = gs->caps.height,
++                .bits_per_pixel = gs->caps.bits_per_pixel,
++                .x = x + column, .y = y + line, .image_width = w, .image_height = h,
++                .bytes = h * packed_row, .pixels = (uintptr_t)packed };
++            if (request(gs, PS2GS_UPLOAD, &upload)) return -1;
++            line += h;
++        }
++        column += w;
++    }
++    return 0;
++}
++
++uint32_t ps2_gs_pixel_color(uint32_t pixel, unsigned bits_per_pixel)
++{
++    if (bits_per_pixel == 32) return 0x80000000 | (pixel & 0x00ffffff);
++    /* GS CT16 is RGB555, red in bits 0..4. This is not RGB565. */
++    unsigned r = ((pixel & 31) * 255 + 15) / 31;
++    unsigned g = (((pixel >> 5) & 31) * 255 + 15) / 31;
++    unsigned b = (((pixel >> 10) & 31) * 255 + 15) / 31;
++    return 0x80000000 | r | (g << 8) | (b << 16);
++}
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_gs_client.h
+@@ -0,0 +1,32 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_GS_CLIENT_H
++#define PS2_GS_CLIENT_H
++#include <stdint.h>
++#include <stddef.h>
++#include "ps2-gs.h"
++
++/* One drawing thread owns this queue. Failure is sticky: a partially executed
++ * hardware batch is never replayed and never replaced by CPU rasterization. */
++struct ps2_gs_client {
++    int fd, error;
++    unsigned count;
++    struct ps2gs_caps caps;
++    struct ps2gs_command commands[PS2GS_MAX_COMMANDS];
++};
++int ps2_gs_open(struct ps2_gs_client *, const char *device);
++void ps2_gs_close(struct ps2_gs_client *);
++int ps2_gs_flush(struct ps2_gs_client *);
++int ps2_gs_fill(struct ps2_gs_client *, unsigned x, unsigned y,
++               unsigned width, unsigned height, uint32_t rgba);
++int ps2_gs_copy(struct ps2_gs_client *, unsigned sx, unsigned sy,
++               unsigned dx, unsigned dy, unsigned width, unsigned height);
++int ps2_gs_triangle(struct ps2_gs_client *, const struct ps2gs_vertex vertices[3], int depth);
++int ps2_gs_clear_depth(struct ps2_gs_client *);
++/* Upload already existing native pixels. This is a hardware transfer, not a
++ * CPU renderer. Bounds cover all addressed rows, including caller padding.
++ * Queued drawing is fenced first. A partial upload failure is never replayed. */
++int ps2_gs_upload(struct ps2_gs_client *, unsigned x, unsigned y,
++                  unsigned width, unsigned height, const void *pixels,
++                  size_t source_bytes, size_t stride);
++uint32_t ps2_gs_pixel_color(uint32_t pixel, unsigned bits_per_pixel);
++#endif
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2-gs.h
+@@ -0,0 +1,73 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++/* Experimental bounded rendering ABI for the PS2 GS framebuffer.
++ * No raw GS register writes, DMA addresses or userspace MMIO are accepted.
++ * Rasterization always takes place in GS local memory. There is no CPU renderer.
++ */
++#ifndef _UAPI_PS2_GS_H
++#define _UAPI_PS2_GS_H
++#include <linux/types.h>
++#include <linux/ioctl.h>
++
++#define PS2GS_ABI_VERSION 1
++#define PS2GS_MAX_COMMANDS 64
++#define PS2GS_HW_FILL       (1U << 0)
++#define PS2GS_HW_COPY       (1U << 1)
++#define PS2GS_HW_TRIANGLE   (1U << 2)
++#define PS2GS_HW_DEPTH16    (1U << 3)
++#define PS2GS_HW_UPLOAD     (1U << 4)
++#define PS2GS_MAX_UPLOAD_BYTES 3072
++#define PS2GS_DEPTH_TEST    (1U << 0)
++
++enum ps2gs_operation {
++	PS2GS_FILL = 1, PS2GS_COPY, PS2GS_TRIANGLE, PS2GS_CLEAR_DEPTH
++};
++
++/* x/y are unsigned 12.4 window coordinates, z is a 16-bit depth value.
++ * Larger depth values are nearer. rgba is R | G<<8 | B<<16 | A<<24;
++ * GS opaque alpha is 128. Blending is not exposed by this ABI.
++ */
++struct ps2gs_vertex { __u32 x, y, z, rgba; };
++
++/* FILL: v[0] origin/color, width/height in pixels.
++ * COPY: v[0] source, v[1] destination, width/height in pixels.
++ * TRIANGLE: three vertices; width/height must be zero.
++ * CLEAR_DEPTH: all fields except op must be zero; clears depth to zero.
++ * All unused vertices/fields must be zero. Unsupported flags are errors.
++ */
++struct ps2gs_command {
++	__u32 op, flags;
++	struct ps2gs_vertex v[3];
++	__u32 width, height;
++};
++
++struct ps2gs_caps {
++	__u32 abi, features, width, height;
++	__u32 bits_per_pixel, max_commands, depth_base, depth_bytes;
++	__aligned_u64 completed_batches, fills, copies, triangles;
++	__aligned_u64 depth_clears, timeouts;
++};
++
++struct ps2gs_submit {
++	__u32 abi, count, width, height;
++	__u32 bits_per_pixel, reserved;
++	__aligned_u64 commands;
++};
++
++/* Packed native CT16/CT32 pixels, left to right, top to bottom. No row padding.
++ * The source is snapshotted before the first GS side effect. The destination
++ * is always the current framebuffer; users cannot select a VRAM address.
++ * CT16 is red-low RGB555/A1, CT32 is red-low RGBA8 (opaque GS alpha = 128).
++ * The final GIF quadword is zero padded by the kernel, never read from users.
++ * Mode identity and the feature bit allow old ABI-1 clients/kernels to coexist.
++ */
++struct ps2gs_upload {
++	__u32 abi, width, height, bits_per_pixel;
++	__u32 x, y, image_width, image_height;
++	__u32 bytes, reserved;
++	__aligned_u64 pixels;
++};
++
++#define PS2GS_GET_CAPS _IOR('G', 0x70, struct ps2gs_caps)
++#define PS2GS_SUBMIT   _IOW('G', 0x71, struct ps2gs_submit)
++#define PS2GS_UPLOAD   _IOW('G', 0x72, struct ps2gs_upload)
++#endif
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_raster.c
+@@ -0,0 +1,78 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_raster.h"
++#include <errno.h>
++#include <math.h>
++
++static int reject(struct ps2_gs_client *gs)
++{
++    if (!gs->error) gs->error = ENOTSUP;
++    gs->count = 0;
++    errno = gs->error;
++    return -1;
++}
++
++static unsigned channel(float value, unsigned max)
++{
++    if (value <= 0) return 0;
++    if (value >= 1) return max;
++    return value * max + 0.5f;
++}
++
++static int rgba(const float color[4], uint32_t *packed)
++{
++    for (unsigned i = 0; i < 4; ++i) if (!isfinite(color[i])) return -1;
++    *packed = channel(color[0],255) | (channel(color[1],255)<<8) |
++        (channel(color[2],255)<<16) | (channel(color[3],128)<<24);
++    return 0;
++}
++
++int ps2_gallium_clear_color(struct ps2_gs_client *gs, const struct pipe_scissor_state *scissor,
++                            const union pipe_color_union *color)
++{
++    uint32_t packed;
++    if (gs->error) return reject(gs);
++    if (!color || rgba(color->f, &packed)) return reject(gs);
++    unsigned x = scissor ? scissor->minx : 0, y = scissor ? scissor->miny : 0;
++    unsigned right = scissor ? scissor->maxx : gs->caps.width;
++    unsigned bottom = scissor ? scissor->maxy : gs->caps.height;
++    /* Gallium's max bounds are exclusive. Empty clears draw nothing. */
++    if (right <= x || bottom <= y) return 0;
++    return ps2_gs_fill(gs, x, y, right-x, bottom-y, packed);
++}
++
++int ps2_gallium_triangle(struct ps2_gs_client *gs, const float position[3][4],
++                        const float color[3][4], int depth_test)
++{
++    struct ps2gs_vertex vertices[3];
++    if (!position || !color) return reject(gs);
++    for (unsigned i = 0; i < 3; ++i) {
++        for (unsigned j = 0; j < 4; ++j) if (!isfinite(position[i][j])) return reject(gs);
++        /* Clipping/viewport conversion belongs upstream of this raster stage.
++         * Never clamp an out-of-range triangle into a different polygon. */
++        if (position[i][0] < 0 || position[i][0] > gs->caps.width ||
++            position[i][1] < 0 || position[i][1] > gs->caps.height ||
++            position[i][2] < 0 || position[i][2] > 1) return reject(gs);
++        vertices[i].x = position[i][0] * 16.0f + 0.5f;
++        vertices[i].y = position[i][1] * 16.0f + 0.5f;
++        /* GS depth grows towards the viewer; Gallium near depth is zero. */
++        vertices[i].z = (1.0f-position[i][2]) * 65535.0f + 0.5f;
++        if (rgba(color[i], &vertices[i].rgba)) return reject(gs);
++    }
++    return ps2_gs_triangle(gs, vertices, depth_test);
++}
++
++int ps2_gallium_upload_color(struct ps2_gs_client *gs, enum pipe_format format,
++                             const struct pipe_box *box, const void *pixels,
++                             size_t source_bytes, size_t stride)
++{
++    if (gs->error) return reject(gs);
++    if (!box || box->x < 0 || box->y < 0 || box->z || box->depth != 1 ||
++        box->width <= 0 || box->height <= 0) return reject(gs);
++    /* No hidden CPU format conversion, alpha rescaling or pixel rendering.
++     * Independent textures and alpha-bearing formats need a resource API. */
++    if ((gs->caps.bits_per_pixel == 32 && format != PIPE_FORMAT_R8G8B8X8_UNORM) ||
++        (gs->caps.bits_per_pixel == 16 && format != PIPE_FORMAT_R5G5B5X1_UNORM))
++        return reject(gs);
++    return ps2_gs_upload(gs, box->x, box->y, box->width, box->height,
++                         pixels, source_bytes, stride);
++}
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_raster.h
+@@ -0,0 +1,17 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_GALLIUM_RASTER_H
++#define PS2_GALLIUM_RASTER_H
++#include "pipe/p_state.h"
++#include "ps2_gs_client.h"
++
++/* GS raster output for a Gallium draw stage. Inputs are transformed, clipped
++ * window-space vertices. This does not advertise a complete OpenGL profile. */
++int ps2_gallium_clear_color(struct ps2_gs_client *, const struct pipe_scissor_state *,
++                            const union pipe_color_union *);
++int ps2_gallium_triangle(struct ps2_gs_client *, const float position[3][4],
++                        const float color[3][4], int depth_test);
++/* Front-buffer transfer for native opaque color formats. This is not yet
++ * pipe_context.texture_subdata or an independent texture resource allocator. */
++int ps2_gallium_upload_color(struct ps2_gs_client *, enum pipe_format,
++                             const struct pipe_box *, const void *, size_t, size_t);
++#endif
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_draw.c
+@@ -0,0 +1,95 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_draw.h"
++#include "ps2_raster.h"
++#include <errno.h>
++#include <stdlib.h>
++#include <string.h>
++
++struct ps2_draw_stage {
++    struct draw_stage base;
++    struct ps2_gs_client *gs;
++    unsigned outputs, position, color;
++    int depth;
++};
++
++static void reject(struct ps2_draw_stage *stage, int error)
++{
++    if (!stage->gs->error) stage->gs->error = error;
++    stage->gs->count = 0;
++}
++
++static void triangle(struct draw_stage *base, struct prim_header *primitive)
++{
++    struct ps2_draw_stage *stage = (struct ps2_draw_stage *)base;
++    if (stage->gs->error) return;
++    if (!stage->outputs || !primitive) { reject(stage, EINVAL); return; }
++    float positions[3][4], colors[3][4];
++    for (unsigned i = 0; i < 3; ++i) {
++        if (!primitive->v[i] || primitive->v[i]->clipmask) {
++            reject(stage, ENOTSUP); return;
++        }
++        memcpy(positions[i], primitive->v[i]->data[stage->position], sizeof(positions[i]));
++        memcpy(colors[i], primitive->v[i]->data[stage->color], sizeof(colors[i]));
++    }
++    ps2_gallium_triangle(stage->gs, positions, colors, stage->depth);
++}
++
++static void unsupported(struct draw_stage *base, struct prim_header *primitive)
++{
++    (void)primitive;
++    reject((struct ps2_draw_stage *)base, ENOTSUP);
++}
++
++static void flush(struct draw_stage *base, unsigned flags)
++{
++    (void)flags;
++    ps2_gs_flush(((struct ps2_draw_stage *)base)->gs);
++}
++
++static void reset_stipple(struct draw_stage *base)
++{
++    (void)base; /* No stippled primitive is accepted by this stage. */
++}
++
++static void destroy(struct draw_stage *base)
++{
++    /* draw_context/pipe_context must fence before destruction. Destruction
++     * itself must never replay or submit commands after a failed flush. */
++    free(base);
++}
++
++struct draw_stage *ps2_draw_stage_create(struct draw_context *draw, struct ps2_gs_client *gs)
++{
++    if (!draw || !gs || gs->fd < 0 || gs->error) { errno = EINVAL; return NULL; }
++    struct ps2_draw_stage *stage = calloc(1, sizeof(*stage));
++    if (!stage) return NULL;
++    stage->gs = gs;
++    stage->base.draw = draw;
++    stage->base.name = "ps2-gs";
++    stage->base.tri = triangle;
++    stage->base.point = unsupported;
++    stage->base.line = unsupported;
++    stage->base.flush = flush;
++    stage->base.reset_stipple_counter = reset_stipple;
++    stage->base.destroy = destroy;
++    return &stage->base;
++}
++
++int ps2_draw_stage_outputs(struct draw_stage *base, unsigned outputs,
++                           unsigned position, unsigned color, int depth)
++{
++    if (!base) { errno = EINVAL; return -1; }
++    struct ps2_draw_stage *stage = (struct ps2_draw_stage *)base;
++    if (!outputs || outputs > PIPE_MAX_SHADER_OUTPUTS || position >= outputs ||
++        color >= outputs || position == color || (depth != 0 && depth != 1)) {
++        reject(stage, EINVAL); errno = stage->gs->error; return -1;
++    }
++    if (depth && !(stage->gs->caps.features & PS2GS_HW_DEPTH16)) {
++        reject(stage, ENOTSUP); errno = stage->gs->error; return -1;
++    }
++    /* A state change must not reinterpret commands queued under prior state. */
++    if (ps2_gs_flush(stage->gs)) return -1;
++    stage->outputs = outputs; stage->position = position;
++    stage->color = color; stage->depth = depth;
++    return 0;
++}
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_draw.h
+@@ -0,0 +1,15 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_GALLIUM_DRAW_H
++#define PS2_GALLIUM_DRAW_H
++#include "draw/draw_pipe.h"
++#include "ps2_gs_client.h"
++
++/* Final primitive stage: Mesa performs vertex transformation and clipping;
++ * the GS performs rasterization. No software fragment renderer is installed.
++ * The eventual pipe_context must reject unsupported fragment/depth state
++ * before drawing. This component alone is not an OpenGL driver.
++ */
++struct draw_stage *ps2_draw_stage_create(struct draw_context *, struct ps2_gs_client *);
++int ps2_draw_stage_outputs(struct draw_stage *, unsigned output_count,
++                           unsigned position_slot, unsigned color_slot, int depth_test);
++#endif

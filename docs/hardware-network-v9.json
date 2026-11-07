@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-03",
+  "source": "user's latest real-console photographs",
+  "machine": "SCPH-90001; Tuna/LaunchELF; PAL; PS2-to-HDMI",
+  "disk_build_id_observed": "relay-v8 PAL ext4 GNU glibc-2.44 cache",
+  "kernel_hash_measured_on_console": false,
+  "authenticated_root_shell_observed": true,
+  "interfaces_observed": [
+    "lo"
+  ],
+  "SMAP_failure_stage": "TX FIFO reset timed out",
+  "SMAP_probe_error": -145,
+  "MIPS_errno": "ETIMEDOUT",
+  "physical_ethernet_packets_confirmed": false,
+  "new_candidate": "ps2-smap with IOP-owned MAC/FIFO/MDIO and SIF packet transport",
+  "new_candidate_physical_result": "subsequently user-confirmed basic Ethernet on SCPH-90001",
+  "note": "An earlier disk build ID does not identify the separately replaced ELF. The photo identifies the hardware reset stage but does not measure its kernel hash. The failure fields above describe the earlier photograph; the follow-up evidence records the successful IOP-backend retest.",
+  "followup_evidence": "docs/hardware-network-validation.json"
+}

@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "bmon",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.bmon",
+  "symbol": "BR2_PACKAGE_BMON",
+  "version": "5.0",
+  "recipe": "package/bmon/bmon.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "6016e41fdda9166b86b09a0ac601a0c453c3b35acdf904c97a8a555459ad73c0",
+      "filename": "bmon-5.0.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/Jafaral/bmon/releases/tag/v5.0"
+}

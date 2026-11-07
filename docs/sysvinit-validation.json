@@ -1,0 +1,162 @@
+{
+  "format_version": 1,
+  "status": "cross-build-and-elf-audit-passed",
+  "sysvinit": {
+    "version": "3.13",
+    "source": "userland/sysvinit",
+    "archive_sha256": "cbaeabddc35a6511b87c87452ee5e87c678a26329c7d7d17fb69a2b42a314d86",
+    "pristine_manifest_unchanged": true
+  },
+  "toolchain": {
+    "target": "mipsr5900el-unknown-linux-gnu",
+    "gcc": "14.4.0",
+    "glibc": "2.41",
+    "flags": [
+      "-Os",
+      "-march=r5900",
+      "-mabi=32",
+      "-msoft-float",
+      "-mno-llsc",
+      "-mfix-r5900"
+    ],
+    "normal_limits_header_mb_len_max": 16,
+    "forced_header_workaround": false
+  },
+  "build": {
+    "jobs": 1,
+    "source_date_epoch": 946684800,
+    "source_build_directory": "isolated copy",
+    "package_installation": "private staging directory",
+    "compiler_sysroot_modified": false,
+    "init_utmp_init_main_define_preserved": true
+  },
+  "elf_audit": {
+    "program_count": 14,
+    "class": "ELF32",
+    "endianness": "little",
+    "machine": "MIPS",
+    "abi": "o32",
+    "isa": "MIPS3 with Toshiba R5900 extension",
+    "floating_point": "soft",
+    "stripped_outputs_audited": true,
+    "runtime_dependency_closure": [
+      "ld.so.1",
+      "libc.so.6",
+      "libcrypt.so.2"
+    ]
+  },
+  "libxcrypt": {
+    "version": "4.4.38",
+    "source_url": "https://github.com/besser82/libxcrypt/releases/download/v4.4.38/libxcrypt-4.4.38.tar.xz",
+    "archive_sha256": "80304b9c306ea799327f01d9a7549bdb28317789182631f1b54f4511b4206dd6",
+    "pinned_recipe": "Buildroot 2025.02.18",
+    "hash_matches_pinned_recipe": true,
+    "hash_algorithms": [
+      "sha512crypt"
+    ],
+    "libraries": [
+      {
+        "path": "/usr/lib/libcrypt.so.2.0.0",
+        "size_bytes": 73476,
+        "sha256": "6de6b2bdddbdff16a3be7b076c41b0422bdcac6049eb18a6f3a8aca287973724",
+        "stripped_size_bytes": 67904,
+        "stripped_sha256": "b9b4afe799ff4b8618b64ef54a85f7f86db881719b7e21f29d9e67009e03e646"
+      }
+    ]
+  },
+  "total_program_size_bytes": 288828,
+  "total_stripped_program_size_bytes": 190640,
+  "programs": {
+    "/sbin/init": {
+      "size_bytes": 51472,
+      "sha256": "fa79e2f2b8232f20b044b07925528c823c455972a2a4eb962c8ececccbdd1ba0",
+      "stripped_size_bytes": 40904,
+      "stripped_sha256": "00e8b956bacd54a0ec3f960571e8be1e8aa310459bcbfa91fb0d1ca39390762c"
+    },
+    "/sbin/halt": {
+      "size_bytes": 22280,
+      "sha256": "66598621a60ff337ef84b0932b30695adfc9bbab592d0053ba478d8074abe31e",
+      "stripped_size_bytes": 15112,
+      "stripped_sha256": "23c2e510c03a49ab251cac971fa330af78b8b79c6439af930ac143147173ce65"
+    },
+    "/sbin/shutdown": {
+      "size_bytes": 29688,
+      "sha256": "78141835ef5bb88405f61332e2da7c950c4108f4be4c0d54b2beed36a1cf5419",
+      "stripped_size_bytes": 21184,
+      "stripped_sha256": "44425a1087031dc0f835f3faf2b242b6b7a9112afdb3f9966b213ca8b51739dc"
+    },
+    "/sbin/runlevel": {
+      "size_bytes": 10084,
+      "sha256": "4e6b01286dc68c382f501db8a90e8371bf5e14f75860de552ac22aaa60a9db4c",
+      "stripped_size_bytes": 4808,
+      "stripped_sha256": "dfd6b1b0be05ee7ad7554c495fddc22f5e5cf7b326abcdaf00d783cf5ee05d71"
+    },
+    "/sbin/killall5": {
+      "size_bytes": 24932,
+      "sha256": "74df67ce79cd42daa6a6680440cd20a4f29535b041da766681aa3613c15f6467",
+      "stripped_size_bytes": 17368,
+      "stripped_sha256": "34727289741282c4c09774d39e7a38a2e2346909164673b773080e1ff68d9c8d"
+    },
+    "/sbin/fstab-decode": {
+      "size_bytes": 9096,
+      "sha256": "94e718066110adf84cb877522fdb20a5c1e27b846a62d33dc14bd34b6b3fc5f4",
+      "stripped_size_bytes": 4108,
+      "stripped_sha256": "06dbcfb50528bb48f6979b8fe89319acf883b86e9e0b53ab0084d26cf2838fe3"
+    },
+    "/sbin/logsave": {
+      "size_bytes": 13900,
+      "sha256": "29645cb91f2814c7a55b575e0585ca5eccd8f5400e3890d2bfcefc6de6bbaee7",
+      "stripped_size_bytes": 7840,
+      "stripped_sha256": "2aa12b643dc953609e22abf65d7cf28c8c9abdba122649ac5a52bf510dcb11dc"
+    },
+    "/sbin/sulogin": {
+      "size_bytes": 31160,
+      "sha256": "e643411968f6791c061704ef0a5ea3e5227ae8c4806b37e9c4d9300fe51c739e",
+      "stripped_size_bytes": 21172,
+      "stripped_sha256": "741bc24db19a21c2f6c8413b6a2cd7c2e444b4323869c17bf4e7d16618908144"
+    },
+    "/sbin/bootlogd": {
+      "size_bytes": 21916,
+      "sha256": "5d185d37f69cba0a353773c8329ece046d19ef9027da12bcb7cc297b6c8f1ed3",
+      "stripped_size_bytes": 14580,
+      "stripped_sha256": "cffbde2c6808ffb76defe0c23e66387ec79cec21abcd5eec3444c6cd1958aeef"
+    },
+    "/usr/bin/last": {
+      "size_bytes": 21688,
+      "sha256": "85d4d4591b171370f1a44ea83881dd5014bb112dccfd2d7d8df3e2a01c964065",
+      "stripped_size_bytes": 14512,
+      "stripped_sha256": "217dde489e316f1e1cbdb47af01cc16739ff9b75c2aeda6dec3e3cda72c72baf"
+    },
+    "/usr/bin/mesg": {
+      "size_bytes": 10604,
+      "sha256": "cbb017e4aebdf420364d9230573ae41a340b0ed28e98174ca745a3895e2e1986",
+      "stripped_size_bytes": 5204,
+      "stripped_sha256": "86031fbf7c7d8b348ac1c90a7948c9e352eeb3f7de4372e012c1cab74cf7a152"
+    },
+    "/usr/bin/readbootlog": {
+      "size_bytes": 10940,
+      "sha256": "735a88a4617150f0d85cff9c4f7c2ec078351de6f00ae87842fe9646cc5c82ba",
+      "stripped_size_bytes": 5612,
+      "stripped_sha256": "d8746831ace67128a739c0490271debf7a5de9f1876fcd7c9e530cc1515f2ae0"
+    },
+    "/usr/bin/utmpdump": {
+      "size_bytes": 15192,
+      "sha256": "3d7ca6ddc9f64400b3258c578e30122747222d9bfa5d09581c96840857488a29",
+      "stripped_size_bytes": 9060,
+      "stripped_sha256": "aec1ce3edc2dc9e0e05083a88388f406c729542e63b04075ba13e5dd5f66665d"
+    },
+    "/usr/bin/wall": {
+      "size_bytes": 15876,
+      "sha256": "9c116d8c07b90bb8bd941ca9b4f5f7b90020ce09a5661466c9d37a9e28838443",
+      "stripped_size_bytes": 9176,
+      "stripped_sha256": "e0e9746578cd78fffb4eace61cfde120006c23a04bec708aba934662c5859e21"
+    }
+  },
+  "limitations": [
+    "No target program was executed; PS2 hardware boot and login are untested.",
+    "This isolated library enables SHA-512 crypt only; the production Buildroot package has its own hash configuration.",
+    "Dependency resolution was checked against private libxcrypt staging and the compiler glibc sysroot, not a complete rootfs image.",
+    "Binary file sizes do not measure runtime RAM usage."
+  ],
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

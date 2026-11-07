@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "name": "glibc",
+  "engine": "toolchain/bootstrap.py",
+  "source": {
+    "name": "glibc",
+    "version": "2.44",
+    "url": "https://ftp.gnu.org/gnu/glibc/glibc-2.44.tar.xz",
+    "algorithm": "sha256",
+    "digest": "37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667",
+    "hash_source": "SHA256 of official release archive authenticated with its GNU detached signature",
+    "release_source": "https://sourceware.org/pipermail/libc-announce/2026/000058.html",
+    "signature": {
+      "url": "https://ftp.gnu.org/gnu/glibc/glibc-2.44.tar.xz.sig",
+      "key_fingerprint": "FD19E6D31B192EE4DC63EAD3DC2B16215ED5412A",
+      "keyring_url": "https://ftp.gnu.org/gnu/gnu-keyring.gpg",
+      "keyring_sha256": "b136fbe57ade4ee5270ca66c402cae7b50349fd07646b5b3de7962d58d4df608",
+      "verified_on": "2026-10-02"
+    }
+  },
+  "source_archive": "../../sources/glibc-2.44.tar.xz"
+}

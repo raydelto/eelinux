@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "date": "2026-10-03",
+  "scope": "bounded GS image uploads; complete Xorg/Mesa desktop unfinished",
+  "reference": "https://psi-rockin.github.io/ps2tek/",
+  "kernel": {
+    "sha256": "b3435acb777fdf546d1b86eb80e29d194ad54f8052573a23689badc497ffb813"
+  },
+  "kernel_build_log": {
+    "sha256": "b7f3f548d0edf4ab17cf80df28fd5b3845698e8c9c33407d8c573734697fa959"
+  },
+  "kernel_source_sha256": {
+    "kernel/new-drivers/ps2fb-gs.h": "870127417a38999420da6c7603266ab27266eee26219561b12b388dedec7ddf8",
+    "kernel/new-drivers/ps2fb-gs-image.h": "9a3a67d79e94775a137d79ce83c11cbb5da5c1b5a61aef2d0371e86ad3518665",
+    "kernel/new-drivers/ps2-gs.h": "5e7e0e97021db4d90b164a56dcbbef599f8d7d37ff694d61a95c88b890ae2cd7"
+  },
+  "kernel_patch": {
+    "path": "kernel/patches/ps2-gs-commands.patch",
+    "sha256": "368bbbba400993588a5265066f746a3f6c8bdb9effa6c845a8c4b39fb38e565a"
+  },
+  "patch_application": "reverse previous patch, clean forward check/application, exact source comparison passed",
+  "compiled_Xorg_Mesa_components": {
+    "sha256": "73f78e1c2c05d57f7c7ec72c6f002b916377674c875bcf83e31d7b1497574d9b"
+  },
+  "generic_userland_patches": {
+    "sha256": "67cdc967d0e679bf4f171deaf216bb7b75c2f805dd4646e707013fe3f2292fd5"
+  },
+  "host_checks": {
+    "new_component_cases": 17,
+    "result": "passed",
+    "sanitizers": [
+      "ASan",
+      "UBSan"
+    ],
+    "unchanged_primitive_validator": "passed",
+    "evidence_kind": "transcription of successful tool output; no additional run"
+  },
+  "R5900_Linux_user_checks": {
+    "cases": 17,
+    "result": "passed",
+    "GPU_syscalls": "wrapped",
+    "scope": "transport/callback behavior and pure kernel packet encodings, not OpenGL conformance"
+  },
+  "diagnostic_lifecycle_checks": {
+    "host_sanitizer_cases": 3,
+    "result": "passed",
+    "R5900_cases": {
+      "sha256": "2c9fdb9d2673c3310b0116ed66be52a0a2cbc52ce9b3d6b6a338dbf44be05c40"
+    },
+    "scope": "real diagnostic success, hardware failure and SIGINT paths with wrapped device calls"
+  },
+  "image": {
+    "sha256": "3908c0ad3d20704d5160771c39835d69a7528c9228db7d529d03be50ea8d4049"
+  },
+  "image_assembly_checks": {
+    "diagnostic_fat_readback_byte_exact": {},
+    "fat32_bpb_and_cluster_count": "passed",
+    "fsck_fat_read_only": "passed",
+    "kernel_fat_readback_byte_exact": true,
+    "readme_fat_readback_byte_exact": true,
+    "root_payload_byte_exact": true,
+    "source_inputs_unchanged": true
+  },
+  "upload_probe": {
+    "sha256": "21adbeffa768a10c471d15e4f06bda15b642d665a1bfbb535a437adf03ad3d71"
+  },
+  "controlled_PCSX2_run": {
+    "log": {
+      "sha256": "5e6d2d32d13ad65e56bfbe01a5d08e4f41fbfcf467093bd3077de2ce9b11cf0b"
+    },
+    "process_result": {
+      "sha256": "b6e630f4d3f9ab92dfb880841ffb409fdebadd69cf88527fed699f111fd6a9e4"
+    },
+    "milestones": [
+      "EXT4-fs (sda2): mounted filesystem",
+      "720x576 32bpp features=1f",
+      "ps2-gs: command/fence test PASSED",
+      "ps2-gs: image transfer/fence PASSED",
+      "ps2-smap ps2-smap eth0: Link is Up"
+    ],
+    "stop": "120-second controlled timeout",
+    "output_pixels_inspected": false,
+    "authenticated_login_tested": false
+  },
+  "physical_image_upload_tested": true,
+  "physical_observation": {
+    "date": "2026-10-03",
+    "source": "user report",
+    "console": "SCPH-90001",
+    "command": "ps2-gs-upload-test",
+    "result": "image displayed, then returned to the text terminal; working good",
+    "artifact_hash_read_back_from_console": false,
+    "pixel_readback_or_format_sweep": false
+  },
+  "working_artifacts_preserved": {
+    "/home/machaddr/.cache/eelinux/sources/linux-7.2.8-ps2-gs/drivers/video/fbdev/ps2fb-gs.h": "6de6d8d8077ae46fa9a5fe6e7f8f4c9a4d51718281bc24b77a2be69164072079",
+    "/home/machaddr/.cache/eelinux/sources/linux-7.2.8-ps2-gs/include/uapi/linux/ps2-gs.h": "7667b3d5bfccc9d7b3446674fa5d2115a5e969b89e53f258dd91553018236557"
+  },
+  "diagnostic_logging": "GNU tee saves /run log and writes /dev/kmsg; avoid short-lived polled ttyS0 writers",
+  "no_software_rasterizer": true,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL": false,
+  "remaining": [
+    "independent GS surfaces and ownership",
+    "glyph/composite operations",
+    "DDX screen/cursor/VT setup",
+    "Mesa screen/context/resources",
+    "textures and cache invalidation",
+    "GLX integration and existing OpenGL application tests",
+    "upload format sweep and pixel readback"
+  ],
+  "physical_hardware_followup": {
+    "date": "2026-10-04",
+    "evidence": "docs/graphics-hardware-validation.json",
+    "evidence_sha256": "ef10249c0b5c23f171d1bc7390788c271086b4caaeff929984f5f6c0fe42e1f3",
+    "diagnostics": [
+      "ps2-gs-upload-test"
+    ],
+    "diagnostic_scenes_tested_on_physical_hardware": true,
+    "result": "passed according to the user on real PlayStation 2 hardware",
+    "evidence_kind": "explicit user verification report; device logs not captured",
+    "earlier_fields_preserved": true,
+    "scope": "normal diagnostic scenes on the user's PS2; not all host/mock cases or a complete desktop",
+    "artifact_hash_read_back_on_console": false,
+    "GPU_pixel_readback": false,
+    "complete_Xorg_TWM_or_OpenGL_session_tested": false
+  },
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

@@ -1,0 +1,10 @@
+config BR2_PACKAGE_EELINUX_TCL86_COMPAT
+	bool "Tcl 8.6 compatibility for stable Expect"
+	depends on BR2_USE_MMU
+	depends on BR2_TOOLCHAIN_HAS_THREADS
+	depends on !BR2_STATIC_LIBS
+	select BR2_PACKAGE_ZLIB
+	help
+	  Maintained Tcl 8.6 runtime for stable Expect, alongside current Tcl.
+	  Installs versioned libraries, a versioned interpreter, private headers
+	  and tcl86.pc without replacing the default Tcl interpreter or SDK.

@@ -1,0 +1,1 @@
+# Project additions to Buildroot's device table. No BusyBox executable is installed.

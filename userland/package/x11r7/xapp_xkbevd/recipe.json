@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xkbevd",
+  "kind": "application",
+  "program": "xkbevd",
+  "version": "1.1.6",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xkbevd-1.1.6.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xkbevd-1.1.6.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "d9b401f84cf8568342ff63b1ffc6aecd3877579256d89fe6408645e2741b073e",
+      "filename": "xkbevd-1.1.6.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "5120909376d11c1b153198ba887c1af8c0398f2a7ded8ec85402418f9837730cc4ca689773f326f4f74dc348942644ab0159bd2c973de0007d21a4f14731ac1a",
+      "filename": "xkbevd-1.1.6.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

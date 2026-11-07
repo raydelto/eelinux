@@ -1,0 +1,940 @@
+{
+  "schema": 1,
+  "date": "2026-11-06",
+  "packages": {
+    "acl": {
+      "version": "2.4.0",
+      "filename": "acl-2.4.0.tar.xz",
+      "url": "https://download-mirror.savannah.nongnu.org/releases/acl/acl-2.4.0.tar.xz",
+      "sha256": "e661131456d2708a01c614a0f400e11d7d1bfaeb6f3e74b75bb980b72f0161a3",
+      "version_url": "https://download.savannah.nongnu.org/releases/acl/"
+    },
+    "atftp": {
+      "version": "0.8.1",
+      "filename": "atftp-0.8.1.tar.gz",
+      "url": "https://downloads.sourceforge.net/project/atftp/atftp-0.8.1.tar.gz",
+      "sha256": "96cbdbd2f16615c89c9db36be9b306de176d9a1c03dcb8cb777625bfe068bc2b",
+      "version_url": "https://sourceforge.net/projects/atftp/files/",
+      "remove_patches": {
+        "0001-tftpd_pcre.c-fix-build-with-pcre2-10.43.patch": "5f5ea9b2e77a3eab864280715a84c9b69eb89d0b574723b7d29b73ddccd3c518"
+      },
+      "patch_retirement_reason": "Upstream 0.8.1 passes a nonconst PCRE2_UCHAR pointer to pcre2_substring_list_free; the obsolete const cast is absent."
+    },
+    "attr": {
+      "version": "2.6.0",
+      "filename": "attr-2.6.0.tar.xz",
+      "url": "https://download-mirror.savannah.nongnu.org/releases/attr/attr-2.6.0.tar.xz",
+      "sha256": "6c8a2148a7b85043b68492bce43316b0e2e214fc4e628c7ede078e76e216330b",
+      "version_url": "https://download-mirror.savannah.nongnu.org/releases/attr/",
+      "remove_patches": {
+        "0002-configure.ac-add-detection-of-symver-gcc-attribute.patch": "615a21bde80f8c72513a41ecf4bfd6dda36df20be052b59a1306deadfd1ab01a",
+        "0003-tools-attr.c-Add-missing-libgen.h-include-for-basena.patch": "8d8a867ff37d7d5e97e32ffd374fadaa5ed74603dc58331880d53525d3d32e5b"
+      },
+      "patch_retirement_reason": "Latest pinned upstream source contains the reviewed fixes; exact source semantic markers checked in audit_cli_patch_retirement.py"
+    },
+    "bash-completion": {
+      "version": "2.18.0",
+      "filename": "bash-completion-2.18.0.tar.xz",
+      "url": "https://github.com/scop/bash-completion/releases/download/2.18.0/bash-completion-2.18.0.tar.xz",
+      "sha256": "88bcf85124f77f74f2f2f8bcd16ac4382d807a827ede742a64940c7116aea33f",
+      "version_url": "https://github.com/scop/bash-completion/releases/latest"
+    },
+    "bmon": {
+      "version": "5.0",
+      "filename": "bmon-5.0.tar.gz",
+      "url": "https://github.com/Jafaral/bmon/releases/download/v5.0/bmon-5.0.tar.gz",
+      "sha256": "6016e41fdda9166b86b09a0ac601a0c453c3b35acdf904c97a8a555459ad73c0",
+      "version_url": "https://github.com/Jafaral/bmon/releases/tag/v5.0",
+      "variables": {
+        "BMON_AUTORECONF": "YES"
+      }
+    },
+    "bridge-utils": {
+      "version": "1.7.1",
+      "filename": "bridge-utils-1.7.1.tar.xz",
+      "url": "https://www.kernel.org/pub/linux/utils/net/bridge-utils/bridge-utils-1.7.1.tar.xz",
+      "sha256": "a61d8be4f1a1405c60c8ef38d544f0c18c05b33b9b07e5b4b31033536165e60e",
+      "version_url": "https://www.kernel.org/pub/linux/utils/net/bridge-utils/"
+    },
+    "c-ares": {
+      "version": "1.34.9",
+      "filename": "c-ares-1.34.9.tar.gz",
+      "url": "https://github.com/c-ares/c-ares/releases/download/v1.34.9/c-ares-1.34.9.tar.gz",
+      "sha256": "9364b70a12eb59a06830fb488d9357f90100dff0d98b23ea3593a183d43e6f2f",
+      "version_url": "https://github.com/c-ares/c-ares/releases/tag/v1.34.9",
+      "recipe_override": "userland/package/c-ares/latest-buildroot-recipe.txt",
+      "compatibility_reason": "Use upstream CMake tool installation to remove build-only executable RPATH automatically; preserve threaded sharedlibrary plus matching static SDK archive and install both real DNS clients"
+    },
+    "cifs-utils": {
+      "version": "7.9",
+      "filename": "cifs-utils-7.9.tar.bz2",
+      "url": "https://download.samba.org/pub/linux-cifs/cifs-utils/cifs-utils-7.9.tar.bz2",
+      "sha256": "9f3750f402520b15c2c8eb52fd485df6ea77e5e66fe5e39ce8ac4386c32c0296",
+      "version_url": "https://download.samba.org/pub/linux-cifs/cifs-utils/"
+    },
+    "conntrack-tools": {
+      "version": "1.4.9",
+      "filename": "conntrack-tools-1.4.9.tar.xz",
+      "url": "https://www.netfilter.org/pub/conntrack-tools/conntrack-tools-1.4.9.tar.xz",
+      "sha256": "c15afe488a8d408c9d6d61e97dbd19f3c591942f62c13df6453a961ca4231cae",
+      "version_url": "https://www.netfilter.org/pub/conntrack-tools/"
+    },
+    "cpulimit": {
+      "version": "0.2",
+      "filename": "cpulimit-0.2.tar.gz",
+      "url": "https://github.com/opsengine/cpulimit/archive/v0.2/cpulimit-0.2.tar.gz",
+      "sha256": "64312f9ac569ddcadb615593cd002c94b76e93a0d4625d3ce1abb49e08e2c2da",
+      "version_url": "https://api.github.com/repos/opsengine/cpulimit/tags"
+    },
+    "dialog": {
+      "version": "1.3-20260721",
+      "filename": "dialog-1.3-20260721.tgz",
+      "url": "https://invisible-mirror.net/archives/dialog/dialog-1.3-20260721.tgz",
+      "sha256": "62bdf59057d4f760a1cc2217827f07887b4a3eebf694c25eacd4803d2171cdc6",
+      "version_url": "https://invisible-mirror.net/archives/dialog/"
+    },
+    "dos2unix": {
+      "version": "7.5.7",
+      "filename": "dos2unix-7.5.7.tar.gz",
+      "url": "https://downloads.sourceforge.net/project/dos2unix/dos2unix/7.5.7/dos2unix-7.5.7.tar.gz",
+      "sha256": "669ee27120ae71589f638fe3a167d6ea54f8633f5ab1b282551bd7a7c9510dfa",
+      "version_url": "https://dos2unix.sourceforge.io/"
+    },
+    "dosfstools": {
+      "version": "4.2",
+      "filename": "dosfstools-4.2.tar.gz",
+      "url": "https://github.com/dosfstools/dosfstools/releases/download/v4.2/dosfstools-4.2.tar.gz",
+      "sha256": "64926eebf90092dca21b14259a5301b7b98e7b1943e8a201c7d726084809b527",
+      "version_url": "https://github.com/dosfstools/dosfstools/releases/tag/v4.2"
+    },
+    "e2fsprogs": {
+      "version": "1.47.4",
+      "filename": "e2fsprogs-1.47.4.tar.xz",
+      "url": "https://www.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.4/e2fsprogs-1.47.4.tar.xz",
+      "sha256": "fd5bf388cbdbe006a3d3b318d983b2948382440acc85a87f1e7d108653e8db0b",
+      "version_url": "https://www.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.4/"
+    },
+    "eelinux-openssl3-compat": {
+      "version": "3.5.9",
+      "filename": "openssl-3.5.9.tar.gz",
+      "url": "https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz",
+      "sha256": "603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a",
+      "version_url": "https://openssl-library.org/source/"
+    },
+    "eelinux-tcl86-compat": {
+      "version": "8.6.18",
+      "filename": "tcl8.6.18-src.tar.gz",
+      "url": "https://downloads.sourceforge.net/project/tcl/Tcl/8.6.18/tcl8.6.18-src.tar.gz",
+      "sha256": "14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e",
+      "version_url": "https://www.tcl-lang.org/software/tcltk/download.html",
+      "release_policy": "Latest maintained Tcl 8.6 compatibility ABI for stable Expect; coinstalled with primary Tcl 9.1.0"
+    },
+    "ethtool": {
+      "version": "7.2",
+      "filename": "ethtool-7.2.tar.xz",
+      "url": "https://www.kernel.org/pub/software/network/ethtool/ethtool-7.2.tar.xz",
+      "sha256": "44256ddf4631ed08d816b7b8725f4b2e0f05e96b8c7ca64ee5c81449da2b6507",
+      "version_url": "https://www.kernel.org/pub/software/network/ethtool/"
+    },
+    "expect": {
+      "version": "5.45.4",
+      "filename": "expect5.45.4.tar.gz",
+      "url": "https://downloads.sourceforge.net/project/expect/Expect/5.45.4/expect5.45.4.tar.gz",
+      "sha256": "49a7da83b0bdd9f46d04a04deec19c7767bb9a323e40c4781f89caf760b92c34",
+      "version_url": "https://core.tcl-lang.org/expect/home",
+      "variables": {
+        "EXPECT_DEPENDENCIES": "eelinux-tcl86-compat",
+        "EXPECT_CONF_OPTS": "--enable-shared --disable-rpath --with-tcl=$(BUILD_DIR)/eelinux-tcl86-compat-8.6.18/unix"
+      }
+    },
+    "file": {
+      "version": "5.48",
+      "filename": "file-5.48.tar.gz",
+      "url": "https://www.astron.com/pub/file/file-5.48.tar.gz",
+      "sha256": "ed14656883b23a364b4057c05595d93252da9bc473d30106519519d0da141283",
+      "version_url": "https://www.astron.com/pub/file/"
+    },
+    "fping": {
+      "version": "5.5",
+      "filename": "fping-5.5.tar.gz",
+      "url": "https://github.com/schweikert/fping/releases/download/v5.5/fping-5.5.tar.gz",
+      "sha256": "15c4e32b6c55ff105bafe03e8c91c7ca1b2eda31bf9a7127326bb87887ee18fe",
+      "version_url": "https://github.com/schweikert/fping/releases/tag/v5.5"
+    },
+    "htop": {
+      "version": "3.5.3",
+      "filename": "htop-3.5.3.tar.xz",
+      "url": "https://github.com/htop-dev/htop/releases/download/3.5.3/htop-3.5.3.tar.xz",
+      "sha256": "a8b164386494cb85bb255a415a3f5f80afe7a0c4491da5d113b3a0f951087e65",
+      "version_url": "https://github.com/htop-dev/htop/releases/latest"
+    },
+    "iftop": {
+      "version": "1.0pre4",
+      "filename": "iftop-1.0pre4.tar.gz",
+      "url": "https://www.ex-parrot.com/pdw/iftop/download/iftop-1.0pre4.tar.gz",
+      "sha256": "f733eeea371a7577f8fe353d86dd88d16f5b2a2e702bd96f5ffb2c197d9b4f97",
+      "version_url": "https://www.ex-parrot.com/pdw/iftop/"
+    },
+    "ipcalc": {
+      "version": "1.2.0",
+      "filename": "ipcalc-1.2.0.tar.bz2",
+      "url": "https://gitlab.com/ipcalc/ipcalc/-/archive/1.2.0/ipcalc-1.2.0.tar.bz2",
+      "sha256": "4b8f43dd61f2ce3c18ca0e2def2adc54ade3be4d4d1ff302f22ad0aede4b226a",
+      "version_url": "https://gitlab.com/ipcalc/ipcalc/-/releases"
+    },
+    "iperf": {
+      "version": "2.2.1",
+      "filename": "iperf-2.2.1.tar.gz",
+      "url": "https://downloads.sourceforge.net/project/iperf2/iperf-2.2.1.tar.gz",
+      "sha256": "754ab0a7e28033dbea81308ef424bc7df4d6e2fe31b60cc536b61b51fefbd8fb",
+      "version_url": "https://sourceforge.net/projects/iperf2/files/"
+    },
+    "iperf3": {
+      "version": "3.22",
+      "filename": "iperf-3.22.tar.gz",
+      "url": "https://github.com/esnet/iperf/releases/download/3.22/iperf-3.22.tar.gz",
+      "sha256": "1c0d0fb02c52626111d6e132db80edfbf27bbaff8bd9245df2a371dcb0b35a92",
+      "version_url": "https://github.com/esnet/iperf/releases/tag/3.22",
+      "remove_patches": {
+        "0001-Fix-off-by-one-head-overflow-in-auth.patch": "ec77f0ff3d5a558878298bde1c84c02ea2acd809cbeae22026878d562e57cdba",
+        "0002-Prevent-crash-due-to-assertion-failures-on-malformed-authentication-attempt.patch": "f7995764c41ad2df7628b978f8d97bc53cdf9a89aaad88c8184c785dea4320a5"
+      },
+      "patch_retirement_reason": "Upstream 3.22 contains the extra plaintext terminator allocation, rejects failed decryptions, frees allocations and removed the malformed-auth assertion."
+    },
+    "iproute2": {
+      "version": "7.3.0",
+      "filename": "iproute2-7.3.0.tar.xz",
+      "url": "https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/iproute2-7.3.0.tar.xz",
+      "sha256": "5c1789d290bba048a6135ed1ab81b0402dd0fb528d1f1421765c42b1fc3d6289",
+      "version_url": "https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/",
+      "roots": [
+        "iproute2-7.3.0"
+      ],
+      "remove_patches": {
+        "0001-nstat-NULL-Dereference-when-no-entries-specified.patch": "d146f6242bcecfd7bc38f823d519a0df5d559a9a1bde225739a063ba8ab0e36e"
+      },
+      "patch_retirement_reason": "Exact reverse patch check passes against upstream7.3.0; nstat fix already present"
+    },
+    "ipset": {
+      "version": "7.24",
+      "filename": "ipset-7.24.tar.bz2",
+      "url": "https://www.netfilter.org/pub/ipset/ipset-7.24.tar.bz2",
+      "sha256": "fbe3424dff222c1cb5e5c34d38b64524b2217ce80226c14fdcbb13b29ea36112",
+      "version_url": "https://www.netfilter.org/pub/ipset/",
+      "remove_patches": {
+        "0001-ipset-fix-implicit-declaration-of-function-basename.patch": "5fbe7192da23712f298f937fe7f4daa0a3a756d509bf6134bcac1be5bfd671d0"
+      },
+      "patch_retirement_reason": "Exact reverse patch check passes against 7.24: fix already upstream."
+    },
+    "iptables": {
+      "version": "1.8.13",
+      "filename": "iptables-1.8.13.tar.xz",
+      "url": "https://www.netfilter.org/pub/iptables/iptables-1.8.13.tar.xz",
+      "sha256": "1afcd33da9e8f913ace6a2126788162e207e26f5d5e29c6573c0e581ffc58b99",
+      "version_url": "https://www.netfilter.org/pub/iptables/",
+      "remove_patches": {
+        "0001-nft-fix-interface-comparisons-in-C-commands.patch": "9cca9e3536c1f0ebfa18d3de80fbea064c0a931e51690a025c691a5eae5289cf"
+      },
+      "patch_retirement_reason": "Exact reverse patch check passes against 1.8.13: fix already upstream."
+    },
+    "iptraf-ng": {
+      "version": "1.2.2",
+      "filename": "iptraf-ng-1.2.2.tar.gz",
+      "url": "https://github.com/iptraf-ng/iptraf-ng/archive/refs/tags/v1.2.2.tar.gz",
+      "sha256": "75fd653745ea0705995c25e6c07b34252ecc2563c6a91b007a3a8c26f29cc252",
+      "version_url": "https://github.com/iptraf-ng/iptraf-ng/releases/tag/v1.2.2",
+      "variables": {
+        "IPTRAF_NG_AUTORECONF": "YES"
+      }
+    },
+    "iputils": {
+      "version": "20250605",
+      "filename": "iputils-20250605.tar.gz",
+      "url": "https://github.com/iputils/iputils/releases/download/20250605/iputils-20250605.tar.gz",
+      "sha256": "475c643e5f55b302286267b97d3ce0f47ca3489ced8aa0401b1eeb1e68228d6b",
+      "version_url": "https://github.com/iputils/iputils/releases/tag/20250605",
+      "roots": [
+        "iputils-20250605"
+      ]
+    },
+    "iw": {
+      "version": "6.17",
+      "filename": "iw-6.17.tar.xz",
+      "url": "https://www.kernel.org/pub/software/network/iw/iw-6.17.tar.xz",
+      "sha256": "7d182e498289ab39b257da6780d562e415377107f50358ee5b55b8cfe40b1e33",
+      "version_url": "https://www.kernel.org/pub/software/network/iw/"
+    },
+    "jq": {
+      "version": "1.8.2",
+      "filename": "jq-1.8.2.tar.gz",
+      "url": "https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-1.8.2.tar.gz",
+      "sha256": "71b8d6e8f5fe81f6c6d0d110e3892251f6ce76ed095abd315e26e6e1193af3af",
+      "version_url": "https://github.com/jqlang/jq/releases/tag/jq-1.8.2",
+      "roots": [
+        "jq-1.8.2"
+      ],
+      "remove_patches": {
+        "0001-CVE-2024-23337.patch": "6b1a41ca57311acd48c1c0c7c0b4f6c2a5c1ae87b5dbc2aee574ace48fe2de0e",
+        "0002-CVE-2024-53427.patch": "2de7574cfb7bcf40b1064f7ae111997d9708e8ad895dba1c01c0ea4101ddf0fb",
+        "0003-CVE-2025-48060.patch": "21b674ebc1677f8c01c4b057296db56cd0c98969a0af7ef6be26f19adda7bcca",
+        "0004-fix-out-of-bounds-read-in-jv-parse-sized.patch": "dcf279cb44c563b3d16dcd4eaa0d0bb86b933d0a0e8c75b949d2cb3339488c24",
+        "0005-fix-NUL-truncation-in-the-JSON-parser.patch": "11d69d1bb6499589e2a2a1b920af1303a3b86d0a03c9d7a1236ac59af0411150",
+        "0006-limit-path-depth-to-prevent-stack-overflow.patch": "254e7c83e09382d40168ca48d4969c82ea853f08d40bc0bd7dab3719e55567ec",
+        "0007-fix-heap-buffer-overflow-in-jvp-string-append-and-jvp-string-copy-replace-bad.patch": "b3c27bbbaf358ffa81b178e3e165b54d1bb48a7fadee16f199f9c615eef38cb4",
+        "0008-randomize-hash-seed-to-mitigate-hash-collision-DoS-attacks.patch": "4a02017d5219952e7b62d8598fc360ca14a2d9786faf6293da857b8a3d27b9cc",
+        "0009-limit-the-containment-check-depth.patch": "2d821dfcf5c7fe6cd6b481c04518082ff2b49207f464d7f8a588817e0349989f",
+        "0010-fix-NUL-truncation-in-program-files-loaded-with-f.patch": "108993eec3519e7ffd1bb08a06af7bafefcf05adc99ee020443f5e9db23d6581",
+        "0011-fix-signed-int-overflow-in-stack-reallocate.patch": "dd29e0106ce2a66fe477931dc28a5c5d9e9a6ce203dbd52bb0793fd57d8163c0",
+        "0012-reject-numeric-literals-longer-than-DEC-MAX-DIGITS.patch": "db81bdbf276b9e17e78b9c2c651d4214176cb998ac4ab0fdedbf3575483c9622",
+        "0013-limit-recursive-object-merge-depth-to-prevent-stack-overflow.patch": "8d1b1fb6834bec26dac555e9072ec5f2cc4f6aea3e3e403d15bdfd096737ec2b",
+        "0014-detect-circular-module-imports-to-prevent-stack-overflow.patch": "fdda113ed62129e9b5f90d8357e4351242616055a011f386ba44c84aa6349505",
+        "0015-fix-heap-buffer-overflow-in-raw-file-loading.patch": "877e07dbff320b0af90643bddcd0a5c190a2dd9453b4bfd36fdd67557cd7a288",
+        "0016-tighten-string-length-bounds-and-propagate-invalid-jv-in-implode.patch": "578a1035ab92f288187ad7f6b956dc106ba42a618029f21df6a054346ac792ad"
+      },
+      "patch_retirement_reason": "All16 upstream security fixes retained; exact reverse checks and changed-context semantic marker audit in build/network-work/jq-latest-retirement.json"
+    },
+    "kmod": {
+      "version": "34.3",
+      "filename": "kmod-34.3.tar.xz",
+      "url": "https://www.kernel.org/pub/linux/utils/kernel/kmod/kmod-34.3.tar.xz",
+      "sha256": "985554de49c21a58abd68c6cda2251384e1e5bb08b3b14c7f02b51f4c90c2958",
+      "version_url": "https://www.kernel.org/pub/linux/utils/kernel/kmod/",
+      "remove_patches": {
+        "0001-fix-O_CLOEXEC.patch": "6e679b3c16d1908100adf07a4569e19fa0af5704dd5a61b6355ab92ad2f952cc"
+      },
+      "patch_retirement_reason": "The rejected upstream O_CLOEXEC=0 workaround targeted Linux headers older than 2.6.23. This project requires headers >=4.14 and its qualified target provides real O_CLOEXEC, so preserve close-on-exec semantics rather than reintroducing the obsolete fallback."
+    },
+    "less": {
+      "version": "710",
+      "filename": "less-710.tar.gz",
+      "url": "https://www.greenwoodsoftware.com/less/less-710.tar.gz",
+      "sha256": "d1008fb78dcae1323ddab664bcb352a61f022b1b131bd8018548e021d975ec7a",
+      "version_url": "https://www.greenwoodsoftware.com/less/index.html"
+    },
+    "lftp": {
+      "version": "4.9.3",
+      "filename": "lftp-4.9.3.tar.xz",
+      "url": "https://lftp.yar.ru/ftp/lftp-4.9.3.tar.xz",
+      "sha256": "96e7199d7935be33cf6b1161e955b2aab40ab77ecdf2a19cea4fc1193f457edc",
+      "version_url": "https://lftp.yar.ru/ftp/",
+      "remove_patches": {
+        "0001-Fix-build-with-LibreSSL-following-commit-537f37898.patch": "257b1be86cb2d0e1fdbac55f3a28b8d5ad50bb401d2e23d7a77ec964db51fe40",
+        "0002-src-lftp_ssl.c-fix-build-with-libressl-2.7.0.patch": "5d00a2dab559261f099fa89eefca4b33ad30d92310e64f4939a71a5a571dc3d9"
+      },
+      "patch_retirement_reason": "Upstream 4.9.3 contains version-gated LibreSSL compatibility replacing the older unconditional guards; second patch reverses exactly."
+    },
+    "libarchive": {
+      "version": "3.8.11",
+      "filename": "libarchive-3.8.11.tar.xz",
+      "url": "https://github.com/libarchive/libarchive/releases/download/v3.8.11/libarchive-3.8.11.tar.xz",
+      "sha256": "a3dc0872b1b39da34dc18ef1b944f0f11ffd37425d70ae04be679279f1cf43d2",
+      "version_url": "https://github.com/libarchive/libarchive/releases/latest"
+    },
+    "libcurl": {
+      "version": "8.23.0",
+      "filename": "curl-8.23.0.tar.xz",
+      "url": "https://curl.se/download/curl-8.23.0.tar.xz",
+      "sha256": "8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5",
+      "version_url": "https://curl.se/download/"
+    },
+    "libidn2": {
+      "version": "2.3.8",
+      "filename": "libidn2-2.3.8.tar.gz",
+      "url": "https://ftp.gnu.org/gnu/libidn/libidn2-2.3.8.tar.gz",
+      "sha256": "f557911bf6171621e1f72ff35f5b1825bb35b52ed45325dcdee931e5d3c0787a",
+      "version_url": "https://ftp.gnu.org/gnu/libidn/"
+    },
+    "libldns": {
+      "version": "1.9.2",
+      "filename": "ldns-1.9.2.tar.gz",
+      "url": "https://www.nlnetlabs.nl/downloads/ldns/ldns-1.9.2.tar.gz",
+      "sha256": "b524fa21994b6e834200ceb8c27f1b84bda5982fe35706f058196c079db94d5d",
+      "version_url": "https://www.nlnetlabs.nl/downloads/ldns/",
+      "remove_patches": {
+        "0001-fix-cve-2026-10846.patch": "5fc43e204619a387e55ec5116c9a749cb30dc34aa72ee870671239e4f7c15901"
+      },
+      "patch_retirement_reason": "Exact reverse patch check passes against 1.9.2: security fix already upstream.",
+      "variables": {
+        "LIBLDNS_DEPENDENCIES": "eelinux-openssl3-compat",
+        "LIBLDNS_CONF_OPTS": "--with-ssl=$(STAGING_DIR)/usr/include/openssl3 --enable-dane --enable-ecdsa --enable-sha2 --without-examples --without-p5-dns-ldns --without-pyldns --without-pyldnsx --disable-rpath",
+        "LIBLDNS_CONF_ENV": "CPPFLAGS=\"-I$(STAGING_DIR)/usr/include/openssl3 $(TARGET_CPPFLAGS)\" LDFLAGS=\"-L$(STAGING_DIR)/usr/lib/openssl3 $(TARGET_LDFLAGS)\""
+      },
+      "compatibility_reason": "The selected cross build enables GOST. OpenSSL4 defines OPENSSL_NO_ENGINE; ldns keys.c:135 excludes the GOST loader implementation while keys.c:659 and dnssec.c:554 still call it under HAVE_SSL/USE_GOST. The maintained private OpenSSL3 SDK preserves the selected engine/DNSSEC interfaces. Upstream acx_nlnetlabs.m4:663-678 explicitly supports the split include/openssl3 and lib/openssl3 layout. Existing external.mk still adds libpcap and builds drill plus examples. --disable-rpath avoids staging-only private SDK paths in runtime objects."
+    },
+    "libmnl": {
+      "version": "1.0.5",
+      "filename": "libmnl-1.0.5.tar.bz2",
+      "url": "https://www.netfilter.org/pub/libmnl/libmnl-1.0.5.tar.bz2",
+      "sha256": "274b9b919ef3152bfb3da3a13c950dd60d6e2bcd54230ffeca298d03b40d0525",
+      "version_url": "https://www.netfilter.org/pub/libmnl/"
+    },
+    "libnetfilter_conntrack": {
+      "version": "1.1.1",
+      "filename": "libnetfilter_conntrack-1.1.1.tar.xz",
+      "url": "https://www.netfilter.org/pub/libnetfilter_conntrack/libnetfilter_conntrack-1.1.1.tar.xz",
+      "sha256": "769d3eaf57fa4fbdb05dd12873b6cb9a5be7844d8937e222b647381d44284820",
+      "version_url": "https://www.netfilter.org/pub/libnetfilter_conntrack/",
+      "remove_patches": {
+        "0001-conntrack-fix-build-with-kernel-5-15-and-musl.patch": "6558a81b880364b620844dbc15fd50ca2ac5145de3e8af0f346c6d118f4aca63"
+      },
+      "patch_retirement_reason": "Exact reverse patch application with --fuzz=0 succeeds against the pinned current upstream source; full checks recorded in build/network-work/remaining-backend-patches.json."
+    },
+    "libnftnl": {
+      "version": "1.3.2",
+      "filename": "libnftnl-1.3.2.tar.xz",
+      "url": "https://www.netfilter.org/pub/libnftnl/libnftnl-1.3.2.tar.xz",
+      "sha256": "c97abc3409f8fa396b4462b2bb7f147a3a47a4ddc97cfa0b2f18890c9cfde8b0",
+      "version_url": "https://www.netfilter.org/pub/libnftnl/"
+    },
+    "libnl": {
+      "version": "3.12.0",
+      "filename": "libnl-3.12.0.tar.gz",
+      "url": "https://github.com/thom311/libnl/releases/download/libnl3_12_0/libnl-3.12.0.tar.gz",
+      "sha256": "fc51ca7196f1a3f5fdf6ffd3864b50f4f9c02333be28be4eeca057e103c0dd18",
+      "version_url": "https://github.com/thom311/libnl/releases/tag/libnl3_12_0",
+      "recipe_override": "userland/package/libnl/latest-buildroot-recipe.txt",
+      "compatibility_reason": "Provide genuine host libnl/libnl-genl libraries for upstream nfs-utils 3.1.1 unconditional pkg-config checks; keep target tools selection unchanged.",
+      "license_hashes": [
+        {
+          "filename": "COPYING",
+          "algorithm": "sha256",
+          "digest": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551"
+        }
+      ]
+    },
+    "libopenssl": {
+      "version": "4.1.0",
+      "filename": "openssl-4.1.0.tar.gz",
+      "url": "https://github.com/openssl/openssl/releases/download/openssl-4.1.0/openssl-4.1.0.tar.gz",
+      "sha256": "50c17baf54cb008f6ce42d50deb4b28050a1aad711636cabd4b241c7e90cc2fd",
+      "version_url": "https://openssl-library.org/source/",
+      "remove_patches": {
+        "0004-Serialize-install-process-to-avoid-multiple-make-dep.patch": "3d9967848a83e7cce532e9be51189912746369daa7590398228ae8b22658867a"
+      },
+      "patch_retirement_reason": "Exact reverse patch application with --fuzz=0 succeeds against the pinned current upstream source; full checks recorded in build/network-work/remaining-backend-patches.json."
+    },
+    "libpcap": {
+      "version": "1.11.0",
+      "filename": "libpcap-1.11.0.tar.gz",
+      "url": "https://github.com/the-tcpdump-group/libpcap/archive/refs/tags/libpcap-1.11.0.tar.gz",
+      "sha256": "05a6a0026d3527f55c8a92e72f9c1656f62f33b639c75cbd7db377543c235407",
+      "version_url": "https://github.com/the-tcpdump-group/libpcap/tags",
+      "variables": {
+        "LIBPCAP_AUTORECONF": "YES"
+      }
+    },
+    "libssh2": {
+      "version": "1.11.1",
+      "filename": "libssh2-1.11.1.tar.bz2",
+      "url": "https://github.com/libssh2/libssh2/releases/download/libssh2-1.11.1/libssh2-1.11.1.tar.bz2",
+      "sha256": "8ddbd698403a2c3a9987df48f2940c6f6a9bddce28d37eb201938dd7755646f0",
+      "version_url": "https://github.com/libssh2/libssh2/releases/tag/libssh2-1.11.1"
+    },
+    "libtalloc": {
+      "version": "2.5.0",
+      "filename": "talloc-2.5.0.tar.gz",
+      "url": "https://www.samba.org/ftp/talloc/talloc-2.5.0.tar.gz",
+      "sha256": "912afa237510ae542a7733998eb18a12bcda35ab6729c8e2ddb43e8d0ebab007",
+      "version_url": "https://www.samba.org/ftp/talloc/",
+      "roots": [
+        "talloc-2.5.0"
+      ],
+      "remove_patches": {
+        "0001-buildtools-wafsamba-add-disable-stack-protector-opti.patch": "3ea536b143f232dad9e4325ed40122afd888de93c2c03ef81947f376c32b5749"
+      },
+      "patch_retirement_reason": "Replace obsolete2.4-specific patch with checksum-locked2.5 port preserving default strongSSP/Fortify3/stack-clash behavior and explicit disable option"
+    },
+    "libusb": {
+      "version": "1.0.30",
+      "filename": "libusb-1.0.30.tar.bz2",
+      "url": "https://github.com/libusb/libusb/releases/download/v1.0.30/libusb-1.0.30.tar.bz2",
+      "sha256": "fea36f34f9156400209595e300840767ab1a385ede1dc7ee893015aea9c6dbaf",
+      "version_url": "https://github.com/libusb/libusb/releases/tag/v1.0.30"
+    },
+    "lsof": {
+      "version": "4.99.7",
+      "filename": "lsof-4.99.7.tar.gz",
+      "url": "https://github.com/lsof-org/lsof/releases/download/4.99.7/lsof-4.99.7.tar.gz",
+      "sha256": "4a10391aab0b8ce1f539e82a1966693b2a6cf225972a6504ebb7ec4fa71675de",
+      "version_url": "https://github.com/lsof-org/lsof/releases/tag/4.99.7",
+      "recipe_override": "userland/package/lsof/latest-buildroot-recipe.txt",
+      "compatibility_reason": "Use upstream4.99.7 shipped Autotools build and installed liblsof SDK; preserve targettirpc/SELinux choices instead of removedlegacy Configure entry point"
+    },
+    "lz4": {
+      "version": "1.11.0",
+      "filename": "lz4-1.11.0.tar.gz",
+      "url": "https://github.com/lz4/lz4/releases/download/v1.11.0/lz4-1.11.0.tar.gz",
+      "sha256": "247e5fa64da5f7b75ee3dd3bed484076396c9ebe8254d9ccf693eb62800c5e26",
+      "version_url": "https://github.com/lz4/lz4/releases/latest",
+      "recipe_override": "userland/package/lz4/latest-buildroot-recipe.txt",
+      "compatibility_reason": "LZ4 1.11 default library goal requires both variants even when BUILD_STATIC=no removes the static rule. Build lib with BUILD_STATIC=yes BUILD_SHARED=yes whenever shared runtime libraries are selected, providing a matching current liblz4.a for the full native SDK; select liblz4.a with BUILD_SHARED=no for static-only profiles. Build liblz4.pc explicitly, preserve release DEBUGFLAGS= behavior, keep CLI directory default release build and all existing staging/target install commands unchanged."
+    },
+    "lzip": {
+      "version": "1.26",
+      "filename": "lzip-1.26.tar.gz",
+      "url": "https://download-mirror.savannah.nongnu.org/releases/lzip/lzip-1.26.tar.gz",
+      "sha256": "641cf30961525cbe3b340cc883436c8854e9f5032f459f444de4782b621e6572",
+      "version_url": "https://download-mirror.savannah.nongnu.org/releases/lzip/"
+    },
+    "lzop": {
+      "version": "1.04",
+      "filename": "lzop-1.04.tar.gz",
+      "url": "https://www.lzop.org/download/lzop-1.04.tar.gz",
+      "sha256": "7e72b62a8a60aff5200a047eea0773a8fb205caf7acbe1774d95147f305a2f41",
+      "version_url": "https://www.lzop.org/download/"
+    },
+    "mc": {
+      "version": "4.8.33",
+      "filename": "mc-4.8.33.tar.xz",
+      "url": "https://ftp.osuosl.org/pub/midnightcommander/mc-4.8.33.tar.xz",
+      "sha256": "cae149d42f844e5185d8c81d7db3913a8fa214c65f852200a9d896b468af164c",
+      "version_url": "https://ftp.osuosl.org/pub/midnightcommander/"
+    },
+    "mtools": {
+      "version": "4.0.50",
+      "filename": "mtools-4.0.50.tar.bz2",
+      "url": "https://ftp.gnu.org/gnu/mtools/mtools-4.0.50.tar.bz2",
+      "sha256": "f3a58e6cfc2634b03c240442548e3b00103692357afc28e1e7104744dd6478b5",
+      "version_url": "https://ftp.gnu.org/gnu/mtools/"
+    },
+    "mtr": {
+      "version": "0.96",
+      "filename": "mtr-0.96.tar.gz",
+      "url": "https://github.com/traviscross/mtr/archive/refs/tags/v0.96.tar.gz",
+      "sha256": "73e6aef3fb6c8b482acb5b5e2b8fa7794045c4f2420276f035ce76c5beae632d",
+      "version_url": "https://github.com/traviscross/mtr/tags",
+      "variables": {
+        "MTR_AUTORECONF": "YES"
+      }
+    },
+    "ncdu": {
+      "version": "1.22",
+      "filename": "ncdu-1.22.tar.gz",
+      "url": "https://dev.yorhel.nl/download/ncdu-1.22.tar.gz",
+      "sha256": "0ad6c096dc04d5120581104760c01b8f4e97d4191d6c9ef79654fa3c691a176b",
+      "version_url": "https://dev.yorhel.nl/ncdu",
+      "release_policy": "Latest maintained C LTS; upstream stable2.9.2 requiresZig0.14/0.15, notGCC R5900"
+    },
+    "ncftp": {
+      "version": "3.3.0",
+      "filename": "ncftp-3.3.0-src.tar.gz",
+      "url": "https://www.ncftp.com/public_ftp/ncftp/ncftp-3.3.0-src.tar.gz",
+      "sha256": "7920f884c2adafc82c8e41c46d6f3d22698785c7b3f56f5677a8d5c866396386",
+      "version_url": "https://www.ncftp.com/download/"
+    },
+    "net-tools": {
+      "version": "2.10",
+      "filename": "net-tools-2.10.tar.xz",
+      "url": "https://downloads.sourceforge.net/project/net-tools/net-tools-2.10.tar.xz",
+      "sha256": "b262435a5241e89bfa51c3cabd5133753952f7a7b7b93f32e08cb9d96f580d69",
+      "version_url": "https://sourceforge.net/projects/net-tools/files/"
+    },
+    "netcat": {
+      "version": "0.7.1",
+      "filename": "netcat-0.7.1.tar.bz2",
+      "url": "https://downloads.sourceforge.net/project/netcat/netcat/0.7.1/netcat-0.7.1.tar.bz2",
+      "sha256": "b55af0bbdf5acc02d1eb6ab18da2acd77a400bafd074489003f3df09676332bb",
+      "version_url": "https://netcat.sourceforge.net/download.php"
+    },
+    "nethogs": {
+      "version": "0.9.0",
+      "filename": "nethogs-0.9.0.tar.gz",
+      "url": "https://github.com/raboof/nethogs/archive/refs/tags/v0.9.0.tar.gz",
+      "sha256": "5961bef2155c05695d2fe7e79aa11194981b5afd1cad9bf1f259c7f30d5487c3",
+      "version_url": "https://github.com/raboof/nethogs/releases/tag/v0.9.0"
+    },
+    "nfs-utils": {
+      "version": "3.1.1",
+      "filename": "nfs-utils-3.1.1.tar.xz",
+      "url": "https://www.kernel.org/pub/linux/utils/nfs-utils/3.1.1/nfs-utils-3.1.1.tar.xz",
+      "sha256": "7dbc05eb8b32828b322872b759a62cb3979cb4118f344dd8616813d1390e84e0",
+      "version_url": "https://www.kernel.org/pub/linux/utils/nfs-utils/3.1.1/",
+      "recipe_override": "userland/package/nfs-utils/latest-buildroot-recipe.txt",
+      "compatibility_reason": "Upstream configure.ac checks libnl-3.0 and libnl-genl-3.0 unconditionally, including host rpcgen-only configuration; declare actual native and cross dependencies without changing NFS client/v4/rpcdebug or server selection."
+    },
+    "nftables": {
+      "version": "1.1.7",
+      "filename": "nftables-1.1.7.tar.xz",
+      "url": "https://www.netfilter.org/pub/nftables/nftables-1.1.7.tar.xz",
+      "sha256": "a6fbf060d8d4fff001517a2b94f356bb4366bfbf0ba366366f9d27cc38caa58f",
+      "version_url": "https://www.netfilter.org/pub/nftables/"
+    },
+    "ngrep": {
+      "version": "1.49.0",
+      "filename": "ngrep-1.49.0.tar.gz",
+      "url": "https://github.com/jpr5/ngrep/archive/refs/tags/v1.49.0.tar.gz",
+      "sha256": "6c94b31681316b7469a3ace92d2aeec7c9f490bd6782453dff2ade0e289a3348",
+      "version_url": "https://github.com/jpr5/ngrep/releases/tag/v1.49.0",
+      "recipe_override": "userland/package/ngrep/latest-buildroot-recipe.txt",
+      "remove_patches": {
+        "0001-Fix-typo-in-configure-in-when-testing-for-use_pcre.patch": "2f49d073f66b1ea566eec1ab1ef3d2a524acae6e1de7b07a163ddd7de2ad73ad",
+        "0002-Check-for-libnet_init-in-configure-in.patch": "1995cfee772caccb4f042eb79d0e802926e77a8803af7e019b7ca83639dca457",
+        "0003-fix-disable-tcpkill.patch": "418ae7d3cf0022949164ee3c85e4beda5c68633a1f38d62126f4344fe76c5a52",
+        "0004-configure.in-use-pkg-config-to-find-libnet.patch": "6868a3a256b340fcca89e1065f55a262901fa3e8949377a1997efad0fd9e04da",
+        "0006-Include-err.h-and-tcpkill.h-to-avoid-implicit-functi.patch": "17e47e089f4ec4cff7c2c5fb78bf4494f8283fa35212ce1007a13cc85ff69a1b"
+      },
+      "patch_retirement_reason": "Upstream 1.49.0 replaced configure.in with configure.ac and PCRE2 support; real headers tcpkill.h and err.h are already included, libnet init detection and disable-tcpkill handling are present."
+    },
+    "nload": {
+      "version": "0.7.4",
+      "filename": "nload-0.7.4.tar.gz",
+      "url": "https://www.roland-riegel.de/nload/nload-0.7.4.tar.gz",
+      "sha256": "c1c051e7155e26243d569be5d99c744d8620e65fa8a7e05efcf84d01d9d469e5",
+      "version_url": "https://www.roland-riegel.de/nload/"
+    },
+    "nmap": {
+      "version": "7.993",
+      "filename": "nmap-7.993.tar.bz2",
+      "url": "https://nmap.org/dist/nmap-7.993.tar.bz2",
+      "sha256": "270e55f04915bfcecb5db8feb959d4c5ba86a48c094520a4f1c07571e1c79c59",
+      "version_url": "https://nmap.org/download",
+      "remove_patches": {
+        "0002-nping-Crypto.cc-fix-build-with-libressl-3.5.0.patch": "2db263d41d45bac37a63f030ab79cce1b07d6f01accbecb916ab471a4c0ee04c"
+      },
+      "patch_retirement_reason": "Upstream 7.993 Crypto.cc already selects opaque EVP context support for modern LibreSSL and OpenSSL; obsolete version guard patch no longer applies."
+    },
+    "ntp": {
+      "version": "4.2.8p18",
+      "filename": "ntp-4.2.8p18.tar.gz",
+      "url": "https://downloads.nwtime.org/ntp/4.2.8/ntp-4.2.8p18.tar.gz",
+      "sha256": "cf84c5f3fb1a295284942624d823fffa634144e096cfc4f9969ac98ef5f468e5",
+      "version_url": "https://www.ntp.org/downloads/",
+      "variables": {
+        "NTP_DEPENDENCIES": "host-pkgconf libevent eelinux-openssl3-compat",
+        "NTP_CONF_OPTS": "--with-shared --program-transform-name=s,,, --disable-tickadj --disable-debugging --with-yielding-select=yes --disable-local-libevent --with-openssl-incdir=$(STAGING_DIR)/usr/include/openssl3 --with-openssl-libdir=$(STAGING_DIR)/usr/lib/openssl3",
+        "NTP_CONF_ENV": "ac_cv_lib_md5_MD5Init=no POSIX_SHELL=/bin/sh ntp_cv_ssl_without_runpath=yes CPPFLAGS=\"-I$(STAGING_DIR)/usr/include/openssl3 $(TARGET_CPPFLAGS)\" LDFLAGS=\"-L$(STAGING_DIR)/usr/lib/openssl3 $(TARGET_LDFLAGS)\" PKG_CONFIG_SYSROOT_DIR=\"$(STAGING_DIR)\""
+      },
+      "compatibility_reason": "Top-level and nested SNTP need private3 include/library search first, ahead of libevent/pkg-config default library directories. Scoped cross-Linux Libtool configure policy prevents staging paths from entering installed ELF runpaths."
+    },
+    "openssh": {
+      "version": "10.6p2",
+      "filename": "openssh-10.6p2.tar.gz",
+      "url": "https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-10.6p2.tar.gz",
+      "sha256": "9ae44872090cf2f06b3cf9ff147e7f16f309671340763ed2f99248398ae29d5b",
+      "version_url": "https://www.openssh.org/releasenotes.html",
+      "variables": {
+        "OPENSSH_VERSION_MAJOR": "10.6",
+        "OPENSSH_VERSION_MINOR": "p2"
+      },
+      "recipe_override": "userland/package/openssh/latest-buildroot-recipe.txt",
+      "remove_patches": {
+        "0001-fix-logic-error-in-disableforwarding-option.patch": "6269751aca06a4bf3d0af79a2735ea3cf8528e3b3f571cfc980e575dce24491a",
+        "0002-CVE-2025-61984-tests.patch": "588d552f03bceab355a4fb04ee6606b4af1bff783c43d3039894400ee94dbcfb",
+        "0003-CVE-2025-61984.patch": "5536e60fac52202d76a90d0fc311f47b75ce3e6fc59e7a39ab87da32b7a2f138",
+        "0004-CVE-2025-61985.patch": "4778bf942824e27f642dcf04e0a8246a8dbce769b05387421d579fdc9f758f1a",
+        "0005-CVE-2026-35385.patch": "df532ebcd726b5082249dea0183ec4c13dd2a967102825de1157e2b3a8db14d8",
+        "0006-CVE-2026-35386-1.patch": "7d74e3ba2099c35687ea240621d23028a736fdf47654d90c8bb2c3f496c2daf3",
+        "0007-CVE-2026-35386-2.patch": "cdfaca58b1a087d76329a7eea4cf9fdb62b8e9c32d595813adb7a2698c423eec",
+        "0008-CVE-2026-35386-3.patch": "3fa667f6ce9db1dc33ed715444c1b397ca361325db41bb545cca2709be125d14",
+        "0009-CVE-2026-35387.patch": "456b9868886aaf31282c96b59a4a41eb74c5810692c16e87a2677b0db23d8d84",
+        "0010-CVE-2026-35388.patch": "1c734075b04d693c315169e8acb209faf83d2d8d85567e10726dcdc45abe763b",
+        "0011-CVE-2026-35414.patch": "4f6e3ad1472d1ef859b02cedb7e2e451fc4a974c3c377739d6dc574c5b41626a",
+        "0012-CVE-2026-59995.patch": "2b11e82b14350c36782159c5b7a67c3103c33a94e38afd80ad29b10aead88dca",
+        "0013-CVE-2026-59996.patch": "1a87a29e06a6afb60f4ec229e2577888883b770a3c8274fdb743aefe6b7a059e",
+        "0014-CVE-2026-59997.patch": "e13879a3205ed1f1158f398d5f676543066e15e47fbf0a2aa9237ef1e3133576",
+        "0015-CVE-2026-59999.patch": "7eaacad319856b2b4e428c9842c170bc9581294609dd88a14f9c6c6da6c32fda",
+        "0016-CVE-2026-60000.patch": "79f7efb90bc0eeb1a94cd1d3b31f3af6bb3fe1136021bc69f5d4f380c13ded89",
+        "0017-CVE-2026-60001.patch": "fcf6723e1857ae7a0e2d3c0a3bd957035adb78711c30ca10baed49674e613b62",
+        "0018-CVE-2026-60002.patch": "4f07bf8d8d12c589fa871f943ee44e4591a89f20de3d6c953dd9d30c39206bd5"
+      },
+      "patch_retirement_reason": "All18 backported fixes present in actual upstream10.6p2 source; per-hunk semantic evidence and source hashes recorded in build/network-work/openssh-latest-retirement.json"
+    },
+    "openvpn": {
+      "version": "2.7.9",
+      "filename": "openvpn-2.7.9.tar.gz",
+      "url": "https://github.com/OpenVPN/openvpn/releases/download/v2.7.9/openvpn-2.7.9.tar.gz",
+      "sha256": "c42a6ed892ddfe2d6e3317a5040f19bec5827564affb2fe3f2b3904a94daacb1",
+      "version_url": "https://github.com/OpenVPN/openvpn/releases/tag/v2.7.9",
+      "remove_patches": {
+        "0001-avoid-unbounded-reliable-tls-timeout.patch": "0e768aabcb67582252ca7709b05f22b86cec97e3dc891840b53b74812845fb55",
+        "0002-ignore-acks-for-packets-that-cannot-be-outstanding.patch": "6c7bc7a8a65bb37e3f8bb428c070d2a8ff4981b78e1dfae33b703ba3ab677c27"
+      },
+      "patch_retirement_reason": "Upstream 2.7.9 contains bounded retransmit timeout and validate_packet_id_window with wraparound-aware reliable_pid_min checks, including packet-window tests."
+    },
+    "procps-ng": {
+      "version": "4.0.7",
+      "filename": "procps-ng-4.0.7.tar.xz",
+      "url": "https://downloads.sourceforge.net/project/procps-ng/Production/procps-ng-4.0.7.tar.xz",
+      "sha256": "9d2021f47a4501c667862c9942a92d1953694b21d11bcd1702e83eb594e3d67d",
+      "version_url": "https://sourceforge.net/projects/procps-ng/rss?path=%2FProduction%2F",
+      "variables": {
+        "PROCPS_NG_AUTORECONF": "NO"
+      },
+      "remove_patches": {
+        "0001-pgrep-provide-definition-for-nr-pidfd_open.patch": "9da0f711ea0ed239af7bd84e87c7945c3d12d1d6a4e3afe373b2dd4982e29bb7"
+      },
+      "patch_retirement_reason": "Current procps-ng uses SYS_pidfd_open and already supplies its fallback before syscall(SYS_pidfd_open,...); the old __NR_pidfd_open backport is superseded."
+    },
+    "psmisc": {
+      "version": "23.7",
+      "filename": "psmisc-23.7.tar.xz",
+      "url": "https://downloads.sourceforge.net/project/psmisc/psmisc/psmisc-23.7.tar.xz",
+      "sha256": "58c55d9c1402474065adae669511c191de374b0871eec781239ab400b907c327",
+      "version_url": "https://sourceforge.net/projects/psmisc/rss?path=%2Fpsmisc%2F"
+    },
+    "pv": {
+      "version": "1.12.7",
+      "filename": "pv-1.12.7.tar.gz",
+      "url": "https://ivarch.com/s/pv-1.12.7.tar.gz",
+      "sha256": "5326ed7ee95ef18039390c0b17891ac28985ac7c7a4235070fab767c1fe37bd8",
+      "version_url": "https://www.ivarch.com/programs/pv.shtml"
+    },
+    "rpcbind": {
+      "version": "1.3.1",
+      "filename": "rpcbind-1.3.1.tar.bz2",
+      "url": "https://downloads.sourceforge.net/project/rpcbind/rpcbind/1.3.1/rpcbind-1.3.1.tar.bz2",
+      "sha256": "8e551b445f5172f8ef218845af342fb2a2d741b57ce8c777c781a01ea92f92a5",
+      "version_url": "https://sourceforge.net/projects/rpcbind/files/rpcbind/",
+      "roots": [
+        "rpcbind-1.3.1"
+      ]
+    },
+    "rsync": {
+      "version": "3.5.2",
+      "filename": "rsync-3.5.2.tar.gz",
+      "url": "https://github.com/RsyncProject/rsync/releases/download/v3.5.2/rsync-3.5.2.tar.gz",
+      "sha256": "a10d591825251e070f74c98df3daad195def4ed81b4a2de16169026aea33f6c8",
+      "version_url": "https://github.com/RsyncProject/rsync/releases/tag/v3.5.2"
+    },
+    "s6-dns": {
+      "version": "2.4.1.3",
+      "filename": "s6-dns-2.4.1.3.tar.gz",
+      "url": "https://skarnet.org/software/s6-dns/s6-dns-2.4.1.3.tar.gz",
+      "sha256": "f9e9deb4648c5507a8485548364bd1c56dabda394bc9ee2d7f1cbb16a036cd76",
+      "version_url": "https://skarnet.org/software/s6-dns/"
+    },
+    "screen": {
+      "version": "5.0.2",
+      "filename": "screen-5.0.2.tar.gz",
+      "url": "https://ftp.gnu.org/gnu/screen/screen-5.0.2.tar.gz",
+      "sha256": "ca9a2c7e240919bc7ac12124593ae4529bb4eb5f7349d8857829b7e3f0b3b332",
+      "version_url": "https://ftp.gnu.org/gnu/screen/"
+    },
+    "shadow": {
+      "version": "4.20.3",
+      "filename": "shadow-4.20.3.tar.xz",
+      "url": "https://github.com/shadow-maint/shadow/releases/download/4.20.3/shadow-4.20.3.tar.xz",
+      "sha256": "623be9429f64fa2165bfc5957c6a642ec309c5cf23c0d53855c99f7591922297",
+      "version_url": "https://github.com/shadow-maint/shadow/releases/tag/4.20.3"
+    },
+    "skalibs": {
+      "version": "2.16.0.0",
+      "filename": "skalibs-2.16.0.0.tar.gz",
+      "url": "https://skarnet.org/software/skalibs/skalibs-2.16.0.0.tar.gz",
+      "version_url": "https://skarnet.org/software/skalibs/",
+      "sha256": "90a3deda94a40d7d6a4495fe6feaf91c0185e0428d59cbd150a1a468741269aa"
+    },
+    "socat": {
+      "version": "1.8.1.3",
+      "filename": "socat-1.8.1.3.tar.gz",
+      "url": "http://www.dest-unreach.org/socat/download/socat-1.8.1.3.tar.gz",
+      "sha256": "06602ffd591e98c75b3dc1d66f0f19136cc666b0b2d95caad987d6ab2cb28097",
+      "version_url": "http://www.dest-unreach.org/socat/"
+    },
+    "sqlite": {
+      "version": "3.54.1",
+      "filename": "sqlite-autoconf-3540100.tar.gz",
+      "url": "https://www.sqlite.org/2026/sqlite-autoconf-3540100.tar.gz",
+      "sha256": "926ef8d3eab93fbf6e06011901273eec076b25594a4e1cdadd50c987f4f6d64e",
+      "version_url": "https://www.sqlite.org/download.html",
+      "remove_patches": {
+        "0001-disable-rpath.patch": "99c25635bc3e724aeda0b3b08d1c329618f3e2e707259e14e351dac38b4248ba",
+        "0002-CVE-2025-70873.patch": "56d8325c3284c5e729dd4ba7bca86dad21c4ca020f1b5f2efd36526c1ac46e1a",
+        "0003-CVE-2026-11822.patch": "d2f260640ed28540edf8d44ee9368acb5a7f9f944c7925a3268199c3fef663d2"
+      },
+      "patch_retirement_reason": "Latest pinned upstream source contains the reviewed fixes; exact source semantic markers checked in audit_cli_patch_retirement.py",
+      "recipe_override": "userland/package/sqlite/latest-buildroot-recipe.txt",
+      "compatibility_reason": "Enable matching static archive before existing feature option additions; retain sharedlibrary, selected FTS/readline/SQL capabilities and SDK header/archive version consistency"
+    },
+    "strace": {
+      "version": "7.3",
+      "filename": "strace-7.3.tar.xz",
+      "url": "https://github.com/strace/strace/releases/download/v7.3/strace-7.3.tar.xz",
+      "sha256": "529634c40910895a9a1f3c5c1e65da2ca9ed72fb158dfc4bcc89efdf05e39b72",
+      "version_url": "https://github.com/strace/strace/releases/tag/v7.3"
+    },
+    "sysklogd": {
+      "version": "2.8.0",
+      "filename": "sysklogd-2.8.0.tar.gz",
+      "url": "https://github.com/troglobit/sysklogd/releases/download/v2.8.0/sysklogd-2.8.0.tar.gz",
+      "sha256": "67f49c6b2e9d75ce15202db815112719f4af0db8901032f0c3a0cec1b9f65551",
+      "version_url": "https://github.com/troglobit/sysklogd/releases/tag/v2.8.0"
+    },
+    "sysvinit": {
+      "version": "3.18",
+      "filename": "sysvinit-3.18.tar.xz",
+      "url": "https://codeberg.org/thejessesmith/sysvinit/releases/download/3.18/sysvinit-3.18.tar.xz",
+      "sha256": "793d7427e219f1ccf122e7c55655cef5f3419adc620ec2ee0ed557e8c94b438f",
+      "version_url": "https://codeberg.org/thejessesmith/sysvinit/releases/tag/3.18"
+    },
+    "tcl": {
+      "version": "9.1.0",
+      "filename": "tcl9.1.0-src.tar.gz",
+      "url": "https://downloads.sourceforge.net/project/tcl/Tcl/9.1.0/tcl9.1.0-src.tar.gz",
+      "sha256": "536c45543f64d6eb11832d97ba3494aacff046fbc5040273bd55258d0e448ff1",
+      "version_url": "https://www.tcl-lang.org/software/tcltk/download.html",
+      "release_policy": "Latest stable Tcl; owns default interpreter and public SDK",
+      "variables": {
+        "TCL_VERSION_MAJOR": "9.1",
+        "TCL_AUTORECONF": "NO",
+        "TCL_DEPENDENCIES": "host-tcl $(if $(BR2_PACKAGE_SQLITE),sqlite) $(if $(BR2_PACKAGE_MARIADB),mariadb) $(if $(BR2_PACKAGE_POSTGRESQL),postgresql) zlib",
+        "TCL_MAKE_ENV": "TCLSH_NATIVE=$(HOST_DIR)/bin/tclsh9.1",
+        "HOST_TCL_DEPENDENCIES": "host-zlib"
+      },
+      "cross_build_reason": "Bundled Thread ZIPFS generation requires a genuine host Tcl9 interpreter. Build the host variant of this same pinned source and export TCLSH_NATIVE; keep target ZIPFS and threaded extension support enabled."
+    },
+    "tcpdump": {
+      "version": "4.99.7",
+      "filename": "tcpdump-4.99.7.tar.gz",
+      "url": "https://github.com/the-tcpdump-group/tcpdump/archive/refs/tags/tcpdump-4.99.7.tar.gz",
+      "sha256": "f748d773343f9149723ab76b2025163038137bf6af6780f2fd43d99830547991",
+      "version_url": "https://github.com/the-tcpdump-group/tcpdump/tags",
+      "variables": {
+        "TCPDUMP_AUTORECONF": "YES"
+      }
+    },
+    "tcping": {
+      "version": "2.1.0",
+      "filename": "tcping-2.1.0.tar.gz",
+      "url": "https://github.com/mkirchner/tcping/archive/refs/tags/2.1.0.tar.gz",
+      "sha256": "b8aa427420fe00173b5a2c0013d78e52b010350f5438bf5903c1942cba7c39c9",
+      "version_url": "https://github.com/mkirchner/tcping/tags",
+      "variables": {
+        "TCPING_AUTORECONF": "YES"
+      }
+    },
+    "tftpd": {
+      "version": "7.2",
+      "filename": "tftp-hpa-7.2.tar.xz",
+      "url": "https://www.kernel.org/pub/software/network/tftp/tftp-hpa-7.2.tar.xz",
+      "sha256": "72858bb18cff6207ffc98fe8d21e6a1187e036163ca8d91e9c9f5d4c3fdae22f",
+      "version_url": "https://www.kernel.org/pub/software/network/tftp/",
+      "variables": {
+        "TFTPD_SITE_METHOD": "wget",
+        "TFTPD_AUTORECONF": "NO"
+      }
+    },
+    "time": {
+      "version": "1.10",
+      "filename": "time-1.10.tar.xz",
+      "url": "https://ftp.gnu.org/gnu/time/time-1.10.tar.xz",
+      "sha256": "706bf7b8444ca9eb9037e9eda18e1d0eb7c2327ae7d8c2ce3a4823c5f80c7b11",
+      "version_url": "https://ftp.gnu.org/gnu/time/"
+    },
+    "tmux": {
+      "version": "3.8",
+      "filename": "tmux-3.8.tar.gz",
+      "url": "https://github.com/tmux/tmux/releases/download/3.8/tmux-3.8.tar.gz",
+      "sha256": "e79c699c7e949dccd0a4a125e17b8d1261e311b16979dbc8eb34542f3966d82e",
+      "version_url": "https://github.com/tmux/tmux/releases/latest",
+      "remove_patches": {
+        "0001-Cast-to-avoid-warnings-on-32-bit-architectures.-GitH.patch": "f0698176136fb94b3c47d12c937ca5b3c2f6660f97f9a40f1c38bc0dd342d054"
+      },
+      "patch_retirement_reason": "Latest pinned upstream source contains the reviewed fixes; exact source semantic markers checked in audit_cli_patch_retirement.py"
+    },
+    "traceroute": {
+      "version": "2.1.6",
+      "filename": "traceroute-2.1.6.tar.gz",
+      "url": "https://downloads.sourceforge.net/project/traceroute/traceroute/traceroute-2.1.6/traceroute-2.1.6.tar.gz",
+      "sha256": "9ccef9cdb9d7a98ff7fbf93f79ebd0e48881664b525c4b232a0fcec7dcb9db5e",
+      "version_url": "https://sourceforge.net/projects/traceroute/files/"
+    },
+    "tree": {
+      "version": "2.3.2",
+      "filename": "tree-2.3.2.tgz",
+      "url": "https://oldmanprogrammer.net/tar/tree/tree-2.3.2.tgz",
+      "sha256": "6b941dd6cbecfb4d3250700e4d08d8e0c251488981dd4868b90d744234300e21",
+      "version_url": "https://oldmanprogrammer.net/tar/tree/"
+    },
+    "unbound": {
+      "version": "1.26.2",
+      "filename": "unbound-1.26.2.tar.gz",
+      "url": "https://www.nlnetlabs.nl/downloads/unbound/unbound-1.26.2.tar.gz",
+      "sha256": "d8ee7aa6bbb3ff1be7d9e57637d0d0ec2f18273a8efff1a0afe2c665858b96f7",
+      "version_url": "https://nlnetlabs.nl/projects/unbound/download/",
+      "variables": {
+        "UNBOUND_DEPENDENCIES": "host-pkgconf expat libevent eelinux-openssl3-compat",
+        "UNBOUND_CONF_OPTS": "--disable-rpath --disable-debug --with-conf-file=/etc/unbound/unbound.conf --with-pidfile=/var/run/unbound.pid --with-rootkey-file=/etc/unbound/root.key --enable-tfo-server --enable-tfo-client --with-libevent=$(STAGING_DIR)/usr --with-libexpat=$(STAGING_DIR)/usr --with-ssl=$(STAGING_DIR)/usr/include/openssl3",
+        "UNBOUND_CONF_ENV": "CPPFLAGS=\"-I$(STAGING_DIR)/usr/include/openssl3 $(TARGET_CPPFLAGS)\" LDFLAGS=\"-L$(STAGING_DIR)/usr/lib/openssl3 $(TARGET_LDFLAGS)\""
+      },
+      "compatibility_reason": "The default GOST probe records maybe during cross compilation and enables USE_GOST. Unbound sldns/keyraw.c:144-203 then uses removed ENGINE and EVP_PKEY_ASN1_METHOD APIs without an OPENSSL_NO_ENGINE guard. The private maintained OpenSSL3 SDK preserves those selected interfaces while the default system OpenSSL remains4.1. Upstream acx_nlnetlabs.m4:713-728 explicitly supports this split SDK include/lib path. Existing thread, LTO and DNSCrypt recipe additions remain effective."
+    },
+    "usbutils": {
+      "version": "020",
+      "filename": "usbutils-020.tar.xz",
+      "url": "https://www.kernel.org/pub/linux/utils/usb/usbutils/usbutils-020.tar.xz",
+      "sha256": "20287d68fcd9ebb50a05ba0645a4af7583bd8dfc7307215ba121e4bc6d057aa1",
+      "version_url": "https://www.kernel.org/pub/linux/utils/usb/usbutils/"
+    },
+    "util-linux": {
+      "version": "2.42.4",
+      "filename": "util-linux-2.42.4.tar.xz",
+      "url": "https://www.kernel.org/pub/linux/utils/util-linux/v2.42/util-linux-2.42.4.tar.xz",
+      "sha256": "fbd62a100ab7bb8746ba0661255c3c48185b1e9021507c624da01fbc696330ec",
+      "version_url": "https://www.kernel.org/pub/linux/utils/util-linux/v2.42/",
+      "variables": {
+        "UTIL_LINUX_AUTORECONF": "NO"
+      },
+      "remove_patches": {
+        "0001-sys-utils-setarch.c-fix-build-with-uclibc-ng-1.0.39.patch": "e32687c00479ee7b88e8370b8e1b2213ffb57948416104f829fe7c0101a029f9",
+        "0002-c.h-consolidate-THREAD_LOCAL.patch": "73483b60b04c728e50e4f31caaa958cbc2edfb2de4c3546a9c6b399a7ad67f5f",
+        "0003-autotools-define-HAVE_LIBPTHREAD-and-PTHREAD_LIBS.patch": "0df313ead00a7418e2772c0bb52808aa082948765d9c4fb527e15e6e6a6ee4a5",
+        "0004-meson-add-HAVE_LIBPTHREAD.patch": "093f24a8d078f0d615c1e15ad51ce4cb079c94a60bcc52afb8df2b3bf373b87f",
+        "0005-libuuid-support-non-cached-scenarios-when-lpthread-i.patch": "75ba6070e49cc09f50a101c1dff138b75007389ab3e0aaf3d499b102b6478e49",
+        "0006-add-loopdev-fl-nofollow.patch": "265fddbc77b8d57829cb3622e4ee43b6e9599409cf58838b0ed35c4c4ff36dfd",
+        "0007-lib-path-avoid-double-free-for-cpusets.patch": "6a0399ee9baff5c7d4fd06aaab422df30a3a2caaead97151ab06395dbc654f5a",
+        "0008-CVE-2025-14104-1.patch": "77126ce7b8a76db5dd0e9932f667df789a0d4b9d201c98f6b7759c69b058c1ea",
+        "0009-CVE-2025-14104-2.patch": "5f983895ac45e87de03e72d3c0807cf4a4cc4154a13d460c6b58536eb291215b",
+        "0010-CVE-2026-53612.patch": "80ab8c029776bd9853cd5b95d41222f53a7e57bc22b86af487329a02412ff8c1",
+        "0011-CVE-2026-53613-1.patch": "46981da397f15fdbad33d0541eae24ab3725b02ffa969916b4f07bd161751300",
+        "0012-CVE-2026-53613-2.patch": "3bc1362ad2127e51cb242c9bfbbc3418a53b820792871e8db4496561a6d4d43b",
+        "0013-CVE-2026-53614.patch": "8be57ccb953a5c03f4d310ffa508c32f56c9bf75c385df5d43776993ddf2c1ad",
+        "0014-loopdev-use-openat2-RESOLVE_NO_SYMLINKS-for-backing-.patch": "298a6cdf0c9bc43387816ab9d038958f9ab5577fc447a7efd86db6c4d0a53600",
+        "0015-CVE-2026-13595.patch": "14ec55f6154157f6aea4c4b6bed8ce0191f4b8ae77deb9271549f87e90db28df"
+      },
+      "patch_retirement_reason": "Upstream util-linux 2.42.4 already contains thread-local/pthread handling, safe loop device opening, bounds-safe password rewriting, pinned mount-target file descriptors, secure environment access, and individually allocated partition records. Exact reverse-patch checks and current-source expressions are recorded in build/admin-work/base-admin-compatibility-evidence.json."
+    },
+    "whois": {
+      "version": "5.6.6",
+      "filename": "whois-5.6.6.tar.gz",
+      "url": "https://github.com/rfc1036/whois/archive/refs/tags/v5.6.6.tar.gz",
+      "sha256": "43d3b3cc64c75e8bd10aee6feff3906e9488ed335076d206e70f3b25bf644969",
+      "version_url": "https://github.com/rfc1036/whois/tags"
+    },
+    "wireguard-tools": {
+      "version": "1.0.20260223",
+      "filename": "wireguard-tools-1.0.20260223.tar.xz",
+      "url": "https://git.zx2c4.com/wireguard-tools/snapshot/wireguard-tools-1.0.20260223.tar.xz",
+      "sha256": "af459827b80bfd31b83b08077f4b5843acb7d18ad9a33a2ef532d3090f291fbf",
+      "version_url": "https://git.zx2c4.com/wireguard-tools/refs/tags"
+    },
+    "wireless-regdb": {
+      "version": "2026.09.03",
+      "filename": "wireless-regdb-2026.09.03.tar.xz",
+      "url": "https://www.kernel.org/pub/software/network/wireless-regdb/wireless-regdb-2026.09.03.tar.xz",
+      "sha256": "b22e0901227b820cd1c280abe681a15b773a5103a5e10dc442e94ebb34cbf58d",
+      "version_url": "https://www.kernel.org/pub/software/network/wireless-regdb/"
+    },
+    "wireless_tools": {
+      "version": "30.pre9",
+      "filename": "wireless_tools.30.pre9.tar.gz",
+      "url": "https://hewlettpackard.github.io/wireless-tools/wireless_tools.30.pre9.tar.gz",
+      "sha256": "abd9c5c98abf1fdd11892ac2f8a56737544fe101e1be27c6241a564948f34c63",
+      "version_url": "https://hewlettpackard.github.io/wireless-tools/"
+    },
+    "wpa_supplicant": {
+      "version": "2.12",
+      "filename": "wpa_supplicant-2.12.tar.gz",
+      "url": "https://w1.fi/releases/wpa_supplicant-2.12.tar.gz",
+      "sha256": "08e23937e16d0155e55cab2b51f51fbe10d80a1aa91c4e15442645059b737ef6",
+      "version_url": "https://w1.fi/releases/"
+    },
+    "zstd": {
+      "version": "1.5.7",
+      "filename": "zstd-1.5.7.tar.gz",
+      "url": "https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz",
+      "sha256": "eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3",
+      "version_url": "https://github.com/meta/zstd/releases/latest"
+    }
+  }
+}

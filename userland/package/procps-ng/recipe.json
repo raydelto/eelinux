@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "procps-ng",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.procps-ng",
+  "symbol": "BR2_PACKAGE_PROCPS_NG",
+  "version": "4.0.7",
+  "recipe": "package/procps-ng/procps-ng.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "9d2021f47a4501c667862c9942a92d1953694b21d11bcd1702e83eb594e3d67d",
+      "filename": "procps-ng-4.0.7.tar.xz"
+    }
+  ],
+  "release_url": "https://sourceforge.net/projects/procps-ng/rss?path=%2FProduction%2F"
+}

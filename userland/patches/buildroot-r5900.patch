@@ -1,0 +1,45 @@
+--- a/arch/Config.in.mips
++++ b/arch/Config.in.mips
+@@ -42,6 +42,16 @@
+ 
+ 	  64bit capable: mips4, 64, 64r2, 64r3, 64r5, 64r6
+ 	  non-64bit capable: mips4, 32, 32r2, 32r3, 32r5, 32r6
++
++config BR2_mips_r5900
++	bool "Sony/Toshiba R5900 (PlayStation 2)"
++	depends on !BR2_ARCH_IS_64
++	select BR2_ARCH_HAS_NO_TOOLCHAIN_BUILDROOT
++	select BR2_MIPS_NAN_LEGACY
++	help
++	  R5900 Linux o32 userland with an external GNU glibc toolchain.
++	  The CPU has no ll/sc instructions. The Linux/toolchain port
++	  must provide userspace atomic-operation compatibility.
+ 
+ config BR2_mips_32
+ 	bool "Generic MIPS32"
+@@ -245,6 +255,7 @@
+ 	default "BIG"		if BR2_mips || BR2_mips64
+ 
+ config BR2_GCC_TARGET_ARCH
++	default "r5900"	if BR2_mips_r5900
+ 	default "mips32"	if BR2_mips_32
+ 	default "mips32r2"	if BR2_mips_32r2
+ 	default "mips32r3"	if BR2_mips_32r3
+--- a/toolchain/Config.in
++++ b/toolchain/Config.in
+@@ -830,6 +830,7 @@
+ config BR2_TOOLCHAIN_HAS_SYNC_1
+ 	bool
+ 	default y
++	depends on !BR2_mips_r5900 # no ll/sc instructions or guaranteed __sync helpers
+ 	depends on !BR2_m68k_cf
+ 	depends on !BR2_microblaze
+ 	depends on !BR2_sparc
+@@ -842,6 +843,7 @@
+ config BR2_TOOLCHAIN_HAS_SYNC_4
+ 	bool
+ 	default y
++	depends on !BR2_mips_r5900 # no ll/sc instructions or guaranteed __sync helpers
+ 	depends on !BR2_m68k_cf
+ 	depends on !BR2_sparc
+ 	depends on !(BR2_arc && !BR2_ARC_ATOMIC_EXT)

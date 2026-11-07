@@ -1,0 +1,73 @@
+--- a/arch/mips/ps2/intc-irq.c
++++ b/arch/mips/ps2/intc-irq.c
+@@ -9,6 +9,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/ioport.h>
+ #include <linux/module.h>
++#include <linux/spinlock.h>
+ #include <linux/types.h>
+ 
+ #include <asm/io.h>
+@@ -17,17 +18,36 @@
+ 
+ #include <asm/mach-ps2/irq.h>
+ 
+-static void intc_reverse_mask(struct irq_data *data)
++static DEFINE_RAW_SPINLOCK(intc_mask_lock);
++
++static void intc_set_mask(struct irq_data *data, bool enabled)
+ {
+-	outl(BIT(data->irq - IRQ_INTC), INTC_MASK);
++	const unsigned int bit = BIT(data->irq - IRQ_INTC);
++	unsigned long flags;
++
++	/* INTC_MASK toggles written bits rather than assigning their value. */
++	raw_spin_lock_irqsave(&intc_mask_lock, flags);
++	if (!!(inl(INTC_MASK) & bit) != enabled) {
++		outl(bit, INTC_MASK);
++		(void)inl(INTC_MASK);
++	}
++	raw_spin_unlock_irqrestore(&intc_mask_lock, flags);
++}
++
++static void intc_mask(struct irq_data *data)
++{
++	intc_set_mask(data, false);
++}
++
++static void intc_unmask(struct irq_data *data)
++{
++	intc_set_mask(data, true);
+ }
+ 
+ static void intc_mask_ack(struct irq_data *data)
+ {
+-	const unsigned int bit = BIT(data->irq - IRQ_INTC);
+-
+-	outl(bit, INTC_MASK);
+-	outl(bit, INTC_STAT);
++	intc_mask(data);
++	outl(BIT(data->irq - IRQ_INTC), INTC_STAT);
+ }
+ 
+ #define INTC_IRQ_TYPE(irq_, name_)				\
+@@ -35,8 +55,8 @@
+ 		.irq = irq_,					\
+ 		.irq_chip = {					\
+ 			.name = name_,				\
+-			.irq_unmask = intc_reverse_mask,	\
+-			.irq_mask = intc_reverse_mask,		\
++			.irq_unmask = intc_unmask,	\
++			.irq_mask = intc_mask,		\
+ 			.irq_mask_ack = intc_mask_ack,		\
+ 		}						\
+ 	}
+@@ -68,7 +88,7 @@
+ 	unsigned int pending, irq_intc;
+ 	irqreturn_t status = IRQ_NONE;
+ 
+-	for (pending = inl(INTC_STAT); pending; pending &= ~BIT(irq_intc)) {
++	for (pending = inl(INTC_STAT) & inl(INTC_MASK); pending; pending &= ~BIT(irq_intc)) {
+ 		irq_intc = __fls(pending);
+ 
+ 		if (generic_handle_irq(irq_intc + IRQ_INTC) < 0)

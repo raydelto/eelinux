@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "name": "x11r7/xfont_font-misc-misc",
+  "engine": "Buildroot 2025.02.18 external tree",
+  "manifest_entry": "configs/packages.json:packages.x11r7/xfont_font-misc-misc",
+  "symbol": "BR2_PACKAGE_XFONT_FONT_MISC_MISC",
+  "version": "1.1.3",
+  "recipe": "package/x11r7/xfont_font-misc-misc/xfont_font-misc-misc.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "79abe361f58bb21ade9f565898e486300ce1cc621d5285bec26e14b6a8618fed",
+      "filename": "font-misc-misc-1.1.3.tar.xz"
+    }
+  ]
+}

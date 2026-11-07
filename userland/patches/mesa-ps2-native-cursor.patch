@@ -1,0 +1,294 @@
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_cursor.c
+@@ -0,0 +1,172 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_cursor.h"
++#include "ps2_gs_render.h"
++#include "ps2_gs_logic.h"
++#include "ps2_solid_batch.h"
++#include <errno.h>
++#include <stdlib.h>
++#include <string.h>
++struct image {
++    unsigned char source[512], mask[512];
++    unsigned width,height,xhot,yhot,msb_first;
++    uint32_t foreground,background;
++};
++struct ps2_pipe_cursor {
++    struct pipe_context *context;
++    struct ps2_surface_client *gs;
++    struct image image;
++    struct ps2_pipe_solid_run runs[4096];
++    unsigned count,width,height,bpp,unit;
++    uint32_t saved;
++    int x,y,sx,sy,sw,sh;
++    int wanted,visible,suspended,busy;
++};
++static int front_access(void *data);
++static int valid(struct ps2_pipe_cursor *c)
++{
++    if(!c || c->gs->front_access!=front_access || c->gs->front_access_data!=c){errno=EINVAL;return -1;}
++    if(c->gs->error){errno=c->gs->error;return -1;}
++    if(c->gs->front.width!=c->width || c->gs->front.height!=c->height ||
++       c->gs->front.bits_per_pixel!=c->bpp){errno=ENOTSUP;return -1;}
++    if(ps2_pipe_context_acquire(c->context))return -1;
++    ps2_pipe_context_release(c->context);return 0;
++}
++static int hide(struct ps2_pipe_cursor *c)
++{
++    if(!c->visible)return 0;
++    int result=ps2_surface_copy(c->gs,c->saved,0,0,0,c->sx,c->sy,c->sw,c->sh);
++    c->visible=0;return result;
++}
++static int front_access(void *data)
++{
++    struct ps2_pipe_cursor *c=data;
++    if(c->busy || !c->visible)return 0;
++    c->busy=1;int result=hide(c);c->busy=0;return result;
++}
++struct ps2_pipe_cursor *ps2_pipe_cursor_create(struct pipe_context *context)
++{
++    struct ps2_render_client *r=ps2_pipe_context_render(context);
++    if(!r || !r->gs){errno=EINVAL;return NULL;}
++    struct ps2_surface_client *gs=r->gs;
++    unsigned unit=gs->front.bits_per_pixel==16?4:2;
++    if(gs->front_access || !gs->front.width || !gs->front.height || gs->front.width%unit ||
++       (gs->front.bits_per_pixel!=16 && gs->front.bits_per_pixel!=32) ||
++       !(gs->caps.features&PS2GS_HW_SOLID_LOGIC)){errno=ENOTSUP;return NULL;}
++    if(ps2_pipe_context_acquire(context))return NULL;
++    struct ps2_pipe_cursor *c=calloc(1,sizeof(*c));
++    if(!c){ps2_pipe_context_release(context);return NULL;}
++    c->context=context;c->gs=gs;c->width=gs->front.width;
++    c->height=gs->front.height;c->bpp=gs->front.bits_per_pixel;c->unit=unit;
++    if(ps2_surface_create(gs,64,64,c->bpp,&c->saved)){
++        int error=errno;free(c);ps2_pipe_context_release(context);errno=error;return NULL;
++    }
++    gs->front_access=front_access;gs->front_access_data=c;return c;
++}
++static int bit(const unsigned char *bytes,unsigned x,unsigned y,unsigned msb)
++{ return (bytes[y*8+x/8]>>(msb?7-x%8:x%8))&1; }
++static int snapshot(struct ps2_pipe_cursor *c,struct image *out,const struct ps2_cursor_image *in)
++{
++    uint32_t bits=c->bpp==16?0x7fff:0xffffff;
++    if(!in->source || !in->mask || !in->width || !in->height || in->width>64 || in->height>64 ||
++       in->xhot>=in->width || in->yhot>=in->height || in->msb_first>1 ||
++       ((in->foreground|in->background)&~bits)){errno=EINVAL;return -1;}
++    size_t row=(in->width+7)/8;
++    if(in->stride<row || (in->height>1 && in->stride>(SIZE_MAX-row)/(in->height-1))){errno=EINVAL;return -1;}
++    size_t bytes=(in->height-1)*in->stride+row;
++    if(in->source_bytes<bytes || in->mask_bytes<bytes ||
++       (uintptr_t)in->source>UINTPTR_MAX-(bytes-1) || (uintptr_t)in->mask>UINTPTR_MAX-(bytes-1)){
++        errno=EINVAL;return -1;
++    }
++    *out=(struct image){.width=in->width,.height=in->height,.xhot=in->xhot,.yhot=in->yhot,
++        .msb_first=in->msb_first,.foreground=in->foreground,.background=in->background};
++    for(unsigned y=0;y<in->height;++y){
++        memcpy(out->source+y*8,in->source+y*in->stride,row);
++        memcpy(out->mask+y*8,in->mask+y*in->stride,row);
++    }
++    return 0;
++}
++static void plan(struct ps2_pipe_cursor *c,const struct image *im,int x,int y)
++{
++    c->count=0;int64_t left=(int64_t)x-im->xhot,top=(int64_t)y-im->yhot;
++    for(unsigned j=0;j<im->height;++j){
++        int64_t py=top+j;if(py<0 || py>=c->height)continue;
++        for(unsigned i=0;i<im->width;){
++            unsigned start=i,foreground=bit(im->source,i,j,im->msb_first);
++            if(!bit(im->mask,i,j,im->msb_first)){++i;continue;}
++            do{++i;}while(i<im->width && bit(im->mask,i,j,im->msb_first) &&
++                (unsigned)bit(im->source,i,j,im->msb_first)==foreground);
++            int64_t a=left+start,b=left+i;a=a<0?0:a;b=b>c->width?c->width:b;
++            if(a>=b)continue;
++            c->runs[c->count++]=(struct ps2_pipe_solid_run){.box={a,py,b,py+1},
++                .color=foreground?im->foreground:im->background};
++        }
++    }
++    if(!c->count){c->sw=c->sh=0;return;}
++    int64_t a=left<0?0:left,b=left+im->width;
++    int64_t t=top<0?0:top,d=top+im->height;
++    b=b>c->width?c->width:b;d=d>c->height?c->height:d;
++    unsigned w=((unsigned)(b-a)+c->unit-1)&~(c->unit-1);
++    if(a+w>c->width)a=c->width-w;
++    c->sx=a;c->sy=t;c->sw=w;c->sh=d-t;
++}
++static int redraw(struct ps2_pipe_cursor *c)
++{
++    if(ps2_render_flush(ps2_pipe_context_render(c->context)))return -1;
++    c->busy=1;
++    /* plan reuses the saved-position fields, so callers must hide the old
++     * cursor before replacing its plan. */
++    int result=0;
++    if(c->wanted && !c->suspended && c->count){
++        result=ps2_surface_copy(c->gs,0,c->saved,c->sx,c->sy,0,0,c->sw,c->sh);
++        if(!result)result=ps2_pipe_solid_runs(c->context,0,c->runs,c->count,
++            c->bpp==16?0x7fff:0xffffff,3);
++        if(!result)c->visible=1;
++    }
++    c->busy=0;return result;
++}
++int ps2_pipe_cursor_invalidate(struct ps2_pipe_cursor *c)
++{ if(valid(c))return -1;return front_access(c); }
++static int relocate(struct ps2_pipe_cursor *c,const struct image *image,int wanted,int x,int y)
++{
++    /* Both flush and hide still use the old save-under coordinates. All image
++     * validation and ownership checks have already completed. */
++    if(ps2_render_flush(ps2_pipe_context_render(c->context)) || front_access(c))return -1;
++    c->image=*image;c->wanted=wanted;c->x=x;c->y=y;
++    plan(c,&c->image,x,y);return redraw(c);
++}
++int ps2_pipe_cursor_set(struct ps2_pipe_cursor *c,const struct ps2_cursor_image *image,int x,int y)
++{
++    if(valid(c))return -1;
++    struct image snapshot_image={0};
++    if(image && snapshot(c,&snapshot_image,image))return -1;
++    return relocate(c,&snapshot_image,!!image,x,y);
++}
++int ps2_pipe_cursor_move(struct ps2_pipe_cursor *c,int x,int y)
++{ if(valid(c))return -1;return relocate(c,&c->image,c->wanted,x,y); }
++int ps2_pipe_cursor_flush(struct ps2_pipe_cursor *c)
++{
++    if(valid(c) || ps2_render_flush(ps2_pipe_context_render(c->context)))return -1;
++    if(c->visible || !c->wanted || c->suspended)return 0;
++    plan(c,&c->image,c->x,c->y);return redraw(c);
++}
++int ps2_pipe_cursor_suspend(struct ps2_pipe_cursor *c,int suspended)
++{
++    if(suspended!=0 && suspended!=1){errno=EINVAL;return -1;}
++    if(valid(c))return -1;
++    if(ps2_render_flush(ps2_pipe_context_render(c->context)) || front_access(c))return -1;
++    c->suspended=suspended;
++    return suspended?0:ps2_pipe_cursor_flush(c);
++}
++int ps2_pipe_cursor_destroy(struct ps2_pipe_cursor *c)
++{
++    if(!c)return 0;
++    if(c->gs->front_access!=front_access || c->gs->front_access_data!=c){errno=EBUSY;return -1;}
++    int result=0,error=0;
++    if(!c->gs->error && (ps2_render_flush(ps2_pipe_context_render(c->context)) || front_access(c)))
++        {result=-1;error=errno;}
++    c->gs->front_access=NULL;c->gs->front_access_data=NULL;
++    if(!c->gs->error && ps2_surface_destroy(c->gs,c->saved)){result=-1;error=errno;}
++    struct pipe_context *context=c->context;free(c);ps2_pipe_context_release(context);
++    if(result)errno=error;
++    return result;
++}
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_cursor.h
+@@ -0,0 +1,28 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_PIPE_CURSOR_H
++#define PS2_PIPE_CURSOR_H
++#include "ps2_context_link.h"
++#include <stdint.h>
++#include <stddef.h>
++struct ps2_pipe_cursor;
++struct ps2_cursor_image {
++    const unsigned char *source, *mask;
++    size_t source_bytes, mask_bytes, stride;
++    unsigned width, height, xhot, yhot, msb_first;
++    uint32_t foreground, background;
++};
++/* Single submission thread, one monochrome cursor per GS front buffer. Native
++ * save-under storage is 64x64; a bounded 4096-run heap plan draws masked pixels.
++ * Source bits are snapshotted. No colour destination is read by the CPU.
++ * Front width must be aligned to the GS local-copy unit (2 CT32 / 4 CT16).
++ * Caller must remove any front observer installed later before destruction. */
++struct ps2_pipe_cursor *ps2_pipe_cursor_create(struct pipe_context *);
++int ps2_pipe_cursor_set(struct ps2_pipe_cursor *, const struct ps2_cursor_image *, int x, int y);
++int ps2_pipe_cursor_move(struct ps2_pipe_cursor *, int x, int y);
++/* invalidate restores synchronously without flushing: safe inside a native
++ * front-access callback while the existing render batch is being submitted. */
++int ps2_pipe_cursor_invalidate(struct ps2_pipe_cursor *);
++int ps2_pipe_cursor_flush(struct ps2_pipe_cursor *);
++int ps2_pipe_cursor_suspend(struct ps2_pipe_cursor *, int suspended);
++int ps2_pipe_cursor_destroy(struct ps2_pipe_cursor *);
++#endif
+--- a/src/gallium/drivers/ps2/ps2_gs_surface.c
++++ b/src/gallium/drivers/ps2/ps2_gs_surface.c
+@@ -17,6 +17,14 @@
+     if (!gs->error) gs->error = error;
+     errno = gs->error;
+     return -1;
++}
++
++int ps2_surface_front_access(struct ps2_surface_client *gs, uint32_t handle)
++{
++    if (gs->error) return fail(gs, gs->error);
++    if (!handle && gs->front_access && gs->front_access(gs->front_access_data))
++        return fail(gs, errno ? errno : EIO);
++    return 0;
+ }
+ 
+ static int pause_retry(struct ps2_surface_client *gs)
+@@ -127,6 +135,7 @@
+     if (!rect(ps2_surface_lookup(gs, handle), x, y, width, height)) return fail(gs, EINVAL);
+     struct ps2gs_surface_fill fill = { .abi = PS2GS_ABI_VERSION, .handle = handle,
+         .x = x, .y = y, .width = width, .height = height, .rgba = rgba };
++    if (ps2_surface_front_access(gs, handle)) return -1;
+     return request(gs, PS2GS_SURFACE_FILL, &fill);
+ }
+ 
+@@ -141,6 +150,8 @@
+     struct ps2gs_surface_copy copy = { .abi = PS2GS_ABI_VERSION,
+         .source = source, .destination = destination, .sx = sx, .sy = sy,
+         .dx = dx, .dy = dy, .width = width, .height = height };
++    if (ps2_surface_front_access(gs, source) ||
++        (destination != source && ps2_surface_front_access(gs, destination))) return -1;
+     return request(gs, PS2GS_SURFACE_COPY, &copy);
+ }
+ 
+@@ -156,6 +167,7 @@
+     if (stride < row || (height > 1 && stride > (SIZE_MAX - row) / (height - 1))) return fail(gs, EINVAL);
+     size_t required = (height - 1) * stride + row;
+     if (source_bytes < required || (uintptr_t)pixels > UINTPTR_MAX - (required - 1)) return fail(gs, EINVAL);
++    if (ps2_surface_front_access(gs, handle)) return -1;
+     unsigned char packed[PS2GS_MAX_UPLOAD_BYTES];
+     for (unsigned column = 0; column < width;) {
+         unsigned w = width - column;
+--- a/src/gallium/drivers/ps2/ps2_gs_surface.h
++++ b/src/gallium/drivers/ps2/ps2_gs_surface.h
+@@ -15,7 +15,13 @@
+     int fd, error;
+     struct ps2gs_caps caps;
+     struct ps2_surface front, surfaces[PS2GS_MAX_SURFACES];
++    /* One optional screen-owned observer, called before native front reads or
++     * writes. It must not flush the pending render queue; save-under cursors
++     * restore through synchronous GS copies and suppress their own recursion. */
++    int (*front_access)(void *);
++    void *front_access_data;
+ };
++int ps2_surface_front_access(struct ps2_surface_client *, uint32_t handle);
+ int ps2_surface_open(struct ps2_surface_client *, const char *device);
+ void ps2_surface_close(struct ps2_surface_client *);
+ const struct ps2_surface *ps2_surface_lookup(const struct ps2_surface_client *, uint32_t handle);
+--- a/src/gallium/drivers/ps2/ps2_gs_render.c
++++ b/src/gallium/drivers/ps2/ps2_gs_render.c
+@@ -53,6 +53,7 @@
+         .target = r->target, .depth = r->depth, .count = r->count,
+         .width = color->width, .height = color->height, .bits_per_pixel = color->bits_per_pixel,
+         .commands = (uintptr_t)r->commands };
++    if (ps2_surface_front_access(r->gs, r->target)) return fail(r, errno);
+     if (request(r, PS2GS_RENDER_SUBMIT, &submit)) return -1;
+     r->count = 0;
+     return 0;
+--- a/src/gallium/drivers/ps2/ps2_gs_texture.c
++++ b/src/gallium/drivers/ps2/ps2_gs_texture.c
+@@ -37,6 +37,7 @@
+     struct ps2gs_texture_submit submit = { .abi = PS2GS_ABI_VERSION, .target = r->target,
+         .depth = r->depth, .texture = texture_handle, .count = count, .width = color->width,
+         .height = color->height, .bits_per_pixel = color->bits_per_pixel, .triangles = (uintptr_t)triangles };
++    if (ps2_surface_front_access(r->gs, r->target)) return fail(r, errno);
+     for (unsigned attempt = 0; attempt < 100; ++attempt) {
+         if (!ioctl(r->gs->fd, PS2GS_TEXTURE_SUBMIT, &submit)) return 0;
+         if (errno != EAGAIN) return fail(r, errno);
+--- a/src/gallium/drivers/ps2/ps2_gs_logic.c
++++ b/src/gallium/drivers/ps2/ps2_gs_logic.c
+@@ -25,6 +25,7 @@
+     struct ps2gs_solid_logic r = { .abi = PS2GS_ABI_VERSION, .handle = handle,
+         .x = x, .y = y, .width = width, .height = height,
+         .color = color, .plane_mask = plane_mask, .alu = alu };
++    if (ps2_surface_front_access(gs, handle)) return -1;
+     for (unsigned retry = 0; retry < 100; ++retry) {
+         if (!ioctl(gs->fd, PS2GS_SOLID_LOGIC, &r)) return 0;
+         if (errno != EAGAIN) return fail(gs, errno);

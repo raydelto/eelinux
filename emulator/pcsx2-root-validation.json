@@ -1,0 +1,399 @@
+{
+  "schema": 1,
+  "validation_date": "2026-10-02",
+  "status": "patched Linux and Windows runtimes mount an audit root, run SysVinit and pass guest PAM authentication; newer ext4/SMAP firmware boot under investigation",
+  "kernel": {
+    "artifact": {
+      "path": "build/verification/kernel-root-fixed-7.2.8.elf",
+      "bytes": 2497944,
+      "sha256": "271aa0ca84ce86b25157e2b804063709d2855693202c47e10bac18e00671f141"
+    },
+    "config": {
+      "path": "build/verification/kernel-root-fixed-7.2.8.config",
+      "bytes": 50357,
+      "sha256": "7bfb98d305ad1164984f0b87a9ec50f075930a08ae19c9916ff8f57d6437f0e5"
+    },
+    "api_patch_sha256": "9cc4fbf120267b0dc1349449d6ef3fb2cdf4831cb60e63696a5dd3bba4b8d25c",
+    "early_root_source_sha256": "f27407eef3cd26860eb70853683d855f40969758e983f802c7e45a53acdfec2b",
+    "early_init_bytes": 657384,
+    "early_init_sha256": "eda546a794c39a3a86b83720eea0eea61a9f0a4b5423958f410ca200053bb3c6",
+    "early_modules": [
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/ps2/sif.ko",
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/ps2/iop-memory.ko",
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/ps2/iop-heap.ko",
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/ps2/iop-module.ko",
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/ps2/iop-irq.ko",
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/usb/common/usb-common.ko",
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/usb/core/usbcore.ko",
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/usb/host/ohci-hcd.ko",
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/ps2/iop-registers.ko",
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/usb/host/ohci-ps2.ko",
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/usb/storage/usb-storage.ko",
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/scsi/sd_mod.ko",
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/hid/hid.ko",
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/hid/hid-generic.ko",
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/hid/usbhid/usbhid.ko",
+      "/lib/modules/7.2.8-eelinux-ps2/kernel/drivers/input/evdev.ko"
+    ],
+    "built_module_count": 42,
+    "firmware_sha256": {
+      "ata.irx": "572df70f266888498440cc838d2f8fd11315a71b225c63afccab8ee5302e8db4",
+      "dev9.irx": "660eb68671b239164cd8759015affabc2ab3646b045b98d8fbcafe5f18f22d4f",
+      "gamepad.irx": "f88d003d66bf1255c58b254b5c1ae28312c2357606e83f818447ed070c9d1190",
+      "irq.irx": "9f36af2933493764fe054bbf26831d2cdfd35ac19dab7669605004c45b751685",
+      "irqrelay.irx": "2c838071a8ece21c167a576e9c112854e1ffe6c410293288d14e8ef617347e48",
+      "printk.irx": "984824081f5c41975182569f90650e4ac7e3154d60a3aa159fecedfb48e651e0"
+    },
+    "archive_unpacked_bytes": 1454080,
+    "archive_gzip_bytes": 576228,
+    "archive_sha256": "5b75bde203515161dae8390c55daa2a360e17b3bc53ad6d20ff5cf8762805756",
+    "initial_console": {
+      "mode": "character 0600",
+      "major": 5,
+      "minor": 1
+    },
+    "actual_embedded_archive_validated": true,
+    "layout": {
+      "ram_bytes": 33554432,
+      "kernel_physical_ranges": [
+        [
+          65536,
+          4734784
+        ]
+      ],
+      "compressed_physical_ranges": [
+        [
+          8388608,
+          16071584
+        ]
+      ],
+      "decompressor_overlap_check": "passed"
+    }
+  },
+  "normal_run": {
+    "directory": "build/emulator/pcsx2-root-fixed-normal",
+    "log": {
+      "path": "build/emulator/pcsx2-root-fixed-normal/pcsx2-profile/PCSX2/logs/emulog.txt",
+      "bytes": 18448,
+      "sha256": "5726b423ea91af20354007c6fc1793535ca81e598d6b11e6da6d525ec37b09dd"
+    },
+    "timeout_seconds": 90,
+    "process_timed_out": true,
+    "pcsx2_version": "PCSX2 v2.6.3",
+    "log_mode": "normal",
+    "last_guest_message": "Run /init as init process",
+    "last_guest_timestamp_seconds": 4.276,
+    "early_root_messages_observed": false
+  },
+  "debug_baseline": {
+    "kernel_sha256": "84fba95ad532ccc51c0d993cd9f032fab4bf5c58f32670a7027ad26733946b3a",
+    "timeout_seconds": 120,
+    "log_bytes": 940863184,
+    "repeating_fault": "COP0_TLBWR 0:0,4a6001,0,0",
+    "meaning": "VPN2 0x004a6000; ASID 1; both entry halves invalid",
+    "first_run_init_seconds": 4.316
+  },
+  "production_source_gate_passed": false,
+  "remaining_rejected_port_files": 64,
+  "linux_boot_pass": null,
+  "root_disk_mounted": false,
+  "gnu_sysvinit_started": false,
+  "authenticated_shell_observed": false,
+  "real_hardware_tested": false,
+  "native_ethernet_tested": false,
+  "xorg_tested": false,
+  "limitations": [
+    "Cross-compilation and embedded archive checks do not establish boot completion.",
+    "No physical USB stick is needed: PCSX2 uses the disposable image as virtual USB mass storage.",
+    "Stock PCSX2 invalid-vs-refill exception routing prevents the first real init from reaching module loading.",
+    "ASID, dirty-page/COW, syscall and privilege behavior still require full system qualification."
+  ],
+  "initial_mmu_probe": {
+    "emulator_sha256": "a9566463821130076be8fafff76314a2fae3acb92194f96fd9e1ce2b00c97435",
+    "mmu_patch_sha256": "0182987ad616054b575979201fa43848e267df41f7662016b7b73ce18bcf11c9",
+    "host": "Debian WSL2/WSLg",
+    "kernel_sha256": "271aa0ca84ce86b25157e2b804063709d2855693202c47e10bac18e00671f141",
+    "directory": "build/emulator/pcsx2-mmu-probe",
+    "timeout_seconds": 120,
+    "log_sha256": "929cbef2dc981ce08bf4311a8eb842ac412f2d0ddf22da3d65aa045dd298bb45",
+    "log_bytes": 18836,
+    "screen_visually_observed": true,
+    "result": "first demand fault handled; init SIGSEGV in __tls_init_tp and PID 1 panic",
+    "faulting_pc": "0x00421368",
+    "faulting_return_address": "0x00401b20",
+    "faulting_store_address": "0xffffe830",
+    "instruction_word": "0x7c03e83b",
+    "decode": "R5900 SQ v1,-6085(zero); Linux/glibc RDHWR v1,$29 compatibility needs AdES handler",
+    "linux_boot_pass": null
+  },
+  "tls_probe": {
+    "kernel": {
+      "path": "build/verification/kernel-root-tls-7.2.8.elf",
+      "bytes": 2499048,
+      "sha256": "65686b560a38b1c9398eb95af4d9c3e0895325b0dfaae1eae349ff61e836b223"
+    },
+    "config": {
+      "path": "build/verification/kernel-root-tls-7.2.8.config",
+      "bytes": 50355,
+      "sha256": "ee981e9084b20a3e5b040832fd895ea10a0770a5142884d55ba8103d97a45a8e"
+    },
+    "api_patch_sha256": "47239ff7c20f6c780a9c9e344386c10378664579249cccbc687c2c3113bc6412",
+    "compiled_unaligned_object_sha256": "5993dcdfab76b4e7a541c73c43fc56aef74ead9c60e267e806c4b0a5d86fd7c3",
+    "compiled_rdhwr_call": [
+      "164: R_MIPS_26\tsimulate_rdhwr"
+    ],
+    "emulator_sha256": "e102b0c6301e4974e3afb6b12507347bca8db68bc9835bc499b886a34364ca24",
+    "mmu_patch_sha256": "0c77d612a001b6d11015ba4be68052b1ac4a15c9a2623eda14f0413be9db95a9",
+    "directory": "build/emulator/pcsx2-tls-probe",
+    "host": "Debian WSL2/WSLg",
+    "timeout_seconds": 120,
+    "log": {
+      "path": "build/emulator/pcsx2-tls-probe/pcsx2-profile/PCSX2/logs/emulog.txt",
+      "bytes": 18662,
+      "sha256": "467b5eb06f7aa8c4e71b33bc50ccfa66d5ca9c5f76fd1d14241adfd5679bba15"
+    },
+    "log_mode": "normal",
+    "result": "first RDHWR/SQ address exception handled; glibc futex fatal, init SIGTRAP and PID 1 panic",
+    "last_guest_timestamp_seconds": 4.2842,
+    "user_supplied_screen_message": "The futex facility returned an unexpected error code.",
+    "init_exit_code": "0x00000005",
+    "early_root_module_messages_observed": false,
+    "root_disk_mounted": false,
+    "gnu_sysvinit_started": false,
+    "linux_boot_pass": null,
+    "layout": {
+      "ram_bytes": 33554432,
+      "kernel_physical_ranges": [
+        [
+          65536,
+          4734784
+        ]
+      ],
+      "compressed_physical_ranges": [
+        [
+          8388608,
+          16072688
+        ]
+      ],
+      "decompressor_overlap_check": "passed"
+    },
+    "initramfs_unpacked_bytes": 1454080,
+    "initial_console_node": {
+      "major": 5,
+      "minor": 1,
+      "mode": "0600"
+    }
+  },
+  "futex_diagnostic": {
+    "emulator_sha256": "62dfedeed688ff274beb773d5bcfc3520bda5ff1f0c3be08ac21d1bf363d9e4f",
+    "diagnostic_only": true,
+    "diagnostic_patch_sha256": "8de6e7b487a011606241104e23ea4d31ef471fe1c83b6270cd8f04f12788f992",
+    "bounded_syscall_events": 1024,
+    "original_log": {
+      "path": "build/emulator/pcsx2-futex-probe/pcsx2-profile/PCSX2/logs/emulog.txt",
+      "bytes": 75084,
+      "sha256": "b01834916c7a1c54c0eb72612988687796cfc80714cef30bb90b38179a757d9c"
+    },
+    "original_futex_trace": [
+      "[    6.2497] eeLinux diagnostic SYSCALL 174 pc=00410b08 v0=0000108e v1=00000000 a0=004a6b10 a1=00000080 a2=00000002 a3=00000000 status=00010c11 bd=0",
+      "[    6.2499] eeLinux diagnostic ERET syscall=4238 pc=00410b08 epc=00410b0c v0=00000059 v1=00000000 a0=004a6b10 a1=00000080 a2=00000002 a3=00000001 status=00010c13",
+      "[    6.2641] eeLinux diagnostic BREAK pc=0040061c code=00ff000d v0=00000000 v1=00000001 a0=00000002 a1=7fbaadf0 a2=00000000 a3=00000000 status=00010c11 bd=0 last_syscall=4195"
+    ],
+    "original_result": "syscall 4238 returned MIPS ENOSYS (v0=89,a3=1), then glibc abort BREAK255",
+    "cause": "CONFIG_COMPAT_32BIT_TIME disabled; sys_futex_time32 resolved to sys_ni_syscall",
+    "time32_kernel": {
+      "path": "build/verification/kernel-root-time32-7.2.8.elf",
+      "bytes": 2500328,
+      "sha256": "b36fd54ae18047c96f7efafa57790a1d2081f4c305070d89baee31b1b4d9c0d7"
+    },
+    "time32_config": {
+      "path": "build/verification/kernel-root-time32-7.2.8.config",
+      "bytes": 50347,
+      "sha256": "f5d1e64ab88b83802c4664619b9953329642ca2e2be17a52fda83356c04511fc"
+    },
+    "time32_log": {
+      "path": "build/emulator/pcsx2-time32-probe/pcsx2-profile/PCSX2/logs/emulog.txt",
+      "bytes": 336211,
+      "sha256": "4d4d38e7ec074dd62c786a468f0d36f57e666b185e12c63a8183b49677c989f5"
+    },
+    "time32_futex_trace": [
+      "[    4.4538] eeLinux diagnostic SYSCALL 174 pc=00410b08 v0=0000108e v1=00000000 a0=004a6b10 a1=00000080 a2=00000002 a3=00000000 status=00010c11 bd=0",
+      "[    4.4540] eeLinux diagnostic ERET syscall=4238 pc=00410b08 epc=00410b0c v0=0000000b v1=00000000 a0=004a6b10 a1=00000080 a2=00000002 a3=00000001 status=00010c13",
+      "[    4.4542] eeLinux diagnostic SYSCALL 175 pc=00410b08 v0=0000108e v1=fffffffc a0=004a6b10 a1=00000080 a2=00000002 a3=00000000 status=00010c11 bd=0",
+      "[    4.4544] eeLinux diagnostic ERET syscall=4238 pc=00410b08 epc=00410b0c v0=0000000b v1=fffffffc a0=004a6b10 a1=00000080 a2=00000002 a3=00000001 status=00010c13"
+    ],
+    "time32_result": "ENOSYS panic removed; repeated valid FUTEX_WAIT_PRIVATE returns EAGAIN",
+    "time32_enabled": true,
+    "linked_syscall_table_proof": {
+      "symbols": {
+        "sys_call_table": {
+          "address": 2147619816,
+          "type": "T"
+        },
+        "sys_futex_time32": {
+          "address": 2148102384,
+          "type": "T"
+        },
+        "sys_ni_syscall": {
+          "address": 2147787488,
+          "type": "T"
+        }
+      },
+      "syscall": 4238,
+      "table_index": 238,
+      "table_slot_address": 2147620768,
+      "table_slot_value": 2148102384,
+      "strong_function": true,
+      "table_target_is_compiled_futex_time32": true
+    },
+    "next_cause": "LL at 0x00410adc and SC at 0x00410ae4 dispatch to PCSX2 Unknown(), which silently returns",
+    "kernel_llsc_emulation_requires_instruction_exception": true,
+    "linux_boot_pass": null,
+    "root_disk_mounted": false,
+    "gnu_sysvinit_started": false
+  },
+  "ri_probe": {
+    "kernel_sha256": "b36fd54ae18047c96f7efafa57790a1d2081f4c305070d89baee31b1b4d9c0d7",
+    "emulator_sha256": "45ff47f51b0afa3ed67454d85a55e5e009f1437b64ef8814b6c62259077a2aea",
+    "patch_sha256": "32f65091b0020f48046e058c9b60ae12899ee39dfda1acd38bdc186a557ca9f3",
+    "directory": "build/emulator/pcsx2-ri-probe",
+    "log_bytes": 26172,
+    "log_sha256": "57ccfa9bae5273daf9dad527e582b05cf44d7e0745f587f7a834888445a66a19",
+    "early_root_modules_loaded": true,
+    "iop_irq_relay_ready": true,
+    "usb_hid_keyboard_detected": true,
+    "virtual_usb_storage_detected": true,
+    "scsi_host_registered": true,
+    "scsi_disk_detected": false,
+    "root_disk_mounted": false,
+    "gnu_sysvinit_started": false,
+    "timeout_seconds": 120,
+    "linux_boot_pass": null
+  },
+  "usb_control_probe": {
+    "session": "build/emulator/pcsx2-usb-control-probe",
+    "kernel": {
+      "path": "build/verification/kernel-root-usbdebug-7.2.8.elf",
+      "bytes": 2506808,
+      "sha256": "7f7f0407f6af70d1325f36cf999a6dfbbb5fdcc79087ab39bebcca53590d7b2b"
+    },
+    "emulator": {
+      "purpose": "private bounded diagnostic; unchanged production baseline",
+      "path": "/home/machaddr/.cache/eelinux/pcsx2-usb-control-diagnostic/pcsx2-qt-diagnostic",
+      "sha256": "22fabb1742d12cdeda80867c89b7cbf6b75cd774884bf0091e9066f2d90acec9"
+    },
+    "log": {
+      "path": "build/emulator/pcsx2-usb-control-probe/pcsx2-profile/PCSX2/logs/emulog.txt",
+      "bytes": 97739,
+      "sha256": "0b698c7c82f9149f8633cd7b96dc7cca9370fde1026e4134a276c96bbbc0724c"
+    },
+    "excerpts": [
+      "[   10.4387] eeLinux diagnostic USB MAXLUN request=a1fe value=0 index=0 length=1 count=0",
+      "[   10.4404] eeLinux diagnostic USB MAXLUN descriptor_result=-1 status=0 actual=0",
+      "[   10.4410] eeLinux diagnostic USB MAXLUN reply=0 status=0 actual=1",
+      "[   10.4417] eeLinux diagnostic OHCI CTRL reply td=00045400 dir=0 packet=8 length=8 actual=8 status=0 ret=8 rounding=0 async=00000000 done=00000000 donecount=7",
+      "[   10.4421] eeLinux diagnostic OHCI CTRL retire td=00045400 head=00045440 cbp=00000000 flags=02c00000 next=00000000 done=00045400 donecount=6 irq=00000004 enable=0000005a",
+      "[   10.4424] eeLinux diagnostic OHCI CTRL reply td=00045440 dir=2 packet=1 length=1 actual=1 status=0 ret=1 rounding=1 async=00000000 done=00045400 donecount=6",
+      "[   10.4425] eeLinux diagnostic OHCI CTRL retire td=00045440 head=00045480 cbp=00000000 flags=02d40000 next=00045400 done=00045440 donecount=6 irq=00000004 enable=0000005a",
+      "[   10.4428] eeLinux diagnostic OHCI CTRL reply td=00045480 dir=1 packet=0 length=0 actual=0 status=0 ret=0 rounding=0 async=00000000 done=00045440 donecount=6",
+      "[   10.4435] eeLinux diagnostic OHCI CTRL retire td=00045480 head=000454c0 cbp=00000000 flags=02080000 next=00045440 done=00045480 donecount=0 irq=00000004 enable=0000005a",
+      "[   10.4439] eeLinux diagnostic OHCI DONE frame=0f01 hcca=00045000 done=00045480 previous=00000000 irq=00000004 enable=0000005a",
+      "[   10.4440] eeLinux diagnostic OHCI IRQ 0 pending=00000006 enable=0000005a mie=0 clock=54261055135 last=54222015713",
+      "[   34.2115] Timeout -- cancelling URB",
+      "[   34.2120] eeLinux diagnostic OHCI IRQREG 0 offset=04 value=0000008f ctl=0000009f status=00000000 irq=00000006 enable=0000005a frame=379b hcca=00045000 done=00000000 ctrlhead=00045360",
+      "[   34.2123] eeLinux diagnostic OHCI IRQREG 1 offset=10 value=00000004 ctl=0000008f status=00000000 irq=00000002 enable=0000005a frame=379b hcca=00045000 done=00000000 ctrlhead=00045360"
+    ],
+    "get_max_lun_reply": {
+      "status": 0,
+      "actual_bytes": 1,
+      "maximum_lun": 0
+    },
+    "control_setup_data_status_tds_retired": true,
+    "hcca_done_published": true,
+    "master_interrupt_enabled_at_completion": false,
+    "intrenable_hex": "0000005a",
+    "wdh_pending_after_completion": true,
+    "root_mounted": false,
+    "sysvinit_started": false,
+    "conclusion": "OHCI control stages complete but MIE remains disabled; kernel waits for giveback, including after cancellation",
+    "physical_hardware_test": false
+  },
+  "historical_status": "real init and IOP/USB drivers run; virtual USB mass storage detected but SCSI disk scan incomplete",
+  "pam_permission_correction": {
+    "date": "2026-10-02",
+    "scope": "real guest PAM calls and emulator launch milestones",
+    "root_username": "root",
+    "root_password": "eelinux",
+    "root_cause": "DrvFS scratch files were mode0777; pam_securetty rejected world-writable /etc/securetty",
+    "correction": "native Linux assembly scratch plus output-local atomic publication; securetty0644/shadow0600",
+    "linux_native": {
+      "kernel_sha256": "7f846b4b460ae6a9b97a3b4ac1905624a14234ce4ba264ef79acd84177fa8122",
+      "source_rootfs_sha256": "87f623ad65972043070e6682468984e5f6215ef6b2604c23b06be89b5f9943d4",
+      "guest_log_sha256": "3b82829acc9de7eb67c9b8e4b0b0af7b63f9645e11b9b4da9b97b3f4ce9d79e6",
+      "authentication_lines": [
+        "[   54.5692] eeLinux auth probe: getpwnam=1 uid=0 euid=0 errno=0",
+        "[   54.5881] eeLinux auth probe: getspnam=1 errno=0",
+        "[   54.6079] eeLinux auth probe: crypt=1 matches=1 errno=0 lastchange=10957",
+        "[   54.6267] eeLinux auth probe: service=auth-tty-probe correct password result=0",
+        "[   54.6443] eeLinux auth probe: account result=0",
+        "[   54.6617] eeLinux auth probe: session result=0",
+        "[   54.6817] eeLinux auth probe: service=auth-unix-probe correct password result=0",
+        "[   54.6993] eeLinux auth probe: account result=0",
+        "[   54.7187] eeLinux auth probe: session result=0",
+        "[   54.7362] eeLinux auth probe: service=login wrong password result=7",
+        "[   54.7545] eeLinux auth probe: service=login correct password result=0",
+        "[   54.7709] eeLinux auth probe: account result=0",
+        "[   54.7870] eeLinux auth probe: session result=0",
+        "[   54.8028] eeLinux auth probe: overall=PASS"
+      ],
+      "wrong_password_rejected": true,
+      "correct_password_accepted": true,
+      "pam_account_and_session_passed": true,
+      "interactive_shell_tested": false
+    },
+    "windows_patched": {
+      "kernel_sha256": "7f846b4b460ae6a9b97a3b4ac1905624a14234ce4ba264ef79acd84177fa8122",
+      "source_rootfs_sha256": "87f623ad65972043070e6682468984e5f6215ef6b2604c23b06be89b5f9943d4",
+      "guest_log_sha256": "2d98d4f780d12a27bcb07ef0b96d43bb09932a46c943c515812bcf986814c09b",
+      "authentication_lines": [
+        "[   61.5984] eeLinux auth probe: getpwnam=1 uid=0 euid=0 errno=0",
+        "[   61.6427] eeLinux auth probe: getspnam=1 errno=0",
+        "[   61.6915] eeLinux auth probe: crypt=1 matches=1 errno=0 lastchange=10957",
+        "[   61.7507] eeLinux auth probe: service=auth-tty-probe correct password result=0",
+        "[   61.7972] eeLinux auth probe: account result=0",
+        "[   61.8478] eeLinux auth probe: session result=0",
+        "[   61.8973] eeLinux auth probe: service=auth-unix-probe correct password result=0",
+        "[   61.9381] eeLinux auth probe: account result=0",
+        "[   61.9868] eeLinux auth probe: session result=0",
+        "[   62.0254] eeLinux auth probe: service=login wrong password result=7",
+        "[   62.0705] eeLinux auth probe: service=login correct password result=0",
+        "[   62.1155] eeLinux auth probe: account result=0",
+        "[   62.1507] eeLinux auth probe: session result=0",
+        "[   62.1888] eeLinux auth probe: overall=PASS"
+      ],
+      "wrong_password_rejected": true,
+      "correct_password_accepted": true,
+      "pam_account_and_session_passed": true,
+      "interactive_shell_tested": false
+    },
+    "pcsx2_mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85",
+    "windows_runtime_sha256": "c8fb4a613f0bdb241b54743a0511cdff4db31233cf18e36d275c4215aed80439",
+    "managed_windows_stop_verified": true,
+    "real_ps2_login_tested": false
+  },
+  "physical_boot_checkpoints": {
+    "model": "SCPH-90001",
+    "launcher": "Tuna/LaunchELF",
+    "display": "PS2-to-HDMI",
+    "evidence": "user-reported colors",
+    "entry_red": "passed",
+    "post_bss_yellow": "passed",
+    "post_decompression_green": "passed",
+    "post_cache_handoff_cyan": "passed",
+    "main_kernel_visible_boot": false,
+    "main_kernel_entry_magenta": "passed",
+    "sync_guard_candidate": "blank_screen_not_fixed",
+    "sync_candidate_image_sha256": "825b671f899e50d79b452e787201a24daeea2f10cfc5d93d62d79f3bba4088b4",
+    "main_entry_image_sha256": "694045dd8648596e571c1089580e7a5432ff9251e0bcdb10d76e6622d50ab6bc"
+  }
+}

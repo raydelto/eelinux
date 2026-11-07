@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_bdftopcf",
+  "kind": "application",
+  "program": "bdftopcf",
+  "version": "1.1",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/bdftopcf-1.1.tar.bz2",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/bdftopcf-1.1.tar.bz2",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "4b4df05fc53f1e98993638d6f7e178d95b31745c4568cee407e167491fd311a2",
+      "filename": "bdftopcf-1.1.tar.bz2"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "7b790e8d512ca2812ac889c156ef91c48798b4744a6857e5b17e0128764b5afa8c5426fe5de05a9819d64745116718db4221b3e657e3c2633465e87179c44bec",
+      "filename": "bdftopcf-1.1.tar.bz2"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": true,
+  "runtime_qualification": {
+    "scope": "emulator application smoke checks; not exhaustive feature qualification",
+    "record": "docs/desktop-applications-r41-validation.json"
+  }
+}

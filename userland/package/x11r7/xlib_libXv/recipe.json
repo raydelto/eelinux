@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "name": "x11r7/xlib_libXv",
+  "kind": "library",
+  "program": "libXv",
+  "version": "1.0.13",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/libXv-1.0.13.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/lib/libXv-1.0.13.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "7d34910958e1c1f8d193d828fea1b7da192297280a35437af0692f003ba03755",
+      "filename": "libXv-1.0.13.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "80d7a11e6415fbe0fc50c3c2a1abf8f0f2ec38446c9c8d88ff48875cd94b8949cb1028f2ab37476c4b25cbd7eac34dde9132dd998c4e04ea576b95ae411ba946",
+      "filename": "libXv-1.0.13.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": true,
+  "runtime_qualification": {
+    "scope": "emulator application smoke checks; not exhaustive feature qualification",
+    "record": "docs/desktop-applications-r41-validation.json"
+  }
+}

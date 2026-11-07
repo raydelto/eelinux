@@ -1,0 +1,299 @@
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_cursor_screen.c
+@@ -0,0 +1,143 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_cursor_screen.h"
++#include "ps2_cursor.h"
++#include "ps2_gs_render.h"
++#include "cursorstr.h"
++#include "pixmapstr.h"
++#include "servermd.h"
++#include "os.h"
++#include <errno.h>
++#include <string.h>
++static DevPrivateKeyRec key;
++static Bool close_screen(ScreenPtr);
++static void block_handler(ScreenPtr,void *);
++static void best_size(int,unsigned short *,unsigned short *,ScreenPtr);
++static struct ps2_cursor_screen *owner(ScreenPtr s)
++{
++    struct ps2_cursor_screen *b=s?dixLookupPrivate(&s->devPrivates,&key):NULL;
++    if(!b || !b->installed)FatalError("PS2 GS: missing native cursor owner\n");
++    return b;
++}
++static void result(int status)
++{ if(status)FatalError("PS2 GS: native cursor failed: %s\n",strerror(errno)); }
++static Bool supported(CursorPtr cursor)
++{
++    CursorBitsPtr b=cursor?cursor->bits:NULL;
++    return b && !b->argb && b->source && b->mask && b->width && b->height &&
++        b->width<=64 && b->height<=64 && b->xhot<b->width && b->yhot<b->height;
++}
++static Bool realize(DeviceIntPtr d,ScreenPtr s,CursorPtr cursor)
++{ (void)d;(void)s;return supported(cursor); }
++static Bool unrealize(DeviceIntPtr d,ScreenPtr s,CursorPtr cursor)
++{
++    (void)d;struct ps2_cursor_screen *b=owner(s);
++    if(b->current==cursor){result(ps2_pipe_cursor_set(b->native,NULL,0,0));b->current=NULL;}
++    return TRUE;
++}
++static uint32_t pixel(unsigned r,unsigned g,unsigned b,unsigned bpp)
++{ return bpp==16?(r>>11)|((g>>11)<<5)|((b>>11)<<10):(r>>8)|((g>>8)<<8)|((b>>8)<<16); }
++static void set_cursor(DeviceIntPtr d,ScreenPtr s,CursorPtr cursor,int x,int y)
++{
++    struct ps2_cursor_screen *b=owner(s);
++    if(d!=b->device)FatalError("PS2 GS: multiple cursor devices unsupported\n");
++    if(!cursor){result(ps2_pipe_cursor_set(b->native,NULL,x,y));b->current=NULL;return;}
++    if(!supported(cursor))FatalError("PS2 GS: unsupported colour/oversized cursor\n");
++    CursorBitsPtr bits=cursor->bits;size_t stride=BitmapBytePad(bits->width);
++    /* Screen depth, fixed by native DDX setup, determines the logical pixels. */
++    unsigned bpp=s->rootDepth==15?16:32;
++    struct ps2_cursor_image image={.source=bits->source,.mask=bits->mask,
++        .source_bytes=stride*bits->height,.mask_bytes=stride*bits->height,.stride=stride,
++        .width=bits->width,.height=bits->height,.xhot=bits->xhot,.yhot=bits->yhot,
++        .msb_first=BITMAP_BIT_ORDER==MSBFirst,
++        .foreground=pixel(cursor->foreRed,cursor->foreGreen,cursor->foreBlue,bpp),
++        .background=pixel(cursor->backRed,cursor->backGreen,cursor->backBlue,bpp)};
++    result(ps2_pipe_cursor_set(b->native,&image,x,y));b->current=cursor;
++}
++static void move_cursor(DeviceIntPtr d,ScreenPtr s,int x,int y)
++{
++    struct ps2_cursor_screen *b=owner(s);
++    if(d!=b->device)FatalError("PS2 GS: foreign cursor device\n");
++    result(ps2_pipe_cursor_move(b->native,x,y));
++}
++static Bool device_initialize(DeviceIntPtr d,ScreenPtr s)
++{
++    struct ps2_cursor_screen *b=owner(s);
++    if(!d || (b->device && b->device!=d))return FALSE;
++    b->device=d;return TRUE;
++}
++static void device_cleanup(DeviceIntPtr d,ScreenPtr s)
++{
++    struct ps2_cursor_screen *b=owner(s);
++    if(b->device!=d)return;
++    result(ps2_pipe_cursor_set(b->native,NULL,0,0));b->device=NULL;b->current=NULL;
++}
++static const miPointerSpriteFuncRec sprite_funcs={realize,unrealize,set_cursor,move_cursor,
++    device_initialize,device_cleanup};
++static void damaged(DamagePtr damage,RegionPtr region,void *closure)
++{
++    (void)region;struct ps2_cursor_screen *b=closure;
++    result(ps2_pipe_cursor_invalidate(b->native));DamageEmpty(damage);
++}
++static void damage_destroyed(DamagePtr damage,void *closure)
++{
++    struct ps2_cursor_screen *b=closure;
++    if(b->damage==damage)b->damage=NULL;
++}
++static void best_size(int kind,unsigned short *w,unsigned short *h,ScreenPtr s)
++{
++    struct ps2_cursor_screen *b=owner(s);
++    if(kind==CursorShape){if(*w>64)*w=64;if(*h>64)*h=64;return;}
++    b->QueryBestSize(kind,w,h,s);
++}
++static void block_handler(ScreenPtr s,void *timeout)
++{
++    struct ps2_cursor_screen *b=owner(s);
++    if(s->BlockHandler!=block_handler)FatalError("PS2 GS: cursor block owner changed\n");
++    s->BlockHandler=b->BlockHandler;s->BlockHandler(s,timeout);
++    b->BlockHandler=s->BlockHandler;s->BlockHandler=block_handler;
++    result(ps2_pipe_cursor_flush(b->native));
++}
++Bool ps2_cursor_screen_prepare(ScreenPtr s,struct ps2_cursor_screen *b,
++    struct pipe_context *context,miPointerScreenFuncPtr screen_funcs)
++{
++    struct ps2_render_client *r=ps2_pipe_context_render(context);
++    if(!s || !b || b->installed || !r || !screen_funcs || !screen_funcs->CursorOffScreen ||
++       !screen_funcs->CrossScreen || !screen_funcs->WarpCursor || !s->CloseScreen ||
++       !s->BlockHandler || !s->QueryBestSize || !s->GetScreenPixmap ||
++       !((s->rootDepth==24 && r->gs->front.bits_per_pixel==32) ||
++         (s->rootDepth==15 && r->gs->front.bits_per_pixel==16)) ||
++       !dixRegisterPrivateKey(&key,PRIVATE_SCREEN,0) || dixLookupPrivate(&s->devPrivates,&key))return FALSE;
++    PixmapPtr front=s->GetScreenPixmap(s);
++    if(!front || front->drawable.pScreen!=s || front->drawable.width!=r->gs->front.width ||
++       front->drawable.height!=r->gs->front.height || front->drawable.depth!=s->rootDepth ||
++       front->devPrivate.ptr)return FALSE;
++    struct ps2_pipe_cursor *native=ps2_pipe_cursor_create(context);if(!native)return FALSE;
++    *b=(struct ps2_cursor_screen){.screen=s,.native=native,.screen_funcs=*screen_funcs};
++    b->damage=DamageCreate(damaged,damage_destroyed,DamageReportRawRegion,TRUE,s,b);
++    if(!b->damage){ps2_pipe_cursor_destroy(native);memset(b,0,sizeof(*b));return FALSE;}
++    DamageSetReportAfterOp(b->damage,FALSE);
++    dixSetPrivate(&s->devPrivates,&key,b);b->installed=TRUE;
++    if(!miPointerInitialize(s,(miPointerSpriteFuncPtr)&sprite_funcs,&b->screen_funcs,TRUE)){
++        b->installed=FALSE;dixSetPrivate(&s->devPrivates,&key,NULL);
++        DamageDestroy(b->damage);ps2_pipe_cursor_destroy(native);memset(b,0,sizeof(*b));return FALSE;
++    }
++    DamageRegister(&front->drawable,b->damage);
++    b->CloseScreen=s->CloseScreen;b->BlockHandler=s->BlockHandler;b->QueryBestSize=s->QueryBestSize;
++    s->CloseScreen=close_screen;s->BlockHandler=block_handler;s->QueryBestSize=best_size;return TRUE;
++}
++Bool ps2_cursor_screen_suspend(struct ps2_cursor_screen *b,Bool suspend)
++{ return b && b->installed && !ps2_pipe_cursor_suspend(b->native,!!suspend); }
++static Bool close_screen(ScreenPtr s)
++{
++    struct ps2_cursor_screen *b=owner(s);
++    if(s->CloseScreen!=close_screen || s->BlockHandler!=block_handler || s->QueryBestSize!=best_size)
++        FatalError("PS2 GS: cursor callbacks changed before close\n");
++    s->CloseScreen=b->CloseScreen;s->BlockHandler=b->BlockHandler;s->QueryBestSize=b->QueryBestSize;
++    if(b->damage){DamageUnregister(b->damage);DamageDestroy(b->damage);}
++    int status=ps2_pipe_cursor_destroy(b->native);
++    if(status && errno==EBUSY)result(status); /* A foreign observer still owns it. */
++    b->native=NULL;b->current=NULL;b->device=NULL;
++    b->installed=FALSE;dixSetPrivate(&s->devPrivates,&key,NULL);
++    Bool lower=s->CloseScreen(s);
++    return !status && lower;
++}
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_cursor_screen.h
+@@ -0,0 +1,31 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_XORG_CURSOR_H
++#define PS2_XORG_CURSOR_H
++#include "xorg-server.h"
++#include "scrnintstr.h"
++#include "mipointer.h"
++#include "damage.h"
++#include "ps2_context_link.h"
++struct ps2_pipe_cursor;
++struct ps2_cursor_screen {
++    ScreenPtr screen;
++    struct ps2_pipe_cursor *native;
++    DamagePtr damage;
++    CursorPtr current;
++    DeviceIntPtr device;
++    miPointerScreenFuncRec screen_funcs;
++    CloseScreenProcPtr CloseScreen;
++    ScreenBlockHandlerProcPtr BlockHandler;
++    QueryBestSizeProcPtr QueryBestSize;
++    Bool installed;
++};
++/* Install after Damage/native GC setup and before other pointer setup. One
++ * submission-thread pointer per screen; positive monochrome cursors <=64x64.
++ * miPointerInitialize owns the lower pointer CloseScreen. The outer native
++ * hook restores the background and removes Damage/observer ownership first.
++ * ARGB cursors are rejected, never routed to a CPU colour renderer.
++ * Caller remains responsible for input drivers and DDX VT callbacks. */
++Bool ps2_cursor_screen_prepare(ScreenPtr,struct ps2_cursor_screen *,
++    struct pipe_context *,miPointerScreenFuncPtr);
++Bool ps2_cursor_screen_suspend(struct ps2_cursor_screen *,Bool);
++#endif
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_cursor.h
+@@ -0,0 +1,28 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_PIPE_CURSOR_H
++#define PS2_PIPE_CURSOR_H
++#include "ps2_context_link.h"
++#include <stdint.h>
++#include <stddef.h>
++struct ps2_pipe_cursor;
++struct ps2_cursor_image {
++    const unsigned char *source, *mask;
++    size_t source_bytes, mask_bytes, stride;
++    unsigned width, height, xhot, yhot, msb_first;
++    uint32_t foreground, background;
++};
++/* Single submission thread, one monochrome cursor per GS front buffer. Native
++ * save-under storage is 64x64; a bounded 4096-run heap plan draws masked pixels.
++ * Source bits are snapshotted. No colour destination is read by the CPU.
++ * Front width must be aligned to the GS local-copy unit (2 CT32 / 4 CT16).
++ * Caller must remove any front observer installed later before destruction. */
++struct ps2_pipe_cursor *ps2_pipe_cursor_create(struct pipe_context *);
++int ps2_pipe_cursor_set(struct ps2_pipe_cursor *, const struct ps2_cursor_image *, int x, int y);
++int ps2_pipe_cursor_move(struct ps2_pipe_cursor *, int x, int y);
++/* invalidate restores synchronously without flushing: safe inside a native
++ * front-access callback while the existing render batch is being submitted. */
++int ps2_pipe_cursor_invalidate(struct ps2_pipe_cursor *);
++int ps2_pipe_cursor_flush(struct ps2_pipe_cursor *);
++int ps2_pipe_cursor_suspend(struct ps2_pipe_cursor *, int suspended);
++int ps2_pipe_cursor_destroy(struct ps2_pipe_cursor *);
++#endif
+--- a/hw/xfree86/drivers/ps2/ps2_gs_surface.c
++++ b/hw/xfree86/drivers/ps2/ps2_gs_surface.c
+@@ -17,6 +17,14 @@
+     if (!gs->error) gs->error = error;
+     errno = gs->error;
+     return -1;
++}
++
++int ps2_surface_front_access(struct ps2_surface_client *gs, uint32_t handle)
++{
++    if (gs->error) return fail(gs, gs->error);
++    if (!handle && gs->front_access && gs->front_access(gs->front_access_data))
++        return fail(gs, errno ? errno : EIO);
++    return 0;
+ }
+ 
+ static int pause_retry(struct ps2_surface_client *gs)
+@@ -127,6 +135,7 @@
+     if (!rect(ps2_surface_lookup(gs, handle), x, y, width, height)) return fail(gs, EINVAL);
+     struct ps2gs_surface_fill fill = { .abi = PS2GS_ABI_VERSION, .handle = handle,
+         .x = x, .y = y, .width = width, .height = height, .rgba = rgba };
++    if (ps2_surface_front_access(gs, handle)) return -1;
+     return request(gs, PS2GS_SURFACE_FILL, &fill);
+ }
+ 
+@@ -141,6 +150,8 @@
+     struct ps2gs_surface_copy copy = { .abi = PS2GS_ABI_VERSION,
+         .source = source, .destination = destination, .sx = sx, .sy = sy,
+         .dx = dx, .dy = dy, .width = width, .height = height };
++    if (ps2_surface_front_access(gs, source) ||
++        (destination != source && ps2_surface_front_access(gs, destination))) return -1;
+     return request(gs, PS2GS_SURFACE_COPY, &copy);
+ }
+ 
+@@ -156,6 +167,7 @@
+     if (stride < row || (height > 1 && stride > (SIZE_MAX - row) / (height - 1))) return fail(gs, EINVAL);
+     size_t required = (height - 1) * stride + row;
+     if (source_bytes < required || (uintptr_t)pixels > UINTPTR_MAX - (required - 1)) return fail(gs, EINVAL);
++    if (ps2_surface_front_access(gs, handle)) return -1;
+     unsigned char packed[PS2GS_MAX_UPLOAD_BYTES];
+     for (unsigned column = 0; column < width;) {
+         unsigned w = width - column;
+--- a/hw/xfree86/drivers/ps2/ps2_gs_surface.h
++++ b/hw/xfree86/drivers/ps2/ps2_gs_surface.h
+@@ -15,7 +15,13 @@
+     int fd, error;
+     struct ps2gs_caps caps;
+     struct ps2_surface front, surfaces[PS2GS_MAX_SURFACES];
++    /* One optional screen-owned observer, called before native front reads or
++     * writes. It must not flush the pending render queue; save-under cursors
++     * restore through synchronous GS copies and suppress their own recursion. */
++    int (*front_access)(void *);
++    void *front_access_data;
+ };
++int ps2_surface_front_access(struct ps2_surface_client *, uint32_t handle);
+ int ps2_surface_open(struct ps2_surface_client *, const char *device);
+ void ps2_surface_close(struct ps2_surface_client *);
+ const struct ps2_surface *ps2_surface_lookup(const struct ps2_surface_client *, uint32_t handle);
+--- a/hw/xfree86/drivers/ps2/ps2_gs_render.c
++++ b/hw/xfree86/drivers/ps2/ps2_gs_render.c
+@@ -53,6 +53,7 @@
+         .target = r->target, .depth = r->depth, .count = r->count,
+         .width = color->width, .height = color->height, .bits_per_pixel = color->bits_per_pixel,
+         .commands = (uintptr_t)r->commands };
++    if (ps2_surface_front_access(r->gs, r->target)) return fail(r, errno);
+     if (request(r, PS2GS_RENDER_SUBMIT, &submit)) return -1;
+     r->count = 0;
+     return 0;
+--- a/hw/xfree86/drivers/ps2/ps2_gs_texture.c
++++ b/hw/xfree86/drivers/ps2/ps2_gs_texture.c
+@@ -37,6 +37,7 @@
+     struct ps2gs_texture_submit submit = { .abi = PS2GS_ABI_VERSION, .target = r->target,
+         .depth = r->depth, .texture = texture_handle, .count = count, .width = color->width,
+         .height = color->height, .bits_per_pixel = color->bits_per_pixel, .triangles = (uintptr_t)triangles };
++    if (ps2_surface_front_access(r->gs, r->target)) return fail(r, errno);
+     for (unsigned attempt = 0; attempt < 100; ++attempt) {
+         if (!ioctl(r->gs->fd, PS2GS_TEXTURE_SUBMIT, &submit)) return 0;
+         if (errno != EAGAIN) return fail(r, errno);
+--- a/hw/xfree86/drivers/ps2/ps2_gs_logic.c
++++ b/hw/xfree86/drivers/ps2/ps2_gs_logic.c
+@@ -25,6 +25,7 @@
+     struct ps2gs_solid_logic r = { .abi = PS2GS_ABI_VERSION, .handle = handle,
+         .x = x, .y = y, .width = width, .height = height,
+         .color = color, .plane_mask = plane_mask, .alu = alu };
++    if (ps2_surface_front_access(gs, handle)) return -1;
+     for (unsigned retry = 0; retry < 100; ++retry) {
+         if (!ioctl(gs->fd, PS2GS_SOLID_LOGIC, &r)) return 0;
+         if (errno != EAGAIN) return fail(gs, errno);

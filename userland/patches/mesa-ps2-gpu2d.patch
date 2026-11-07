@@ -1,0 +1,1098 @@
+--- a/src/gallium/drivers/ps2/ps2_gs_surface.c
++++ b/src/gallium/drivers/ps2/ps2_gs_surface.c
+@@ -11,6 +11,7 @@
+ _Static_assert(sizeof(struct ps2gs_surface_create) == 32, "surface create ABI");
+ _Static_assert(sizeof(struct ps2gs_surface_copy) == 48, "surface copy ABI");
+ _Static_assert(sizeof(struct ps2gs_surface_upload) == 40, "surface upload ABI");
++_Static_assert(sizeof(struct ps2gs_surface_download) == 40, "surface download ABI");
+ 
+ static int fail(struct ps2_surface_client *gs, int error)
+ {
+@@ -25,6 +26,18 @@
+     if (!handle && gs->front_access && gs->front_access(gs->front_access_data))
+         return fail(gs, errno ? errno : EIO);
+     return 0;
++}
++int ps2_surface_front_region(struct ps2_surface_client *gs,uint32_t handle,
++    unsigned x,unsigned y,unsigned width,unsigned height)
++{
++    if(gs->error)return fail(gs,gs->error);
++    if(handle || !width || !height)return 0;
++    if(gs->front_region){
++        if(gs->front_region(gs->front_access_data,x,y,width,height))
++            return fail(gs,errno?errno:EIO);
++        return 0;
++    }
++    return ps2_surface_front_access(gs,handle);
+ }
+ 
+ static int pause_retry(struct ps2_surface_client *gs)
+@@ -135,7 +148,7 @@
+     if (!rect(ps2_surface_lookup(gs, handle), x, y, width, height)) return fail(gs, EINVAL);
+     struct ps2gs_surface_fill fill = { .abi = PS2GS_ABI_VERSION, .handle = handle,
+         .x = x, .y = y, .width = width, .height = height, .rgba = rgba };
+-    if (ps2_surface_front_access(gs, handle)) return -1;
++    if (ps2_surface_front_region(gs, handle,x,y,width,height)) return -1;
+     return request(gs, PS2GS_SURFACE_FILL, &fill);
+ }
+ 
+@@ -150,8 +163,8 @@
+     struct ps2gs_surface_copy copy = { .abi = PS2GS_ABI_VERSION,
+         .source = source, .destination = destination, .sx = sx, .sy = sy,
+         .dx = dx, .dy = dy, .width = width, .height = height };
+-    if (ps2_surface_front_access(gs, source) ||
+-        (destination != source && ps2_surface_front_access(gs, destination))) return -1;
++    if (ps2_surface_front_region(gs, source,sx,sy,width,height) ||
++        ps2_surface_front_region(gs, destination,dx,dy,width,height)) return -1;
+     return request(gs, PS2GS_SURFACE_COPY, &copy);
+ }
+ 
+@@ -167,7 +180,7 @@
+     if (stride < row || (height > 1 && stride > (SIZE_MAX - row) / (height - 1))) return fail(gs, EINVAL);
+     size_t required = (height - 1) * stride + row;
+     if (source_bytes < required || (uintptr_t)pixels > UINTPTR_MAX - (required - 1)) return fail(gs, EINVAL);
+-    if (ps2_surface_front_access(gs, handle)) return -1;
++    if (ps2_surface_front_region(gs, handle,x,y,width,height)) return -1;
+     unsigned char packed[PS2GS_MAX_UPLOAD_BYTES];
+     for (unsigned column = 0; column < width;) {
+         unsigned w = width - column;
+@@ -190,3 +203,17 @@
+     }
+     return 0;
+ }
++int ps2_surface_download(struct ps2_surface_client *gs,uint32_t handle,
++    unsigned x,unsigned y,unsigned width,unsigned height,void *pixels,size_t bytes)
++{
++    if(gs->error)return fail(gs,gs->error);
++    if(!(gs->caps.features&PS2GS_HW_READBACK))return fail(gs,ENOTSUP);
++    const struct ps2_surface *s=ps2_surface_lookup(gs,handle);
++    if(!pixels || !rect(s,x,y,width,height) || width%(s->bits_per_pixel==16?4:2) ||
++        !bytes || bytes>PS2GS_MAX_READBACK_BYTES || bytes%128 || bytes!=(size_t)width*height*(s->bits_per_pixel/8) ||
++        (uintptr_t)pixels>UINTPTR_MAX-(bytes-1))return fail(gs,EINVAL);
++    if(ps2_surface_front_region(gs,handle,x,y,width,height))return -1;
++    struct ps2gs_surface_download download={.abi=PS2GS_ABI_VERSION,.handle=handle,.x=x,.y=y,
++        .width=width,.height=height,.bytes=bytes,.pixels=(uintptr_t)pixels};
++    return request(gs,PS2GS_SURFACE_DOWNLOAD,&download);
++}
+--- a/src/gallium/drivers/ps2/ps2_gs_render.c
++++ b/src/gallium/drivers/ps2/ps2_gs_render.c
+@@ -53,7 +53,29 @@
+         .target = r->target, .depth = r->depth, .count = r->count,
+         .width = color->width, .height = color->height, .bits_per_pixel = color->bits_per_pixel,
+         .commands = (uintptr_t)r->commands };
+-    if (ps2_surface_front_access(r->gs, r->target)) return fail(r, errno);
++    unsigned left=color->width,top=color->height,right=0,bottom=0;
++    for(unsigned i=0;i<r->count;++i){
++        const struct ps2gs_command *c=r->commands+i;
++        unsigned x,y,x2,y2;
++        if(c->op==PS2GS_CLEAR_DEPTH)continue;
++        if(c->op==PS2GS_FILL){x=c->v[0].x/16;y=c->v[0].y/16;x2=x+c->width;y2=y+c->height;}
++        else{
++            x=x2=c->v[0].x;y=y2=c->v[0].y;
++            for(unsigned j=1;j<3;++j){
++                if(c->v[j].x<x)x=c->v[j].x;
++                if(c->v[j].y<y)y=c->v[j].y;
++                if(c->v[j].x>x2)x2=c->v[j].x;
++                if(c->v[j].y>y2)y2=c->v[j].y;
++            }
++            x/=16;y/=16;x2=(x2+15)/16;y2=(y2+15)/16;
++        }
++        if(x<left)left=x;
++        if(y<top)top=y;
++        if(x2>right)right=x2;
++        if(y2>bottom)bottom=y2;
++    }
++    if(right>left && bottom>top &&
++       ps2_surface_front_region(r->gs,r->target,left,top,right-left,bottom-top))return fail(r,errno);
+     if (request(r, PS2GS_RENDER_SUBMIT, &submit)) return -1;
+     r->count = 0;
+     return 0;
+--- a/src/gallium/drivers/ps2/ps2_gs_texture.c
++++ b/src/gallium/drivers/ps2/ps2_gs_texture.c
+@@ -11,6 +11,21 @@
+ {
+     if (!r->gs->error) r->gs->error = error;
+     r->count = 0; errno = r->gs->error; return -1;
++}
++int ps2_texture_front_region(struct ps2_render_client *r,
++    const struct ps2gs_texture_triangle *triangles,unsigned count)
++{
++    unsigned left=UINT32_MAX,top=UINT32_MAX,right=0,bottom=0;
++    for(unsigned i=0;i<count;++i)for(unsigned j=0;j<3;++j){
++        unsigned x=triangles[i].v[j].position.x,y=triangles[i].v[j].position.y;
++        if(x<left)left=x;
++        if(y<top)top=y;
++        if(x>right)right=x;
++        if(y>bottom)bottom=y;
++    }
++    left/=16;top/=16;right=(right+15)/16;bottom=(bottom+15)/16;
++    return right>left && bottom>top?
++        ps2_surface_front_region(r->gs,r->target,left,top,right-left,bottom-top):0;
+ }
+ int ps2_texture_triangles(struct ps2_render_client *r, uint32_t texture_handle,
+                           const struct ps2gs_texture_triangle *triangles, unsigned count)
+@@ -37,7 +52,7 @@
+     struct ps2gs_texture_submit submit = { .abi = PS2GS_ABI_VERSION, .target = r->target,
+         .depth = r->depth, .texture = texture_handle, .count = count, .width = color->width,
+         .height = color->height, .bits_per_pixel = color->bits_per_pixel, .triangles = (uintptr_t)triangles };
+-    if (ps2_surface_front_access(r->gs, r->target)) return fail(r, errno);
++    if (ps2_texture_front_region(r,triangles,count)) return fail(r, errno);
+     for (unsigned attempt = 0; attempt < 100; ++attempt) {
+         if (!ioctl(r->gs->fd, PS2GS_TEXTURE_SUBMIT, &submit)) return 0;
+         if (errno != EAGAIN) return fail(r, errno);
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_gs_bitmap.c
+@@ -0,0 +1,98 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_gs_bitmap.h"
++#include <errno.h>
++#include <stdlib.h>
++
++#define MAX_GLYPHS 4096U
++#define MAX_CLIPS 256U
++#define MAX_PIXELS 1048576U
++#define MAX_SPANS 32768U
++struct span { uint16_t x,y,width,height; uint32_t color; };
++struct plan { struct span *spans; unsigned count,capacity; };
++static int invalid(int error) { errno=error; return -1; }
++static int append(struct plan *p,int64_t x,int64_t y,int64_t right,int64_t bottom,uint32_t color)
++{
++    if (right<=x || bottom<=y) return 0;
++    if (p->count==MAX_SPANS) return invalid(E2BIG);
++    if (p->count==p->capacity) {
++        unsigned capacity=p->capacity ? p->capacity*2 : 64;
++        struct span *spans=realloc(p->spans,capacity*sizeof(*spans));
++        if (!spans) return -1;
++        p->spans=spans; p->capacity=capacity;
++    }
++    p->spans[p->count++]=(struct span){x,y,right-x,bottom-y,color};
++    return 0;
++}
++static int rectangle(struct plan *p,const struct ps2_surface *surface,
++    const struct ps2_bitmap_box *clips,unsigned count,
++    int64_t x,int64_t y,int64_t right,int64_t bottom,uint32_t color)
++{
++    for(unsigned i=0;i<count;++i) {
++        int64_t a=x>clips[i].x1 ? x : clips[i].x1,b=y>clips[i].y1 ? y : clips[i].y1;
++        int64_t c=right<clips[i].x2 ? right : clips[i].x2,d=bottom<clips[i].y2 ? bottom : clips[i].y2;
++        if(a<0) a=0;
++        if(b<0) b=0;
++        if(c>surface->width) c=surface->width;
++        if(d>surface->height) d=surface->height;
++        if(append(p,a,b,c,d,color)) return -1;
++    }
++    return 0;
++}
++static int bit(const unsigned char *row,unsigned x,int msb)
++{ return !!(row[x/8] & (msb ? 0x80U>>(x%8) : 1U<<(x%8))); }
++int ps2_bitmap_draw(struct ps2_render_client *r,uint32_t target,
++    const struct ps2_bitmap_glyph *glyphs,unsigned count,
++    const struct ps2_bitmap_box *clips,unsigned clip_count,int msb_first,
++    uint32_t foreground,const struct ps2_bitmap_box *background,uint32_t background_color)
++{
++    if(!r || !r->gs) return invalid(EINVAL);
++    if(r->gs->error) return invalid(r->gs->error);
++    const struct ps2_surface *surface=ps2_surface_lookup(r->gs,target);
++    if(!surface || (count && !glyphs) || (clip_count && !clips) ||
++        count>MAX_GLYPHS || clip_count>MAX_CLIPS || (msb_first!=0 && msb_first!=1)) return invalid(EINVAL);
++    if(background && (background->x2<background->x1 || background->y2<background->y1)) return invalid(EINVAL);
++    for(unsigned i=0;i<clip_count;++i)
++        if(clips[i].x2<clips[i].x1 || clips[i].y2<clips[i].y1) return invalid(EINVAL);
++    size_t pixels=0;
++    for(unsigned i=0;i<count;++i) {
++        const struct ps2_bitmap_glyph *g=&glyphs[i];
++        if(g->width>256 || g->height>256) return invalid(ENOTSUP);
++        pixels+=(size_t)g->width*g->height;
++        if(pixels>MAX_PIXELS) return invalid(E2BIG);
++        if(!g->width || !g->height) continue;
++        size_t row=(g->width+7)/8;
++        if(!g->bits || g->stride<row || g->height-1>(SIZE_MAX-row)/g->stride) return invalid(EINVAL);
++        size_t bytes=(g->height-1)*g->stride+row;
++        if(g->bytes<bytes || (uintptr_t)g->bits>UINTPTR_MAX-(bytes-1)) return invalid(EINVAL);
++    }
++    if(!clip_count) return 0;
++    struct plan p={0};
++    if(background && rectangle(&p,surface,clips,clip_count,background->x1,background->y1,
++        background->x2,background->y2,background_color)) goto error;
++    for(unsigned i=0;i<count;++i) {
++        const struct ps2_bitmap_glyph *g=&glyphs[i];
++        if(!g->width || !g->height) continue;
++        for(unsigned y=0;y<g->height;++y) {
++            const unsigned char *row=g->bits+y*g->stride;
++            unsigned x=0;
++            while(x<g->width) {
++                while(x<g->width && !bit(row,x,msb_first)) ++x;
++                unsigned left=x;
++                while(x<g->width && bit(row,x,msb_first)) ++x;
++                if(x>left && rectangle(&p,surface,clips,clip_count,(int64_t)g->x+left,(int64_t)g->y+y,
++                    (int64_t)g->x+x,(int64_t)g->y+y+1,foreground)) goto error;
++            }
++        }
++    }
++    if(!p.count) { free(p.spans); return 0; }
++    uint32_t saved_color=r->target,saved_depth=r->depth;
++    if(ps2_render_bind(r,target,0)) goto error;
++    for(unsigned i=0;i<p.count;++i) {
++        const struct span *s=&p.spans[i];
++        if(ps2_render_fill(r,s->x,s->y,s->width,s->height,s->color)) goto error;
++    }
++    if(ps2_render_flush(r) || ps2_render_bind(r,saved_color,saved_depth)) goto error;
++    free(p.spans); return 0;
++error:
++    free(p.spans); return -1;
++}
+--- a/src/gallium/drivers/ps2/ps2_gs_logic.c
++++ b/src/gallium/drivers/ps2/ps2_gs_logic.c
+@@ -6,6 +6,7 @@
+ #include <time.h>
+ 
+ _Static_assert(sizeof(struct ps2gs_solid_logic) == 40, "solid logic ABI");
++_Static_assert(sizeof(struct ps2gs_solid_batch) == 40, "solid batch ABI");
+ static int fail(struct ps2_surface_client *gs, int error)
+ { if (!gs->error) gs->error = error; errno = gs->error; return -1; }
+ int ps2_surface_solid_logic(struct ps2_surface_client *gs, uint32_t handle,
+@@ -25,7 +26,7 @@
+     struct ps2gs_solid_logic r = { .abi = PS2GS_ABI_VERSION, .handle = handle,
+         .x = x, .y = y, .width = width, .height = height,
+         .color = color, .plane_mask = plane_mask, .alu = alu };
+-    if (ps2_surface_front_access(gs, handle)) return -1;
++    if (ps2_surface_front_region(gs, handle,x,y,width,height)) return -1;
+     for (unsigned retry = 0; retry < 100; ++retry) {
+         if (!ioctl(gs->fd, PS2GS_SOLID_LOGIC, &r)) return 0;
+         if (errno != EAGAIN) return fail(gs, errno);
+@@ -35,3 +36,39 @@
+     }
+     return fail(gs, EAGAIN);
+ }
++int ps2_surface_solid_batch(struct ps2_surface_client *gs, uint32_t handle,
++    const struct ps2gs_solid_logic *rectangles, unsigned count)
++{
++    if (!gs) { errno=EINVAL; return -1; }
++    if (gs->error) return fail(gs,gs->error);
++    if (gs->fd<0) return fail(gs,EBADF);
++    const struct ps2_surface *s=ps2_surface_lookup(gs,handle);
++    if (!s || !rectangles || !count || count>PS2GS_MAX_COMMANDS) return fail(gs,EINVAL);
++    if (!(gs->caps.features&PS2GS_HW_SOLID_BATCH)) return fail(gs,ENOTSUP);
++    unsigned bits=s->bits_per_pixel==16 ? 0x7fff : 0xffffff;
++    unsigned x=s->width,y=s->height,x2=0,y2=0;
++    for (unsigned i=0;i<count;++i) {
++        const struct ps2gs_solid_logic *b=rectangles+i;
++        if (b->abi!=PS2GS_ABI_VERSION || b->handle!=handle || b->reserved || b->alu>15 ||
++            ((b->color|b->plane_mask)&~bits) || b->alu!=rectangles[0].alu ||
++            b->plane_mask!=rectangles[0].plane_mask || !b->width || !b->height ||
++            b->x>=s->width || b->y>=s->height || b->width>s->width-b->x || b->height>s->height-b->y)
++            return fail(gs,EINVAL);
++        if(b->x<x)x=b->x;
++        if(b->y<y)y=b->y;
++        if(b->x+b->width>x2)x2=b->x+b->width;
++        if(b->y+b->height>y2)y2=b->y+b->height;
++    }
++    if (ps2_surface_front_region(gs,handle,x,y,x2-x,y2-y)) return -1;
++    struct ps2gs_solid_batch batch={.abi=PS2GS_ABI_VERSION,.handle=handle,.count=count,
++        .plane_mask=rectangles[0].plane_mask,.alu=rectangles[0].alu,
++        .width=s->width,.height=s->height,.bits_per_pixel=s->bits_per_pixel,
++        .rectangles=(uintptr_t)rectangles};
++    for(unsigned retry=0;retry<100;++retry) {
++        if(!ioctl(gs->fd,PS2GS_SOLID_BATCH,&batch))return 0;
++        if(errno!=EAGAIN)return fail(gs,errno);
++        struct timespec delay={.tv_nsec=10000000};
++        while(nanosleep(&delay,&delay)<0)if(errno!=EINTR)return fail(gs,errno);
++    }
++    return fail(gs,EAGAIN);
++}
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_gs_transfer.c
+@@ -0,0 +1,50 @@
++/* SPDX-License-Identifier: MIT */
++#define _POSIX_C_SOURCE 200809L
++#include "ps2_gs_transfer.h"
++#include <errno.h>
++#include <sys/ioctl.h>
++#include <time.h>
++_Static_assert(sizeof(struct ps2gs_texture_transfer) == 48, "texture transfer ABI");
++static int fail(struct ps2_render_client *r, int error)
++{
++    if (!r->gs->error) r->gs->error = error;
++    r->count = 0; errno = r->gs->error; return -1;
++}
++int ps2_texture_transfer(struct ps2_render_client *r, uint32_t texture_handle,
++    const struct ps2gs_texture_triangle *triangles, unsigned count, uint32_t mask, unsigned mode)
++{
++    if (r->gs->error) return fail(r, r->gs->error);
++    const struct ps2_surface *color = ps2_surface_lookup(r->gs, r->target);
++    const struct ps2_surface *texture = texture_handle ? ps2_surface_lookup(r->gs, texture_handle) : NULL;
++    if (!(r->gs->caps.features & PS2GS_HW_TEXTURE_TRANSFER)) return fail(r, ENOTSUP);
++    if (!color || !texture || color == texture || !triangles || !count || count > 64 ||
++        r->depth || texture->width > 1024 || texture->height > 1024 ||
++        mode > PS2GS_TRANSFER_SUBTRACT || (mask & ~(color->bits_per_pixel == 16 ? 0x7fffU : 0xffffffU)))
++        return fail(r, EINVAL);
++    for (unsigned i = 0; i < count; ++i) {
++        const struct ps2gs_texture_triangle *t = triangles + i;
++        if ((t->flags & ~PS2GS_TEXTURE_MODULATE) || t->reserved[0] || t->reserved[1] || t->reserved[2])
++            return fail(r, EINVAL);
++        for (unsigned j = 0; j < 3; ++j) {
++            const struct ps2gs_texture_vertex *v = t->v + j;
++            if (v->q < 0x39800000 || v->q > 0x45800000 || v->s > v->q || v->t > v->q ||
++                v->position.x > color->width * 16 || v->position.y > color->height * 16 || v->position.z > 65535)
++                return fail(r, EINVAL);
++        }
++    }
++    if (!mask) return 0;
++    if (ps2_render_flush(r) || ps2_texture_front_region(r,triangles,count)) return -1;
++    struct ps2gs_texture_transfer request = {
++        .draw = {.abi = PS2GS_ABI_VERSION, .target = r->target, .texture = texture_handle,
++            .count = count, .width = color->width, .height = color->height,
++            .bits_per_pixel = color->bits_per_pixel, .triangles = (uintptr_t)triangles},
++        .plane_mask = mask, .mode = mode };
++    for (unsigned attempt = 0; attempt < 100; ++attempt) {
++        if (!ioctl(r->gs->fd, PS2GS_TEXTURE_TRANSFER, &request)) return 0;
++        if (errno != EAGAIN) return fail(r, errno);
++        struct timespec delay = {.tv_nsec = 10000000};
++        while (nanosleep(&delay, &delay) < 0)
++            if (errno != EINTR) return fail(r, errno);
++    }
++    return fail(r, EAGAIN);
++}
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_gs_bitmap.h
+@@ -0,0 +1,23 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_GS_BITMAP_H
++#define PS2_GS_BITMAP_H
++#include "ps2_gs_render.h"
++#include <stddef.h>
++struct ps2_bitmap_box { int32_t x1,y1,x2,y2; };
++struct ps2_bitmap_glyph {
++    int32_t x,y;
++    unsigned width,height;
++    const unsigned char *bits;
++    size_t bytes,stride;
++};
++/* Decode existing monochrome font bits into native GS rectangle commands.
++ * No destination pixels, CPU framebuffer, readback or software rasterizer.
++ * All coordinates/clips are relative to the supplied owned color target.
++ * Preflight the entire command plan before fencing/submitting anything.
++ * One submission thread; restore the previous Mesa color/depth binding.
++ */
++int ps2_bitmap_draw(struct ps2_render_client *,uint32_t target,
++    const struct ps2_bitmap_glyph *,unsigned count,
++    const struct ps2_bitmap_box *,unsigned clip_count,int msb_first,
++    uint32_t foreground,const struct ps2_bitmap_box *background,uint32_t background_color);
++#endif
+--- a/src/gallium/drivers/ps2/ps2_gs_logic.h
++++ b/src/gallium/drivers/ps2/ps2_gs_logic.h
+@@ -3,9 +3,12 @@
+ #define PS2_GS_LOGIC_CLIENT_H
+ #include "ps2_gs_surface.h"
+ #include "ps2-gs-logic.h"
++#include "ps2-gs-batch.h"
+ /* Native pixel values; alpha is preserved. Sticky hardware failure, one
+  * drawing thread, pre-effect EAGAIN retries only. No destination mapping. */
+ int ps2_surface_solid_logic(struct ps2_surface_client *, uint32_t handle,
+     unsigned x, unsigned y, unsigned width, unsigned height,
+     uint32_t color, uint32_t plane_mask, unsigned alu);
++int ps2_surface_solid_batch(struct ps2_surface_client *, uint32_t handle,
++    const struct ps2gs_solid_logic *rectangles, unsigned count);
+ #endif
+--- a/src/gallium/drivers/ps2/ps2_gs_surface.h
++++ b/src/gallium/drivers/ps2/ps2_gs_surface.h
+@@ -4,6 +4,7 @@
+ #include <stdint.h>
+ #include <stddef.h>
+ #include "ps2-gs-surface.h"
++#include "ps2-gs-readback.h"
+ 
+ struct ps2_surface {
+     uint32_t handle, width, height, bits_per_pixel, buffer_width, bytes;
+@@ -17,11 +18,14 @@
+     struct ps2_surface front, surfaces[PS2GS_MAX_SURFACES];
+     /* One optional screen-owned observer, called before native front reads or
+      * writes. It must not flush the pending render queue; save-under cursors
+-     * restore through synchronous GS copies and suppress their own recursion. */
++     * restore through synchronous GS draws and suppress their own recursion. */
+     int (*front_access)(void *);
+     void *front_access_data;
++    int (*front_region)(void *, unsigned, unsigned, unsigned, unsigned);
+ };
+ int ps2_surface_front_access(struct ps2_surface_client *, uint32_t handle);
++int ps2_surface_front_region(struct ps2_surface_client *, uint32_t handle,
++    unsigned x, unsigned y, unsigned width, unsigned height);
+ int ps2_surface_open(struct ps2_surface_client *, const char *device);
+ void ps2_surface_close(struct ps2_surface_client *);
+ const struct ps2_surface *ps2_surface_lookup(const struct ps2_surface_client *, uint32_t handle);
+@@ -36,4 +40,6 @@
+ int ps2_surface_upload(struct ps2_surface_client *, uint32_t handle,
+                        unsigned x, unsigned y, unsigned width, unsigned height,
+                        const void *pixels, size_t source_bytes, size_t stride);
++int ps2_surface_download(struct ps2_surface_client *, uint32_t handle,
++    unsigned x,unsigned y,unsigned width,unsigned height,void *pixels,size_t bytes);
+ #endif
+--- a/src/gallium/drivers/ps2/ps2_gs_texture.h
++++ b/src/gallium/drivers/ps2/ps2_gs_texture.h
+@@ -2,6 +2,8 @@
+ #ifndef PS2_GS_TEXTURE_CLIENT_H
+ #define PS2_GS_TEXTURE_CLIENT_H
+ #include "ps2_gs_render.h"
++struct ps2gs_texture_triangle;
++int ps2_texture_front_region(struct ps2_render_client *,const struct ps2gs_texture_triangle *,unsigned);
+ #include "ps2-gs-texture.h"
+ /* Synchronous sampling on the same exclusive file. Fences queued rendering
+  * first. No raw GS addresses, CPU rasterization or retries after effects. */
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_gs_transfer.h
+@@ -0,0 +1,8 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_GS_TRANSFER_CLIENT_H
++#define PS2_GS_TRANSFER_CLIENT_H
++#include "ps2_gs_texture.h"
++#include "ps2-gs-transfer.h"
++int ps2_texture_transfer(struct ps2_render_client *, uint32_t texture,
++    const struct ps2gs_texture_triangle *, unsigned count, uint32_t mask, unsigned mode);
++#endif
+--- a/src/gallium/drivers/ps2/ps2_solid_batch.c
++++ b/src/gallium/drivers/ps2/ps2_solid_batch.c
+@@ -3,6 +3,35 @@
+ #include "ps2_solid_batch.h"
+ #include "ps2_gs_logic.h"
+ #include <errno.h>
++static int submit_solids(struct ps2_render_client *render,uint32_t handle,
++    const struct ps2_pipe_solid_box *boxes,const struct ps2_pipe_solid_run *runs,
++    unsigned count,uint32_t color,uint32_t mask,unsigned alu)
++{
++    if(ps2_render_flush(render))return -1;
++    /* Geometry and colours only: destination pixels never leave GS memory.
++     * Older kernels retain the identical individually fenced operation. */
++    if(!(render->gs->caps.features&PS2GS_HW_SOLID_BATCH)) {
++        for(unsigned i=0;i<count;++i) {
++            const struct ps2_pipe_solid_box *b=runs ? &runs[i].box : boxes+i;
++            if(ps2_surface_solid_logic(render->gs,handle,b->x1,b->y1,
++                b->x2-b->x1,b->y2-b->y1,runs ? runs[i].color : color,mask,alu))return -1;
++        }
++        return 0;
++    }
++    struct ps2gs_solid_logic batch[PS2GS_MAX_COMMANDS];
++    for(unsigned i=0;i<count;) {
++        unsigned n=count-i;if(n>PS2GS_MAX_COMMANDS)n=PS2GS_MAX_COMMANDS;
++        for(unsigned j=0;j<n;++j) {
++            const struct ps2_pipe_solid_box *b=runs ? &runs[i+j].box : boxes+i+j;
++            batch[j]=(struct ps2gs_solid_logic){.abi=PS2GS_ABI_VERSION,.handle=handle,
++                .x=b->x1,.y=b->y1,.width=b->x2-b->x1,.height=b->y2-b->y1,
++                .color=runs ? runs[i+j].color : color,.plane_mask=mask,.alu=alu};
++        }
++        if(ps2_surface_solid_batch(render->gs,handle,batch,n))return -1;
++        i+=n;
++    }
++    return 0;
++}
+ int ps2_pipe_solid_rectangles(struct pipe_context *context,uint32_t handle,
+     const struct ps2_pipe_solid_box *boxes,unsigned count,uint32_t color,uint32_t mask,unsigned alu)
+ {
+@@ -23,12 +52,7 @@
+             (unsigned)b->x2>storage->width || (unsigned)b->y2>storage->height) goto out;
+     }
+     if(!count || !mask || alu==5) { status=0;goto out; }
+-    status=ps2_render_flush(render);
+-    for(unsigned i=0;!status && i<count;++i) {
+-        const struct ps2_pipe_solid_box *b=boxes+i;
+-        status=ps2_surface_solid_logic(render->gs,handle,b->x1,b->y1,
+-            b->x2-b->x1,b->y2-b->y1,color,mask,alu);
+-    }
++    status=submit_solids(render,handle,boxes,NULL,count,color,mask,alu);
+     error=errno;
+ out:
+     ps2_pipe_context_release(context);
+@@ -174,12 +198,7 @@
+             (unsigned)b->x2>s->width || (unsigned)b->y2>s->height)goto out;
+     }
+     if(!count || !mask || alu==5){status=0;goto out;}
+-    status=ps2_render_flush(render);
+-    for(unsigned i=0;!status && i<count;++i){
+-        const struct ps2_pipe_solid_box *b=&runs[i].box;
+-        status=ps2_surface_solid_logic(render->gs,handle,b->x1,b->y1,b->x2-b->x1,b->y2-b->y1,
+-                                       runs[i].color,mask,alu);
+-    }
++    status=submit_solids(render,handle,NULL,runs,count,0,mask,alu);
+     error=errno;
+ out:
+     ps2_pipe_context_release(context);if(status)errno=error;return status;
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_rop.c
+@@ -0,0 +1,296 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_rop.h"
++#include "ps2_pipe.h"
++#include "ps2_gs_logic.h"
++#include "ps2_tile.h"
++#include <errno.h>
++#include <stdlib.h>
++#include <string.h>
++static uint32_t bits(float f) { uint32_t v; memcpy(&v, &f, 4); return v; }
++static unsigned padded(unsigned n) { unsigned p = 1; while (p < n) p *= 2; return p; }
++static int sample(struct ps2_surface_client *gs, uint32_t source, uint32_t destination,
++    unsigned sx, unsigned sy, unsigned dx, unsigned dy, unsigned w, unsigned h,
++    uint32_t mask, unsigned mode, unsigned factor)
++{
++    const struct ps2_surface *s = ps2_surface_lookup(gs, source);
++    unsigned x[4] = {dx, dx+w, dx+w, dx}, y[4] = {dy, dy, dy+h, dy+h};
++    unsigned u[4] = {sx, sx+w, sx+w, sx}, v[4] = {sy, sy, sy+h, sy+h};
++    static const unsigned indices[2][3] = {{0,1,2},{0,2,3}};
++    struct ps2gs_texture_triangle triangles[2] = {0};
++    for (unsigned i=0; i<2; ++i) {
++        triangles[i].flags = factor != 128 ? PS2GS_TEXTURE_MODULATE : 0;
++        for (unsigned j=0; j<3; ++j) {
++            unsigned k=indices[i][j];
++            triangles[i].v[j] = (struct ps2gs_texture_vertex){
++                .position = {.x=x[k]*16, .y=y[k]*16,
++                    .rgba=0x80000000U | factor | factor<<8 | factor<<16},
++                .s=bits((float)u[k]/padded(s->width)), .t=bits((float)v[k]/padded(s->height)),
++                .q=0x3f800000};
++        }
++    }
++    struct ps2_render_client r = {.gs=gs, .target=destination};
++    return ps2_texture_transfer(&r, source, triangles, 2, mask, mode);
++}
++int ps2_rop_release(struct ps2_rop_workspace *w)
++{
++    int status=0, error=errno;
++    uint32_t handles[] = {w->c,w->b,w->a,w->destination,w->source};
++    for (unsigned i=0; i<5; ++i)
++        if (handles[i] && !w->gs->error && ps2_surface_destroy(w->gs,handles[i])) {
++            if (!status) error=errno;
++            status=-1;
++        }
++    memset(w,0,sizeof(*w)); errno=error; return status;
++}
++int ps2_rop_reserve(struct ps2_rop_workspace *w, struct ps2_surface_client *gs, unsigned bpp)
++{
++    *w=(struct ps2_rop_workspace){.gs=gs};
++    if (!(gs->caps.features&PS2GS_HW_TEXTURE_TRANSFER) ||
++        !(gs->caps.features&PS2GS_HW_SOLID_LOGIC)) { errno=ENOTSUP; return -1; }
++    if (ps2_surface_create(gs,128,32,bpp,&w->source) ||
++        ps2_surface_create(gs,128,32,bpp,&w->destination) ||
++        ps2_surface_create(gs,64,32,32,&w->a) ||
++        ps2_surface_create(gs,64,32,32,&w->b) ||
++        ps2_surface_create(gs,64,32,32,&w->c)) {
++        int error=errno; ps2_rop_release(w); errno=error; return -1;
++    }
++    return 0;
++}
++static int clear(struct ps2_rop_workspace *w, uint32_t handle, unsigned width, unsigned height)
++{ return ps2_surface_solid_logic(w->gs,handle,0,0,width,height,0,0xffffff,0); }
++static int capture(struct ps2_rop_workspace *w, uint32_t source, uint32_t snapshot,
++    unsigned sx, unsigned sy, unsigned width, unsigned height, unsigned *offset)
++{
++    const struct ps2_surface *s=ps2_surface_lookup(w->gs,source);
++    unsigned unit=s->bits_per_pixel==16 ? 4 : 2, aligned=(width+unit-1)&~(unit-1);
++    *offset=0;
++    if (s->width<unit) {
++        return sample(w->gs,source,snapshot,sx,sy,0,0,width,height,
++            s->bits_per_pixel==16?0x7fff:0xffffff,PS2GS_TRANSFER_REPLACE,128);
++    }
++    /* A whole odd-width pixmap may be narrower than its rounded transfer.
++     * Copy the aligned prefix and the final complete unit at their exact
++     * positions. The overlapping snapshot pixels receive identical values;
++     * this also handles tall pixmaps without texturing the original source. */
++    if (aligned>s->width) {
++        unsigned prefix=width&~(unit-1);
++        if (ps2_surface_copy(w->gs,source,snapshot,sx,sy,0,0,prefix,height)) return -1;
++        return ps2_surface_copy(w->gs,source,snapshot,sx+width-unit,sy,width-unit,0,unit,height);
++    }
++    if (sx+aligned>s->width) { *offset=sx+aligned-s->width; sx-=*offset; }
++    return ps2_surface_copy(w->gs,source,snapshot,sx,sy,0,0,aligned,height);
++}
++int ps2_rop_rectangle(struct ps2_rop_workspace *w, uint32_t source, uint32_t destination,
++    unsigned sx, unsigned sy, unsigned dx, unsigned dy, unsigned width, unsigned height,
++    uint32_t mask, unsigned alu)
++{
++    struct ps2_surface_client *gs=w->gs;
++    const struct ps2_surface *d=ps2_surface_lookup(gs,destination);
++    unsigned so=0,doff=0;
++    if (!width || !height || !mask || alu==5) return 0;
++    if (width>64 || height>32 || alu>15) { errno=EINVAL; return -1; }
++    if (alu==0 || alu==10 || alu==15)
++        return ps2_surface_solid_logic(gs,destination,dx,dy,width,height,0,mask,alu);
++    if (capture(w,source,w->source,sx,sy,width,height,&so)) return -1;
++    if (alu==3 || alu==12) {
++        if (sample(gs,w->source,destination,so,0,dx,dy,width,height,mask,0,128)) return -1;
++        return alu==12 ? ps2_surface_solid_logic(gs,destination,dx,dy,width,height,0,mask,10) : 0;
++    }
++    /* Algebraic normal form of the X11 truth table over GF(2):
++     * f(S,D)=constant XOR source*S XOR dest*D XOR both*(S AND D).
++     * Isolated-bit addition modulo 256 is XOR. AND is the carry from S+D.
++     * CT16 expands five-bit channels at bits 3..7; CT32 temporaries retain
++     * carries that a five-bit scratch target would discard. */
++    unsigned constant=(alu>>3)&1, sc=((alu>>1)&1)^constant;
++    unsigned dc=((alu>>2)&1)^constant, both=(alu&1)^((alu>>1)&1)^((alu>>2)&1)^constant;
++    if (both && capture(w,destination,w->destination,dx,dy,width,height,&doff)) return -1;
++    for (unsigned k=d->bits_per_pixel==16?3:0; k<8; ++k) {
++        uint32_t native=d->bits_per_pixel==16 ?
++            (1U<<(k-3))|(1U<<(k+2))|(1U<<(k+7)) : (1U<<k)|(1U<<(k+8))|(1U<<(k+16));
++        native &= mask;
++        if (!native) continue;
++        uint32_t rgb=d->bits_per_pixel==16 ?
++            ((native&31)<<3)|(((native>>5)&31)<<11)|(((native>>10)&31)<<19) : native;
++        if (clear(w,w->a,width,height) || sample(gs,w->source,w->a,so,0,0,0,width,height,rgb,0,128)) return -1;
++        if (both) {
++            if (clear(w,w->b,width,height) || clear(w,w->c,width,height)) return -1;
++            if (k==7) {
++                /* Halve bit 7 before adding, then threshold the retained
++                 * bit-7 carry with MODULATE 255/128 and clamping. */
++                if (sample(gs,w->destination,w->b,doff,0,0,0,width,height,rgb>>1,0,64) ||
++                    sample(gs,w->a,w->b,0,0,0,0,width,height,rgb,1,64) ||
++                    sample(gs,w->b,w->c,0,0,0,0,width,height,rgb,0,255)) return -1;
++            } else if (sample(gs,w->destination,w->b,doff,0,0,0,width,height,rgb,0,128) ||
++                sample(gs,w->a,w->b,0,0,0,0,width,height,rgb<<1,1,128) ||
++                sample(gs,w->b,w->c,0,0,0,0,width,height,rgb,0,64)) return -1;
++        }
++        if (!dc && ps2_surface_solid_logic(gs,destination,dx,dy,width,height,0,native,0)) return -1;
++        if (constant && ps2_surface_solid_logic(gs,destination,dx,dy,width,height,0,native,10)) return -1;
++        if (sc && sample(gs,w->a,destination,0,0,dx,dy,width,height,native,1,128)) return -1;
++        if (both && sample(gs,w->c,destination,0,0,dx,dy,width,height,native,1,128)) return -1;
++    }
++    return 0;
++}
++static int before(const struct ps2_pipe_copy_box *a,const struct ps2_pipe_copy_box *b)
++{ return a->dy<b->dy || (a->dy==b->dy && a->dx<b->dx); }
++int ps2_pipe_rop_copy_boxes(struct pipe_context *ctx,uint32_t source,uint32_t destination,
++    const struct ps2_pipe_copy_box *input,unsigned count,uint32_t mask,unsigned alu)
++{
++    if (!ctx || count>PS2_PIPE_MAX_COPY_BOXES || (count && !input) || alu>15) { errno=EINVAL; return -1; }
++    if (ps2_pipe_context_acquire(ctx)) return -1;
++    struct ps2_render_client *r=ps2_pipe_context_render(ctx);
++    struct ps2_surface_client *gs=r->gs;
++    const struct ps2_surface *s=ps2_surface_lookup(gs,source), *d=ps2_surface_lookup(gs,destination);
++    struct ps2_pipe_copy_box boxes[PS2_PIPE_MAX_COPY_BOXES];
++    struct ps2_rop_workspace w={0};
++    int status=-1,error=EINVAL;
++    if (!s || !d || s->bits_per_pixel!=d->bits_per_pixel ||
++        (mask&~(d->bits_per_pixel==16?0x7fffU:0xffffffU))) goto out;
++    int64_t shift_x=count?(int64_t)input[0].dx-input[0].sx:0;
++    int64_t shift_y=count?(int64_t)input[0].dy-input[0].sy:0;
++    uint64_t pixels=0;
++    for (unsigned i=0;i<count;++i) {
++        struct ps2_pipe_copy_box b=input[i];
++        if (b.sx<0 || b.sy<0 || b.dx<0 || b.dy<0 || b.width<=0 || b.height<=0 ||
++            (int64_t)b.sx+b.width>s->width || (int64_t)b.sy+b.height>s->height ||
++            (int64_t)b.dx+b.width>d->width || (int64_t)b.dy+b.height>d->height ||
++            (int64_t)b.dx-b.sx!=shift_x || (int64_t)b.dy-b.sy!=shift_y) goto out;
++        pixels+=(uint64_t)b.width*b.height;
++        if (pixels>PS2_PIPE_MAX_COPY_PIXELS) { error=E2BIG; goto out; }
++        unsigned j=i;
++        while (j && before(&b,boxes+j-1)) { boxes[j]=boxes[j-1]; --j; }
++        boxes[j]=b;
++    }
++    int64_t band_end=0;
++    for (unsigned i=0;i<count;++i) {
++        const struct ps2_pipe_copy_box *b=boxes+i;
++        if (!i || b->dy!=boxes[i-1].dy) {
++            if (i && b->dy<band_end) goto out;
++            band_end=(int64_t)b->dy+b->height;
++        } else if ((int64_t)b->dy+b->height!=band_end || b->dx<(int64_t)boxes[i-1].dx+boxes[i-1].width) goto out;
++    }
++    if (!count || !mask || alu==5) { status=0; goto out; }
++    if (alu==3 && mask==(d->bits_per_pixel==16?0x7fffU:0xffffffU)) {
++        status=ps2_pipe_copy_boxes(ctx,source,destination,boxes,count); error=errno; goto out;
++    }
++    if ((s->width<(s->bits_per_pixel==16?4U:2U) && (!source || s->height>1024)) ||
++        (d->width<(d->bits_per_pixel==16?4U:2U) && (!destination || d->height>1024))) {
++        error=ENOTSUP; goto out;
++    }
++    if (ps2_rop_reserve(&w,gs,d->bits_per_pixel)) { error=errno; goto out; }
++    status=ps2_render_flush(r);
++    unsigned band=count;
++    while (!status && band) {
++        unsigned first,last;
++        if (source==destination && shift_y>0) {
++            last=band; first=last-1;
++            while (first && boxes[first-1].dy==boxes[last-1].dy) --first;
++            band=first;
++        } else {
++            first=count-band; last=first+1;
++            while (last<count && boxes[last].dy==boxes[first].dy) ++last;
++            band=count-last;
++        }
++        for (unsigned j=first; !status && j<last; ++j) {
++            unsigned index=source==destination && shift_x>0 ? last-1-(j-first):j;
++            const struct ps2_pipe_copy_box *b=boxes+index;
++            for (unsigned rows=b->height; !status && rows;) {
++                unsigned h=rows>32?32:rows, y=source==destination && shift_y>0?rows-h:b->height-rows;
++                rows-=h;
++                for (unsigned columns=b->width; !status && columns;) {
++                    unsigned width=columns>64?64:columns, x=source==destination && shift_x>0?columns-width:b->width-columns;
++                    columns-=width;
++                    status=ps2_rop_rectangle(&w,source,destination,b->sx+x,b->sy+y,b->dx+x,b->dy+y,width,h,mask,alu);
++                }
++            }
++        }
++    }
++    error=errno;
++    if (ps2_rop_release(&w) && !status) { status=-1; error=errno; }
++out:
++    ps2_pipe_context_release(ctx);
++    if (status) errno=error;
++    return status;
++}
++static unsigned phase(int coordinate,int32_t origin,unsigned period)
++{int64_t v=((int64_t)coordinate-origin)%period;return v<0?v+period:v;}
++int ps2_pipe_tile_logic_geometry(struct pipe_context *ctx,uint32_t source,uint32_t destination,
++    const struct ps2_pipe_solid_box *input,unsigned count,int32_t ox,int32_t oy,uint32_t mask,unsigned alu)
++{
++    if(!ctx || count>16384 || (count && !input) || alu>15){errno=EINVAL;return -1;}
++    if(ps2_pipe_context_acquire(ctx))return -1;
++    struct ps2_render_client *r=ps2_pipe_context_render(ctx);
++    struct ps2_surface_client *gs=r->gs;
++    const struct ps2_surface *s=ps2_surface_lookup(gs,source),*d=ps2_surface_lookup(gs,destination);
++    struct ps2_rop_workspace workspace={0};
++    struct ps2_pipe_solid_box *boxes=NULL;
++    int status=-1,error=EINVAL;
++    if(!source || source==destination || !s || !d || s->bits_per_pixel!=d->bits_per_pixel ||
++        s->width>1024 || s->height>1024 || (mask&~(d->bits_per_pixel==16?0x7fffU:0xffffffU)))goto out;
++    uint64_t pixels=0,pieces=0;
++    for(unsigned i=0;i<count;++i){const struct ps2_pipe_solid_box *b=input+i;
++        if(b->x1<0 || b->y1<0 || b->x2<=b->x1 || b->y2<=b->y1 ||
++            (unsigned)b->x2>d->width || (unsigned)b->y2>d->height)goto out;
++        pixels+=(uint64_t)(b->x2-b->x1)*(b->y2-b->y1);
++        for(int y=b->y1;y<b->y2;){
++            unsigned sy=phase(y,oy,s->height),h=s->height-sy;if(h>32)h=32;if(h>(unsigned)(b->y2-y))h=b->y2-y;
++            for(int x=b->x1;x<b->x2;){unsigned sx=phase(x,ox,s->width),w=s->width-sx;
++                if(w>64)w=64;
++                if(w>(unsigned)(b->x2-x))w=b->x2-x;
++                ++pieces;x+=w;}
++            y+=h;}
++        if(pixels>PS2_PIPE_MAX_TILE_PIXELS || pieces>PS2_PIPE_MAX_TILE_PIECES){error=E2BIG;goto out;}}
++    if(!count || !mask || alu==5){status=0;goto out;}
++    boxes=malloc(count*sizeof(*boxes));if(!boxes){error=errno;goto out;}
++    memcpy(boxes,input,count*sizeof(*boxes));
++    if(alu==3 && mask==(d->bits_per_pixel==16?0x7fffU:0xffffffU)){
++        status=ps2_pipe_tile_geometry(ctx,source,destination,boxes,count,ox,oy);error=errno;goto out;}
++    if(ps2_rop_reserve(&workspace,gs,d->bits_per_pixel)){error=errno;goto out;}
++    status=ps2_render_flush(r);
++    for(unsigned i=0;!status && i<count;++i){const struct ps2_pipe_solid_box *b=boxes+i;
++        for(int y=b->y1;!status && y<b->y2;){
++            unsigned sy=phase(y,oy,s->height),h=s->height-sy;if(h>32)h=32;if(h>(unsigned)(b->y2-y))h=b->y2-y;
++            for(int x=b->x1;!status && x<b->x2;){unsigned sx=phase(x,ox,s->width),w=s->width-sx;
++                if(w>64)w=64;
++                if(w>(unsigned)(b->x2-x))w=b->x2-x;
++                status=ps2_rop_rectangle(&workspace,source,destination,sx,sy,x,y,w,h,mask,alu);x+=w;}
++            y+=h;}}
++    error=errno;
++    if(ps2_rop_release(&workspace) && !status){status=-1;error=errno;}
++out:
++    free(boxes);ps2_pipe_context_release(ctx);if(status)errno=error;return status;
++}
++int ps2_pipe_download(struct pipe_context *ctx,uint32_t source,unsigned x,unsigned y,
++    unsigned width,unsigned height,uint32_t mask,void *pixels,size_t bytes,size_t stride)
++{
++    if(ps2_pipe_context_acquire(ctx))return -1;
++    struct ps2_render_client *r=ps2_pipe_context_render(ctx);
++    struct ps2_surface_client *gs=r->gs;
++    const struct ps2_surface *s=ps2_surface_lookup(gs,source);
++    struct ps2_rop_workspace w={.gs=gs};
++    unsigned char packed[8192];
++    int status=-1,error=EINVAL;
++    if(!s || !pixels || !width || !height || x>=s->width || y>=s->height ||
++        width>s->width-x || height>s->height-y || (mask&~(s->bits_per_pixel==16?0x7fffU:0xffffffU)))goto out;
++    unsigned cpp=s->bits_per_pixel/8;size_t row=(size_t)width*cpp;
++    if(stride<row || height-1>(SIZE_MAX-row)/stride || bytes<(height-1)*stride+row ||
++        (uintptr_t)pixels>UINTPTR_MAX-((height-1)*stride+row-1))goto out;
++    if(!(gs->caps.features&PS2GS_HW_READBACK) || !(gs->caps.features&PS2GS_HW_TEXTURE_TRANSFER)){
++        error=ENOTSUP;goto out;}
++    if(ps2_surface_create(gs,128,32,s->bits_per_pixel,&w.source) ||
++        ps2_surface_create(gs,64,32,s->bits_per_pixel,&w.destination)){error=errno;goto cleanup;}
++    status=ps2_render_flush(r);
++    for(unsigned yy=0;!status && yy<height;yy+=32)for(unsigned xx=0;!status && xx<width;xx+=64){
++        unsigned h=height-yy>32?32:height-yy,ww=width-xx>64?64:width-xx;
++        status=ps2_surface_solid_logic(gs,w.destination,0,0,64,32,0,s->bits_per_pixel==16?0x7fff:0xffffff,0);
++        if(!status && mask)status=ps2_rop_rectangle(&w,source,w.destination,x+xx,y+yy,0,0,ww,h,mask,3);
++        if(!status)status=ps2_surface_download(gs,w.destination,0,0,64,32,packed,64*32*cpp);
++        if(!status)for(unsigned line=0;line<h;++line)
++            memcpy((unsigned char*)pixels+(yy+line)*stride+xx*cpp,packed+line*64*cpp,ww*cpp);
++    }
++    error=errno;
++cleanup:
++    if(ps2_rop_release(&w) && !status){status=-1;error=errno;}
++out:
++    ps2_pipe_context_release(ctx);if(status)errno=error;return status;
++}
+--- a/src/gallium/drivers/ps2/ps2_tile.c
++++ b/src/gallium/drivers/ps2/ps2_tile.c
+@@ -70,9 +70,9 @@
+ }
+ static int tiles(struct pipe_context *context, uint32_t source, uint32_t destination,
+     const struct ps2_pipe_solid_box *boxes, unsigned count, int32_t origin_x, int32_t origin_y,
+-    const struct ps2_pipe_mono_pattern *mono, uint32_t foreground, uint32_t background)
+-{
+-    if(count>PS2_PIPE_MAX_TILE_BOXES || (count && !boxes)) { errno=EINVAL; return -1; }
++    const struct ps2_pipe_mono_pattern *mono, uint32_t foreground, uint32_t background,unsigned box_limit)
++{
++    if(count>box_limit || (count && !boxes)) { errno=EINVAL; return -1; }
+     if(ps2_pipe_context_acquire(context)) return -1;
+     struct ps2_render_client *render=ps2_pipe_context_render(context);
+     struct ps2_surface_client *gs=render->gs;
+@@ -171,14 +171,24 @@
+ int ps2_pipe_tile_rectangles(struct pipe_context *context, uint32_t source, uint32_t destination,
+     const struct ps2_pipe_solid_box *boxes, unsigned count, int32_t origin_x, int32_t origin_y)
+ {
+-    return tiles(context,source,destination,boxes,count,origin_x,origin_y,NULL,0,0);
++    return tiles(context,source,destination,boxes,count,origin_x,origin_y,NULL,0,0,PS2_PIPE_MAX_TILE_BOXES);
++}
++int ps2_pipe_tile_geometry(struct pipe_context *context,uint32_t source,uint32_t destination,
++    const struct ps2_pipe_solid_box *boxes,unsigned count,int32_t origin_x,int32_t origin_y)
++{
++    if(count>16384 || (count && !boxes)){errno=EINVAL;return -1;}
++    struct ps2_pipe_solid_box *saved=count?malloc(count*sizeof(*saved)):NULL;
++    if(count && !saved){errno=ENOMEM;return -1;}
++    if(count)memcpy(saved,boxes,count*sizeof(*saved));
++    int result=tiles(context,source,destination,saved,count,origin_x,origin_y,NULL,0,0,16384);
++    int error=errno;free(saved);if(result)errno=error;return result;
+ }
+ int ps2_pipe_opaque_stipple_rectangles(struct pipe_context *context, uint32_t destination,
+     const struct ps2_pipe_mono_pattern *mono, const struct ps2_pipe_solid_box *boxes, unsigned count,
+     int32_t origin_x, int32_t origin_y, uint32_t foreground, uint32_t background)
+ {
+     if(!mono) { errno=EINVAL; return -1; }
+-    return tiles(context,0,destination,boxes,count,origin_x,origin_y,mono,foreground,background);
++    return tiles(context,0,destination,boxes,count,origin_x,origin_y,mono,foreground,background,PS2_PIPE_MAX_TILE_BOXES);
+ }
+ static int mono_bit(const struct ps2_pipe_mono_pattern *mono,unsigned x,unsigned y)
+ {
+--- a/src/gallium/drivers/ps2/ps2_cursor.c
++++ b/src/gallium/drivers/ps2/ps2_cursor.c
+@@ -22,6 +22,7 @@
+     int wanted,visible,suspended,busy;
+ };
+ static int front_access(void *data);
++static int front_region(void *data,unsigned x,unsigned y,unsigned w,unsigned h);
+ static int valid(struct ps2_pipe_cursor *c)
+ {
+     if(!c || c->gs->front_access!=front_access || c->gs->front_access_data!=c){errno=EINVAL;return -1;}
+@@ -34,8 +35,14 @@
+ static int hide(struct ps2_pipe_cursor *c)
+ {
+     if(!c->visible)return 0;
++    /* Save-under is a pixel-preserving transfer, not a textured draw. STQ
++     * interpolation can change the sampled texel on physical GS hardware;
++     * repeated cursor moves then propagate that change across the desktop.
++     * Both ends remain in GS VRAM. Width is rounded to the transfer unit by
++     * plan(), including cursor positions clipped at the screen edges. */
+     int result=ps2_surface_copy(c->gs,c->saved,0,0,0,c->sx,c->sy,c->sw,c->sh);
+-    c->visible=0;return result;
++    if(!result)c->visible=0;
++    return result;
+ }
+ static int front_access(void *data)
+ {
+@@ -43,15 +50,24 @@
+     if(c->busy || !c->visible)return 0;
+     c->busy=1;int result=hide(c);c->busy=0;return result;
+ }
++static int front_region(void *data,unsigned x,unsigned y,unsigned w,unsigned h)
++{
++    struct ps2_pipe_cursor *c=data;
++    if(c->busy || !c->visible || !w || !h ||
++       (uint64_t)x+w<=(unsigned)c->sx || x>=(unsigned)(c->sx+c->sw) ||
++       (uint64_t)y+h<=(unsigned)c->sy || y>=(unsigned)(c->sy+c->sh))return 0;
++    return front_access(c);
++}
+ struct ps2_pipe_cursor *ps2_pipe_cursor_create(struct pipe_context *context)
+ {
+     struct ps2_render_client *r=ps2_pipe_context_render(context);
+     if(!r || !r->gs){errno=EINVAL;return NULL;}
+     struct ps2_surface_client *gs=r->gs;
+     unsigned unit=gs->front.bits_per_pixel==16?4:2;
+-    if(gs->front_access || !gs->front.width || !gs->front.height || gs->front.width%unit ||
++    if(gs->front_access || gs->front_region || !gs->front.width || !gs->front.height || gs->front.width%unit ||
+        (gs->front.bits_per_pixel!=16 && gs->front.bits_per_pixel!=32) ||
+-       !(gs->caps.features&PS2GS_HW_SOLID_LOGIC)){errno=ENOTSUP;return NULL;}
++       !(gs->caps.features&PS2GS_HW_SOLID_LOGIC) ||
++       !(gs->caps.features&PS2GS_HW_SURFACES)){errno=ENOTSUP;return NULL;}
+     if(ps2_pipe_context_acquire(context))return NULL;
+     struct ps2_pipe_cursor *c=calloc(1,sizeof(*c));
+     if(!c){ps2_pipe_context_release(context);return NULL;}
+@@ -60,7 +76,7 @@
+     if(ps2_surface_create(gs,64,64,c->bpp,&c->saved)){
+         int error=errno;free(c);ps2_pipe_context_release(context);errno=error;return NULL;
+     }
+-    gs->front_access=front_access;gs->front_access_data=c;return c;
++    gs->front_access=front_access;gs->front_region=front_region;gs->front_access_data=c;return c;
+ }
+ static int bit(const unsigned char *bytes,unsigned x,unsigned y,unsigned msb)
+ { return (bytes[y*8+x/8]>>(msb?7-x%8:x%8))&1; }
+@@ -126,6 +142,8 @@
+ }
+ int ps2_pipe_cursor_invalidate(struct ps2_pipe_cursor *c)
+ { if(valid(c))return -1;return front_access(c); }
++int ps2_pipe_cursor_invalidate_region(struct ps2_pipe_cursor *c,unsigned x,unsigned y,unsigned w,unsigned h)
++{ if(valid(c))return -1;return front_region(c,x,y,w,h); }
+ static int relocate(struct ps2_pipe_cursor *c,const struct image *image,int wanted,int x,int y)
+ {
+     /* Both flush and hide still use the old save-under coordinates. All image
+@@ -164,7 +182,7 @@
+     int result=0,error=0;
+     if(!c->gs->error && (ps2_render_flush(ps2_pipe_context_render(c->context)) || front_access(c)))
+         {result=-1;error=errno;}
+-    c->gs->front_access=NULL;c->gs->front_access_data=NULL;
++    c->gs->front_access=NULL;c->gs->front_region=NULL;c->gs->front_access_data=NULL;
+     if(!c->gs->error && ps2_surface_destroy(c->gs,c->saved)){result=-1;error=errno;}
+     struct pipe_context *context=c->context;free(c);ps2_pipe_context_release(context);
+     if(result)errno=error;
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_polygon_tile.c
+@@ -0,0 +1,30 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_polygon_tile.h"
++#include "ps2_tile.h"
++#include "ps2_rop.h"
++#include <errno.h>
++#include <stdlib.h>
++int ps2_pipe_tile_logic_polygon(struct pipe_context *ctx,uint32_t source,uint32_t dest,unsigned bpp,
++    const struct ps2_pipe_polygon_point *points,unsigned count,const struct ps2_pipe_solid_box *clips,
++    unsigned clip_count,unsigned winding,int32_t ox,int32_t oy,uint32_t mask,unsigned alu,unsigned *emitted)
++{
++    if(emitted)*emitted=0;
++    if(ps2_pipe_context_acquire(ctx))return -1;
++    struct ps2_pipe_solid_run *spans=NULL;unsigned n=0;
++    int status=ps2_pipe_polygon_spans(ctx,dest,bpp,points,count,clips,clip_count,winding,&spans,&n);
++    struct ps2_pipe_solid_box *boxes=NULL;
++    if(!status && n){
++        boxes=malloc(n*sizeof(*boxes));if(!boxes){errno=ENOMEM;status=-1;}
++        else{for(unsigned i=0;i<n;++i)boxes[i]=spans[i].box;
++            status=alu==3 && mask==(bpp==16?0x7fffU:0xffffffU) ?
++                ps2_pipe_tile_geometry(ctx,source,dest,boxes,n,ox,oy) :
++                ps2_pipe_tile_logic_geometry(ctx,source,dest,boxes,n,ox,oy,mask,alu);}
++    }
++    int error=errno;if(!status && emitted)*emitted=n;
++    free(boxes);free(spans);ps2_pipe_context_release(ctx);if(status)errno=error;return status;
++}
++int ps2_pipe_tile_polygon(struct pipe_context *ctx,uint32_t source,uint32_t dest,unsigned bpp,
++    const struct ps2_pipe_polygon_point *points,unsigned count,const struct ps2_pipe_solid_box *clips,
++    unsigned clip_count,unsigned winding,int32_t ox,int32_t oy,unsigned *emitted)
++{return ps2_pipe_tile_logic_polygon(ctx,source,dest,bpp,points,count,clips,clip_count,winding,ox,oy,
++    bpp==16?0x7fff:0xffffff,3,emitted);}
+--- a/src/gallium/drivers/ps2/ps2_cursor.h
++++ b/src/gallium/drivers/ps2/ps2_cursor.h
+@@ -22,6 +22,7 @@
+ /* invalidate restores synchronously without flushing: safe inside a native
+  * front-access callback while the existing render batch is being submitted. */
+ int ps2_pipe_cursor_invalidate(struct ps2_pipe_cursor *);
++int ps2_pipe_cursor_invalidate_region(struct ps2_pipe_cursor *,unsigned x,unsigned y,unsigned w,unsigned h);
+ int ps2_pipe_cursor_flush(struct ps2_pipe_cursor *);
+ int ps2_pipe_cursor_suspend(struct ps2_pipe_cursor *, int suspended);
+ int ps2_pipe_cursor_destroy(struct ps2_pipe_cursor *);
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_polygon_tile.h
+@@ -0,0 +1,11 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_PIPE_POLYGON_TILE_H
++#define PS2_PIPE_POLYGON_TILE_H
++#include "ps2_polygon.h"
++int ps2_pipe_tile_logic_polygon(struct pipe_context *,uint32_t source,uint32_t dest,unsigned bpp,
++    const struct ps2_pipe_polygon_point *,unsigned count,const struct ps2_pipe_solid_box *,unsigned clip_count,
++    unsigned winding,int32_t origin_x,int32_t origin_y,uint32_t plane_mask,unsigned alu,unsigned *emitted);
++int ps2_pipe_tile_polygon(struct pipe_context *,uint32_t source,uint32_t destination,unsigned bpp,
++    const struct ps2_pipe_polygon_point *,unsigned count,const struct ps2_pipe_solid_box *,unsigned clip_count,
++    unsigned winding,int32_t origin_x,int32_t origin_y,unsigned *emitted);
++#endif
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_rop.h
+@@ -0,0 +1,27 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_PIPE_ROP_H
++#define PS2_PIPE_ROP_H
++#include "ps2_copy_batch.h"
++#include "ps2_gs_transfer.h"
++/* At most 56 KiB of GS VRAM: two native snapshots and three CT32 bit planes.
++ * No CPU pixel storage. Reserve once before fencing the original queue. */
++struct ps2_rop_workspace {
++    struct ps2_surface_client *gs;
++    uint32_t source, destination, a, b, c;
++};
++int ps2_rop_reserve(struct ps2_rop_workspace *, struct ps2_surface_client *, unsigned bpp);
++int ps2_rop_release(struct ps2_rop_workspace *);
++int ps2_rop_rectangle(struct ps2_rop_workspace *, uint32_t source, uint32_t destination,
++    unsigned sx, unsigned sy, unsigned dx, unsigned dy, unsigned width, unsigned height,
++    uint32_t plane_mask, unsigned alu);
++/* Read-only client transfer. Any plane masking is executed on GS first;
++ * the CPU only packs native rows into the client's output buffer. */
++int ps2_pipe_download(struct pipe_context *,uint32_t source,unsigned x,unsigned y,
++    unsigned width,unsigned height,uint32_t plane_mask,void *pixels,size_t bytes,size_t stride);
++int ps2_pipe_rop_copy_boxes(struct pipe_context *, uint32_t source, uint32_t destination,
++    const struct ps2_pipe_copy_box *, unsigned count, uint32_t plane_mask, unsigned alu);
++struct ps2_pipe_solid_box;
++int ps2_pipe_tile_logic_geometry(struct pipe_context *, uint32_t source, uint32_t destination,
++    const struct ps2_pipe_solid_box *, unsigned count, int32_t origin_x, int32_t origin_y,
++    uint32_t plane_mask, unsigned alu);
++#endif
+--- a/src/gallium/drivers/ps2/ps2_tile.h
++++ b/src/gallium/drivers/ps2/ps2_tile.h
+@@ -15,6 +15,10 @@
+  */
+ int ps2_pipe_tile_rectangles(struct pipe_context *, uint32_t source, uint32_t destination,
+     const struct ps2_pipe_solid_box *, unsigned count, int32_t origin_x, int32_t origin_y);
++/* Geometry spans may exceed the public rectangle request's 256-box limit.
++ * Snapshot <=16384 boxes; retain the same 1 Mi-pixel/65536-piece budgets. */
++int ps2_pipe_tile_geometry(struct pipe_context *,uint32_t source,uint32_t destination,
++    const struct ps2_pipe_solid_box *,unsigned count,int32_t origin_x,int32_t origin_y);
+ struct ps2_pipe_mono_pattern {
+     const unsigned char *bits;
+     size_t bytes, stride;
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2-gs-batch.h
+@@ -0,0 +1,16 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_BATCH_H
++#define _UAPI_PS2_GS_BATCH_H
++#include "ps2-gs-logic.h"
++#define PS2GS_HW_SOLID_BATCH (1U << 11)
++/* Bounded, ordered solid operations with one shared target. Every rectangle
++ * is snapshotted and validated before drawing. Native RGB bits, masks and
++ * Boolean operations retain SOLID_LOGIC semantics, including preserved alpha.
++ * No pixel staging, raw packets, registers or physical addresses are exposed. */
++struct ps2gs_solid_batch {
++	__u32 abi, handle, count, plane_mask;
++	__u32 alu, width, height, bits_per_pixel;
++	__aligned_u64 rectangles;
++};
++#define PS2GS_SOLID_BATCH _IOW('G', 0x7e, struct ps2gs_solid_batch)
++#endif
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2-gs-readback.h
+@@ -0,0 +1,17 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_READBACK_H
++#define _UAPI_PS2_GS_READBACK_H
++#include "ps2-gs-surface.h"
++#define PS2GS_HW_READBACK (1U << 10)
++#define PS2GS_MAX_READBACK_BYTES 8192U
++/* Read-only local-to-host transfer, tightly packed native CT16/CT32 pixels.
++ * Width has local-transfer alignment (4/2 pixels); total bytes are a multiple
++ * of 128. Arbitrary client rectangles are staged/masked on GS by userspace.
++ * No CPU rendering or writable VRAM mapping. Handle ownership and VT/epoch
++ * rules are identical to drawing. A hardware timeout poisons the session. */
++struct ps2gs_surface_download {
++	__u32 abi, handle, x, y, width, height, bytes, reserved;
++	__aligned_u64 pixels;
++};
++#define PS2GS_SURFACE_DOWNLOAD _IOW('G', 0x7d, struct ps2gs_surface_download)
++#endif
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2-gs-transfer.h
+@@ -0,0 +1,18 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_TRANSFER_H
++#define _UAPI_PS2_GS_TRANSFER_H
++#include "ps2-gs-texture.h"
++#define PS2GS_HW_TEXTURE_TRANSFER (1U << 9)
++#define PS2GS_TRANSFER_REPLACE 0U
++#define PS2GS_TRANSFER_ADD 1U
++#define PS2GS_TRANSFER_SUBTRACT 2U
++/* Typed fixed-function texture operation. ADD wraps each eight-bit channel;
++ * SUBTRACT clamps. FRAME masks preserve every other RGB bit and spare/alpha
++ * bit. No arbitrary register programming, shaders or CPU destination access.
++ * Existing texture validation and file ownership rules apply unchanged. */
++struct ps2gs_texture_transfer {
++	struct ps2gs_texture_submit draw;
++	__u32 plane_mask, mode;
++};
++#define PS2GS_TEXTURE_TRANSFER _IOW('G', 0x7c, struct ps2gs_texture_transfer)
++#endif

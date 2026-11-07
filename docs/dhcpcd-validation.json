@@ -1,0 +1,139 @@
+{
+  "schema": 1,
+  "package": "dhcpcd",
+  "version": "10.5.2",
+  "source_lock_sha256": "50b2bd5dbd3cef7965101bb3d3fb6643d89dbc2c793c95beaa2dd6a0d1c2c7c7",
+  "recipe_sha256": "35d98f3b08f8713b04f2282250c96317dab798a4a5f22d1ac5bb12e03e2335e2",
+  "source_inventory_sha256": "c7740a56848f9e6e941532a31bcb905dd2401e01864032d3eef2288eef411f48",
+  "source_archive_sha256": "3e476657fdb6eeb38b277da3a48d0ac0113ecce5858ebdcddff2b629faed52b4",
+  "configuration": [
+    "--prefix=/usr",
+    "--sbindir=/sbin",
+    "--sysconfdir=/etc",
+    "--libexecdir=/usr/lib/dhcpcd",
+    "--mandir=/usr/share/man",
+    "--rundir=/run/dhcpcd",
+    "--dbdir=/var/lib/dhcpcd",
+    "--privsepuser=dhcpcd",
+    "--enable-privsep",
+    "--disable-seccomp",
+    "--disable-ipv6",
+    "--without-dev",
+    "--without-openssl",
+    "--without-libpcap"
+  ],
+  "CPU_FLAGS": [
+    "-march=r5900",
+    "-mabi=32",
+    "-msoft-float",
+    "-mno-llsc",
+    "-mfix-r5900"
+  ],
+  "CPPFLAGS": "-D_FILE_OFFSET_BITS=64",
+  "compiler": {
+    "tuple": "mipsr5900el-unknown-linux-gnu",
+    "version": "16.2.0",
+    "headers": [
+      5,
+      4
+    ]
+  },
+  "files": {
+    "sbin/dhcpcd": {
+      "sha256": "9eeb49743402ec48d73e148dcc46e48602bc059607cbb4f65088349582d6551b",
+      "bytes": 286560
+    },
+    "usr/share/licenses/dhcpcd/LICENSE": {
+      "sha256": "3aeab006b01c1573b42d4440d7edad0adfe61ad05848ca82e02e745424a2b4fa",
+      "bytes": 1302
+    },
+    "usr/share/man/man5/dhcpcd.conf.5": {
+      "sha256": "a981b18c155520fca5e0c0d255977927a82cc3671f409aecffc27054b45040f0",
+      "bytes": 34851
+    },
+    "usr/share/man/man8/dhcpcd.8": {
+      "sha256": "5ab6efb4ad76f28f5d8bde5ab54f799fd21ec3a4fd336950982c4b3860dd138f",
+      "bytes": 26385
+    }
+  },
+  "total_regular_file_bytes": 349098,
+  "privilege_separation": true,
+  "seccomp": false,
+  "DHCP_packet_tested": false,
+  "latest_2026_10_02": {
+    "cross_build": {
+      "schema": 1,
+      "package": "dhcpcd",
+      "version": "10.5.2",
+      "source_lock_sha256": "9d27d73521449e58df7e41a2fbd01b20e2b760a52bff88b73ff62bf991518fe0",
+      "recipe_sha256": "8d21b60d2fef888d831488e8f134336f6956d02d60986627c25c8f89c36fc437",
+      "source_inventory_sha256": "c7740a56848f9e6e941532a31bcb905dd2401e01864032d3eef2288eef411f48",
+      "source_archive_sha256": "3e476657fdb6eeb38b277da3a48d0ac0113ecce5858ebdcddff2b629faed52b4",
+      "patches": [
+        {
+          "path": "userland/package/eelinux-dhcpcd/0001-linux-machinearch-multiword-cpuinfo.patch",
+          "sha256": "3107f1b8ac54add519068b85c47e8026db0387a3cfec539c0a2dd09ec049046d",
+          "purpose": "parse complete colon-separated cpuinfo keys instead of whitespace tokens; preserve privilege separation"
+        }
+      ],
+      "configuration": [
+        "--prefix=/usr",
+        "--sbindir=/sbin",
+        "--sysconfdir=/etc",
+        "--libexecdir=/usr/lib/dhcpcd",
+        "--mandir=/usr/share/man",
+        "--rundir=/run/dhcpcd",
+        "--dbdir=/var/lib/dhcpcd",
+        "--privsepuser=dhcpcd",
+        "--enable-privsep",
+        "--disable-seccomp",
+        "--disable-ipv6",
+        "--without-dev",
+        "--without-openssl",
+        "--without-libpcap"
+      ],
+      "CPU_FLAGS": [
+        "-march=r5900",
+        "-mabi=32",
+        "-msoft-float",
+        "-mno-llsc",
+        "-mfix-r5900"
+      ],
+      "CPPFLAGS": "-D_FILE_OFFSET_BITS=64",
+      "compiler": {
+        "tuple": "mipsr5900el-unknown-linux-gnu",
+        "version": "16.2.0",
+        "headers": [
+          5,
+          4
+        ]
+      },
+      "files": {
+        "sbin/dhcpcd": {
+          "sha256": "6b5760880b0d8bb9800d0f5b261b84e28d2a7f4f0911974be5f4f26be60afb37",
+          "bytes": 286756
+        },
+        "usr/share/licenses/dhcpcd/LICENSE": {
+          "sha256": "3aeab006b01c1573b42d4440d7edad0adfe61ad05848ca82e02e745424a2b4fa",
+          "bytes": 1302
+        },
+        "usr/share/man/man5/dhcpcd.conf.5": {
+          "sha256": "a981b18c155520fca5e0c0d255977927a82cc3671f409aecffc27054b45040f0",
+          "bytes": 34851
+        },
+        "usr/share/man/man8/dhcpcd.8": {
+          "sha256": "5ab6efb4ad76f28f5d8bde5ab54f799fd21ec3a4fd336950982c4b3860dd138f",
+          "bytes": 26385
+        }
+      },
+      "total_regular_file_bytes": 349294,
+      "privilege_separation": true,
+      "seccomp": false,
+      "DHCP_packet_tested": false
+    },
+    "default_hook": "/usr/lib/eelinux/dhcpcd-hook",
+    "startup_hostname_argument": "--hostname=ps2",
+    "actual_guest_network_evidence": "network-runtime-validation.json",
+    "privilege_separation_retained": true
+  }
+}

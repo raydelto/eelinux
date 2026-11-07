@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xpr",
+  "kind": "application",
+  "program": "xpr",
+  "version": "1.2.1",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xpr-1.2.1.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xpr-1.2.1.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "0a5b947cd5e3990c9fcd04fdf92603241de4a55a29b89d4e8a0e473320b778ba",
+      "filename": "xpr-1.2.1.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "c4f9c81806c1d826d1f748f351294c7c037f173d7a53bd83e1431d8676512c1350563cd7f91f0d74fbdc1a82003394ae06b9dfd5e29fa7f9f5758dcaf0240e0e",
+      "filename": "xpr-1.2.1.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

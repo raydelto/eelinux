@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "name": "eelinux-binutils",
+  "engine": "Buildroot 2025.02.18 external tree",
+  "manifest_entry": "configs/packages.json:packages.eelinux-binutils",
+  "symbol": "BR2_PACKAGE_EELINUX_BINUTILS",
+  "version": "2.47",
+  "recipe": "userland/package/eelinux-binutils/eelinux-binutils.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff",
+      "filename": "binutils-2.47.tar.xz"
+    }
+  ]
+}

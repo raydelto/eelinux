@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "ipset",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.ipset",
+  "symbol": "BR2_PACKAGE_IPSET",
+  "version": "7.24",
+  "recipe": "package/ipset/ipset.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "fbe3424dff222c1cb5e5c34d38b64524b2217ce80226c14fdcbb13b29ea36112",
+      "filename": "ipset-7.24.tar.bz2"
+    }
+  ],
+  "release_url": "https://www.netfilter.org/pub/ipset/"
+}

@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "lsof",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.lsof",
+  "symbol": "BR2_PACKAGE_LSOF",
+  "version": "4.99.7",
+  "recipe": "package/lsof/lsof.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "4a10391aab0b8ce1f539e82a1966693b2a6cf225972a6504ebb7ec4fa71675de",
+      "filename": "lsof-4.99.7.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/lsof-org/lsof/releases/tag/4.99.7"
+}

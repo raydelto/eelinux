@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "updated": "2026-10-04",
+  "milestone": "native tiled Xorg window painting and Mesa repeat adapter",
+  "implementation": [
+    "desktop/xorg/ps2_paint_window.c",
+    "desktop/xorg/ps2_paint_window.h",
+    "mesa/ps2/ps2_tile.c",
+    "mesa/ps2/ps2_tile.h"
+  ],
+  "build": {
+    "sha256": "9213643085093c4d86b7389e7937a777b8fc2ada4ff31e08f4f62122ae5c6897"
+  },
+  "host": {
+    "sha256": "d5b670247954c61fd0e43fa922bd7d639c1f83fb36908e4f41a8b03406e33473"
+  },
+  "build_log": {
+    "sha256": "6a50a570dfb561ef21b6f8d8fbfaef13fd081d9d2c64ae6d842a397227c56f4f"
+  },
+  "archives": {
+    "libps2-gallium-tiled-paint.a": "da18b18ec7175145ed132cab87a2f1ef0972607d75a47af9ddec78455db9db6f",
+    "libps2-xorg-tiled-paint.a": "c3e00ce429a19f384dc1b55f4c26c96a359a7e235a09bae7c1932421a149b481"
+  },
+  "patches": [
+    {
+      "patch": "userland/patches/mesa-ps2-tile.patch",
+      "sha256": "beb161816bda978583027249cdbc4fa7c81c94eb2ddb1130bd382bb35f46accd",
+      "after": "mesa-ps2-blit.patch",
+      "prerequisite_patches": [
+        "mesa-ps2-raster.patch",
+        "mesa-ps2-surfaces.patch",
+        "mesa-ps2-rendering.patch",
+        "mesa-ps2-textures.patch",
+        "mesa-ps2-contexts.patch",
+        "mesa-ps2-bitmaps.patch",
+        "mesa-ps2-logic.patch",
+        "mesa-ps2-solid-batch.patch",
+        "mesa-ps2-copy-batch.patch",
+        "mesa-ps2-resource-copy.patch",
+        "mesa-ps2-blit.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    },
+    {
+      "patch": "userland/patches/xorg-ps2-tiled-paint.patch",
+      "sha256": "6922abd4af7b502b1a6da0330ccdc2b77003cbb254ee8405ff509fc170cc545a",
+      "after": "xorg-ps2-paint-window.patch",
+      "prerequisite_patches": [
+        "xorg-ps2-raster.patch",
+        "xorg-ps2-surfaces.patch",
+        "xorg-ps2-rendering.patch",
+        "xorg-ps2-textures.patch",
+        "xorg-ps2-contexts.patch",
+        "xorg-ps2-glyphs.patch",
+        "xorg-ps2-gc.patch",
+        "xorg-ps2-logic.patch",
+        "xorg-ps2-solid-gc.patch",
+        "xorg-ps2-copy.patch",
+        "xorg-ps2-exa-copy.patch",
+        "xorg-ps2-blit.patch",
+        "xorg-ps2-copy-window.patch",
+        "xorg-ps2-paint-window.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    }
+  ],
+  "upstream_PaintWindow": {
+    "sha256": "0e26db377df34b6c06ed3fd413b06eb5bbff64dce3786c92be9db1e1292662ab"
+  },
+  "upstream_Damage": {
+    "sha256": "922aa2f0c7927bddb38e2327cf6c77530ddaad19cc17080a441f6b289c585242"
+  },
+  "host_sanitizer_cases": 51,
+  "R5900_cases": 51,
+  "new_cases_per_environment": 13,
+  "regression_cases_per_environment": 38,
+  "checks": [
+    "background",
+    "border",
+    "redirected",
+    "tiny",
+    "large",
+    "preflight",
+    "capacity",
+    "noop",
+    "seedfailure",
+    "expandfailure",
+    "failure",
+    "lifetime",
+    "random"
+  ],
+  "native_path": "ScreenRec.PaintWindow -> ps2_pipe_tile_rectangles -> GS texture packets and native local copies",
+  "supported": [
+    "distinct owned RGBX/RGB555 tiles up to 1024 per dimension",
+    "non-power-of-two periods",
+    "child background clipping",
+    "inherited background tile and ancestor alignment",
+    "original border image with resolved ancestor origin",
+    "redirected backing pixmap origins",
+    "negative tile origins and overflow-safe signed phase arithmetic",
+    "precise Damage coordinates",
+    "no-op queues, whole-request validation, GS scratch reservation and sticky failure without replay"
+  ],
+  "small_tile_expansion": {
+    "native_GS_only": true,
+    "maximum_logical_dimensions": [
+      64,
+      32
+    ],
+    "maximum_logical_pixel_bytes": 8192,
+    "scratch_released_on_success": true,
+    "failed_session_scratch_reclaimed_on_file_close": true,
+    "full_720x576_one_and_two_pixel_test_output_packets_maximum": 10
+  },
+  "region_boxes_maximum": 256,
+  "heap_box_plan_bytes_maximum": 4096,
+  "texture_triangles_per_packet_maximum": 64,
+  "output_pieces_maximum": 65536,
+  "pixels_per_request_maximum": 1048576,
+  "whole_request_preflight_before_flush": true,
+  "software_destination_rasterizer": false,
+  "GPU_pixel_readback": false,
+  "Gallium_repeat_sampler_advertised": false,
+  "actual_Damage_subsystem_executed": false,
+  "new_PCSX2_pixels_verified": true,
+  "new_physical_PS2_pixels_verified": false,
+  "new_USB_image_packaged": true,
+  "prior_solid_milestone_preserved": true,
+  "earlier_images_and_hardware_evidence_preserved": true,
+  "limitations": [
+    "tile must differ from destination and cannot be the front pixmap",
+    "large tiles and native scratch are subject to GS VRAM capacity",
+    "this explicit Xorg/Mesa adapter does not advertise Gallium repeat sampler or shader support",
+    "component fixtures wrap GS syscalls and model private/Damage bookkeeping",
+    "physical qualification and actual X server/Damage integration remain pending",
+    "full DDX, Mesa shaders/draw_vbo/GLX and complete Xorg/Mesa/TWM RAM measurements remain open"
+  ],
+  "result": "component checks, PCSX2 command/fence checks and qualitative scene review passed; physical and actual server qualification pending",
+  "runtime_validation": {
+    "path": "docs/graphics-tiled-paint-runtime-validation.json",
+    "sha256": "faa7cbfb7d9076ab96f6a175af3ff02b32d784ebf6a46790909694ced1c92af9"
+  },
+  "new_PCSX2_command_fence_checks_passed": true,
+  "new_PCSX2_scene_panels_visually_qualified": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

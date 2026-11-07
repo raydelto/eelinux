@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "sysklogd",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.sysklogd",
+  "symbol": "BR2_PACKAGE_SYSKLOGD",
+  "version": "2.8.0",
+  "recipe": "package/sysklogd/sysklogd.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "67f49c6b2e9d75ce15202db815112719f4af0db8901032f0c3a0cec1b9f65551",
+      "filename": "sysklogd-2.8.0.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/troglobit/sysklogd/releases/tag/v2.8.0"
+}

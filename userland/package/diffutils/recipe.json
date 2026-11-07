@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "name": "diffutils",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "3.12",
+    "url": "https://ftp.gnu.org/gnu/diffutils/diffutils-3.12.tar.xz",
+    "gnu": true,
+    "filename": "diffutils-3.12.tar.xz",
+    "sha256": "7c8b7f9fc8609141fdea9cece85249d308624391ff61dedaf528fcb337727dfd",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Wed 09 Apr 2025 03:53:37 AM WEST\ngpgv:                using RSA key 155D3FC500C834486D1EEA677FD9FCCB000BEEEE\ngpgv: Good signature from \"Jim Meyering <jim@meyering.net>\"\ngpgv:                 aka \"Jim Meyering <meyering@redhat.com>\"\ngpgv:                 aka \"Jim Meyering <meyering@gnu.org>\"\n"
+  },
+  "source_archive": "../../sources/diffutils-3.12.tar.xz",
+  "configure_options": [],
+  "configure_environment": {
+    "gl_cv_func_strcasecmp_works": "yes",
+    "gl_cv_func_getopt_gnu": "yes"
+  },
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false
+}

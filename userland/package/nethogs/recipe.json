@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "nethogs",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.nethogs",
+  "symbol": "BR2_PACKAGE_NETHOGS",
+  "version": "0.9.0",
+  "recipe": "package/nethogs/nethogs.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "5961bef2155c05695d2fe7e79aa11194981b5afd1cad9bf1f259c7f30d5487c3",
+      "filename": "nethogs-0.9.0.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/raboof/nethogs/releases/tag/v0.9.0"
+}

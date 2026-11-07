@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "sqlite",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.sqlite",
+  "symbol": "BR2_PACKAGE_SQLITE",
+  "version": "3.54.1",
+  "recipe": "package/sqlite/sqlite.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "926ef8d3eab93fbf6e06011901273eec076b25594a4e1cdadd50c987f4f6d64e",
+      "filename": "sqlite-autoconf-3540100.tar.gz"
+    }
+  ],
+  "release_url": "https://www.sqlite.org/download.html"
+}

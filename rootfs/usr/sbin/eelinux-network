@@ -1,0 +1,102 @@
+#!/bin/bash
+set -eu
+source "${EELINUX_NETWORK_LIB:-/usr/lib/eelinux/network-common.sh}"
+IP=${EELINUX_IP:-/sbin/ip}
+DHCPCD=${EELINUX_DHCPCD:-/sbin/dhcpcd}
+RUNDIR=${EELINUX_RUN_DIR:-/run}
+RESOLVER=${EELINUX_RESOLVER:-/run/resolv.conf}
+HOOK=${EELINUX_DHCP_HOOK:-/usr/lib/eelinux/dhcpcd-hook}
+DHCP_CONFIG=${EELINUX_DHCPCD_CONFIG:-/etc/dhcpcd.conf}
+read_network_config "${EELINUX_NETWORK_CONFIG:-/etc/network.conf}"
+PIDFILE=
+
+read_dhcp_pidfile() {
+    PIDFILE=$("$DHCPCD" -4 --printpidfile "$DEVICE") || return 1
+    [[ $PIDFILE == "$RUNDIR/dhcpcd/"* && $PIDFILE != *'/../'* ]] || {
+        network_error 'unexpected dhcpcd PID file location'; return 1;
+    }
+}
+
+dhcp_pid_matches() {
+    local pid=$1
+    [[ $pid =~ ^[1-9][0-9]*$ && /proc/$pid/exe -ef $DHCPCD ]]
+}
+
+stop_dhcp() {
+    local pid
+    read_dhcp_pidfile || return 1
+    if [[ -r $PIDFILE ]]; then
+        IFS= read -r pid < "$PIDFILE" || true
+        if [[ ${pid:-} =~ ^[1-9][0-9]*$ ]]; then
+            # The actual executable must match; a misleading process title is insufficient.
+            if dhcp_pid_matches "$pid"; then
+                kill -TERM "$pid" 2>/dev/null || true
+                for ((attempt=0; attempt<20; attempt++)); do
+                    kill -0 "$pid" 2>/dev/null || break
+                    /usr/bin/sleep 0.1
+                done
+                if kill -0 "$pid" 2>/dev/null; then
+                    network_error 'DHCP process did not stop; leaving its PID file intact'
+                    return 1
+                fi
+            fi
+        fi
+        /usr/bin/rm -f -- "$PIDFILE"
+    fi
+}
+
+start_network() {
+    [[ $ENABLED == yes ]] || return 0
+    /bin/mkdir -p -- "$RUNDIR/dhcpcd" "$RUNDIR/log"
+    read_dhcp_pidfile || return 1
+    if [[ -r $PIDFILE ]]; then
+        local pid
+        IFS= read -r pid < "$PIDFILE" || true
+        if dhcp_pid_matches "${pid:-}" && kill -0 "$pid" 2>/dev/null; then
+            printf 'network: DHCP already running on %s\n' "$DEVICE"
+            return 0
+        fi
+        /usr/bin/rm -f -- "$PIDFILE"
+    fi
+    "$IP" link set dev lo up
+    "$IP" link set dev "$DEVICE" up
+    if [[ $MODE == dhcp ]]; then
+        local hostname=ps2
+        if [[ -r /etc/hostname ]]; then IFS= read -r hostname < /etc/hostname || true; fi
+        [[ $hostname =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]{0,62}$ ]] || hostname=ps2
+        # dhcpcd backgrounds immediately and keeps retrying/renewing leases.
+        # Waiting for a DHCP server must not delay the console login prompt.
+        "$DHCPCD" --background -4 --noipv4ll --script "$HOOK" --config "$DHCP_CONFIG" \
+            --hostname="$hostname" --logfile "$RUNDIR/log/dhcpcd-$DEVICE.log" "$DEVICE"
+    else
+        "$IP" -4 address flush dev "$DEVICE" scope global
+        "$IP" -4 address add "$ADDRESS" dev "$DEVICE"
+        "$IP" -4 route del default dev "$DEVICE" 2>/dev/null || true
+        if [[ -n $GATEWAY ]]; then "$IP" -4 route replace default via "$GATEWAY" dev "$DEVICE"; fi
+        local -a servers=()
+        read -r -a servers <<< "$DNS" || true
+        write_resolver "$RESOLVER" "${servers[@]}"
+    fi
+}
+
+stop_network() {
+    stop_dhcp
+    "$IP" -4 route del default dev "$DEVICE" 2>/dev/null || true
+    "$IP" -4 address flush dev "$DEVICE" scope global
+    "$IP" link set dev "$DEVICE" down
+    write_resolver "$RESOLVER"
+}
+
+case ${1:-} in
+    start) start_network ;;
+    stop) stop_network ;;
+    restart) stop_network; start_network ;;
+    status) "$IP" -4 address show dev "$DEVICE"; "$IP" -4 route show dev "$DEVICE" ;;
+    diagnose)
+        printf 'eeLinux network: kernel %s; configured interface %s\n' "$(uname -r)" "$DEVICE"
+        "$IP" link show
+        # The user need not type pipes or punctuation to collect probe failures.
+        dmesg | grep -Ei 'ps2-smap|dev9:|MDIO|PHY|Ethernet' || true
+        ;;
+    *) printf 'Usage: eelinux-network {start|stop|restart|status|diagnose}\n' >&2; exit 2 ;;
+esac

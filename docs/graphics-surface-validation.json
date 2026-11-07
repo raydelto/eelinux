@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "date": "2026-10-03",
+  "scope": "owned offscreen GS storage and native Xorg/Mesa components; full desktop unfinished",
+  "reference": "https://psi-rockin.github.io/ps2tek/",
+  "kernel": {
+    "sha256": "059313fa4938419272140d4622618a57e2699d0a3093769e97913fe45b7a86f4"
+  },
+  "kernel_build_log": {
+    "sha256": "9e674b2b0abd9a4dea7610cd1a607933d40a2374c3352d0307a54607aaf88692"
+  },
+  "compiled_components": {
+    "sha256": "6182e5f521fee8380cceb53f0936daefedeb3123cc88439aee9306b6a37d2a15"
+  },
+  "patches": {
+    "sha256": "f4183908a20ec6afe14113d69c91da5ba792526efa654d7797097061cbe66183"
+  },
+  "image": {
+    "sha256": "aa9f1351278e5e2a2216a4c3e62ebd205e8ac31546d2ae2c7b13bd56fa45d236"
+  },
+  "image_assembly_checks": {
+    "diagnostic_fat_readback_byte_exact": {},
+    "fat32_bpb_and_cluster_count": "passed",
+    "fsck_fat_read_only": "passed",
+    "kernel_fat_readback_byte_exact": true,
+    "readme_fat_readback_byte_exact": true,
+    "root_payload_byte_exact": true,
+    "source_inputs_unchanged": true
+  },
+  "probe": {
+    "sha256": "117dfdcf569c9d783136ade287f419a0277377126151678dcb92f6fa5662c748"
+  },
+  "host_checks": {
+    "cases": 14,
+    "result": "passed",
+    "sanitizers": [
+      "ASan",
+      "UBSan"
+    ],
+    "evidence_kind": "transcription of successful tool output; no additional run",
+    "scope": "actual C packet builders, allocator, callbacks and diagnostic; reduced kernel locking scaffold"
+  },
+  "R5900_Linux_user_checks": {
+    "R5900_cases": 14,
+    "result": "passed",
+    "scope": "actual C callbacks, pure packets and provider lifecycle with wrapped syscalls/locking scaffold",
+    "kernel_lockdep_or_GPU_pixel_qualification": false
+  },
+  "interactive_PCSX2_run": {
+    "observed_at": "2026-10-03T18:03:11.971346+00:00",
+    "log_snapshot": {
+      "sha256": "5e9dc4db4f942e43bfd0c471b68ae9d0ef18ecb1257f6c33c787b218ff0931fd"
+    },
+    "log_changes_while_user_tests": true,
+    "session": {
+      "sha256": "ce236a179ba088c6d4e13bca5c6d320e63a877e778658f0cfdfc3437fa18f2ec"
+    },
+    "runtime": {
+      "requested_program": "C:\\Program Files\\PCSX2\\pcsx2-qt.exe",
+      "executable_sha256": "4d2a4d9c0db3cb2e9760e2d34bcd29150b53d56a1a87ae8e6fb4556796b40f58",
+      "runtime_manifest_sha256": "b7bf008375c55020bfb3287e0a100d1ff001323706bc2e18b3bf2d0e183ed478",
+      "mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85"
+    },
+    "milestones": [
+      "EXT4-fs (sda2): mounted filesystem",
+      "ps2-gs: command/fence test PASSED",
+      "ps2-gs: image transfer/fence PASSED",
+      "ps2-gs: owned surfaces 720x576 32bpp features=33",
+      "ps2-gs: offscreen transfer/fence PASSED",
+      "ps2-gs: surface probe exit=0",
+      "ps2-smap ps2-smap eth0: Link is Up"
+    ],
+    "automatic_timeout_seconds": 0,
+    "pixel_output_inspected": true,
+    "visual_observation": {
+      "source": "user screenshots in this session",
+      "scene": "cyan rectangle left; red/green/blue/white bars and intact checkerboard in black border right",
+      "result": "matches the expected offscreen scene; shell restored after the test",
+      "authenticated_shell_visible": true,
+      "pixel_readback_or_format_sweep": false
+    },
+    "authenticated_login_tested": false
+  },
+  "physical_surface_pixels_tested": false,
+  "physical_devices_written": false,
+  "software_pixel_renderer": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL": false,
+  "remaining": [
+    "physical offscreen scene and format qualification",
+    "glyph/composite operations and complete DDX screen/cursor/VT setup",
+    "Mesa screen/context and owned triangle/depth endpoint integration",
+    "textures, texture cache invalidation and GLX",
+    "existing OpenGL application tests and pixel readback"
+  ],
+  "physical_hardware_followup": {
+    "date": "2026-10-04",
+    "evidence": "docs/graphics-hardware-validation.json",
+    "evidence_sha256": "ef10249c0b5c23f171d1bc7390788c271086b4caaeff929984f5f6c0fe42e1f3",
+    "diagnostics": [
+      "ps2-gs-surface-test"
+    ],
+    "diagnostic_scenes_tested_on_physical_hardware": true,
+    "result": "passed according to the user on real PlayStation 2 hardware",
+    "evidence_kind": "explicit user verification report; device logs not captured",
+    "earlier_fields_preserved": true,
+    "scope": "normal diagnostic scenes on the user's PS2; not all host/mock cases or a complete desktop",
+    "artifact_hash_read_back_on_console": false,
+    "GPU_pixel_readback": false,
+    "complete_Xorg_TWM_or_OpenGL_session_tested": false
+  },
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

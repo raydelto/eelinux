@@ -1,0 +1,159 @@
+{
+  "schema": 1,
+  "date": "2026-10-04",
+  "recorded_at": "2026-10-04T16:57:32.649822+00:00",
+  "scope": "native ScreenRec CopyWindow through the shared Mesa GS copy batch",
+  "compiled_components": {
+    "sha256": "68d857b1a3ac91480f4cb1e10b96a78b85883160a1c001dde63f721d2818c592"
+  },
+  "native_test_log": {
+    "sha256": "9e7ba960e39ebee639ccaf4e152ce349cebe1b4e0448a4be5a6815e95d0690be"
+  },
+  "host_checks": {
+    "schema": 1,
+    "cases": 52,
+    "new_CopyWindow_cases": 11,
+    "result": "passed",
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "groups": [
+      {
+        "suite": "test_ps2_copy_window.py",
+        "cases": 11,
+        "result": "passed"
+      },
+      {
+        "suite": "test_ps2_blit.py",
+        "cases": 11,
+        "result": "passed"
+      },
+      {
+        "suite": "test_ps2_copy_exa.py",
+        "cases": 8,
+        "result": "passed"
+      },
+      {
+        "suite": "test_ps2_resource_copy.py",
+        "cases": 7,
+        "result": "passed"
+      },
+      {
+        "suite": "test_ps2_copy.py",
+        "cases": 9,
+        "result": "passed"
+      },
+      {
+        "suite": "test_ps2_pipe.py",
+        "cases": 6,
+        "result": "passed"
+      }
+    ],
+    "log": {
+      "sha256": "23e67ddc36004c68a8c25f840cfe698eeee2f974220110f44d930ad0916aba10"
+    },
+    "production_sources": {
+      "desktop/xorg/ps2_copy_window.c": "e89917fe9a9efda8d0463953b2dda8737255e60e54a152015e1fe0030059c817",
+      "desktop/xorg/ps2_blit_exa.c": "189c1c776ee475a092bf775e2223498c4e62d04909d31dfdbf32cf9070077958",
+      "mesa/ps2/ps2_blit.c": "4744bf522f8a90940691225051e914771d793b346bd0936dc5fb1b6a236f6cb7",
+      "mesa/ps2/ps2_pipe.c": "e03019d00bc6b788b12fae65cca3281f1fea1333fa68170ed97cc72eb3a41c6b"
+    }
+  },
+  "patches": {
+    "sha256": "21ca84e8333f1094c11851ad17cfe81f4816f0f1d01999c527d82da639a6c048"
+  },
+  "archives": {
+    "libps2-gallium-copy-window.a": {
+      "sha256": "59314ccc0ec4889b6524c3160ae344c6ade4fab5d35eb3decf88e97630fddb0b"
+    },
+    "libps2-xorg-copy-window.a": {
+      "sha256": "55802fca1bd6b869bd57e96e4c9ae0d79902694bc0f0999bcf0659bb0a8e225a"
+    }
+  },
+  "upstream_contracts": {
+    "upstream_CopyWindow": {
+      "sha256": "5e8efbffcb2a2ba42a5415b5912efcdbb19f93eb6aca0f20db9fb62840cf5623"
+    },
+    "upstream_Damage_wrapper": {
+      "sha256": "922aa2f0c7927bddb38e2327cf6c77530ddaad19cc17080a441f6b289c585242"
+    },
+    "upstream_miDoCopy": {
+      "sha256": "f067938461b3543cbce3901990e3224f9af4aa638d63e19652c7c080272d7cb0"
+    }
+  },
+  "checks": {
+    "host_sanitizer_cases": 52,
+    "R5900_Linux_user_cases": 52,
+    "new_CopyWindow_cases": 11,
+    "shared_regression_cases": 41,
+    "result": "passed",
+    "production_NDEBUG": true,
+    "actual_GNU_atomic_references": true,
+    "actual_pixman_regions": true,
+    "COMPOSITE_enabled_target_records": true,
+    "COMPOSITE_disabled_release_component_compile": true
+  },
+  "supported": [
+    "front and owned native RGBX/CT32 and RGB555/CT16 window storage",
+    "old-to-new screen region translation and borderClip intersection",
+    "redirected backing pixmap origins",
+    "all eight overlapping move directions and multiple bands",
+    "odd-width native GS copies with bounded existing scratch",
+    "caller source region translated only after success",
+    "identity and empty copies preserve queue",
+    "whole-request preflight before shared Mesa fence",
+    "callback restoration and context lease"
+  ],
+  "pixel_reference": "independent immutable source snapshot; screen-space region membership; complete destination comparison",
+  "Damage_notifications": "owned by upstream wrapper installed after native hook",
+  "Damage_wrapper_behavior_modeled": true,
+  "actual_Damage_subsystem_executed": false,
+  "lower_raster_callback_used_for_drawing": false,
+  "shared_Mesa_batch_used": true,
+  "binding_and_resource_references_preserved": true,
+  "closed_or_failed_context_does_not_replay": true,
+  "limits": {
+    "boxes": 256,
+    "copy_pixels": 1048576,
+    "GS_scratch_bytes": 8192,
+    "screen_region_coordinates": "signed 16-bit, overflow rejected",
+    "submission_threads": 1
+  },
+  "stack_reports": [
+    {
+      "sha256": "560b878be19ce7b4df209ee5039869b77ba87d07142cba26831fd01a6d87717d"
+    },
+    {
+      "sha256": "4069f7701f5680c4455ee06d1ab982b4715e02b3011c6dc8d87a41df883d576d"
+    }
+  ],
+  "software_destination_pixel_renderer": false,
+  "kernel_ABI_changed": false,
+  "GPU_pixel_readback": false,
+  "new_PCSX2_command_check_passed": true,
+  "new_PCSX2_pixels_verified": true,
+  "new_physical_pixels_verified": false,
+  "new_USB_image_packaged": true,
+  "physical_devices_written": false,
+  "runtime_diagnostic_evidence": {
+    "path": "docs/graphics-copy-window-runtime-validation.json",
+    "sha256": "f8403833e3332f7889c1cc6e8cf529bed8aab344eb570ea11a634d28b6802022"
+  },
+  "prior_archives_source_snapshots_and_runtime_images_preserved": true,
+  "earlier_physical_report": "docs/graphics-hardware-validation.json",
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL_GLX": false,
+  "shader_caps": 0,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "remaining": [
+    "new CopyWindow PCSX2/physical pixel qualification",
+    "actual Damage/X server/TWM window lifecycle",
+    "complete native DDX screen/VT/input/cursor/presentation",
+    "further copy/raster/alpha states",
+    "Mesa shader/vertex execution and draw_vbo",
+    "GLX and existing OpenGL applications",
+    "first startx/TWM and physical idle/peak RAM measurements"
+  ],
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

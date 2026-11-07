@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "libpcap",
+  "symbol": "BR2_PACKAGE_LIBPCAP",
+  "recipe": "package/libpcap/libpcap.mk",
+  "version": "1.11.0",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "05a6a0026d3527f55c8a92e72f9c1656f62f33b639c75cbd7db377543c235407",
+      "filename": "libpcap-1.11.0.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/the-tcpdump-group/libpcap/tags",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.libpcap"
+}

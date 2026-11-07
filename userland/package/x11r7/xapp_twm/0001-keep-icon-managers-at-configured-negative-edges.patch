@@ -1,0 +1,55 @@
+--- a/src/iconmgr.h
++++ b/src/iconmgr.h
+@@ -67,6 +67,7 @@
+     const char *icon_name;
+     int x, y, width, height;
+     int columns, cur_rows, cur_columns;
++    int anchor_mask, offset_x, offset_y, anchor_x, anchor_y, anchor_initialized;
+     int count;
+ } IconMgr;
+ 
+--- a/src/iconmgr.c
++++ b/src/iconmgr.c
+@@ -78,6 +78,13 @@
+         int mask = XParseGeometry(p->geometry, &x, &y,
+                                   (unsigned int *) &p->width,
+                                   (unsigned int *) &p->height);
++
++        /* Keep negative-edge icon managers anchored as their list grows.
++         * Moving the manager manually releases the corresponding edge. */
++        p->anchor_mask = mask & (XNegative | YNegative);
++        p->offset_x = x;
++        p->offset_y = y;
++        p->anchor_initialized = 0;
+ 
+         if (mask & XNegative)
+             x += Scr->MyDisplayWidth - p->width - (2 * Scr->BorderWidth);
+@@ -686,9 +693,24 @@
+     XResizeWindow(dpy, ip->w, (unsigned) newwidth, (unsigned) ip->height);
+ 
+     savewidth = ip->width;
+-    if (ip->twm_win)
+-        SetupWindow(ip->twm_win,
+-                    ip->twm_win->frame_x, ip->twm_win->frame_y,
+-                    newwidth, ip->height + ip->twm_win->title_height, -1);
++    if (ip->twm_win) {
++        TwmWindow *window = ip->twm_win;
++        int x = window->frame_x, y = window->frame_y;
++        int height = ip->height + window->title_height;
++        if (ip->anchor_initialized) {
++            if (x != ip->anchor_x) ip->anchor_mask &= ~XNegative;
++            if (y != ip->anchor_y) ip->anchor_mask &= ~YNegative;
++        }
++        if (ip->anchor_mask & XNegative)
++            x = Scr->MyDisplayWidth + ip->offset_x - newwidth - 2 * window->frame_bw;
++        if (ip->anchor_mask & YNegative)
++            y = Scr->MyDisplayHeight + ip->offset_y - height - 2 * window->frame_bw;
++        if (x < 0) x = 0;
++        if (y < 0) y = 0;
++        SetupWindow(window, x, y, newwidth, height, -1);
++        ip->anchor_x = window->frame_x;
++        ip->anchor_y = window->frame_y;
++        ip->anchor_initialized = 1;
++    }
+     ip->width = savewidth;
+ }

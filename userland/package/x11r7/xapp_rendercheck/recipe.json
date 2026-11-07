@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_rendercheck",
+  "kind": "application",
+  "program": "rendercheck",
+  "version": "1.5",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/rendercheck-1.5.tar.bz2",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/rendercheck-1.5.tar.bz2",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "00605679436d65ccf9a6f1f1cb206df7a2e8b28a7821e867922d2b14b009f1cc",
+      "filename": "rendercheck-1.5.tar.bz2"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "ffa1abf317f85a8bcef3544e3f810b34567553524ac0a784d2a67470e0811854d7983af8600a04aadecf42871ccb83ad5c0e9e25179142fda2a8f5853a07f616",
+      "filename": "rendercheck-1.5.tar.bz2"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": true,
+  "runtime_qualification": {
+    "scope": "emulator application smoke checks; not exhaustive feature qualification",
+    "record": "docs/desktop-applications-r41-validation.json"
+  }
+}

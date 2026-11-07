@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_oclock",
+  "kind": "application",
+  "program": "oclock",
+  "version": "1.0.6",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/oclock-1.0.6.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/oclock-1.0.6.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "3ee85e5e2d211eca7bdb8b2fe0e3baf31998829af48198b5fa9bbee2aa0d24be",
+      "filename": "oclock-1.0.6.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "02d062745356ad09e2c5ef22c41f2f5c271e756c6a78cac78d459fdf8e4b107f4f8df1a657e16ecc3ae0c1801c2a913396133ba0628685c9ea4fe359c0d7dcc3",
+      "filename": "oclock-1.0.6.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

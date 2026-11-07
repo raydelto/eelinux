@@ -1,0 +1,5 @@
+config BR2_PACKAGE_EELINUX_DHCPCD
+	bool "eeLinux dhcpcd"
+	help
+	  dhcpcd 10.5.2, IPv4 DHCP with lease renewal and privilege separation.
+	  Uses the native SMAP interface; does not depend on BusyBox.

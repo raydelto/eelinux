@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xrestop",
+  "kind": "application",
+  "program": "xrestop",
+  "version": "0.6",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xrestop-0.6.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xrestop-0.6.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "2e2ec111c4b2798b5dc2dc2b3ec7af4f6b261946e903b8e14db046831d203b29",
+      "filename": "xrestop-0.6.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "bc46aa1f0664961a42a2ed1f204c3c3959429805936fcdd91a2bdbb7c46d8a19a213c9997f7d2365948220bdbc6d39ea654c5085baf6f7309540445877b62e3b",
+      "filename": "xrestop-0.6.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

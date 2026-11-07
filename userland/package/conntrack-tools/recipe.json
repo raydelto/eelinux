@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "conntrack-tools",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.conntrack-tools",
+  "symbol": "BR2_PACKAGE_CONNTRACK_TOOLS",
+  "version": "1.4.9",
+  "recipe": "package/conntrack-tools/conntrack-tools.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "c15afe488a8d408c9d6d61e97dbd19f3c591942f62c13df6453a961ca4231cae",
+      "filename": "conntrack-tools-1.4.9.tar.xz"
+    }
+  ],
+  "release_url": "https://www.netfilter.org/pub/conntrack-tools/"
+}

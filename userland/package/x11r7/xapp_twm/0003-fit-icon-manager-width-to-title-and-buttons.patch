@@ -1,0 +1,18 @@
+--- a/src/iconmgr.c
++++ b/src/iconmgr.c
+@@ -85,6 +85,15 @@
+         p->offset_x = x;
+         p->offset_y = y;
+         p->anchor_initialized = 0;
++
++        /* Width 1 requests a compact single-column panel.  Measure the
++         * actual title font and retain all configured title buttons. */
++        if ((mask & WidthValue) && p->width == 1 && p->columns == 1) {
++            snprintf(str, sizeof(str), "%s Icon Manager", p->name);
++            p->width = Scr->TBInfo.titlex +
++                MyFont_TextWidth(&Scr->TitleBarFont, str, (int) strlen(str)) +
++                Scr->TitlePadding + Scr->TBInfo.rightoff;
++        }
+ 
+         if (mask & XNegative)
+             x += Scr->MyDisplayWidth - p->width - (2 * Scr->BorderWidth);

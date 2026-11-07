@@ -1,0 +1,190 @@
+{
+  "schema": 1,
+  "date": "2026-10-04",
+  "recorded_at": "2026-10-04T14:32:00.589660+00:00",
+  "scope": "constant-source solid Boolean drawing and shared EXA/Mesa ordering; full desktop unfinished",
+  "compiled_components": {
+    "sha256": "c2e352e8771b9c997b0e70dc0de8518b13d4e9ff72984be7c7e6a3758782a131"
+  },
+  "native_test_log": {
+    "sha256": "175ad5f4875a3d8eda7447d4ae2f00208721d30ad7c191f628745da06f42a44d"
+  },
+  "preserved_source_inputs": {
+    "sha256": "44c16caee96a79605fafc3df756a70e9d951881e2e3a2796f81e3c4899d5968e"
+  },
+  "patches": {
+    "sha256": "4ba2b854871e361640bfdf79a3980ba16c50646f3f288eb44eafc34970a0384d"
+  },
+  "kernel": {
+    "sha256": "ade957454e455420ea4e8910cfaf46d14bcd1e9548b19495f3ff038d40cb8166"
+  },
+  "kernel_build_log": {
+    "sha256": "9d82fce678d7abd9451a57fce7f545a50de15d555bc19046746dc239f14d9b47"
+  },
+  "image": {
+    "sha256": "5724cb5b49ca293c26a1e76e0062d9c2422b270c1e412ce2acd7f6443ddb61ee"
+  },
+  "image_assembly": {
+    "sha256": "aed35877cf9764536470b799b3c57ae586b3e4f4e6dcb31173720de92b122a76"
+  },
+  "image_checks": {
+    "diagnostic_fat_readback_byte_exact": {},
+    "fat32_bpb_and_cluster_count": "passed",
+    "fsck_fat_read_only": "passed",
+    "kernel_fat_readback_byte_exact": true,
+    "readme_fat_readback_byte_exact": true,
+    "root_payload_byte_exact": true,
+    "source_inputs_unchanged": true
+  },
+  "probe": {
+    "sha256": "56e60fecdba848d7a96cf66a4e96cf0942cca1853289c2e0c5ea7aeb76aae70c"
+  },
+  "probe_source": {
+    "sha256": "4d031defe9a48bd05e2f38165a609896f84d89c2a1fda3975adbc0db0b7342d0"
+  },
+  "packaged_probe_matches_tested_binary": true,
+  "host_checks": {
+    "cases": 13,
+    "result": "passed",
+    "sanitizers": [
+      "ASan",
+      "UBSan"
+    ],
+    "evidence_kind": "transcription of successful tool output",
+    "groups": {
+      "kernel_packets_and_provider": 4,
+      "actual_EXA_Mesa_adapters": 6,
+      "actual_probe_lifecycle": 3
+    },
+    "oracle": "independent switch-based Boolean results versus decoded raw GS packet registers",
+    "exhaustive_source_destination_byte_pairs_for_all_ALUs": true,
+    "random_RGB555_RGB888_masks_and_preserved_alpha": true,
+    "software_oracle_is_production": false,
+    "provider_scaffold_is_kernel_lockdep": false
+  },
+  "R5900_Linux_user_checks": {
+    "cases": 13,
+    "result": "passed",
+    "actual_GNU_atomic_references": true,
+    "GPU_pixels_tested": false
+  },
+  "controlled_PCSX2_run": {
+    "session": {
+      "sha256": "a477e4d78af4d6006accde385b4a94638c925eb8545afbba8c619c08e1166d0d"
+    },
+    "process_result": {
+      "sha256": "94f9e6255904b56e0b1ee45cc8cd8d308da7601880f676d9ebcd81a237d38fa4"
+    },
+    "runtime": {
+      "requested_program": "C:\\Program Files\\PCSX2\\pcsx2-qt.exe",
+      "executable_sha256": "4d2a4d9c0db3cb2e9760e2d34bcd29150b53d56a1a87ae8e6fb4556796b40f58",
+      "runtime_manifest_sha256": "b7bf008375c55020bfb3287e0a100d1ff001323706bc2e18b3bf2d0e183ed478",
+      "mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85"
+    },
+    "log_snapshot": {
+      "sha256": "e5e59f1655d50b821f82e342d9cf06c2c0285f33483bafdc0c095cedaf797674"
+    },
+    "milestones": [
+      "EXT4-fs (sda2): mounted filesystem",
+      "ps2-gs: command/fence test PASSED",
+      "ps2-gs: image transfer/fence PASSED",
+      "ps2-gs: offscreen transfer/fence PASSED",
+      "ps2-gs: owned Mesa transfer/fence PASSED",
+      "ps2-gs: texture sampling/fence PASSED",
+      "ps2-gs: screen/context transfer/fence PASSED",
+      "ps2-gs: native glyph command/fence PASSED",
+      "ps2-gs: GC text/lifetime command/fence PASSED",
+      "ps2-gs: starting native solid logic probe",
+      "ps2-gs: native solid logic 720x576 features=1ff",
+      "ps2-gs: solid logic command/fence PASSED",
+      "ps2-gs: native solid logic probe exit=0",
+      "ps2-smap ps2-smap eth0: Link is Up"
+    ],
+    "startup_command_checks_passed": 9,
+    "solid_logic_probe_exit": 0,
+    "solid_logic_probe_exit_guest_seconds": 71.5643,
+    "automatic_timeout_seconds": 185,
+    "timed_out": true,
+    "timeout_is_a_boot_result": false,
+    "kernel_panic_or_user_segfault_in_log": false,
+    "authenticated_login_tested": false
+  },
+  "visual_observation": {
+    "source": "user-supplied sixteen-tile screenshot during the controlled PCSX2 run",
+    "user_report": "Yes it shown; Yes, outline appeared and disappeared; console returned",
+    "grid_confirmed_by_user": true,
+    "assistant_assessment": "4x4 solid tile pattern matches the expected ALU ordering, including black first and white last",
+    "expected_tile_RGB_left_to_right_top_to_bottom": [
+      "#000000",
+      "#284014",
+      "#818342",
+      "#a9c356",
+      "#023c81",
+      "#2a7c95",
+      "#83bfc3",
+      "#abffd7",
+      "#540028",
+      "#7c403c",
+      "#d5836a",
+      "#fdc37e",
+      "#563ca9",
+      "#7e7cbd",
+      "#d7bfeb",
+      "#ffffff"
+    ],
+    "outline_appearance_disappearance_confirmed_by_user": true,
+    "text_console_return_confirmed_by_user": true,
+    "platform_explicitly_named_by_user": false,
+    "automated_screenshot_pixel_comparison": false,
+    "GPU_pixel_readback": false,
+    "physical_hardware_qualification": false
+  },
+  "restrictions": {
+    "constant_source_ALUs": 16,
+    "general_source_pixmap_ALUs": false,
+    "plane_masks": "native RGB555/RGB888",
+    "alpha_preserved": true,
+    "depth_writes_masked": true,
+    "maximum_sprite_passes": 2,
+    "one_submission_thread": true,
+    "native_GC_line_or_outline_hooks": false,
+    "shader_caps": 0,
+    "native_probe_is_X_server": false,
+    "OpenGL_logic_op_capabilities_advertised": false
+  },
+  "memory": {
+    "target_main_RAM_MiB": 32,
+    "separate_GS_VRAM_MiB": 4,
+    "complete_desktop_total_and_peak_measured": false
+  },
+  "physical_devices_written": false,
+  "software_pixel_renderer": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL": false,
+  "remaining": [
+    "native line/outline GC integration and general source-pixmap ALUs",
+    "full DDX screen/cursor/VT setup and alpha glyphs",
+    "shader/state execution and draw_vbo",
+    "GLX and existing OpenGL applications",
+    "presentation/readback/double buffering",
+    "physical pixel and desktop memory qualification"
+  ],
+  "reference": "https://psi-rockin.github.io/ps2tek/",
+  "physical_hardware_followup": {
+    "date": "2026-10-04",
+    "evidence": "docs/graphics-hardware-validation.json",
+    "evidence_sha256": "ef10249c0b5c23f171d1bc7390788c271086b4caaeff929984f5f6c0fe42e1f3",
+    "diagnostics": [
+      "ps2-gs-logic-test"
+    ],
+    "diagnostic_scenes_tested_on_physical_hardware": true,
+    "result": "passed according to the user on real PlayStation 2 hardware",
+    "evidence_kind": "explicit user verification report; device logs not captured",
+    "earlier_fields_preserved": true,
+    "scope": "normal diagnostic scenes on the user's PS2; not all host/mock cases or a complete desktop",
+    "artifact_hash_read_back_on_console": false,
+    "GPU_pixel_readback": false,
+    "complete_Xorg_TWM_or_OpenGL_session_tested": false
+  },
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

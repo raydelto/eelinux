@@ -1,0 +1,149 @@
+{
+  "schema": 1,
+  "date": "2026-10-04",
+  "recorded_at": "2026-10-04T16:57:32.211645+00:00",
+  "scope": "visible actual ScreenRec CopyWindow and shared Mesa GS copy diagnostic, not a full X server/TWM session",
+  "image": {
+    "sha256": "aba284b5c31c60f6fae0fb6870aeec89a4b6a6feb1f3ec0df95032d3b94b95de"
+  },
+  "image_assembly": {
+    "sha256": "151022b0eca939cc388445563b8e690b74e8a88e96c1526480a362f0f1194c78"
+  },
+  "image_checks": {
+    "diagnostic_fat_readback_byte_exact": {},
+    "fat32_bpb_and_cluster_count": "passed",
+    "fsck_fat_read_only": "passed",
+    "kernel_fat_readback_byte_exact": true,
+    "readme_fat_readback_byte_exact": true,
+    "root_payload_byte_exact": true,
+    "source_inputs_unchanged": true
+  },
+  "package": {
+    "sha256": "e39c1f2d5583695a353df24cd253d9ba1e24685940f67839492a707273086625"
+  },
+  "probe": {
+    "sha256": "b3f87aff6608ed026154efc436e58c6475d38ba7059dc5f87f3bde39eb335581"
+  },
+  "source": {
+    "path": "desktop/ps2-gs-window-test.c",
+    "sha256": "586949d722e1cbf7f6e6080500c370b373ebb7ae024c11d0ed7e8df6240e25cd"
+  },
+  "build": {
+    "sha256": "71a577f4e7edbf2d8ac7dccbf8a20cab85adfeb408c3a17c11e85a8709bdfba2"
+  },
+  "native_test_log": {
+    "sha256": "d38ce0c38a0149fa9ecce6de49d24624c475a2e5d7b6cad0d7fcdfe8ff9ad46f"
+  },
+  "host_checks": {
+    "schema": 1,
+    "result": "passed",
+    "cases": 4,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "log_sha256": "dbf1e372bf7036d771e394f607a459bd843270fc8e4db1107141955861b1e729",
+    "probe_source_sha256": "586949d722e1cbf7f6e6080500c370b373ebb7ae024c11d0ed7e8df6240e25cd",
+    "pixel_qualification": false
+  },
+  "host_test_log": {
+    "sha256": "dbf1e372bf7036d771e394f607a459bd843270fc8e4db1107141955861b1e729"
+  },
+  "lifecycle_cases": [
+    "success",
+    "move-failure",
+    "present-failure",
+    "interrupt"
+  ],
+  "host_sanitizer_cases": 4,
+  "R5900_Linux_user_cases": 4,
+  "preceding_component_cases_per_environment": 52,
+  "PCSX2_run": {
+    "session": {
+      "sha256": "4075db0559008adb7d11b89630849de41092a3699fb4edd82622e9288b170ca8"
+    },
+    "log_snapshot": {
+      "sha256": "15705f4b124550a38d2f64170451b1012c2cc47094562880e4339598499d7d67"
+    },
+    "running_process_at_snapshot": {
+      "sha256": "59f7d5ca009eb503ff426421f66bbb72aae8d02e77b584719162d58cb138ad38"
+    },
+    "milestones": [
+      "EXT4-fs (sda2): mounted filesystem",
+      "ps2-gs: starting native CopyWindow / shared Mesa probe",
+      "ps2-gs: native CopyWindow / shared Mesa 720x576 features=1ff",
+      "ps2-gs: window scene 1/4:",
+      "ps2-gs: window scene 2/4:",
+      "ps2-gs: window scene 3/4:",
+      "ps2-gs: window scene 4/4:",
+      "ps2-gs: native CopyWindow command/fence PASSED; window pixels require visual qualification",
+      "ps2-gs: native CopyWindow / shared Mesa probe exit=0"
+    ],
+    "runtime": {
+      "requested_program": "C:\\Program Files\\PCSX2\\pcsx2-qt.exe",
+      "executable_sha256": "4d2a4d9c0db3cb2e9760e2d34bcd29150b53d56a1a87ae8e6fb4556796b40f58",
+      "runtime_manifest_sha256": "b7bf008375c55020bfb3287e0a100d1ff001323706bc2e18b3bf2d0e183ed478",
+      "mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85"
+    },
+    "guest_main_ram_mib": 32,
+    "probe_exit": 0,
+    "probe_exit_guest_seconds": 70.7132,
+    "console_restoration_command_passed": true,
+    "process_exit_is_boot_result": false,
+    "session_left_interactive": true,
+    "authenticated_login_tested": false
+  },
+  "expected_scenes": [
+    "identical reference and window panels",
+    "overlapping down/right window move; original top/left edges remain",
+    "upper source and lower clipped window copy with central vertical gap",
+    "redirected backing pixmap move, presented beside reference"
+  ],
+  "pauses": 4,
+  "manual_command": "ps2-gs-window-test",
+  "diagnostic_format": "RGBX/CT32",
+  "RGB555_runtime_pixels_verified": false,
+  "visual_observation": {
+    "platform": "PCSX2",
+    "evidence_kind": "user-confirmed four-scene PCSX2 verification with four supplied screenshots reviewed against the exact diagnostic sequence",
+    "reviewed_probe_sha256": "b3f87aff6608ed026154efc436e58c6475d38ba7059dc5f87f3bde39eb335581",
+    "all_scene_panels_match_expected": true,
+    "console_return_user_confirmed": true,
+    "console_restoration_command_passed": true,
+    "scope": "qualitative RGBX scene panels and user-confirmed console return; no pixel-by-pixel readback or whole-screen artifact qualification",
+    "physical_hardware_verified": false,
+    "GPU_pixel_readback": false,
+    "repository_images_added": false,
+    "identical_reference_and_window_panels": true,
+    "overlapping_down_right_move_and_retained_original_edges": true,
+    "upper_source_and_lower_clipped_copy_with_vertical_gap": true,
+    "redirected_backing_pixmap_move_beside_reference": true
+  },
+  "physical_hardware_verified": false,
+  "GPU_pixel_readback": false,
+  "software_pixel_renderer": false,
+  "kernel_ABI_changed": false,
+  "native_probe_is_X_server": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL_GLX": false,
+  "shader_caps": 0,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "physical_devices_written": false,
+  "preserved_diagnostic_binaries": {
+    "ps2-gs-test": "1356d7a73a58f09eaa95298092de779cd461615d3f6eb0ac7966cff52a1434cd",
+    "ps2-gs-upload-test": "1ed84bd7c47a1d29b80942bc20a2116f6177c3d4b54a4ddb7aa7175d6f65ef07",
+    "ps2-gs-surface-test": "18674bec98afa5a847649c89bf2231f861e864222faee9bef7fbcff4c3364497",
+    "ps2-gs-render-test": "7616a090815c5759a2f628efcd1e0bac2c88b6e2153b1bc750ea6ca05f33676f",
+    "ps2-gs-texture-test": "fb6dd812b8d73465ec88f93ef3afded6bf09b9b42e8b7b92ed59dd0569b6f102",
+    "ps2-gs-context-test": "cb5e60a9dcf284e64df44846ec11f0b2f16d0f57562ad7909227a34e88b2813b",
+    "ps2-gs-glyph-test": "fdabce9c1f5bbfa6b9cffef0126bd18e834971261b765a48cc51a3f40b38ff34",
+    "ps2-gs-gc-test": "ded18eef24e0f2597ed07bfec72356a667ed9fb90035e6ee600c9649ed3735f9",
+    "ps2-gs-logic-test": "b7d374c1c5c681e8bd03239c3db17ec03d8e504e1e3163276a27df14f8d4158c",
+    "ps2-gs-solid-test": "e7828b6ca61d02b8b2ac1cf065ba3e7b1a5bb8ca7b211e22d9135492108d39d2",
+    "ps2-gs-copy-test": "5c6178bee0a4b483379e107bbfbaed27500b3a1696ae48d1d1687bc3b14c5782",
+    "ps2-gs-blit-test": "700d03530dd03340a8f1fb17a26e73bd3da781b9478767904f99c3f7c8b19af2"
+  },
+  "earlier_physical_report": "docs/graphics-hardware-validation.json",
+  "earlier_report_qualifies_this_new_test": false,
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

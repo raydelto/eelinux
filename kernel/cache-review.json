@@ -1,0 +1,82 @@
+{
+  "verified_on": "2026-10-01",
+  "source_reference": "kernel/vendor/linux-7.2.8/manifest.json",
+  "r5900_reference": "kernel/vendor/frno7/manifest.json",
+  "header": "arch/mips/include/asm/r4kcache.h",
+  "adapter": "scripts/kernel_cache_port.py",
+  "hardware_validated": false,
+  "modern_infrastructure_retained": [
+    "generic ISA/cache operand handling",
+    "EVA protected/user helpers",
+    "protected cache exception table and -EFAULT fixup",
+    "Loongson node-cache helpers"
+  ],
+  "objects": [
+    {
+      "compiler": "Debian GCC 14.2.0",
+      "object_sha256": "4c3736e1519a73ae5cf8b49038d2c6e837dde430df50ccff8011c2fa379cff21",
+      "disassembly": "kernel/logs/7.2.8-cache-disassembly.txt",
+      "disassembly_sha256": "144d23384db9c88807b541d844a4862b1f1c6a8f923d08e0612c5c47e6ae468a",
+      "sequences": [
+        {
+          "function": "blast_dcache64",
+          "cache_opcode": "0x14",
+          "cache_operations": 32,
+          "offsets": "0..1984 step64",
+          "sync_encoding": "0000000f",
+          "sync_count": 33
+        },
+        {
+          "function": "blast_icache64",
+          "cache_opcode": "0x7",
+          "cache_operations": 32,
+          "offsets": "0..1984 step64",
+          "sync_encoding": "0000040f",
+          "sync_count": 2
+        },
+        {
+          "function": "blast_icache64_page",
+          "cache_opcode": "0xb",
+          "cache_operations": 32,
+          "offsets": "0..1984 step64",
+          "sync_encoding": "0000040f",
+          "sync_count": 2
+        }
+      ]
+    },
+    {
+      "compiler": "project GCC 14.4.0",
+      "object_sha256": "65d1adb3d3a070cda43cc711473a35d6aaa8a106039c4cf1d6fc2d763f517cfc",
+      "disassembly": "kernel/logs/7.2.8-cache-project-disassembly.txt",
+      "disassembly_sha256": "c7428f0b11c2ecc0c846a57eb65ce5e5766c577beb2db807f388667f54c541ef",
+      "sequences": [
+        {
+          "function": "blast_dcache64",
+          "cache_opcode": "0x14",
+          "cache_operations": 32,
+          "offsets": "0..1984 step64",
+          "sync_encoding": "0000000f",
+          "sync_count": 33
+        },
+        {
+          "function": "blast_icache64",
+          "cache_opcode": "0x7",
+          "cache_operations": 32,
+          "offsets": "0..1984 step64",
+          "sync_encoding": "0000040f",
+          "sync_count": 2
+        },
+        {
+          "function": "blast_icache64_page",
+          "cache_opcode": "0xb",
+          "cache_operations": 32,
+          "offsets": "0..1984 step64",
+          "sync_encoding": "0000040f",
+          "sync_count": 2
+        }
+      ]
+    }
+  ],
+  "instruction_index_base_review": "Both generated blast_icache64 functions start their index base at zero and combine way/line offsets; address bit31 is clear as in the source fork",
+  "limitations": "Generated code and preserved source invariants do not prove runtime cache/DMA coherence or resolve separate exception/TLB/compressed-bootstrap errata"
+}

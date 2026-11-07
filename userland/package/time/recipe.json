@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "time",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.time",
+  "symbol": "BR2_PACKAGE_TIME",
+  "version": "1.10",
+  "recipe": "package/time/time.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "706bf7b8444ca9eb9037e9eda18e1d0eb7c2327ae7d8c2ce3a4823c5f80c7b11",
+      "filename": "time-1.10.tar.xz"
+    }
+  ],
+  "release_url": "https://ftp.gnu.org/gnu/time/"
+}

@@ -1,0 +1,143 @@
+{
+  "schema": 1,
+  "source_revision": "77174dd4c8958a91aa5b76fb064a60eb68119e70",
+  "hardware_test_status": "GNU console/USB/ext4, native SMAP, stable 576p boot and corrected GS primitive scene user-confirmed on SCPH-90001; desktop and other variants unqualified",
+  "drivers": [
+    {
+      "hardware": "R5900 CPU, MMU/cache, EE interrupt controller and DMA",
+      "paths": [
+        "arch/mips/ps2/memory.c",
+        "arch/mips/ps2/cache.S",
+        "arch/mips/ps2/intc-irq.c",
+        "arch/mips/ps2/dmac-irq.c"
+      ],
+      "symbols": [
+        "SONY_PS2",
+        "CPU_R5900"
+      ],
+      "status": "source implemented upstream"
+    },
+    {
+      "hardware": "SIF RPC and IOP memory/module/interrupt bridge",
+      "paths": [
+        "drivers/ps2/sif.c",
+        "drivers/ps2/iop-memory.c",
+        "drivers/ps2/iop-module-request.c",
+        "drivers/ps2/iop-irq.c",
+        "drivers/ps2/iop-heap.c",
+        "drivers/ps2/iop-registers.c"
+      ],
+      "symbols": [
+        "PS2_IOP_BRIDGE"
+      ],
+      "status": "ordered built-in initialization for SMAP; readiness guards and matching IRX required"
+    },
+    {
+      "hardware": "Graphics Synthesizer and framebuffer console",
+      "paths": [
+        "drivers/ps2/gs.c",
+        "drivers/ps2/gif.c",
+        "drivers/video/fbdev/ps2fb.c"
+      ],
+      "symbols": [
+        "PS2_GS",
+        "FB_PS2"
+      ],
+      "status": "stable 576p boot and corrected CT32/Z16S primitive scene user-confirmed; generic patches add CPU upload diagnostics and native GS commands; Xorg/Mesa drawing components cross-build, full accelerated desktop unfinished"
+    },
+    {
+      "hardware": "USB 1.1 OHCI, USB mass storage, keyboard and mouse",
+      "paths": [
+        "drivers/usb/host/ohci-ps2.c",
+        "drivers/usb/storage/usb.c",
+        "drivers/hid/usbhid/hid-core.c"
+      ],
+      "symbols": [
+        "USB_OHCI_HCD_PS2",
+        "USB_STORAGE",
+        "USB_HID"
+      ],
+      "status": "source implemented upstream; IOP IRQ relay firmware required"
+    },
+    {
+      "hardware": "DEV9 bridge and expansion-bay ATA",
+      "paths": [
+        "drivers/ps2/iop-dev9.c",
+        "drivers/ata/pata_ps2.c"
+      ],
+      "symbols": [
+        "PATA_PS2"
+      ],
+      "status": "source implemented; relevant physical adapter/console and firmware required"
+    },
+    {
+      "hardware": "EE UART serial console",
+      "paths": [
+        "drivers/tty/serial/ps2_uart.c"
+      ],
+      "symbols": [
+        "SERIAL_PS2_UART"
+      ],
+      "status": "source implemented upstream; external UART access required"
+    },
+    {
+      "hardware": "RTC",
+      "paths": [
+        "drivers/rtc/rtc-ps2.c"
+      ],
+      "symbols": [
+        "RTC_DRV_PS2"
+      ],
+      "status": "source implemented upstream"
+    },
+    {
+      "hardware": "DualShock controller",
+      "paths": [
+        "drivers/ps2/gamepad.c"
+      ],
+      "symbols": [
+        "INPUT"
+      ],
+      "status": "source implemented as upstream loadable module; gamepad IRX required"
+    },
+    {
+      "hardware": "USB Ethernet AX88179/178A, AX8817X, CDC, DM9601, RTL8152",
+      "paths": [
+        "drivers/net/usb/ax88179_178a.c",
+        "drivers/net/usb/asix_devices.c",
+        "drivers/net/usb/cdc_ether.c",
+        "drivers/net/usb/dm9601.c",
+        "drivers/net/usb/r8152.c"
+      ],
+      "symbols": [
+        "USB_USBNET",
+        "USB_NET_AX88179_178A",
+        "USB_NET_AX8817X",
+        "USB_NET_CDCETHER",
+        "USB_NET_DM9601",
+        "USB_RTL8152"
+      ],
+      "status": "disabled at user request; upstream source retained, no compilation or boot modprobe"
+    },
+    {
+      "hardware": "Native Sony network adapter / slim SMAP Ethernet",
+      "paths": [
+        "drivers/net/ethernet/ps2/ps2-smap.c",
+        "kernel/iop-overlay/module/dev9.c",
+        "kernel/iop-overlay/builtin/spd-irq.c"
+      ],
+      "symbols": [
+        "PS2_SMAP",
+        "PS2_IOP_BRIDGE",
+        "PHYLIB"
+      ],
+      "status": "built-in PIO/NAPI/phylib driver with IOP-owned DEV9/IRQ transport; DHCP, external ICMP and DNS user-confirmed on SCPH-90001; other variants and sustained traffic pending"
+    },
+    {
+      "hardware": "SPU2 audio, memory cards, CD/DVD, iLink, VU acceleration",
+      "paths": [],
+      "symbols": [],
+      "status": "no complete Linux driver integration in this baseline; port and hardware acceptance required"
+    }
+  ]
+}

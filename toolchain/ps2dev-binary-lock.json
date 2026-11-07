@@ -1,0 +1,9 @@
+{
+  "platform": "Linux x86_64",
+  "repository": "https://github.com/ps2dev/ps2dev",
+  "asset_id": 569786251,
+  "asset_url": "https://github.com/ps2dev/ps2dev/releases/download/latest/ps2dev-ubuntu-latest.tar.gz",
+  "sha256": "00287c79c402e61418811df28faa38f6665b8a755e68cd1e69026b188946c6c1",
+  "digest_source": "GitHub release asset API digest, verified 2026-10-01",
+  "note": "Upstream latest URL moves. A different asset fails the checksum rather than updating this lock silently. The full installed SDK is for IOP/homebrew tools; GNU/Linux uses the separate glibc compiler."
+}

@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config PS2_SMAP
+	tristate "PlayStation 2 native SMAP Ethernet"
+	depends on SONY_PS2 && NETDEVICES && ETHERNET
+	select PHYLIB
+	select PS2_IOP_BRIDGE
+	help
+	  Native 10/100 Ethernet on a Sony Network Adaptor, supported PC Card
+	  adapter, or a Slim console with integrated SMAP. The IOP accesses the
+	  FIFOs and PHY through DEV9; Linux transfers packets over bounded SIF
+	  RPCs and manages the PHY with phylib. This avoids the EE register window
+	  that is unavailable on Slim hardware. The DEV9 1.2 firmware supplies
+	  the factory MAC and leaves shared ATA interrupt/DMA ownership intact.
+	  An Ethernet adapter is required on consoles without an integrated port.
+	  A legacy direct EE backend is available for development. Physical
+	  Ethernet acceptance on each supported model remains pending.

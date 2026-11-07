@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "fping",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.fping",
+  "symbol": "BR2_PACKAGE_FPING",
+  "version": "5.5",
+  "recipe": "package/fping/fping.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "15c4e32b6c55ff105bafe03e8c91c7ca1b2eda31bf9a7127326bb87887ee18fe",
+      "filename": "fping-5.5.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/schweikert/fping/releases/tag/v5.5"
+}

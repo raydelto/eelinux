@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "tcpdump",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.tcpdump",
+  "symbol": "BR2_PACKAGE_TCPDUMP",
+  "version": "4.99.7",
+  "recipe": "package/tcpdump/tcpdump.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "f748d773343f9149723ab76b2025163038137bf6af6780f2fd43d99830547991",
+      "filename": "tcpdump-4.99.7.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/the-tcpdump-group/tcpdump/tags"
+}

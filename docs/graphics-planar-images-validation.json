@@ -1,0 +1,273 @@
+{
+  "schema": 1,
+  "updated": "2026-10-05",
+  "milestone": "native Xorg XYBitmap/XYPixmap PutImage through shared Mesa bitplane runs",
+  "implementation": [
+    "desktop/xorg/ps2_image_gc.c",
+    "desktop/xorg/ps2_image_gc.h",
+    "mesa/ps2/ps2_planar.c",
+    "mesa/ps2/ps2_planar.h"
+  ],
+  "build": {
+    "sha256": "0480998db09623338b121dbf4a9fb24c7f914d7739198b17e11167b9bbe1770a"
+  },
+  "host": {
+    "sha256": "882b11b3c2b8e907606b2cbe6eafe790816d55f776a078f140d1a57536c4d1a0"
+  },
+  "build_log": {
+    "sha256": "aa9ca1249583cb1eb7314963bfe1dba541dd83cff058e9a1b86d3add3ce53866"
+  },
+  "archives": {
+    "libps2-gallium-planar.a": "129234c80da9446e1d528246ca9c44d4fe5642072122f5057502c6618a3788fa",
+    "libps2-xorg-planar.a": "ee98ccd5024d0fc700d7de7fffe549a51935df0f41825a1bb233366d2449c1d6"
+  },
+  "patches": [
+    {
+      "patch": "userland/patches/xorg-ps2-planar-images.patch",
+      "sha256": "895e7c2f8b86948c4c4dc61f8fafa92411c407f08c00ef9fea11f283484a2b3b",
+      "after": "xorg-ps2-client-images.patch",
+      "prerequisite_patches": [
+        "xorg-ps2-raster.patch",
+        "xorg-ps2-surfaces.patch",
+        "xorg-ps2-rendering.patch",
+        "xorg-ps2-textures.patch",
+        "xorg-ps2-contexts.patch",
+        "xorg-ps2-glyphs.patch",
+        "xorg-ps2-gc.patch",
+        "xorg-ps2-logic.patch",
+        "xorg-ps2-solid-gc.patch",
+        "xorg-ps2-copy.patch",
+        "xorg-ps2-exa-copy.patch",
+        "xorg-ps2-blit.patch",
+        "xorg-ps2-copy-window.patch",
+        "xorg-ps2-paint-window.patch",
+        "xorg-ps2-tiled-paint.patch",
+        "xorg-ps2-tiled-gc.patch",
+        "xorg-ps2-stippled-gc.patch",
+        "xorg-ps2-monochrome.patch",
+        "xorg-ps2-transparent-stipple.patch",
+        "xorg-ps2-opaque-stipple-logic.patch",
+        "xorg-ps2-thin-lines.patch",
+        "xorg-ps2-thin-dashes.patch",
+        "xorg-ps2-native-cursor.patch",
+        "xorg-ps2-client-images.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    },
+    {
+      "patch": "userland/patches/mesa-ps2-planar-images.patch",
+      "sha256": "5718b4d54c70d29d10cf40e778d5cf40e4cacc96168a00cc8ef2d382a234029c",
+      "after": "mesa-ps2-client-images.patch",
+      "prerequisite_patches": [
+        "mesa-ps2-raster.patch",
+        "mesa-ps2-surfaces.patch",
+        "mesa-ps2-rendering.patch",
+        "mesa-ps2-textures.patch",
+        "mesa-ps2-contexts.patch",
+        "mesa-ps2-logic.patch",
+        "mesa-ps2-solid-batch.patch",
+        "mesa-ps2-copy-batch.patch",
+        "mesa-ps2-resource-copy.patch",
+        "mesa-ps2-blit.patch",
+        "mesa-ps2-tile.patch",
+        "mesa-ps2-stipple.patch",
+        "mesa-ps2-transparent-stipple.patch",
+        "mesa-ps2-opaque-stipple-logic.patch",
+        "mesa-ps2-thin-lines.patch",
+        "mesa-ps2-thin-dashes.patch",
+        "mesa-ps2-native-cursor.patch",
+        "mesa-ps2-client-images.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    }
+  ],
+  "host_sanitizer_cases": 206,
+  "R5900_cases": 206,
+  "new_cases_per_environment": 16,
+  "regression_cases_per_environment": 190,
+  "checks": [
+    "bitmap",
+    "planes",
+    "padding",
+    "clipping",
+    "rgb555",
+    "boolean",
+    "bitorder",
+    "snapshot",
+    "noop",
+    "preflight",
+    "allocation",
+    "budget",
+    "failure",
+    "rewrap",
+    "cursor",
+    "random"
+  ],
+  "upstream_image_contract": {
+    "sha256": "ece4e68d5e772d1807587252d3a21597119e6f7d15cf2972b51e9b9b2772e759"
+  },
+  "upstream_span_contract": {
+    "sha256": "fa7f95e58ab6dd901c2700759d4914efc5f0952ff325385ff60e4cf9cd70c303"
+  },
+  "upstream_request_contract": {
+    "sha256": "b7ff17b16b6b8072bb71787abe210aabe2ae1ccd2026172708c03eb6a704a767"
+  },
+  "native_path": "snapshotted client bitplanes and ordered clipped boxes -> bounded colour-run plan -> shared Mesa fence -> native GS full-copy colour fills or Boolean rectangles",
+  "CPU_colour_destination_renderer": false,
+  "GPU_pixel_readback": false,
+  "RGBX_CT32_and_RGB555_CT16_modeled": true,
+  "all_16_Boolean_ALUs_and_partial_RGB_masks": true,
+  "ZPixmap_full_RGB_mask_GXcopy_uses_uploads": true,
+  "XY_full_RGB_GXcopy_uses_colour_fills": true,
+  "XY_partial_masks_other_ALUs_preserve_spare_bits": true,
+  "source_and_box_snapshots_before_fence": true,
+  "clipped_noop_and_allocation_failures_leave_queue": true,
+  "SetSpans_coordinates_already_translated": true,
+  "SetSpans_overlaps_retain_input_order": true,
+  "PutImage_always_drawable_relative": true,
+  "XY_image_formats_supported": true,
+  "XYBitmap_source_depth": 1,
+  "XYPixmap_planes_descending": true,
+  "left_pad_0_through_31": true,
+  "CPU_colour_expansion_buffer": false,
+  "depth1_lower_source_editing_retained": true,
+  "native_GC_revalidation_and_reverse_cleanup": true,
+  "front_cursor_guard_exercised": true,
+  "one_submission_thread": true,
+  "limits": {
+    "schema": 1,
+    "R5900_planar_box_bytes": 24,
+    "R5900_Boolean_run_bytes": 20,
+    "source_snapshot_limit_bytes": 2097152,
+    "Xorg_clipped_box_plan_limit_bytes": 98304,
+    "Mesa_box_snapshot_limit_bytes": 98304,
+    "Boolean_run_plan_limit_bytes": 327680,
+    "driver_request_heap_upper_bound_bytes": 2621440,
+    "allocator_overhead_included": false,
+    "original_X_client_buffer_included": false,
+    "full_desktop_peak_RAM_measured": false,
+    "backend_header_sha256": "a32b29f2ec9dee4bc2b86bc8fbe83a17cda1a250475fd3e470805b1ae1d9bb80",
+    "component_build_sha256": "0480998db09623338b121dbf4a9fb24c7f914d7739198b17e11167b9bbe1770a",
+    "measurement_source_sha256": "e7358e6327e51730d7d5de2b5b9b05193b9447c51f731dad1bf8e227824d82bd",
+    "object_sha256": "90e7b8c1350c0a37e5bca2bd0e396c6135ba5e1bd719fec96b9cbe0c11e7a918",
+    "compiler_flags": [
+      "-march=r5900",
+      "-mabi=32",
+      "-msoft-float",
+      "-mno-llsc",
+      "-mfix-r5900",
+      "--sysroot=/home/machaddr/.cache/eelinux/desktop-xorg/output-desktop/staging",
+      "-Os",
+      "-std=gnu17",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-DNDEBUG",
+      "-DUSE_GCC_ATOMIC_BUILTINS",
+      "-DHAVE_ENDIAN_H",
+      "-DHAVE_STRUCT_TIMESPEC",
+      "-DHAVE_PTHREAD",
+      "-I/home/machaddr/.cache/eelinux/desktop-xorg/output-desktop/staging/usr/include/xorg",
+      "-I/home/machaddr/.cache/eelinux/desktop-xorg/output-desktop/staging/usr/include/pixman-1",
+      "-isystem/home/machaddr/.cache/eelinux/mesa-xlib/mesa-24.0.9/mesa-24.0.9/src",
+      "-isystem/home/machaddr/.cache/eelinux/mesa-xlib/mesa-24.0.9/mesa-24.0.9/include",
+      "-isystem/home/machaddr/.cache/eelinux/mesa-xlib/mesa-24.0.9/mesa-24.0.9/src/gallium/include",
+      "-isystem/home/machaddr/.cache/eelinux/mesa-xlib/mesa-24.0.9/mesa-24.0.9/src/gallium/auxiliary",
+      "-I/mnt/c/Users/sedzc/Documents/EEOS-Linux/graphics",
+      "-I/mnt/c/Users/sedzc/Documents/EEOS-Linux/kernel/new-drivers",
+      "-I/mnt/c/Users/sedzc/Documents/EEOS-Linux/desktop/xorg",
+      "-I/mnt/c/Users/sedzc/Documents/EEOS-Linux/mesa/ps2",
+      "-isystem/home/machaddr/.cache/eelinux/mesa-xlib/mesa-24.0.9/mesa-24.0.9/src/compiler/nir",
+      "-isystem/home/machaddr/.cache/eelinux/mesa-xlib/mesa-24.0.9/mesa-24.0.9/src/compiler",
+      "-idirafter/home/machaddr/.cache/eelinux/desktop-xorg/output-desktop/staging/usr/include",
+      "-include",
+      "xorg-server.h",
+      "-DCOMPOSITE"
+    ],
+    "nm_records": [
+      "00000014 00000018 B ps2_planar_box_size",
+      "00000000 00000014 B ps2_planar_run_size"
+    ],
+    "helper_sha256": "dba09795e83e3ab9ffe9aae77b680d1427e673756363f437502d426d9254c21a",
+    "max_PutImage_dimension": 2048,
+    "max_SetSpans_inputs": 4096,
+    "max_GC_clip_boxes": 256,
+    "max_source_width_including_left_pad": 2079,
+    "max_clipped_image_boxes": 4096,
+    "max_output_pixels": 524288,
+    "max_Boolean_runs": 16384,
+    "compiled_R5900_Mesa_planar_frame_bytes": 160,
+    "compiled_R5900_PutImage_frame_bytes": 192,
+    "compiled_R5900_SetSpans_frame_bytes": 192
+  },
+  "memory_measurement": {
+    "sha256": "3b7af3156f82afb6f46f8495f75d21b808deecccd05facc532a979eea40a3550"
+  },
+  "miPointer_framework_stubbed": true,
+  "Damage_framework_stubbed": true,
+  "actual_Damage_subsystem_executed": false,
+  "actual_full_X_server_executed": false,
+  "pointer_input_driver_executed": false,
+  "VT_hook_integrated_in_real_DDX": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL_GLX": false,
+  "shader_caps": 0,
+  "kernel_ABI_changed": false,
+  "initial_visual_failure_evidence": {
+    "path": "docs/graphics-planar-images-initial-visual-failure.json",
+    "sha256": "e5d70da6383631cd7f1664f4dab8b87edd18f9a30aacaef20ef892cbc8c28e10"
+  },
+  "XY_full_copy_spare_bits_unspecified": true,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "prior_qualified_client_image_evidence": {
+    "path": "docs/graphics-client-images-validation.json",
+    "sha256": "9dd0c37c6cb20b71f300cfb5f3b3e6d7f8b15ff8a32b3791e88e89b2a0f2aac2"
+  },
+  "legacy_probe_compatibility": {
+    "path": "docs/graphics-planar-images-legacy-probe-validation.json",
+    "sha256": "60bcfbb2c319e6c653f0dbb783e35f19cdc58b72025e4f1457e7fc654b413fca"
+  },
+  "additional_host_legacy_probe_cases": 57,
+  "qualified_earlier_component_snapshots_unchanged": true,
+  "new_USB_image_packaged": true,
+  "new_PCSX2_pixels_verified": true,
+  "new_physical_PS2_pixels_verified": false,
+  "limitations": [
+    "all planar requests exceeding 16384 native coloured runs reject before fencing",
+    "DDX screen/input/VT/presentation and actual MI/Damage lifecycle remain unfinished",
+    "Mesa shaders/vertex/draw_vbo/GLX, TWM and total desktop RAM remain unfinished"
+  ],
+  "runtime_validation": {
+    "path": "docs/graphics-planar-images-runtime-validation.json",
+    "sha256": "a73831db00ad4a910181bebd23c26e3fb1dc4b7fd710050835c41a9b783c6bc5"
+  },
+  "probe_build": {
+    "sha256": "f36e7afee5289cd262bf48417639fb9d3d32a1ffc76f4f72ba539e6e56c1b06f"
+  },
+  "probe_host_checks": {
+    "schema": 1,
+    "result": "passed",
+    "cases": 6,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "log_sha256": "4115d9509a3b350d3a76741104b92ca92f9ca604c0435c70ffff31ed3065dd48",
+    "probe_source_sha256": "50fca62d2cb10da1972d29291358023212794a9fcb7da8b795204ba6c6b76519",
+    "pixel_qualification": false
+  },
+  "PCSX2_command_fence_exit": 0,
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

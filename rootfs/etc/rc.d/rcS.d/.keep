@@ -1,0 +1,1 @@
+Service symlinks are created by scripts/rootfs.py from ../runlevels.json.

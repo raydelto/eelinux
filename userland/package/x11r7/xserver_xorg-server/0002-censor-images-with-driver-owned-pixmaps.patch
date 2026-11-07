@@ -1,0 +1,55 @@
+--- a/Xext/xace.c
++++ b/Xext/xace.c
+@@ -252,7 +252,6 @@
+         xRectangle *pRects = NULL;
+         Bool failed = FALSE;
+         int depth = 1;
+-        int bitsPerPixel = 1;
+         int i;
+         BoxPtr pBox;
+ 
+@@ -270,16 +269,13 @@
+             pRects[i].height = pBox->y2 - pBox->y1;
+         }
+ 
+-        /* use pBuf as a fake pixmap */
+-
+-        if (format == ZPixmap) {
++        /* Use driver-owned storage so censorship follows the accelerated
++         * GC path.  A fake CPU-backed pixmap cannot be drawn by a driver
++         * which deliberately has no software raster fallback. */
++        if (format == ZPixmap)
+             depth = pDraw->depth;
+-            bitsPerPixel = pDraw->bitsPerPixel;
+-        }
+-
+-        pPix = GetScratchPixmapHeader(pDraw->pScreen, w, h,
+-                                      depth, bitsPerPixel,
+-                                      widthBytesLine, (void *) pBuf);
++        pPix = (*pDraw->pScreen->CreatePixmap)(pDraw->pScreen, w, h, depth,
++                                              CREATE_PIXMAP_USAGE_SCRATCH);
+         if (!pPix) {
+             failed = TRUE;
+             goto failSafe;
+@@ -292,8 +288,12 @@
+         }
+ 
+         ValidateGC(&pPix->drawable, pScratchGC);
++        (*pScratchGC->ops->PutImage)(&pPix->drawable, pScratchGC, depth,
++                                    0, 0, w, h, 0, ZPixmap, pBuf);
+         (*pScratchGC->ops->PolyFillRect) (&pPix->drawable,
+                                           pScratchGC, nRects, pRects);
++        (*pDraw->pScreen->GetImage)(&pPix->drawable, 0, 0, w, h, ZPixmap,
++                                   ~0UL, pBuf);
+ 
+  failSafe:
+         if (failed) {
+@@ -306,7 +306,7 @@
+         if (pScratchGC)
+             FreeScratchGC(pScratchGC);
+         if (pPix)
+-            FreeScratchPixmapHeader(pPix);
++            (*pDraw->pScreen->DestroyPixmap)(pPix);
+     }
+     RegionUninit(&imageRegion);
+     RegionUninit(&censorRegion);

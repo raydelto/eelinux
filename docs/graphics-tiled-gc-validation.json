@@ -1,0 +1,147 @@
+{
+  "schema": 1,
+  "updated": "2026-10-04",
+  "milestone": "native tiled GCOps FillSpans and PolyFillRect with shared Mesa adapters",
+  "implementation": [
+    "desktop/xorg/ps2_fill.c",
+    "desktop/xorg/ps2_fill.h",
+    "desktop/xorg/ps2_gc.c",
+    "desktop/xorg/ps2_gc.h"
+  ],
+  "Mesa_dependency": [
+    "mesa/ps2/ps2_tile.c",
+    "mesa/ps2/ps2_solid_batch.c"
+  ],
+  "build": {
+    "sha256": "976a0f4abf656d2ed40a50384525c2a604240d75bb822198242daae71662f7d4"
+  },
+  "host": {
+    "sha256": "81192f21f9ebb7f81e2956fd5613aebcfcdf86c79e17ca990fce7cea8a15c904"
+  },
+  "build_log": {
+    "sha256": "47d67d3e3c8ab769ed922aff6d4758264d2f28f2074d198ee07f43026d017292"
+  },
+  "archives": {
+    "libps2-gallium-tiled-gc.a": "ce04892cca729a3cdc4a5b8cb8d4c431a37c0735d720532992949c2efa188416",
+    "libps2-xorg-tiled-gc.a": "4e907df567d181d3c3143a99499d01712b63f921a54f7925a781ee117524f5b1"
+  },
+  "patches": [
+    {
+      "patch": "userland/patches/xorg-ps2-tiled-gc.patch",
+      "sha256": "16595f63344fec6221e06b9b331e892e91212c0bc898384ba6acdbce02d55bb3",
+      "after": "xorg-ps2-tiled-paint.patch",
+      "prerequisite_patches": [
+        "xorg-ps2-raster.patch",
+        "xorg-ps2-surfaces.patch",
+        "xorg-ps2-rendering.patch",
+        "xorg-ps2-textures.patch",
+        "xorg-ps2-contexts.patch",
+        "xorg-ps2-glyphs.patch",
+        "xorg-ps2-gc.patch",
+        "xorg-ps2-logic.patch",
+        "xorg-ps2-solid-gc.patch",
+        "xorg-ps2-copy.patch",
+        "xorg-ps2-exa-copy.patch",
+        "xorg-ps2-blit.patch",
+        "xorg-ps2-copy-window.patch",
+        "xorg-ps2-paint-window.patch",
+        "xorg-ps2-tiled-paint.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    }
+  ],
+  "upstream_contracts": [
+    {
+      "sha256": "8a5e63b41834f0a31a63c3945481184a5a2241c9bd51d99d1a6babcd5f8683b9",
+      "contract": "tile pattern origin combines drawable and GC patOrg with destination backing offsets"
+    },
+    {
+      "sha256": "5e8efbffcb2a2ba42a5415b5912efcdbb19f93eb6aca0f20db9fb62840cf5623",
+      "contract": "tileIsPixel uses GC tile.pixel; FillSpans and PolyFillRect have different coordinate translation contracts"
+    }
+  ],
+  "host_sanitizer_cases": 74,
+  "R5900_cases": 74,
+  "new_cases_per_environment": 15,
+  "regression_cases_per_environment": 59,
+  "checks": [
+    "rectangles",
+    "spans",
+    "redirected",
+    "pixel",
+    "solid",
+    "noop",
+    "preflight",
+    "capacity",
+    "seedfailure",
+    "expandfailure",
+    "failure",
+    "rewrap",
+    "lifetime",
+    "installation",
+    "random"
+  ],
+  "native_path": "actual GCOps -> composite clipping -> Mesa tile/Boolean batches -> native GS",
+  "supported": [
+    "owned RGBX/CT32 and RGB555/CT16 tile and destination storage",
+    "non-power-of-two tiles, signed patOrg and redirected backing origins",
+    "already-translated FillSpans and miTranslate-dependent PolyFillRect",
+    "GC tileIsPixel using tile.pixel with all sixteen constant-source ALUs and RGB masks",
+    "FillSolid dispatch preserved, live GC revalidation and existing CopyArea/glyph priority",
+    "whole-request preflight, source/input preservation, queue/no-op ordering and reverse cleanup",
+    "GS capacity and seed/expansion/later-packet failures without replay"
+  ],
+  "tile_pixmap_ALU": "GXcopy with full RGB planemask; GXnoop/zero RGB mask preserve the queue",
+  "Damage_coverage": "GC composite clip, matching existing solid GC coverage; not the exact painted footprint",
+  "max_input_rectangles_or_spans": 4096,
+  "max_clip_and_output_boxes": 256,
+  "heap_box_plan_bytes_maximum": 4096,
+  "tile_max_dimensions": [
+    1024,
+    1024
+  ],
+  "pixels_per_request_maximum": 1048576,
+  "output_pieces_maximum": 65536,
+  "texture_triangles_per_packet_maximum": 64,
+  "GS_scratch_max_logical_dimensions": [
+    64,
+    32
+  ],
+  "GS_scratch_max_logical_pixel_bytes": 8192,
+  "software_destination_rasterizer": false,
+  "GPU_pixel_readback": false,
+  "actual_Damage_subsystem_executed": false,
+  "Gallium_repeat_sampler_advertised": false,
+  "shader_caps": 0,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "new_PCSX2_pixels_verified": true,
+  "new_physical_PS2_pixels_verified": false,
+  "new_USB_image_packaged": true,
+  "prior_qualified_paint_evidence": {
+    "path": "docs/graphics-tiled-paint-validation.json",
+    "sha256": "eed71d9a1e8ac52eac7dadd706636c30340f4f336ecf3119b430b800cc2a8628"
+  },
+  "earlier_images_and_hardware_evidence_preserved": true,
+  "limitations": [
+    "source tile must be distinct from destination and cannot be the front pixmap",
+    "source-pixmap Boolean ALUs and partial RGB masks remain unsupported",
+    "stippled fills, additional GC operations and large/complex requests remain unsupported",
+    "native scratch/source storage remains subject to GS VRAM capacity",
+    "component fixtures model private and Damage bookkeeping around actual callbacks",
+    "new physical qualification and actual X server/Damage integration remain pending",
+    "full DDX, Mesa shaders/vertex/draw_vbo/GLX and complete desktop RAM measurement remain open"
+  ],
+  "result": "component checks, PCSX2 command/fence checks and qualitative scene review passed; physical and actual server qualification pending",
+  "runtime_validation": {
+    "path": "docs/graphics-tiled-gc-runtime-validation.json",
+    "sha256": "4b14148259fbd708e25b2696847a9664999da08a144ba63de4db3e7c743de443"
+  },
+  "new_PCSX2_command_fence_checks_passed": true,
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

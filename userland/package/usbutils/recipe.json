@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "usbutils",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.usbutils",
+  "symbol": "BR2_PACKAGE_USBUTILS",
+  "version": "020",
+  "recipe": "package/usbutils/usbutils.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "20287d68fcd9ebb50a05ba0645a4af7583bd8dfc7307215ba121e4bc6d057aa1",
+      "filename": "usbutils-020.tar.xz"
+    }
+  ],
+  "release_url": "https://www.kernel.org/pub/linux/utils/usb/usbutils/"
+}

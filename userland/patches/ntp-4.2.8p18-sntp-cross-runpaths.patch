@@ -1,0 +1,40 @@
+--- a/configure.ac
++++ b/configure.ac
+@@ -94,10 +94,17 @@
+ AM_PROG_AR
+ 
+ # So far, the only shared library we might use is libopts.
+ # It's a small library - we might as well use a static version of it.
+ LT_INIT([disable-shared])
++
++# Cross-built Linux clients use the target loader's normal library paths.
++# Staging paths from dependency metadata must not become automatic runpaths.
++AS_CASE([$host_os:$cross_compiling], [linux*:yes], [
++  hardcode_libdir_flag_spec=
++  runpath_var=
++])
+ AC_SUBST([LIBTOOL_DEPS])
+ 
+ # NTP has (so far) been relying on leading-edge autogen, which
+ # means we need the appropriate corresponding libopts as well.
+ # Therefore, by default:
+--- a/sntp/configure.ac
++++ b/sntp/configure.ac
+@@ -61,10 +61,17 @@
+ AM_PROG_AR
+ 
+ NTP_LIBNTP
+ 
+ LT_INIT([disable-shared])
++
++# Cross-built Linux clients use the target loader's normal library paths.
++# Staging paths from dependency metadata must not become automatic runpaths.
++AS_CASE([$host_os:$cross_compiling], [linux*:yes], [
++  hardcode_libdir_flag_spec=
++  runpath_var=
++])
+ AC_SUBST([LIBTOOL_DEPS])
+ 
+ NTP_WITHSNTP
+ 
+ case "$SNTP" in

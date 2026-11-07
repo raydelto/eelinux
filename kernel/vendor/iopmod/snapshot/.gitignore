@@ -1,0 +1,11 @@
+*.a
+*.iop
+*.irx
+*.mod.*
+*.o
+*.o.d
+*.sym.*
+*.result
+/GPATH
+/GRTAGS
+/GTAGS

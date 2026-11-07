@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "iputils",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.iputils",
+  "symbol": "BR2_PACKAGE_IPUTILS",
+  "version": "20250605",
+  "recipe": "package/iputils/iputils.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "475c643e5f55b302286267b97d3ce0f47ca3489ced8aa0401b1eeb1e68228d6b",
+      "filename": "iputils-20250605.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/iputils/iputils/releases/tag/20250605"
+}

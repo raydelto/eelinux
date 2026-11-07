@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "libidn2",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.libidn2",
+  "symbol": "BR2_PACKAGE_LIBIDN2",
+  "version": "2.3.8",
+  "recipe": "package/libidn2/libidn2.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "f557911bf6171621e1f72ff35f5b1825bb35b52ed45325dcdee931e5d3c0787a",
+      "filename": "libidn2-2.3.8.tar.gz"
+    }
+  ],
+  "release_url": "https://ftp.gnu.org/gnu/libidn/"
+}

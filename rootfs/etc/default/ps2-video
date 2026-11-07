@@ -1,0 +1,4 @@
+# Progressive PAL at 50 Hz is confirmed stable on the project's tested HDMI
+# setup. Choose MODE=pal for interlaced compatibility, or MODE=auto for EDID.
+MODE=576p
+RGB_SOG=0

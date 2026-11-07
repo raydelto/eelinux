@@ -1,0 +1,34 @@
+{
+  "result": "passed",
+  "scope": "actual native Xorg/TWM four-scene, attached mouse slave motion, cursor edges, window resize, CopyPlane and interactive xterm typing integration",
+  "all_four_scene_protocol_errors": 0,
+  "client_completed": true,
+  "Xorg_exit_code": 0,
+  "guest_main_RAM_MiB": 32,
+  "physical_hardware": false,
+  "full_2D_complete": false,
+  "additional_checks": {
+    "monochrome CopyPlane synchronized": true,
+    "cursor warp and edge checks": true,
+    "attached mouse slave motion": true,
+    "managed window move/resize": true,
+    "xterm core-font scrolling completed": true,
+    "interactive terminal typing/backspace": true
+  },
+  "remaining_Xorg_warnings": [
+    "[    12.357] (WW) Falling back to old probe method for ps2",
+    "[    12.358] (WW) VGA arbiter: cannot open kernel arbiter, no multi-card support"
+  ],
+  "logs": {
+    "Xorg.log": "70f1945c3d403377bb4615bc53b2228b8061aaad3d2f198af8fd0ccaafc8c378",
+    "client.log": "1461e4de72ec33a3ff3c9e0d395df4d1cfd4a0e307917a98d3e02adc7e2cf135",
+    "serial.log": "d65591ba578b064162ff06b133f4d993b9d15e4924a607a54be81b9b1ebf3557"
+  },
+  "keyboard_command_output": "ps2-input-ok\n",
+  "interactive_xterm_remained_alive": true,
+  "date": "2026-10-05",
+  "module_sha256": "dbe3b70f646ad4077c7fb5008a06959bf845aa6fe5dcb19fa2aa8d032dd42f05",
+  "kernel_sha256": "e6c9ec03f5df52912fff8c7ca67da04e1c164a2c5deb71886d1bd8bed6b4d040",
+  "component_checks_per_environment": 273,
+  "user_observation": "Successful extended-session console log: all checks errors=0, interactive xterm alive=1, client completed errors=0, server exit=0, session exit=0."
+}

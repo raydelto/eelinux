@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "iw",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.iw",
+  "symbol": "BR2_PACKAGE_IW",
+  "version": "6.17",
+  "recipe": "package/iw/iw.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "7d182e498289ab39b257da6780d562e415377107f50358ee5b55b8cfe40b1e33",
+      "filename": "iw-6.17.tar.xz"
+    }
+  ],
+  "release_url": "https://www.kernel.org/pub/software/network/iw/"
+}

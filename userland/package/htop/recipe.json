@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "htop",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.htop",
+  "symbol": "BR2_PACKAGE_HTOP",
+  "version": "3.5.3",
+  "recipe": "package/htop/htop.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "a8b164386494cb85bb255a415a3f5f80afe7a0c4491da5d113b3a0f951087e65",
+      "filename": "htop-3.5.3.tar.xz"
+    }
+  ],
+  "release_url": "https://github.com/htop-dev/htop/releases/latest"
+}

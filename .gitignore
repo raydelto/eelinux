@@ -1,0 +1,51 @@
+/build/
+/output/
+/downloads/
+__pycache__/
+*.pyc
+.venv/
+/.cache/
+/dist/
+
+# Downloaded upstream archives and generated validation logs.
+# Recipes, source locks, public keys and vendored source remain tracked.
+/userland/sources/
+/kernel/logs/
+/aqtinstall.log
+/cloc-*.exe
+
+# Release media and copied website downloads are published separately.
+/eelinux-images/*.img
+/eelinux-images/*.iso
+/eelinux-site/dist/downloads/
+/eelinux-site/dist/*.zip
+
+# Local console firmware is never part of the public source repository.
+/emulator/bios/
+/emulator/*.[bB][iI][nN]
+/emulator/*.[rR][oO][mM]1
+/emulator/*.[rR][oO][mM]2
+/emulator/*.[eE][rR][oO][mM]
+/emulator/*.[mM][eE][cC]
+/emulator/*.[nN][vV][mM]
+
+# Compiler outputs, interpreter caches and local environment files.
+*.o
+*.obj
+*.a
+*.so
+*.so.*
+*.dll
+*.exe
+*.pyo
+*.pyd
+*.log
+.pytest_cache/
+.mypy_cache/
+.env
+.env.*
+!.env.example
+
+# Account-specific deployment output belongs outside the source tree.
+/deploy/cgit/_work/
+/deploy/cgit/out/

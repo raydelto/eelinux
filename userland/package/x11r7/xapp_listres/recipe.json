@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_listres",
+  "kind": "application",
+  "program": "listres",
+  "version": "1.0.7",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/listres-1.0.7.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/listres-1.0.7.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "d7bdc7354a53f3786487399b6d5ea8169fac9ddac2c751c530383c777d1af139",
+      "filename": "listres-1.0.7.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "2e3eb837eb2901134263b3341b54a525a854144c31a793bad4aefcec02db549ea9f1135c32914ed8ec0f3136be7913f9259090f5a8f55f611be3c46c3b3c580e",
+      "filename": "listres-1.0.7.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

@@ -1,0 +1,125 @@
+{
+  "date": "2026-10-02",
+  "user_observation": {
+    "machine": "SCPH-90001; Tuna/LaunchELF; PAL; PS2-to-HDMI",
+    "candidate": "relay-v7 root build ID visible; user did not measure kernel/image hashes",
+    "disk_build_id": "relay-v7 PAL ext4 GNU glibc-2.44 video",
+    "USB": "SanDisk Cruzer Fit; sda1/sda2 enumerated",
+    "ext4_root_mounted": "/dev/sda2",
+    "next_failure": "PID 1 SIGSEGV in ld.so.1",
+    "bad_address": "0x268",
+    "EPC": "0x77dd2614",
+    "RA": "0x77dd32fc",
+    "loader_offset": "0xb614",
+    "registers": {
+      "cause": "70000408",
+      "s0": "00000000",
+      "s1": "77e0045c",
+      "s2": "00000000",
+      "s3": "00000000",
+      "s4": "77e00448",
+      "s5": "77e06f20",
+      "s6": "e1bfccf0",
+      "s7": "77e07480",
+      "v0": "00000000",
+      "v1": "77e07480",
+      "a0": "77df5870",
+      "a1": "6e43a918",
+      "a2": "7fa77ba4",
+      "a3": "7fa77d8c",
+      "t0": "00000000",
+      "t1": "00000000",
+      "sp": "7fa77ac0",
+      "gp": "77e0f010",
+      "status": "10018c13"
+    },
+    "physical_root_mount_confirmed": true,
+    "physical_dynamic_init_result": "FAIL SIGSEGV",
+    "physical_login_confirmed": false
+  },
+  "packaged_loader_sha256": "63d25f263990e26a0cbda09e437dd3ff20a410a5f0b781c70ad4e2540d9f6599",
+  "instruction_encoding": "0x8e050268",
+  "instruction": "lw a1,616(s0)",
+  "inference": "The register dump confirms s0=0 at lw a1,616(s0). Earlier straight-line instructions read through s0 without changing it. Register, data or instruction visibility corruption remains unproven.",
+  "latest_candidate": {
+    "kernel_sha256": "d4f30e03f2e8201691014fa4a45c7279f5f2007d9e5015c2a3d81a5d3128b3fa",
+    "USB_sha256": "92140dc78754a83ef1525106517fed5bc4542711a6fa031ef7affd165fc9a0eb",
+    "R5900_user_VM_guards": {
+      "TLB_refill_FLX05_padding": true,
+      "TLB_refill_32_slot_limit": true,
+      "TLBR_hazards_restored": true,
+      "interrupt_vector_FLX05_padding": true,
+      "PID_1_user_fault_summary": true,
+      "physical_userland_retest": "user-confirmed successful boot and root shell"
+    },
+    "active_cache_helpers": {
+      "r4k_blast_dcache_page_dc64": {
+        "cache_operations": 32,
+        "opcode": "0x18",
+        "sync_encoding": "0xf",
+        "sync_count": 33,
+        "non_EVA_user_page_alias": true,
+        "existing_synchronization_verified": true
+      },
+      "blast_icache64_page": {
+        "cache_operations": 32,
+        "opcode": "0xb",
+        "sync_encoding": "0x40f",
+        "sync_count": 2,
+        "non_EVA_user_page_alias": true,
+        "existing_synchronization_verified": true
+      }
+    },
+    "TLB_refill_NOPS_at_entry": 2,
+    "TLB_refill_ERET_slot": 25,
+    "TLB_refill_total_instructions": 31,
+    "TLB_refill_limit": 32,
+    "interrupt_prefix_NOPS": 2,
+    "interrupt_tail_NOPS": 5,
+    "actual_guest_vector_inspection": "PASS",
+    "GNU_dynamic_executions": 32,
+    "guest_log_sha256": "7c3ed7d60884e47ab5abea2fab87f614fb67948444344e54a3930b72de9fad6c",
+    "physical_retest": "user-confirmed boot, authenticated root shell and GNU command execution; native Ethernet absent",
+    "page_cache_writeback": {
+      "clean_PTE_page_writeback_restored": true,
+      "folio_mapping_uses_byte_offsets": true,
+      "interrupt_skipover_CP0_guards_restored": true,
+      "physical_loader_fix_confirmed": true,
+      "reference": "frno7/linux 77174dd4c8958a91aa5b76fb064a60eb68119e70 arch/mips/mm/cache.c and arch/mips/kernel/genex.S",
+      "causal_attribution": "v8 retest succeeds; bundled fixes cannot be individually attributed from photographs"
+    }
+  },
+  "precautions": [
+    "Active non-EVA page cache helpers were already synchronized; no unused-cache change is claimed as a fix",
+    "TLBR hazard restoration is inherited from the original port; Ri/Xi paths are not exercised by R5900",
+    "GNU dynamic SysVinit and latest glibc are retained; no static replacement masks the problem"
+  ],
+  "sources": [
+    "https://github.com/frno7/linux/blob/77174dd4c8958a91aa5b76fb064a60eb68119e70/arch/mips/kernel/traps.c",
+    "https://github.com/frno7/linux/blob/77174dd4c8958a91aa5b76fb064a60eb68119e70/arch/mips/mm/tlbex.c"
+  ],
+  "latest_physical_observation": {
+    "date": "2026-10-02",
+    "source": "user report and two real-console photographs",
+    "machine": "SCPH-90001; Tuna/LaunchELF; PAL; PS2-to-HDMI",
+    "candidate": "relay-v8 retest following delivery; kernel/image hashes not measured on console",
+    "boot_and_authenticated_root_shell_user_confirmed": true,
+    "GNU_commands_observed": [
+      "ls",
+      "ip",
+      "dhcpcd",
+      "dmesg"
+    ],
+    "network_interfaces_observed": [
+      "lo"
+    ],
+    "physical_Ethernet_packets_confirmed": false,
+    "SMAP_probe_error": -145,
+    "MIPS_errno": "ETIMEDOUT",
+    "probe_error_timestamp_seconds": "3.131847",
+    "dhcpcd_result": "no valid interfaces found; no interfaces have a carrier",
+    "UK_keyboard_user_report": "physical UK keyboard; backslash and pipe incorrect",
+    "limitation": "The old generic probe error does not identify DEV9, MAC/FIFO reset or MDIO timeout"
+  },
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

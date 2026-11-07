@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xutil_groff",
+  "kind": "runtime dependency",
+  "program": "groff",
+  "version": "1.24.2",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/groff-1.24.2.tar.gz",
+  "upstream": "https://ftp.gnu.org/gnu/groff/groff-1.24.2.tar.gz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "f9c1efd5bebbe37fc6e1063db7473ce8df1e3e0be4ff0f43ce04fce57e9c5dd9",
+      "filename": "groff-1.24.2.tar.gz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "4fff1e98ba350b1ea57ae208aa2ed9360aec01d10c42dcc0fa4159d922ce5e707b33ce9fa787134e8e4fa61ca995150663767e17e8e8fd78865a1b335a33b244",
+      "filename": "groff-1.24.2.tar.gz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

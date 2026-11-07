@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xkbprint",
+  "kind": "application",
+  "program": "xkbprint",
+  "version": "1.0.8",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xkbprint-1.0.8.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xkbprint-1.0.8.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "6dbb3dc79b1d1e17045a65f86e7581e149c75ee5aacae69a6cf685acf78fc31b",
+      "filename": "xkbprint-1.0.8.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "b2c1716f0dc30e528886190cfccfb72fb17f337bb321f988058759a1cbbf93f2effc68c1b2b9a0c808cc2831b62a8e894ca341ba0a35c22eaff4cc195a20d8da",
+      "filename": "xkbprint-1.0.8.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

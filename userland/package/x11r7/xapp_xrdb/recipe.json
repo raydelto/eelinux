@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xrdb",
+  "kind": "application",
+  "program": "xrdb",
+  "version": "1.2.3",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xrdb-1.2.3.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xrdb-1.2.3.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "c88f560243278c896ce4fc92ae5a45a2b505a316ffa427fe55b02e5d5914c4e4",
+      "filename": "xrdb-1.2.3.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "4dbbfd38afc9c795de3671a37e377247dc598b9c1352f6f07158fb716437f0465fb5db4eee22d74ebee93dff4a3ef1c1e4268f333cea0d8f02d1fa10104ac748",
+      "filename": "xrdb-1.2.3.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

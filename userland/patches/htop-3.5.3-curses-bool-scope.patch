@@ -1,0 +1,32 @@
+Subject: [PATCH] keep curses' configured bool ABI inside its wrapper
+
+Restore htop's C boolean after parsing the public curses prototypes.
+This prevents include order from changing internal function types.
+
+--- a/ProvideCurses.h
++++ b/ProvideCurses.h
+@@ -14,6 +14,7 @@
+ #include "config.h" // IWYU pragma: keep
+ #endif
+ 
++#include <stdbool.h>
+ // IWYU pragma: begin_exports
+ 
+ #if defined(HAVE_NCURSESW_CURSES_H)
+@@ -33,6 +34,16 @@
+ #include <wctype.h>
+ #endif
+ 
++/* Curses' prototypes above retain their ABI; htop uses the C boolean type. */
++#ifndef __cplusplus
++#ifdef bool
++#undef bool
++#endif
++#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 202311L
++#define bool _Bool
++#endif
++#endif
++
+ // IWYU pragma: end_exports
+ 
+ #endif // HEADER_ProvideCurses

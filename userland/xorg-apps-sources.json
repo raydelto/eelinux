@@ -1,0 +1,1903 @@
+{
+  "schema": 1,
+  "date": "2026-10-18",
+  "upstream_index": "https://xorg.freedesktop.org/archive/individual/app/",
+  "recipe_directory": "userland/package/x11r7",
+  "libraries": [
+    {
+      "schema": 1,
+      "name": "x11r7/xlib_libXScrnSaver",
+      "kind": "library",
+      "program": "libXScrnSaver",
+      "version": "1.2.5",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/libXScrnSaver-1.2.5.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/lib/libXScrnSaver-1.2.5.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "5057365f847253e0e275871441e10ff7846c8322a5d88e1e187d326de1cd8d00",
+          "filename": "libXScrnSaver-1.2.5.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "1c0be0d15c5e7b50a3eb4a239e2c833c44b693b111c7f64c409f9abf8051356572acadebc8b295555683ff6bd4895acdbe32b15a538c971f15d8aa4e6b7fd51b",
+          "filename": "libXScrnSaver-1.2.5.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xlib_libXmu",
+      "kind": "library",
+      "program": "libXmu",
+      "version": "1.3.1",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/libXmu-1.3.1.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/lib/libXmu-1.3.1.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "81a99e94c4501e81c427cbaa4a11748b584933e94b7a156830c3621256857bc4",
+          "filename": "libXmu-1.3.1.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "5210acad4ec19d93a2ac906fbb062e69853c8ced8e6d3428586cb737a3485280489f238a54676a286aa0b6698af6406504274ffd08d9b5803cad57cf9476c802",
+          "filename": "libXmu-1.3.1.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xlib_libXv",
+      "kind": "library",
+      "program": "libXv",
+      "version": "1.0.13",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/libXv-1.0.13.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/lib/libXv-1.0.13.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "7d34910958e1c1f8d193d828fea1b7da192297280a35437af0692f003ba03755",
+          "filename": "libXv-1.0.13.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "80d7a11e6415fbe0fc50c3c2a1abf8f0f2ec38446c9c8d88ff48875cd94b8949cb1028f2ab37476c4b25cbd7eac34dde9132dd998c4e04ea576b95ae411ba946",
+          "filename": "libXv-1.0.13.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xlib_libpng",
+      "kind": "library",
+      "program": "libpng",
+      "version": "1.6.59",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/libpng-1.6.59.tar.xz",
+      "upstream": "https://download.sourceforge.net/libpng/libpng-1.6.59.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "d80dd2a38a37f803cb9b6ac7b14bd6e74ddc3b654780a8380bdf93523fdb4389",
+          "filename": "libpng-1.6.59.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "e7d9d1b5f7648213ff5daf20789eda9400da7a23af9c9b0a6668e72dae69bd8944fc71c76a5ff2ed70dcb2cb74bb680020763a0a5914120ee5a3910df575fbf6",
+          "filename": "libpng-1.6.59.tar.xz"
+        }
+      ],
+      "official_checksum_page": "https://www.libpng.org/pub/png/libpng.html",
+      "license": "libpng-2.0",
+      "license_file": "LICENSE",
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    }
+  ],
+  "runtime_dependencies": [
+    {
+      "schema": 1,
+      "name": "x11r7/xutil_groff",
+      "kind": "runtime dependency",
+      "program": "groff",
+      "version": "1.24.2",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/groff-1.24.2.tar.gz",
+      "upstream": "https://ftp.gnu.org/gnu/groff/groff-1.24.2.tar.gz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "f9c1efd5bebbe37fc6e1063db7473ce8df1e3e0be4ff0f43ce04fce57e9c5dd9",
+          "filename": "groff-1.24.2.tar.gz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "4fff1e98ba350b1ea57ae208aa2ed9360aec01d10c42dcc0fa4159d922ce5e707b33ce9fa787134e8e4fa61ca995150663767e17e8e8fd78865a1b335a33b244",
+          "filename": "groff-1.24.2.tar.gz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    }
+  ],
+  "applications": [
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_appres",
+      "kind": "application",
+      "program": "appres",
+      "version": "1.0.7",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/appres-1.0.7.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/appres-1.0.7.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "1114b189239fd87a8d1db433edcb4486346d29912132b91eaeee5667f13b819f",
+          "filename": "appres-1.0.7.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "5948f869124dd7160ffe109b0fc7ccdca45c3b3f551a382a0bcf2c2af9e3832b0d4451e2868ca93a38de8e8e2caf1946ac72936b3256e99a32437d0ddd937a60",
+          "filename": "appres-1.0.7.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_bdftopcf",
+      "kind": "application",
+      "program": "bdftopcf",
+      "version": "1.1",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/bdftopcf-1.1.tar.bz2",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/bdftopcf-1.1.tar.bz2",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "4b4df05fc53f1e98993638d6f7e178d95b31745c4568cee407e167491fd311a2",
+          "filename": "bdftopcf-1.1.tar.bz2"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "7b790e8d512ca2812ac889c156ef91c48798b4744a6857e5b17e0128764b5afa8c5426fe5de05a9819d64745116718db4221b3e657e3c2633465e87179c44bec",
+          "filename": "bdftopcf-1.1.tar.bz2"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_beforelight",
+      "kind": "application",
+      "program": "beforelight",
+      "version": "1.0.6",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/beforelight-1.0.6.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/beforelight-1.0.6.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "53f0bf085b7272ebbf626d1b9b0ad320d1a07bc1fe7f3ae260c86a71a857ad28",
+          "filename": "beforelight-1.0.6.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "48a165d151676f6d213883bee98b34007403a77e025253c8649f9a0f5ea258b09381ab523a5e906030ac9fc8245fce2c6beaf9ad0f81116e302d51ad4a0fad5a",
+          "filename": "beforelight-1.0.6.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_bitmap",
+      "kind": "application",
+      "program": "bitmap",
+      "version": "1.1.2",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/bitmap-1.1.2.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/bitmap-1.1.2.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "5c6d2637244c575a9cc65a6b1ee15ced480ef0184821aceeab29650daf323c12",
+          "filename": "bitmap-1.1.2.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "571e2143f7bcc373f570bc1fad2b172de1792c301457ad3ca803d8a71df4163467579331ec1052be58e150dc45780ac7fe54611817b163ce4b3667ff2e2a281b",
+          "filename": "bitmap-1.1.2.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_editres",
+      "kind": "application",
+      "program": "editres",
+      "version": "1.1.1",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/editres-1.1.1.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/editres-1.1.1.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "e0a29b2f5e178362f71950c45ec49b43ccc75cacf44356948377e71cdfee119b",
+          "filename": "editres-1.1.1.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "0a0dba9d80363296e333d6f0cefb622cdb38b596b6e5a2ea1fb458c5cb136b2e53a3e3965e1e3699c4346699a6f541f49e3ec27d619f7236b5a13ea20d5c5237",
+          "filename": "editres-1.1.1.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_fonttosfnt",
+      "kind": "application",
+      "program": "fonttosfnt",
+      "version": "1.2.5",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/fonttosfnt-1.2.5.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/fonttosfnt-1.2.5.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "2e251e66e8753c08aa280b26fd4a10d0d88e7d9bba5c8aac3d3fb36705e5918e",
+          "filename": "fonttosfnt-1.2.5.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "3be2a625234175dfc8a637b13f2d273afc82126ccd624a38afcc7ef3e13814dac0e55c8ae0a0a713725cf52078f8b45f3e86d7b357b1a19a55def55f969d0640",
+          "filename": "fonttosfnt-1.2.5.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_iceauth",
+      "kind": "application",
+      "program": "iceauth",
+      "version": "1.0.11",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/iceauth-1.0.11.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/iceauth-1.0.11.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "9d633cf0d4d1d98e3ef02d18660372958b60a67016e8a72cd04093a8d8f8d4e9",
+          "filename": "iceauth-1.0.11.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "7b3dffb2c1209e00bc11301ace3f802f052ae1062fba20011787ac185e2fd3a6c96ede3ddf37d9be3e41fa91f381e42e71fd61a7e63e8e3945351e16af2f57a6",
+          "filename": "iceauth-1.0.11.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_ico",
+      "kind": "application",
+      "program": "ico",
+      "version": "1.0.7",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/ico-1.0.7.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/ico-1.0.7.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "56a96d6429c387e54aec23b522f548487d5db8296092f21bb289b67845069915",
+          "filename": "ico-1.0.7.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "274b87e943de4f5b27a51971a89ad48340a024eba174805370e4560d9807be32c93698493f4e060d8a8f6e97133dc5e656716784cc2167a3834575688addcba1",
+          "filename": "ico-1.0.7.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_listres",
+      "kind": "application",
+      "program": "listres",
+      "version": "1.0.7",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/listres-1.0.7.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/listres-1.0.7.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "d7bdc7354a53f3786487399b6d5ea8169fac9ddac2c751c530383c777d1af139",
+          "filename": "listres-1.0.7.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "2e3eb837eb2901134263b3341b54a525a854144c31a793bad4aefcec02db549ea9f1135c32914ed8ec0f3136be7913f9259090f5a8f55f611be3c46c3b3c580e",
+          "filename": "listres-1.0.7.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_mkfontscale",
+      "kind": "application",
+      "program": "mkfontscale",
+      "version": "1.2.4",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/mkfontscale-1.2.4.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/mkfontscale-1.2.4.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "a01492a17a9b6c0ee3f92ee578850e305315b9f298da5f006a1cd4b51db01a5e",
+          "filename": "mkfontscale-1.2.4.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "8f9396a3242a7940c626caaf7b4aa84a819e005d11d612ca979179e2f5ff19f745c053a1510fc2205b60df6c5fb371153f1e353ea75df29da66279e134874174",
+          "filename": "mkfontscale-1.2.4.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_oclock",
+      "kind": "application",
+      "program": "oclock",
+      "version": "1.0.6",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/oclock-1.0.6.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/oclock-1.0.6.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "3ee85e5e2d211eca7bdb8b2fe0e3baf31998829af48198b5fa9bbee2aa0d24be",
+          "filename": "oclock-1.0.6.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "02d062745356ad09e2c5ef22c41f2f5c271e756c6a78cac78d459fdf8e4b107f4f8df1a657e16ecc3ae0c1801c2a913396133ba0628685c9ea4fe359c0d7dcc3",
+          "filename": "oclock-1.0.6.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_rendercheck",
+      "kind": "application",
+      "program": "rendercheck",
+      "version": "1.5",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/rendercheck-1.5.tar.bz2",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/rendercheck-1.5.tar.bz2",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "00605679436d65ccf9a6f1f1cb206df7a2e8b28a7821e867922d2b14b009f1cc",
+          "filename": "rendercheck-1.5.tar.bz2"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "ffa1abf317f85a8bcef3544e3f810b34567553524ac0a784d2a67470e0811854d7983af8600a04aadecf42871ccb83ad5c0e9e25179142fda2a8f5853a07f616",
+          "filename": "rendercheck-1.5.tar.bz2"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_rgb",
+      "kind": "application",
+      "program": "rgb",
+      "version": "1.1.1",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/rgb-1.1.1.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/rgb-1.1.1.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "c80ff280a02f56c30fadc2dfa210fc6979c4ab968afa315278cb97768b64ecab",
+          "filename": "rgb-1.1.1.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "8dd40232e149105d680b5689875da8e7444942265b4f64c4f91a5018193d0eb92af4035e51c6457ea57262fe2cab39d85024f70f3f649e17af78644f00a1d0ae",
+          "filename": "rgb-1.1.1.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_sessreg",
+      "kind": "application",
+      "program": "sessreg",
+      "version": "1.1.4",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/sessreg-1.1.4.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/sessreg-1.1.4.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "4e85b52f4f65a93449753bfb00ceb5d77f3317e24d07dc23147f2f116c785350",
+          "filename": "sessreg-1.1.4.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "836d2cfa60448de9b4af1b79693905854ba5c1135d623654bba627d125271eb74111bac2b4437a86f4cbd362695e796fc0279d4f4684f2cd5080cdd953318686",
+          "filename": "sessreg-1.1.4.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_setxkbmap",
+      "kind": "application",
+      "program": "setxkbmap",
+      "version": "1.3.5",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/setxkbmap-1.3.5.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/setxkbmap-1.3.5.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "360193cecc93f906d8383a8fb5c1f3a7eed35e6ced0e118a64ee56ae13c88cac",
+          "filename": "setxkbmap-1.3.5.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "57a7e4c0331f81e6e61240f0da69d536e0838c46191f789b7b2ca3a6a5a3d0169a28b71e108bbcf8d24d10068c63a7f65eb9196a3774dbd8a00db9ecc0df46a0",
+          "filename": "setxkbmap-1.3.5.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_smproxy",
+      "kind": "application",
+      "program": "smproxy",
+      "version": "1.0.8",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/smproxy-1.0.8.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/smproxy-1.0.8.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "fee584eae2ec1ce2d178d72d3b484920271ba68a27935769cefbafbc3a2ff6c8",
+          "filename": "smproxy-1.0.8.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "e930a01c3535050d7d580a93c0b2b7898ff8a8d7ab498215f2d035ab902989497d1fbc70f2939d04b609c980e86d0d4ba7829a98fda3261cb4b159432cd2bc8e",
+          "filename": "smproxy-1.0.8.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_twm",
+      "kind": "application",
+      "program": "twm",
+      "version": "1.0.13",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/twm-1.0.13.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/twm-1.0.13.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "966c4df15757645943a916c1beee4ff4065b44fde00cf01f8477d8c1d0cba2b6",
+          "filename": "twm-1.0.13.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "bab61865b798869d64fdf6e65ac9affee7ae0acf5523e4dc36e5fc65664ed83fb6ba8f1f7f495c29340e9e3dd00a386a81dcccfa11fc7adf3edda505db2f52b9",
+          "filename": "twm-1.0.13.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_viewres",
+      "kind": "application",
+      "program": "viewres",
+      "version": "1.0.8",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/viewres-1.0.8.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/viewres-1.0.8.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "4b221c2b103390b166633612b9abf8036cbbe90605dbd8a37cf2a377fa2b6cd2",
+          "filename": "viewres-1.0.8.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "3cd5dc23ab1b3289eb1433cf7373cc4edab84ef39166013056d4ffad90bb4f926e7471f7691a4c6bcb81cf6bfd203478a0ae2fb53300e838b1c5d1cc82ff8da0",
+          "filename": "viewres-1.0.8.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_x11perf",
+      "kind": "application",
+      "program": "x11perf",
+      "version": "1.6.1",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/x11perf-1.6.1.tar.bz2",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/x11perf-1.6.1.tar.bz2",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "1c7e0b8ffc2794b4ccf11e04d551823abe0ea47b4f7db0637390db6fbe817c34",
+          "filename": "x11perf-1.6.1.tar.bz2"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "b386151bfe3d7c04ab9953ae1882f3c5b627d6d1afb9a8cfe87c58236a88883fc11bbadb2226b9aa61df84b4fce625a1c9e3d146a124ac17e8d7d605b35d9c0b",
+          "filename": "x11perf-1.6.1.tar.bz2"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xauth",
+      "kind": "application",
+      "program": "xauth",
+      "version": "1.1.5",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xauth-1.1.5.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xauth-1.1.5.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "a4000e2f441facebf569026bedecc23ba262cc6927be52070abe0002625cfbe0",
+          "filename": "xauth-1.1.5.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "df94b59de49ced2490351b7ab42d56d3ef92077891b8ba7a73c53b6babb1facd250d934b82f36ee1ddc355dffefb8f52914d30893c9d578711264f82e9bf3cb9",
+          "filename": "xauth-1.1.5.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xbiff",
+      "kind": "application",
+      "program": "xbiff",
+      "version": "1.0.6",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xbiff-1.0.6.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xbiff-1.0.6.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "a85f34361c317ca216f42da9ee069a68b4beffd8dc0c973c9c339c8dd1d7d62a",
+          "filename": "xbiff-1.0.6.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "9bf37dba182909a801cb419102a37f372abf7695ef384687e4d00a1c306ba3f164a63aabba31fa13d84e8ff924d00803148221124f6ad792afb9ac54ccb69fef",
+          "filename": "xbiff-1.0.6.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xbitmaps",
+      "kind": "application",
+      "program": "xbitmaps",
+      "version": "1.1.0",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xbitmaps-1.1.0.tar.bz2",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xbitmaps-1.1.0.tar.bz2",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "c9a2059c8b0636b7ee1169647bb22f6eb4a0589e36fdb98936002e2569ad8761",
+          "filename": "xbitmaps-1.1.0.tar.bz2"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "cf499a15adc1004354c15849bf715e6ae671b01a007fee0135642d536f35f882928ffcaa696f165415e60d5c635f6944291b96558840e3beb202d8294d6fee11",
+          "filename": "xbitmaps-1.1.0.tar.bz2"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xcalc",
+      "kind": "application",
+      "program": "xcalc",
+      "version": "1.1.3",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xcalc-1.1.3.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xcalc-1.1.3.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "86e157b6174678675a4a912995dccd0ff4e2ce32b01bdd6f91bfe93333324980",
+          "filename": "xcalc-1.1.3.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "26236f5d6bd37df424e2f61b00362f4cd31a55b1decf03d98053765466af1393c762ae4127fd29256d635e28c10d7713ad12c5feb72c02272144b94453115afd",
+          "filename": "xcalc-1.1.3.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xclipboard",
+      "kind": "application",
+      "program": "xclipboard",
+      "version": "1.1.6",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xclipboard-1.1.6.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xclipboard-1.1.6.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "d7c7a74ed0a4c8983b7dd47301a91c3da48e1027e9338705cad5be8d15c0d1f1",
+          "filename": "xclipboard-1.1.6.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "c7d14f9997e7ab7741f5694fe04d413ef92d479160533ac46dc9ebb25d727d649b9a624ab82f8fadef072645c967a80bc2b7305f0a50a2a3b4cb927525f64aeb",
+          "filename": "xclipboard-1.1.6.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xclock",
+      "kind": "application",
+      "program": "xclock",
+      "version": "1.2.1",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xclock-1.2.1.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xclock-1.2.1.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "e326cac20f7ad2af5412b9c4b70b1c3d392e08cd3cc6246e0a77b7c3935a4851",
+          "filename": "xclock-1.2.1.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "0e94fd7e6c1e1c9e914991f3a8e3bf44b055a93066a153b05ec25fa4f8b6ec2c3b836bb8e1e6bc98c38a8e55f2070f225d358e7a771a97d27e2df119e0511b41",
+          "filename": "xclock-1.2.1.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xcmsdb",
+      "kind": "application",
+      "program": "xcmsdb",
+      "version": "1.0.7",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xcmsdb-1.0.7.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xcmsdb-1.0.7.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "5ec4068e488187b05ea92ee1362c96b78a90f19ccc7a1844c5921d70626bbc38",
+          "filename": "xcmsdb-1.0.7.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "87bd13930385c16689bfb6eefe47860f3741ccede9ddee4a860bb763937828808aca2c2fcc56637c06c3b9f1a5ee5ffd5cadc039d93ff7b2375a004867ef9f22",
+          "filename": "xcmsdb-1.0.7.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xconsole",
+      "kind": "application",
+      "program": "xconsole",
+      "version": "1.1.1",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xconsole-1.1.1.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xconsole-1.1.1.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "d412abbea2423f2930443c43db1c83d7d0cf2b677419b86ed54aa5d47f072322",
+          "filename": "xconsole-1.1.1.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "8024ae0dc1bc3512234ee0a2bf66dcc665daa2af67056f680af3e7f330952eb5fa6dab0442a4b4ad54df3d35ef4ec0442e7c0c6cb9fe6d9b70b2038102ae8bef",
+          "filename": "xconsole-1.1.1.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xcursorgen",
+      "kind": "application",
+      "program": "xcursorgen",
+      "version": "1.0.9",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xcursorgen-1.0.9.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xcursorgen-1.0.9.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "0cc9e156ac84ca16ea902710af35e0faffa51d13797071e3b4b6cc7cbd493bbc",
+          "filename": "xcursorgen-1.0.9.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "d40b96d6f60ee3815ef8ed6217028b39b127f200415661e39cf23af89662aafc6783f9e311f8021fe1a5ccfbc47610909796e569991e6680b8c2133401af476e",
+          "filename": "xcursorgen-1.0.9.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xditview",
+      "kind": "application",
+      "program": "xditview",
+      "version": "1.0.7",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xditview-1.0.7.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xditview-1.0.7.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "039e2d447fa409d4bb25c4e87cf09b4d4b3eff2d3af5aee8e7e52165a3259fd7",
+          "filename": "xditview-1.0.7.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "da7e80cd9fbb5da0ec4949c6fed0bad135a2490767f030e60f1c51a9f5a62379572bf8b4dd6dec2fe824152d090470e62fce12c9144aaa1be1b48ddbc3b2910b",
+          "filename": "xditview-1.0.7.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xdpyinfo",
+      "kind": "application",
+      "program": "xdpyinfo",
+      "version": "1.4.0",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xdpyinfo-1.4.0.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xdpyinfo-1.4.0.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "dc1de6e6e091ed46c4837b0ae9811e8182f7be0d2af638cab3e530ff081a48b6",
+          "filename": "xdpyinfo-1.4.0.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "478dd3de58950eeca213a51820445e62a5a63b2fa9ff3505f22802a7980f855fc11f1465e57ff4c34cdf8df0a0ff3c576804ef44f11f3b52c1c9da4ecc5a62d3",
+          "filename": "xdpyinfo-1.4.0.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xedit",
+      "kind": "application",
+      "program": "xedit",
+      "version": "1.2.5",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xedit-1.2.5.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xedit-1.2.5.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "733460cbf20a9d88e2a482ff1b288f51a97150cff807c7ffb98d2430546c8867",
+          "filename": "xedit-1.2.5.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "577d38781a8373e0db415d2b51e7e3158fdbcd720ee3fab3f157004132d6e4644928b922d91c42f46e389f7d7b6a7254f341f1031ec378bbe4640e54e2299d98",
+          "filename": "xedit-1.2.5.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xev",
+      "kind": "application",
+      "program": "xev",
+      "version": "1.2.7",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xev-1.2.7.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xev-1.2.7.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "95167895924de58e34b1013b2b0c8476e90d0888c6c39e7ae9bc35e3a19dba04",
+          "filename": "xev-1.2.7.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "e6537827972b80bd58af4569054d44028cbb8a86e94445e9e99c7a6299500454da7b7dad0783bd49e937ca43e39cde1bf564762576ae3f2c52dc4a5c7c68b333",
+          "filename": "xev-1.2.7.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xeyes",
+      "kind": "application",
+      "program": "xeyes",
+      "version": "1.3.1",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xeyes-1.3.1.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xeyes-1.3.1.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "5608d76b7b1aac5ed7f22f1b6b5ad74ef98c8693220f32b4b87dccee4a956eaa",
+          "filename": "xeyes-1.3.1.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "c0c3e25b1685cc943c8d27f88c4d3ec79aa05c102ba7ac0cbd7dcebdf703111ecb2288f4bac55d9ffc5b7aa3b15cba58f28c21025a53b415a8a18bdb61688dcf",
+          "filename": "xeyes-1.3.1.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xfd",
+      "kind": "application",
+      "program": "xfd",
+      "version": "1.1.6",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xfd-1.1.6.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xfd-1.1.6.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "8f78ffcda2d58c66226daa957ad045839053ecdd44448124c20392ed9ff2f33b",
+          "filename": "xfd-1.1.6.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "3e91252975e56c45fc4ffa9e0dd13a17221753d8219bdc8d96b86fb901eb9304555cb8e4c54d8a2cb2b709d4dae462313a403a126ebf0e75d813377fe13c0772",
+          "filename": "xfd-1.1.6.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xfontsel",
+      "kind": "application",
+      "program": "xfontsel",
+      "version": "1.1.2",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xfontsel-1.1.2.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xfontsel-1.1.2.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "78ff018757c7b22137cf5d3526ef5e9388bc0cdead1f00daf2c898e2e274553f",
+          "filename": "xfontsel-1.1.2.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "377ef4e95f68411716a9cd202f4b2468ef5638d53ebd058518bdf97319f8008052f2cb76154503a1eae76aae3ce27dfa7334428b66f738a087d0915bef69c603",
+          "filename": "xfontsel-1.1.2.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xgc",
+      "kind": "application",
+      "program": "xgc",
+      "version": "1.0.7",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xgc-1.0.7.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xgc-1.0.7.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "d858258c05eaac2d1f48bb44820dc2dce0a68601a14fff97853c72b48d1b7d08",
+          "filename": "xgc-1.0.7.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "2d994c1dfa93b8c99756336d099737025d97ae0e6ec102e964ffe4a46209e518917fb2bc57bf0274010e099742bd50fcdebdaf9add0d9c02849edb220bced4a7",
+          "filename": "xgc-1.0.7.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xhost",
+      "kind": "application",
+      "program": "xhost",
+      "version": "1.0.10",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xhost-1.0.10.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xhost-1.0.10.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "a8afd70059479c712948b895e41c35a4a8bfcede3ba2d5a4b855c88bbb725be1",
+          "filename": "xhost-1.0.10.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "65467b0a096455dae681f8397f5b8b0490a2f80db5cb9f92757cfff8d7822b43833202a275eed8467c6a6aaf3b02e0a7b1a069c5d587d32e56b1893297903051",
+          "filename": "xhost-1.0.10.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xinit",
+      "kind": "application",
+      "program": "xinit",
+      "version": "1.4.4",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xinit-1.4.4.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xinit-1.4.4.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "40a47c7a164c7f981ce3787b4b37f7e411fb43231dcde543d70094075dacfef9",
+          "filename": "xinit-1.4.4.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "387285c952bbe074d2ed2dbbf745d1634763bb71f7f7edb22b3306b9e96ae4e28e59ecd6c48cc646b12dbdbcc68d42036bd127da75ef3c16fabdae87794ad6d1",
+          "filename": "xinit-1.4.4.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xinput",
+      "kind": "application",
+      "program": "xinput",
+      "version": "1.6.4",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xinput-1.6.4.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xinput-1.6.4.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "ad04d00d656884d133110eeddc34e9c69e626ebebbbab04dc95791c2907057c8",
+          "filename": "xinput-1.6.4.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "6734860852715e5cb9d26259a173e42413fc037546ed7fa4173ffa802c2619ee0322bed228a28cd1911be759d860070867d9b89b115f37323cca1c9ef75354b9",
+          "filename": "xinput-1.6.4.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xkbcomp",
+      "kind": "application",
+      "program": "xkbcomp",
+      "version": "1.5.0",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xkbcomp-1.5.0.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xkbcomp-1.5.0.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "2ac31f26600776db6d9cd79b3fcd272263faebac7eb85fb2f33c7141b8486060",
+          "filename": "xkbcomp-1.5.0.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "d8ef4906261251e2600b3650660fbe88ed99a44694f1e59b433e0811f1ab5234c4f2f0b3647fa5372fb0f46b56eac60c0219a762bf1af0ab06226b63e4a6b081",
+          "filename": "xkbcomp-1.5.0.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xkbevd",
+      "kind": "application",
+      "program": "xkbevd",
+      "version": "1.1.6",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xkbevd-1.1.6.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xkbevd-1.1.6.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "d9b401f84cf8568342ff63b1ffc6aecd3877579256d89fe6408645e2741b073e",
+          "filename": "xkbevd-1.1.6.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "5120909376d11c1b153198ba887c1af8c0398f2a7ded8ec85402418f9837730cc4ca689773f326f4f74dc348942644ab0159bd2c973de0007d21a4f14731ac1a",
+          "filename": "xkbevd-1.1.6.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xkbprint",
+      "kind": "application",
+      "program": "xkbprint",
+      "version": "1.0.8",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xkbprint-1.0.8.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xkbprint-1.0.8.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "6dbb3dc79b1d1e17045a65f86e7581e149c75ee5aacae69a6cf685acf78fc31b",
+          "filename": "xkbprint-1.0.8.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "b2c1716f0dc30e528886190cfccfb72fb17f337bb321f988058759a1cbbf93f2effc68c1b2b9a0c808cc2831b62a8e894ca341ba0a35c22eaff4cc195a20d8da",
+          "filename": "xkbprint-1.0.8.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xkbutils",
+      "kind": "application",
+      "program": "xkbutils",
+      "version": "1.0.7",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xkbutils-1.0.7.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xkbutils-1.0.7.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "5f37be0ee31ada114415780c562638a1b4f03b385e56449927bf0d5665787a26",
+          "filename": "xkbutils-1.0.7.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "cc5767fa089b53cfcf43d559b946be9ec338f6bc8610594e1b0e212373d84cfd1382f4bd67071a9167ad3fcee4171bf5dcd62d714a448591628614118b84dd31",
+          "filename": "xkbutils-1.0.7.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xkill",
+      "kind": "application",
+      "program": "xkill",
+      "version": "1.0.7",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xkill-1.0.7.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xkill-1.0.7.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "5ff264bc4eebc0459255a92036dc8dc84b6d48caef8509f88a783beaadea750b",
+          "filename": "xkill-1.0.7.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "af5444da74b2af45dabd093e74b4c2e906c4742593067b6fecced6593a27b2b493e868e91672ffc17571851621b4e6716741d2eb91c5459c5bcf9867d4812d9a",
+          "filename": "xkill-1.0.7.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xload",
+      "kind": "application",
+      "program": "xload",
+      "version": "1.2.2",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xload-1.2.2.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xload-1.2.2.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "112a75e481783b52a20d37367f57983d60919f78059f0e107458dde236804131",
+          "filename": "xload-1.2.2.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "98d853543da8a1b86fc474a6748425861bac01c4888087d052c3f00baca6aade2d4ecfa3ee96feb32ed4fbaa4f89816888fe03a022b8fa19c71f147a0a9a4a48",
+          "filename": "xload-1.2.2.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xlogo",
+      "kind": "application",
+      "program": "xlogo",
+      "version": "1.0.7",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xlogo-1.0.7.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xlogo-1.0.7.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "8a3f67b20407a53286a7de1a04dbda12d272234d59ef35e68ecfaf7633d83624",
+          "filename": "xlogo-1.0.7.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "dfea0d42aeec7394c487e009c22ebb24af9501fa8144079d4fe1f32931cfad6bd1eb3830a1d211b9785a9f89fe22c61d4d4b6d6b881af42f3f916ccc5eb9ce66",
+          "filename": "xlogo-1.0.7.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xlsatoms",
+      "kind": "application",
+      "program": "xlsatoms",
+      "version": "1.1.5",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xlsatoms-1.1.5.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xlsatoms-1.1.5.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "9ac9400328fbeffe15c9d94a90dedb90d09dcaa9d51482efabc55b33a736e317",
+          "filename": "xlsatoms-1.1.5.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "a3e91814d6484f7bd6bb55d49ab898e685beb0bb5c86209cfc3e2f3b9aa85c81e09322f25b315bb0afe2ce86b8344adb81c47ed38730a1d4ffa15ce07c230631",
+          "filename": "xlsatoms-1.1.5.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xlsclients",
+      "kind": "application",
+      "program": "xlsclients",
+      "version": "1.1.6",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xlsclients-1.1.6.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xlsclients-1.1.6.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "909810a3fdbd01d84747907f2c0cc32ee732e77afc88cb310abb9d155b2a0807",
+          "filename": "xlsclients-1.1.6.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "bc330df0f56aa2c732a6d251494280839eb6a7c085e138e2f1d484e2ae580cdb562e1efb71257fa277f7a69f8a22317ef8419c5755661ed5155ea428a550a513",
+          "filename": "xlsclients-1.1.6.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xlsfonts",
+      "kind": "application",
+      "program": "xlsfonts",
+      "version": "1.0.9",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xlsfonts-1.0.9.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xlsfonts-1.0.9.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "a6a2e291801458d92510263b175d16f98024dc3816ebddbde79b5009f6c3b065",
+          "filename": "xlsfonts-1.0.9.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "c08d8ad107eabcd8ffc2653de172b2b3192c3823890e95feb226c5689335b8cb3d8d3a78168f62f07b7f84bf55b1cf8e2230df2fed1c414a56f36cfa150224b1",
+          "filename": "xlsfonts-1.0.9.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xmag",
+      "kind": "application",
+      "program": "xmag",
+      "version": "1.0.8",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xmag-1.0.8.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xmag-1.0.8.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "326d3c583d795bb53ac609d144e7f7fb1499baba7eaec14b8e6cd232ea069532",
+          "filename": "xmag-1.0.8.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "d4dbf6bf60a5a3ac88309cdc8f07284a20bd3b044795cd54e002ee5956fa317a09e5f21a9469a6fd9a786f109d8592d8b8e5128ac86850391a6445ccc1f7a11c",
+          "filename": "xmag-1.0.8.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xman",
+      "kind": "application",
+      "program": "xman",
+      "version": "1.2.0",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xman-1.2.0.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xman-1.2.0.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "f18db80bd72a0c27cf38b2a7b75485ee48cd22aab10f2ff58de54d83e268b406",
+          "filename": "xman-1.2.0.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "072dba172fd30606c1e185c6e50b3b9a9ec5e430eb2ac7f0c476e1c2de998e8c0b5fbf53de20a7339d39a8990255e77fe72d3928b43d055e8463f8069389d192",
+          "filename": "xman-1.2.0.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xmessage",
+      "kind": "application",
+      "program": "xmessage",
+      "version": "1.0.7",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xmessage-1.0.7.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xmessage-1.0.7.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "703fccb7a0b772d61d7e603c189b9739866aa97ba985c727275420f829a30356",
+          "filename": "xmessage-1.0.7.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "0c44f7973f7ed8d7993aaeb457a8921301cb0de905e45d92bd99d49463223b54c704a28bef376fe6038b4aec7156be873a34294741c8537bb7a5a57e1f152cce",
+          "filename": "xmessage-1.0.7.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xmodmap",
+      "kind": "application",
+      "program": "xmodmap",
+      "version": "1.0.12",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xmodmap-1.0.12.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xmodmap-1.0.12.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "fc54b9b5bbf2ae58ba8f9d42bd051c41c7438377400c42c17d7496d19e1bb3ce",
+          "filename": "xmodmap-1.0.12.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "2319f1b7eee54d650930c9e16c06e8db5a0c19eaef1902d6196d666bcab8bc288baaea65d3b561e117fc98b918cbcd9c2660c91c556f3fa08e0f57a8f0d38f82",
+          "filename": "xmodmap-1.0.12.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xmore",
+      "kind": "application",
+      "program": "xmore",
+      "version": "1.0.4",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xmore-1.0.4.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xmore-1.0.4.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "7eb560dbc1de4e43c64fe491ad73907a29d734cca82a9ad82c7d3feb9cdb0a9a",
+          "filename": "xmore-1.0.4.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "52ac9bca78431f5f830b4607ff2cc375ab90e11380e0d4d3e591689359806cc7c7ec92c713d4d65742f40407e4f407c372759e5d03e30a30dfd866e6d5c6f6f7",
+          "filename": "xmore-1.0.4.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xpr",
+      "kind": "application",
+      "program": "xpr",
+      "version": "1.2.1",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xpr-1.2.1.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xpr-1.2.1.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "0a5b947cd5e3990c9fcd04fdf92603241de4a55a29b89d4e8a0e473320b778ba",
+          "filename": "xpr-1.2.1.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "c4f9c81806c1d826d1f748f351294c7c037f173d7a53bd83e1431d8676512c1350563cd7f91f0d74fbdc1a82003394ae06b9dfd5e29fa7f9f5758dcaf0240e0e",
+          "filename": "xpr-1.2.1.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xprop",
+      "kind": "application",
+      "program": "xprop",
+      "version": "1.2.8",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xprop-1.2.8.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xprop-1.2.8.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "d689e2adb7ef7b439f6469b51cda8a7daefc83243854c2a3b8f84d0f029d67ee",
+          "filename": "xprop-1.2.8.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "bdd9b02c4ee738bb4661c3acc901330e635b9967de5efb1615297f6b0ff3cdbd0eab6f63f80a605539090e8d62c611bb603da17477e16e3c0b26ff4314d0b664",
+          "filename": "xprop-1.2.8.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xrandr",
+      "kind": "application",
+      "program": "xrandr",
+      "version": "1.5.4",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xrandr-1.5.4.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xrandr-1.5.4.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "2cafccb2aaf2491a4068676117a0d4f90ab307724b96fffc54cd1da953779400",
+          "filename": "xrandr-1.5.4.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "2758615a3d212cc53540cd76199d7a03580702a7b776c430984db33c5368a19620cf54b7ac8e193a4c4036bc40373a933c01473d2f2ce982ce2c6b48379da5e5",
+          "filename": "xrandr-1.5.4.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xrdb",
+      "kind": "application",
+      "program": "xrdb",
+      "version": "1.2.3",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xrdb-1.2.3.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xrdb-1.2.3.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "c88f560243278c896ce4fc92ae5a45a2b505a316ffa427fe55b02e5d5914c4e4",
+          "filename": "xrdb-1.2.3.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "4dbbfd38afc9c795de3671a37e377247dc598b9c1352f6f07158fb716437f0465fb5db4eee22d74ebee93dff4a3ef1c1e4268f333cea0d8f02d1fa10104ac748",
+          "filename": "xrdb-1.2.3.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xrefresh",
+      "kind": "application",
+      "program": "xrefresh",
+      "version": "1.1.1",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xrefresh-1.1.1.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xrefresh-1.1.1.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "e947048130f6300e8be86573af8f225b486884fac14fcfe01bd913b41fa73bd3",
+          "filename": "xrefresh-1.1.1.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "9b064bc63216a52fc768068a11d32a6327907033ae69aaf99f2944503931da2d418550c1165713a20fc3690cd034533df977ec1831e9a618e2daed2796782d35",
+          "filename": "xrefresh-1.1.1.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xrestop",
+      "kind": "application",
+      "program": "xrestop",
+      "version": "0.6",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xrestop-0.6.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xrestop-0.6.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "2e2ec111c4b2798b5dc2dc2b3ec7af4f6b261946e903b8e14db046831d203b29",
+          "filename": "xrestop-0.6.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "bc46aa1f0664961a42a2ed1f204c3c3959429805936fcdd91a2bdbb7c46d8a19a213c9997f7d2365948220bdbc6d39ea654c5085baf6f7309540445877b62e3b",
+          "filename": "xrestop-0.6.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xscope",
+      "kind": "application",
+      "program": "xscope",
+      "version": "1.4.5",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xscope-1.4.5.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xscope-1.4.5.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "5f125d4c94e19e4be48edc43691e46df0b82f0b6ead95453dc7ac775a0d70066",
+          "filename": "xscope-1.4.5.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "f880d25e92ebebaa41fd08e801c8766d0452d57cc6e807df83c45e5fc9dc51c2dd82efe14f2f8c011ddce3172a0130caac939953d519ef516ea6e09e1bf1f2e9",
+          "filename": "xscope-1.4.5.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xset",
+      "kind": "application",
+      "program": "xset",
+      "version": "1.2.6",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xset-1.2.6.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xset-1.2.6.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "623837349ea887bc003f01ee2e4b6b8ddd9c2774f632c6d70eead1b56306b695",
+          "filename": "xset-1.2.6.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "5031166960eea0588b9ef643677d5aef44c83c6d6070234a68f247ea947b94818d94c6958d9abe05cfa99ceee98ad3c95443f5f0c54cf0d086407ffe816d19ca",
+          "filename": "xset-1.2.6.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xsetroot",
+      "kind": "application",
+      "program": "xsetroot",
+      "version": "1.1.4",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xsetroot-1.1.4.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xsetroot-1.1.4.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "1315a3f7e9abe06357363b93461e272601f67225ce0bc075c430cce35073362b",
+          "filename": "xsetroot-1.1.4.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "76f2ba25e7e312337cf28013470b814b9db0aa67777d8463b360177e374ef1195af867e85cccb848694466de7d7e9804dcd905c59c87a5d25aff72386e163573",
+          "filename": "xsetroot-1.1.4.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xsm",
+      "kind": "application",
+      "program": "xsm",
+      "version": "1.0.6",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xsm-1.0.6.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xsm-1.0.6.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "b74cc774c6060c37592f68a90dbd31b0f2a62fb14e562769434f79be284a63ce",
+          "filename": "xsm-1.0.6.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "ee4e9b4ab6be6773e53685540f807b03d553bfecc26c4e85fe12daca486fdeb66c594c6eab54043a8c149112c7a3ed18e463d68d7aee62e93a06c091ce39c268",
+          "filename": "xsm-1.0.6.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xstdcmap",
+      "kind": "application",
+      "program": "xstdcmap",
+      "version": "1.0.6",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xstdcmap-1.0.6.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xstdcmap-1.0.6.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "062a15722769799524eee542fc82ae778f5ac180b618295d913f34962b134ffe",
+          "filename": "xstdcmap-1.0.6.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "912247ede6531c06f57544e83540c5a7b0f0c1faefc7adc86517499acfee65ac41569b6cdb34ffcafe958b7ed8349ad5ff06e2f398ab64432910e5d319e63d87",
+          "filename": "xstdcmap-1.0.6.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xterm",
+      "kind": "application",
+      "program": "xterm",
+      "version": "412",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xterm-412.tgz",
+      "upstream": "https://invisible-island.net/archives/xterm/current/xterm-412.tgz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "b48bc780c1cbc14f6d89269f7e593712af6095876960d650be28b55e5dad65a6",
+          "filename": "xterm-412.tgz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "7a6cb30abd8553a7a1d90208f03498319b5bb51aa5f092a70d2705b8e734d045860c783473c3ea82acecf87bb9a15f6225df85844cda6b12a7a1d4541c81da62",
+          "filename": "xterm-412.tgz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xvinfo",
+      "kind": "application",
+      "program": "xvinfo",
+      "version": "1.1.6",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xvinfo-1.1.6.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xvinfo-1.1.6.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "a436945e6a4ab70590358eec2b85d26970f7de480d27e8a25af8fe8421e88ae2",
+          "filename": "xvinfo-1.1.6.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "f57655e3c7cb72e9b7db6831255b4b1e1e3e1a6bc227eec3c3d2da81871708743a3582385ddaa63c39080440331a541c11564d76f6d5ec056c0b2a091f7f0084",
+          "filename": "xvinfo-1.1.6.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xwd",
+      "kind": "application",
+      "program": "xwd",
+      "version": "1.0.10",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xwd-1.0.10.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xwd-1.0.10.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "4909eacc26c4cd5a9afcd1468aec26e7c646544639031bdad4f71173aa82f3c3",
+          "filename": "xwd-1.0.10.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "93be318bbc3d305f7786c9964376536f990b7172d0800193573697442770cf7ca47ef20d869af0c365b894ef41cc8721fd0a6d6b439fd95bf9ebf7859e2d96d6",
+          "filename": "xwd-1.0.10.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xwininfo",
+      "kind": "application",
+      "program": "xwininfo",
+      "version": "1.1.7",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xwininfo-1.1.7.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xwininfo-1.1.7.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "bee14d594cc86cc59aae1015c1b452a71bf60c304131e2716ca1cf0df733b4ac",
+          "filename": "xwininfo-1.1.7.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "116e53bdd5c40b6162e98057fc1c7981a4c4fb894adeb31197984d5408489195f9eb621635036e17194f4e50c7eed9e3624d044cab14b975988200f6883b9a66",
+          "filename": "xwininfo-1.1.7.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    },
+    {
+      "schema": 1,
+      "name": "x11r7/xapp_xwud",
+      "kind": "application",
+      "program": "xwud",
+      "version": "1.0.8",
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "source": "sources/xwud-1.0.8.tar.xz",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xwud-1.0.8.tar.xz",
+      "source_hashes": [
+        {
+          "algorithm": "sha256",
+          "digest": "2e282648c34018fd870052b8d814ea4d35ad9fdb9bcfc8bdc5a06822c0f86e99",
+          "filename": "xwud-1.0.8.tar.xz"
+        },
+        {
+          "algorithm": "sha512",
+          "digest": "ff5c6a2d02cada3347f1f810702e6194e2005f5f507150fc3f58ff6a127462d4ffbb4196e5fe41dcc2a6bfab07e7d60abd324e99707abaef66d3a9fdcec3a4b5",
+          "filename": "xwud-1.0.8.tar.xz"
+        }
+      ],
+      "target": "R5900 Linux o32 soft float",
+      "runtime_qualified": false
+    }
+  ],
+  "excluded": {
+    "compiz": "requires unfinished GLX/compositing",
+    "constype": "hardware features unavailable in the native PS2 DDX",
+    "fslsfonts": "obsolete remote proxy/font-server service",
+    "fstobdf": "obsolete remote proxy/font-server service",
+    "grandr": "non-PS2 GPU/display tools",
+    "igt-gpu-tools": "non-PS2 GPU/display tools",
+    "intel-gpu-tools": "non-PS2 GPU/display tools",
+    "lbxproxy": "obsolete remote proxy/font-server service",
+    "luit": "legacy encoding filter; UTF-8 xterm is used",
+    "mkcfm": "obsolete or unnecessary font/remote-session tool",
+    "mkcomposecache": "obsolete or unnecessary font/remote-session tool",
+    "mkfontdir": "superseded by mkfontscale",
+    "proxymngr": "obsolete remote proxy/font-server service",
+    "rstart": "obsolete remote proxy/font-server service",
+    "scripts": "obsolete or unnecessary font/remote-session tool",
+    "showfont": "obsolete or unnecessary font/remote-session tool",
+    "transset": "requires a compositor that this desktop does not use",
+    "xbacklight": "hardware features unavailable in the native PS2 DDX",
+    "xcompmgr": "requires unfinished GLX/compositing",
+    "xdbedizzy": "extension test program",
+    "xdm": "unused graphical login service; GNU console login and startx are retained",
+    "xdriinfo": "hardware features unavailable in the native PS2 DDX",
+    "xf86dga": "non-PS2 GPU/display tools",
+    "xfindproxy": "obsolete remote proxy/font-server service",
+    "xfs": "obsolete remote proxy/font-server service",
+    "xfsinfo": "obsolete remote proxy/font-server service",
+    "xfwp": "obsolete remote proxy/font-server service",
+    "xgamma": "hardware features unavailable in the native PS2 DDX",
+    "xinput_calibrator": "touchscreen calibration is unnecessary for this project",
+    "xmh": "requires the absent MH mail backend",
+    "xphelloworld": "extension test program",
+    "xplsprinters": "obsolete Xprint/XTrap service",
+    "xprehashprinterlist": "obsolete Xprint/XTrap service",
+    "xrx": "obsolete remote proxy/font-server service",
+    "xsetmode": "obsolete device configuration; xinput is retained",
+    "xsetpointer": "obsolete device configuration; xinput is retained",
+    "xtrap": "obsolete Xprint/XTrap service",
+    "xvidtune": "non-PS2 GPU/display tools"
+  }
+}

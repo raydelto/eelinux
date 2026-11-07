@@ -1,0 +1,114 @@
+--- a/drivers/ps2/Makefile
++++ b/drivers/ps2/Makefile
+@@ -6,7 +6,7 @@
+ 
+ obj-m				+= iop-dev9.o
+ obj-m				+= iop-module-sysfs.o
+-obj-m				+= iop-registers.o
++obj-$(CONFIG_PS2_IOP_BRIDGE) += iop-registers.o
+ 
+ obj-$(CONFIG_PS2_IOP_BRIDGE) += iop-memory.o
+ obj-$(CONFIG_PS2_IOP_BRIDGE) += sif.o
+--- a/drivers/usb/host/ohci-ps2.c
++++ b/drivers/usb/host/ohci-ps2.c
+@@ -36,6 +36,7 @@
+ 
+ static struct hc_driver __read_mostly ohci_ps2_hc_driver;
+ static irqreturn_t (*ohci_irq)(struct usb_hcd *hcd);
++static int (*ohci_start_driver)(struct usb_hcd *hcd);
+ 
+ static void ohci_ps2_enable(struct usb_hcd *hcd)
+ {
+@@ -67,7 +68,9 @@
+ {
+ 	int err;
+ 
++	dev_info(hcd->self.controller, "OHCI: configure IOP DMA\n");
+ 	ohci_ps2_start_hc(hcd);
++	dev_info(hcd->self.controller, "OHCI: initialize schedules\n");
+ 
+ 	err = ohci_setup(hcd);
+ 	if (err) {
+@@ -76,6 +79,7 @@
+ 	}
+ 
+ 	ohci_ps2_enable(hcd);
++	dev_info(hcd->self.controller, "OHCI: reset complete, requesting IRQ relay\n");
+ 
+ 	return 0;
+ }
+@@ -102,6 +106,17 @@
+ 		(void)ohci_readl(ohci, &regs->control);	/* Flush the write. */
+ 	}
+ 	return status;
++}
++
++static int ohci_ps2_start_driver(struct usb_hcd *hcd)
++{
++	int err;
++
++	dev_info(hcd->self.controller, "OHCI: IRQ ready, starting controller\n");
++	err = ohci_start_driver(hcd);
++	if (!err)
++		dev_info(hcd->self.controller, "OHCI: controller running\n");
++	return err;
+ }
+ 
+ static int iopheap_alloc_dma_buffer(struct platform_device *pdev, size_t size)
+@@ -253,12 +268,20 @@
+ 
+ 	ohci_init_driver(&ohci_ps2_hc_driver, &ps2_overrides);
+ 
++	ohci_start_driver = ohci_ps2_hc_driver.start;
++	ohci_ps2_hc_driver.start = ohci_ps2_start_driver;
++
+ 	ohci_irq = ohci_ps2_hc_driver.irq;	/* Save normal IRQ handler. */
+ 	ohci_ps2_hc_driver.irq = ohci_ps2_irq;	/* Install IRQ workaround. */
+ 
+ 	return platform_driver_register(&ohci_hcd_ps2_driver);
+ }
++#ifdef MODULE
+ module_init(ohci_ps2_init);
++#else
++/* All SIF/heap/module/IRQ device initcalls must finish first. */
++late_initcall_sync(ohci_ps2_init);
++#endif
+ 
+ static void __exit ohci_ps2_exit(void)
+ {
+--- a/drivers/ps2/iop-irq.c
++++ b/drivers/ps2/iop-irq.c
+@@ -66,12 +66,16 @@
+ 	if (!irq_relay) {
+ 		int id;
+ 
++		if (data->irq == IRQ_IOP_USB)
++			pr_info("IOP USB: loading IRQ relay\n");
+ 		id = iop_module_request("irqrelay", 0x0100, NULL);
+ 		if (id < 0) {
+ 			err = id;
+ 			goto out;
+ 		}
+ 
++		if (data->irq == IRQ_IOP_USB)
++			pr_info("IOP USB: binding IRQ relay\n");
+ 		err = sif_rpc_bind(&iop_irq_rpc, SIF_SID_IRQ_RELAY);
+ 		if (err < 0) {
+ 			pr_err("%s: sif_rpc_bind failed with %d\n",
+@@ -81,12 +85,16 @@
+ 		irq_relay = true;
+ 	}
+ 
++	if (data->irq == IRQ_IOP_USB)
++		pr_info("IOP USB: registering interrupt\n");
+ 	err = sif_rpc(&iop_irq_rpc, rpo_request_irq,
+ 		&arg, sizeof(arg),
+ 		&status, sizeof(status));
+ 	pr_debug("%s: err %d status %d\n", __func__, err, status);
+ 	if (err >= 0)
+ 		err = status;
++	if (data->irq == IRQ_IOP_USB)
++		pr_info("IOP USB: IRQ request result %d\n", err);
+ out:
+ 	mutex_unlock(&iop_irq_lock);
+ 	return err;

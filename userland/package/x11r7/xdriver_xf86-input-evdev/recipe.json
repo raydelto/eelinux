@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "name": "x11r7/xdriver_xf86-input-evdev",
+  "engine": "Buildroot 2025.02.18 external tree",
+  "manifest_entry": "configs/packages.json:packages.x11r7/xdriver_xf86-input-evdev",
+  "symbol": "BR2_PACKAGE_XDRIVER_XF86_INPUT_EVDEV",
+  "version": "2.10.6",
+  "recipe": "package/x11r7/xdriver_xf86-input-evdev/xdriver_xf86-input-evdev.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "8726073e81861bc7b2321e76272cbdbd33c7e1a121535a9827977265b9033ec0",
+      "filename": "xf86-input-evdev-2.10.6.tar.bz2"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "560b0a6491d50a46913a5890a35c0367e59f550670993493bd9712d712a9747ddaa6fe5086daabf2fcafa24b0159383787eb273da4a2a60c089bfc0a77ad2ad1",
+      "filename": "xf86-input-evdev-2.10.6.tar.bz2"
+    }
+  ]
+}

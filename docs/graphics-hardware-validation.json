@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "date": "2026-10-04",
+  "scope": "User-confirmed acceptance of all ten current native graphics runtime diagnostics on real PS2 hardware",
+  "evidence_kind": "explicit user confirmation of real PlayStation 2 verification",
+  "user_confirmation": "I can confirm that all tests work on real hardware playstation 2",
+  "all_current_runtime_diagnostics_user_confirmed": true,
+  "console": {
+    "platform_explicitly_confirmed": "real PlayStation 2",
+    "model_from_prior_user_report": "SCPH-90001",
+    "display_chain_from_prior_report": "PS2-to-HDMI monitor setup",
+    "model_independently_verified_in_this_report": false
+  },
+  "configured_diagnostic_mode": {
+    "mode": "720x576 progressive at 50 Hz",
+    "color_format": "CT32",
+    "basis": "current diagnostic setup and prior user-confirmed stable 576p boot",
+    "mode_read_back_in_this_report": false
+  },
+  "diagnostics": [
+    {
+      "id": "primitives",
+      "command": "ps2-gs-test",
+      "scene": "Rectangles and continuous depth-overlapped triangle",
+      "result": "passed according to the user's all-tests hardware confirmation",
+      "component_evidence": [
+        "docs/graphics-validation.json",
+        "docs/graphics-development-validation.json",
+        "docs/hardware-gs-validation.json"
+      ],
+      "normal_sequence_and_console_return": "covered by the user-confirmed all-tests report"
+    },
+    {
+      "id": "upload",
+      "command": "ps2-gs-upload-test",
+      "scene": "Native image upload",
+      "result": "passed according to the user's all-tests hardware confirmation",
+      "component_evidence": [
+        "docs/graphics-upload-validation.json",
+        "docs/graphics-development-validation.json"
+      ],
+      "normal_sequence_and_console_return": "covered by the user-confirmed all-tests report"
+    },
+    {
+      "id": "surfaces",
+      "command": "ps2-gs-surface-test",
+      "scene": "Independent owned surfaces and transfers",
+      "result": "passed according to the user's all-tests hardware confirmation",
+      "component_evidence": [
+        "docs/graphics-surface-validation.json"
+      ],
+      "normal_sequence_and_console_return": "covered by the user-confirmed all-tests report"
+    },
+    {
+      "id": "owned-render",
+      "command": "ps2-gs-render-test",
+      "scene": "Owned color/depth triangle rendering and occlusion",
+      "result": "passed according to the user's all-tests hardware confirmation",
+      "component_evidence": [
+        "docs/graphics-render-validation.json"
+      ],
+      "normal_sequence_and_console_return": "covered by the user-confirmed all-tests report"
+    },
+    {
+      "id": "textures",
+      "command": "ps2-gs-texture-test",
+      "scene": "Updated texture sampling and corrected perspective checker grid",
+      "result": "passed according to the user's all-tests hardware confirmation",
+      "component_evidence": [
+        "docs/graphics-texture-validation.json",
+        "docs/graphics-texture-perspective-validation.json"
+      ],
+      "normal_sequence_and_console_return": "covered by the user-confirmed all-tests report"
+    },
+    {
+      "id": "contexts",
+      "command": "ps2-gs-context-test",
+      "scene": "Mesa screen/context and shared Xorg resource lifetime diagnostic",
+      "result": "passed according to the user's all-tests hardware confirmation",
+      "component_evidence": [
+        "docs/graphics-context-validation.json"
+      ],
+      "normal_sequence_and_console_return": "covered by the user-confirmed all-tests report"
+    },
+    {
+      "id": "glyphs",
+      "command": "ps2-gs-glyph-test",
+      "scene": "Transparent/background glyph rows and deliberate composite clip gap",
+      "result": "passed according to the user's all-tests hardware confirmation",
+      "component_evidence": [
+        "docs/graphics-glyph-validation.json"
+      ],
+      "normal_sequence_and_console_return": "covered by the user-confirmed all-tests report"
+    },
+    {
+      "id": "gc-text",
+      "command": "ps2-gs-gc-test",
+      "scene": "Core text through GC lifecycle and clipping callbacks",
+      "result": "passed according to the user's all-tests hardware confirmation",
+      "component_evidence": [
+        "docs/graphics-gc-validation.json"
+      ],
+      "normal_sequence_and_console_return": "covered by the user-confirmed all-tests report"
+    },
+    {
+      "id": "solid-logic",
+      "command": "ps2-gs-logic-test",
+      "scene": "Sixteen Boolean ALU tiles and reversible XOR outline",
+      "result": "passed according to the user's all-tests hardware confirmation",
+      "component_evidence": [
+        "docs/graphics-logic-validation.json"
+      ],
+      "normal_sequence_and_console_return": "covered by the user-confirmed all-tests report"
+    },
+    {
+      "id": "solid-gc",
+      "command": "ps2-gs-solid-test",
+      "scene": "Six solid GC callbacks, panel and three reversible XOR outlines",
+      "result": "passed according to the user's all-tests hardware confirmation",
+      "component_evidence": [
+        "docs/graphics-solid-validation.json"
+      ],
+      "normal_sequence_and_console_return": "covered by the user-confirmed all-tests report"
+    }
+  ],
+  "artifact_hash_read_back_on_console": false,
+  "physical_runtime_log_captured": false,
+  "individual_physical_probe_exit_codes_captured": false,
+  "GPU_pixel_readback": false,
+  "host_or_mock_failure_cases_run_on_physical_hardware": false,
+  "complete_Xorg_TWM_session_tested": false,
+  "existing_OpenGL_applications_tested": false,
+  "complete_desktop_memory_measured": false,
+  "other_console_models_qualified": false,
+  "remaining": [
+    "Complete Xorg DDX, cursor/input/VT and presentation integration",
+    "Mesa shader/state pipeline, draw_vbo, GLX and existing OpenGL applications",
+    "TWM/xterm and supported OpenGL memory measurements within 32 MiB without swap",
+    "RGB555, partial masks, additional formats/modes and sampler states on hardware",
+    "Provider removal, reset/error recovery, sustained load and other PS2 models"
+  ]
+}

@@ -1,0 +1,319 @@
+{
+  "autoconf": {
+    "version": "2.73",
+    "url": "https://ftp.gnu.org/gnu/autoconf/autoconf-2.73.tar.xz",
+    "gnu": true,
+    "filename": "autoconf-2.73.tar.xz",
+    "sha256": "9fd672b1c8425fac2fa67fa0477b990987268b90ff36d5f016dae57be0d6b52e",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Fri 20 Mar 2026 07:31:46 PM WET\ngpgv:                using RSA key 82F854F3CE73174B8B63174091FCC32B6769AA64\ngpgv: Good signature from \"Zack Weinberg <zackw@panix.com>\"\n"
+  },
+  "automake": {
+    "version": "1.19",
+    "url": "https://ftp.gnu.org/gnu/automake/automake-1.19.tar.xz",
+    "gnu": true,
+    "filename": "automake-1.19.tar.xz",
+    "sha256": "e3e2c2e3abf37898138db5b6c1d1dc35c9160c5978be7947d2c741705251d445",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Thu 10 Sep 2026 06:01:41 AM WEST\ngpgv:                using EDDSA key D5D527E7E338A682CBADB1C1217FCF7314636C07\ngpgv: Good signature from \"Kamila Szewczyk <k@iczelia.net>\"\ngpgv:                 aka \"Kamila Szewczyk <szewczyk@cs.uni-saarland.de>\"\ngpgv:                 aka \"Kamila Szewczyk <kamila@cs.fs.uni-saarland.de>\"\ngpgv:                 aka \"Kamila Szewczyk <kszewczyk@acm.org>\"\ngpgv:                 aka \"Kamila Szewczyk <kasz00001@stud.uni-saarland.de>\"\ngpgv:                 aka \"Kamila Szewczyk <kamila@dyalog.com>\"\n"
+  },
+  "bison": {
+    "version": "3.8.2",
+    "url": "https://ftp.gnu.org/gnu/bison/bison-3.8.2.tar.xz",
+    "gnu": true,
+    "filename": "bison-3.8.2.tar.xz",
+    "sha256": "9bba0214ccf7f1079c5d59210045227bcf619519840ebfa80cd3849cff5a5bf2",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Sat 25 Sep 2021 10:30:33 AM WEST\ngpgv:                using DSA key 7DF84374B1EE1F9764BBE25D0DDCAA3278D5264E\ngpgv: Good signature from \"Akim Demaille <demaille@enst.fr>\"\ngpgv:                 aka \"Akim Demaille <akim@lrde.epita.fr>\"\ngpgv:                 aka \"Akim Demaille <akim@epita.fr>\"\ngpgv:                 aka \"Akim Demaille <akim@freefriends.org>\"\ngpgv:                 aka \"Akim Demaille <akim@gnu.org>\"\n"
+  },
+  "m4": {
+    "version": "1.4.21",
+    "url": "https://ftp.gnu.org/gnu/m4/m4-1.4.21.tar.xz",
+    "gnu": true,
+    "filename": "m4-1.4.21.tar.xz",
+    "sha256": "f25c6ab51548a73a75558742fb031e0625d6485fe5f9155949d6486a2408ab66",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Fri 06 Feb 2026 08:13:57 PM WET\ngpgv:                using RSA key 71C2CC22B1C4602927D2F3AAA7A16B4A2527436A\ngpgv: Good signature from \"Eric Blake <eblake@redhat.com>\"\ngpgv:                 aka \"Eric Blake (Free Software Programmer) <ebb9@byu.net>\"\ngpgv:                 aka \"[invalid image]\"\n"
+  },
+  "libtool": {
+    "version": "2.6.2",
+    "url": "https://ftp.gnu.org/gnu/libtool/libtool-2.6.2.tar.xz",
+    "gnu": true,
+    "filename": "libtool-2.6.2.tar.xz",
+    "sha256": "2ef1067c16c97db930fd740cc9bc3d3ba9a583804ae5ac42cc3e8719e49e191e",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Thu 16 Jul 2026 05:40:26 PM WEST\ngpgv:                using RSA key FA26CA784BE188927F22B99F6570EA01146F7354\ngpgv: Good signature from \"Ileana Dumitrescu <ileanadumi95@protonmail.com>\"\ngpgv:                 aka \"Ileana Dumitrescu <ileanadumitrescu95@gmail.com>\"\n"
+  },
+  "make": {
+    "version": "4.4.1",
+    "url": "https://ftp.gnu.org/gnu/make/make-4.4.1.tar.gz",
+    "gnu": true,
+    "filename": "make-4.4.1.tar.gz",
+    "sha256": "dd16fb1d67bfab79a72f5e8390735c49e3e8e70b4945a15ab1f81ddb78658fb3",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Sun 26 Feb 2023 08:06:19 PM WET\ngpgv:                using RSA key B2508A90102F8AE3B12A0090DEACCAAEDB78137A\ngpgv: Good signature from \"Paul D. Smith <paul@mad-scientist.net>\"\ngpgv:                 aka \"Paul D. Smith <psmith@gnu.org>\"\n"
+  },
+  "patch": {
+    "version": "2.8.1",
+    "url": "https://ftp.gnu.org/gnu/patch/patch-2.8.1.tar.xz",
+    "filename": "patch-2.8.1.tar.xz",
+    "sha256": "3240c7959c5347c8ed347e3c4201c0337bf4240d5cf09d68889e58eeaba30e17",
+    "checked": "2026-11-06",
+    "verification": "SHA256 calculated from actual primary upstream HTTPS archive"
+  },
+  "wget": {
+    "version": "1.25.0",
+    "url": "https://ftp.gnu.org/gnu/wget/wget-1.25.0.tar.gz",
+    "gnu": true,
+    "filename": "wget-1.25.0.tar.gz",
+    "sha256": "766e48423e79359ea31e41db9e5c289675947a7fcf2efdcedb726ac9d0da3784",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Sun 10 Nov 2024 09:32:38 PM WET\ngpgv:                using RSA key 6B98F637D879C5236E277C5C64FF90AAE8C70AF9\ngpgv:                issuer \"darnir@gnu.org\"\ngpgv: Good signature from \"Darshit Shah <darnir@gmail.com>\"\ngpgv:                 aka \"Darshit Shah <s8dashah@stud.uni-saarland.de>\"\ngpgv:                 aka \"Darshit Shah <darnir@gnu.org>\"\n"
+  },
+  "screen": {
+    "version": "5.0.2",
+    "url": "https://ftp.gnu.org/gnu/screen/screen-5.0.2.tar.gz",
+    "gnu": true,
+    "filename": "screen-5.0.2.tar.gz",
+    "sha256": "ca9a2c7e240919bc7ac12124593ae4529bb4eb5f7349d8857829b7e3f0b3b332",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Sat 11 Jul 2026 09:56:33 PM WEST\ngpgv:                using RSA key 7832918905C6D316DFB54313898D726C87C5AFE3\ngpgv: Good signature from \"Alexander Naumov <alexander_naumov@opensuse.org>\"\n"
+  },
+  "bash": {
+    "version": "5.3",
+    "url": "https://ftp.gnu.org/gnu/bash/bash-5.3.tar.gz",
+    "gnu": true,
+    "filename": "bash-5.3.tar.gz",
+    "sha256": "0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Wed 30 Jul 2025 02:47:43 PM WEST\ngpgv:                using DSA key 7C0135FB088AAF6C66C650B9BB5869F064EA74AB\ngpgv: Good signature from \"Chet Ramey <chet@cwru.edu>\"\n",
+    "upstream_patchlevel": 20,
+    "patches_checked": "2026-11-06"
+  },
+  "bc": {
+    "version": "1.08.2",
+    "url": "https://ftp.gnu.org/gnu/bc/bc-1.08.2.tar.gz",
+    "gnu": true,
+    "filename": "bc-1.08.2.tar.gz",
+    "sha256": "ae470fec429775653e042015edc928d07c8c3b2fc59765172a330d3d87785f86",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Sun 25 May 2025 09:34:01 PM WEST\ngpgv:                using RSA key 325B54E4653F935A25CF32BDA186278D426A38E9\ngpgv: Good signature from \"Ken Pizzini <ken@gnu.org>\"\n"
+  },
+  "coreutils": {
+    "version": "9.12",
+    "url": "https://ftp.gnu.org/gnu/coreutils/coreutils-9.12.tar.xz",
+    "gnu": true,
+    "filename": "coreutils-9.12.tar.xz",
+    "sha256": "a480198559733e9b3da999e90543ac6f888a2caa544d8d664c5a1f17e528e210",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Mon 14 Sep 2026 04:37:50 PM WEST\ngpgv:                using RSA key 6C37DC12121A5006BC1DB804DF6FD971306037D9\ngpgv: Good signature from \"P\u00e1draig Brady <P@draigBrady.com>\"\ngpgv:                 aka \"P\u00e1draig Brady <pbrady@redhat.com>\"\ngpgv:                 aka \"P\u00e1draig Brady <pixelbeat@gnu.org>\"\n"
+  },
+  "cpio": {
+    "version": "2.15",
+    "url": "https://ftp.gnu.org/gnu/cpio/cpio-2.15.tar.bz2",
+    "gnu": true,
+    "filename": "cpio-2.15.tar.bz2",
+    "sha256": "937610b97c329a1ec9268553fb780037bcfff0dcffe9725ebc4fd9c1aa9075db",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Sun 14 Jan 2024 11:59:30 AM WET\ngpgv:                using DSA key 325F650C4C2B6AD58807327A3602B07F55D0C732\ngpgv: Good signature from \"Sergey Poznyakoff <gray@gnu.org>\"\ngpgv:                 aka \"Sergey Poznyakoff (Gray) <gray@mirddin.farlep.net>\"\ngpgv:                 aka \"Sergey Poznyakoff <gray@gnu.org.ua>\"\n"
+  },
+  "diffutils": {
+    "version": "3.12",
+    "url": "https://ftp.gnu.org/gnu/diffutils/diffutils-3.12.tar.xz",
+    "gnu": true,
+    "filename": "diffutils-3.12.tar.xz",
+    "sha256": "7c8b7f9fc8609141fdea9cece85249d308624391ff61dedaf528fcb337727dfd",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Wed 09 Apr 2025 03:53:37 AM WEST\ngpgv:                using RSA key 155D3FC500C834486D1EEA677FD9FCCB000BEEEE\ngpgv: Good signature from \"Jim Meyering <jim@meyering.net>\"\ngpgv:                 aka \"Jim Meyering <meyering@redhat.com>\"\ngpgv:                 aka \"Jim Meyering <meyering@gnu.org>\"\n"
+  },
+  "ed": {
+    "version": "1.22.6",
+    "url": "https://ftp.gnu.org/gnu/ed/ed-1.22.6.tar.lz",
+    "gnu": true,
+    "filename": "ed-1.22.6.tar.lz",
+    "sha256": "3f33b22135219c39c3c695f7b7171c2567d3e2a17c798c0a90607320cbb268f2",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Thu 20 Aug 2026 04:50:42 PM WEST\ngpgv:                using RSA key 25B62C9821501AA0\ngpgv: Good signature from \"Antonio Diaz Diaz <antonio@gnu.org>\"\n"
+  },
+  "findutils": {
+    "version": "4.11.0",
+    "url": "https://ftp.gnu.org/gnu/findutils/findutils-4.11.0.tar.xz",
+    "gnu": true,
+    "filename": "findutils-4.11.0.tar.xz",
+    "sha256": "bfd19cb06cc71f3352d567e90284d8cdac02ac89774bbeadf0b533b0c11432fd",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Sat 11 Jul 2026 10:23:59 AM WEST\ngpgv:                using RSA key 0CF4E8D871593224842832B888DD9E08C5DDACB9\ngpgv: Good signature from \"James Youngman <james@youngman.org>\"\ngpgv:                 aka \"James Youngman <jay@gnu.org>\"\n"
+  },
+  "gawk": {
+    "version": "5.4.1",
+    "url": "https://ftp.gnu.org/gnu/gawk/gawk-5.4.1.tar.xz",
+    "gnu": true,
+    "filename": "gawk-5.4.1.tar.xz",
+    "sha256": "07f6f7342b7febe4313fc2c2542ad93d64fe20ad8717200109f105a826f5fd37",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Thu 09 Jul 2026 05:56:28 PM WEST\ngpgv:                using RSA key D1967C63788713177D861ED7DF597815937EC0D2\ngpgv: Good signature from \"Arnold Robbins <arnold@skeeve.com>\"\n"
+  },
+  "grep": {
+    "version": "3.12",
+    "url": "https://ftp.gnu.org/gnu/grep/grep-3.12.tar.xz",
+    "gnu": true,
+    "filename": "grep-3.12.tar.xz",
+    "sha256": "2649b27c0e90e632eadcd757be06c6e9a4f48d941de51e7c0f83ff76408a07b9",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Thu 10 Apr 2025 05:05:57 PM WEST\ngpgv:                using RSA key 155D3FC500C834486D1EEA677FD9FCCB000BEEEE\ngpgv: Good signature from \"Jim Meyering <jim@meyering.net>\"\ngpgv:                 aka \"Jim Meyering <meyering@redhat.com>\"\ngpgv:                 aka \"Jim Meyering <meyering@gnu.org>\"\n"
+  },
+  "gzip": {
+    "version": "1.15",
+    "url": "https://ftp.gnu.org/gnu/gzip/gzip-1.15.tar.xz",
+    "gnu": true,
+    "filename": "gzip-1.15.tar.xz",
+    "sha256": "9aa0cc780dec156b8282844833b342ab7cb08c25d2cd9a1869cdd0df31deff48",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Sun 20 Sep 2026 08:49:30 AM WEST\ngpgv:                using RSA key 155D3FC500C834486D1EEA677FD9FCCB000BEEEE\ngpgv: Good signature from \"Jim Meyering <jim@meyering.net>\"\ngpgv:                 aka \"Jim Meyering <meyering@redhat.com>\"\ngpgv:                 aka \"Jim Meyering <meyering@gnu.org>\"\n"
+  },
+  "readline": {
+    "version": "8.3",
+    "url": "https://ftp.gnu.org/gnu/readline/readline-8.3.tar.gz",
+    "gnu": true,
+    "filename": "readline-8.3.tar.gz",
+    "sha256": "fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Wed 02 Jul 2025 02:17:41 PM WEST\ngpgv:                using DSA key 7C0135FB088AAF6C66C650B9BB5869F064EA74AB\ngpgv: Good signature from \"Chet Ramey <chet@cwru.edu>\"\n",
+    "upstream_patchlevel": 6,
+    "patches_checked": "2026-11-06"
+  },
+  "sed": {
+    "version": "4.10",
+    "url": "https://ftp.gnu.org/gnu/sed/sed-4.10.tar.xz",
+    "gnu": true,
+    "filename": "sed-4.10.tar.xz",
+    "sha256": "b8e72182b2ec96a3574e2998c47b7aaa64cc20ce000d8e9ac313cc07cecf28c7",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Wed 22 Apr 2026 02:45:57 AM WEST\ngpgv:                using RSA key 155D3FC500C834486D1EEA677FD9FCCB000BEEEE\ngpgv: Good signature from \"Jim Meyering <jim@meyering.net>\"\ngpgv:                 aka \"Jim Meyering <meyering@redhat.com>\"\ngpgv:                 aka \"Jim Meyering <meyering@gnu.org>\"\n"
+  },
+  "tar": {
+    "version": "1.35",
+    "url": "https://ftp.gnu.org/gnu/tar/tar-1.35.tar.xz",
+    "gnu": true,
+    "filename": "tar-1.35.tar.xz",
+    "sha256": "4d62ff37342ec7aed748535323930c7cf94acf71c3591882b26a7ea50f3edc16",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Tue 18 Jul 2023 08:16:59 AM WEST\ngpgv:                using DSA key 325F650C4C2B6AD58807327A3602B07F55D0C732\ngpgv: Good signature from \"Sergey Poznyakoff <gray@gnu.org>\"\ngpgv:                 aka \"Sergey Poznyakoff (Gray) <gray@mirddin.farlep.net>\"\ngpgv:                 aka \"Sergey Poznyakoff <gray@gnu.org.ua>\"\n"
+  },
+  "nano": {
+    "version": "9.3",
+    "url": "https://ftp.gnu.org/gnu/nano/nano-9.3.tar.xz",
+    "filename": "nano-9.3.tar.xz",
+    "sha256": "a9affc52c9596ee0682bcdd4ceb3c0b235eb221d83d733dfd9b0dff45897cb0d",
+    "checked": "2026-11-06",
+    "verification": "SHA256 calculated from actual primary upstream HTTPS archive"
+  },
+  "gdb": {
+    "version": "18.1",
+    "url": "https://sourceware.org/pub/gdb/releases/gdb-18.1.tar.xz",
+    "checksum_url": "https://sourceware.org/pub/gdb/releases/sha512.sum",
+    "filename": "gdb-18.1.tar.xz",
+    "sha256": "cd9fc3fe2b47743840e42c1592d3d87f8302eb18639c0b8b4ba0898002e2348f",
+    "checked": "2026-10-05",
+    "verification": "SHA256 pinned from upstream HTTPS archive; no signature claim",
+    "publisher_sha512_verified": "e7079ad31e6176391a4d278c85a668cc92c13c8dc1f4937f3d4438f9dc7afdbb12083af7f86e17e854b3d23c3ceff80c63bdbbc8e18b0cf9962656f75ab8b5a0"
+  },
+  "perl": {
+    "version": "5.44.0",
+    "url": "https://www.cpan.org/src/5.0/perl-5.44.0.tar.xz",
+    "filename": "perl-5.44.0.tar.xz",
+    "sha256": "505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91",
+    "checked": "2026-10-05",
+    "verification": "SHA256 pinned from upstream HTTPS archive; no signature claim"
+  },
+  "pkgconf": {
+    "version": "3.0.10",
+    "url": "https://distfiles.ariadne.space/pkgconf/pkgconf-3.0.10.tar.xz",
+    "filename": "pkgconf-3.0.10.tar.xz",
+    "sha256": "9371b2f6372da574d4c6dc96fe9b1463037bcf6afcb6671c1555afde7b17e2de",
+    "checked": "2026-11-06",
+    "verification": "SHA256 calculated from actual primary upstream HTTPS archive"
+  },
+  "xz": {
+    "version": "5.8.4",
+    "url": "https://github.com/tukaani-project/xz/releases/download/v5.8.4/xz-5.8.4.tar.bz2",
+    "filename": "xz-5.8.4.tar.bz2",
+    "sha256": "3340ae48f88665abc78d71dc43446fb3f7e70b48fd59844ac0e14958cef6e00b",
+    "checked": "2026-10-05",
+    "verification": "SHA256 pinned from upstream HTTPS archive; no signature claim"
+  },
+  "perl-cross": {
+    "version": "1.6.5",
+    "url": "https://github.com/arsv/perl-cross/releases/download/1.6.5/perl-cross-1.6.5.tar.gz",
+    "filename": "perl-cross-1.6.5.tar.gz",
+    "sha256": "81130cd4b8c6d9eb2a1959f37d44391a46ad6a6794fc41fed5441f74e85e3dd0",
+    "checked": "2026-10-05",
+    "verification": "SHA256 pinned from upstream HTTPS archive; no signature claim"
+  },
+  "vim": {
+    "version": "9.2.1302",
+    "url": "https://github.com/vim/vim/archive/refs/tags/v9.2.1302.tar.gz",
+    "filename": "vim-9.2.1302.tar.gz",
+    "sha256": "a9d2a2f57d5d3149cff8342b8a0b063d410df5d5a4b46d898610059648b6a17e",
+    "checked": "2026-11-06",
+    "verification": "SHA256 calculated from actual primary upstream HTTPS archive"
+  },
+  "lynx": {
+    "version": "2.9.3",
+    "url": "https://invisible-mirror.net/archives/lynx/tarballs/lynx2.9.3.tar.bz2",
+    "filename": "lynx2.9.3.tar.bz2",
+    "sha256": "174b7f2866a60f3247ba75f5c7dbb10b124aede4a1359312de15f3bfebd2050f",
+    "checked": "2026-10-05",
+    "verification": "SHA256 pinned from upstream HTTPS archive; no signature claim"
+  },
+  "python3": {
+    "version": "3.15.2",
+    "url": "https://www.python.org/ftp/python/3.15.2/Python-3.15.2.tar.xz",
+    "filename": "Python-3.15.2.tar.xz",
+    "sha256": "8b5536d280142ecf6cdfe15d12a21ba1c65e300bbf7b28a8d0cdb849575797de",
+    "checked": "2026-11-06",
+    "verification": "SHA256 calculated from actual primary upstream HTTPS archive"
+  },
+  "flex": {
+    "version": "2.6.4",
+    "url": "https://github.com/westes/flex/releases/download/v2.6.4/flex-2.6.4.tar.gz",
+    "gnu": false,
+    "filename": "flex-2.6.4.tar.gz",
+    "sha256": "e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": false,
+    "verification": "Archive also matches the pinned Buildroot SHA512 source lock; latest official release checked."
+  },
+  "libffi": {
+    "version": "3.8.0",
+    "url": "https://github.com/libffi/libffi/releases/download/v3.8.0/libffi-3.8.0.tar.gz",
+    "gnu": false,
+    "filename": "libffi-3.8.0.tar.gz",
+    "sha256": "7da3e2d9a171eb0a038f592ecad3ff2bb2550f3496d87b3b29ad0cf4430c0db4",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": false,
+    "publisher_asset_digest": "sha256:7da3e2d9a171eb0a038f592ecad3ff2bb2550f3496d87b3b29ad0cf4430c0db4",
+    "release_url": "https://github.com/libffi/libffi/releases/tag/v3.8.0"
+  }
+}

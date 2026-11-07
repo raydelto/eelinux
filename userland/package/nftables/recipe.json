@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "nftables",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.nftables",
+  "symbol": "BR2_PACKAGE_NFTABLES",
+  "version": "1.1.7",
+  "recipe": "package/nftables/nftables.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "a6fbf060d8d4fff001517a2b94f356bb4366bfbf0ba366366f9d27cc38caa58f",
+      "filename": "nftables-1.1.7.tar.xz"
+    }
+  ],
+  "release_url": "https://www.netfilter.org/pub/nftables/"
+}

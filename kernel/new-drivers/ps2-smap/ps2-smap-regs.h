@@ -1,0 +1,60 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* Register layout from Sony/Juergen Urban GPL SMAP, retained in vendor/ethernet. */
+#ifndef PS2_PS2_SMAP_REGS_H
+#define PS2_PS2_SMAP_REGS_H
+#define SMAP_IO_BASE 0x14000000u
+#define SMAP_CAPS 0x04
+#define SMAP_CAP_ETH 0x0001
+#define SMAP_CLEAR 0x128
+#define SMAP_IRQ_MASK 0x007c
+#define SMAP_BD_MODE 0x102
+#define SMAP_TX_CTRL 0x1000
+#define SMAP_TX_PTR 0x1004
+#define SMAP_TX_INC 0x1010
+#define SMAP_TX_DATA 0x1100
+#define SMAP_RX_CTRL 0x1030
+#define SMAP_RX_PTR 0x1034
+#define SMAP_RX_DEC 0x1040
+#define SMAP_RX_DATA 0x1200
+#define SMAP_BD_TX 0x3000
+#define SMAP_BD_RX 0x3200
+#define SMAP_BD_CTRL 0
+#define SMAP_BD_RESERVED 2
+#define SMAP_BD_LENGTH 4
+#define SMAP_BD_POINTER 6
+#define SMAP_TX_READY 0x8000
+#define SMAP_TX_FCS_PAD 0x0300
+#define SMAP_TX_ERRORS 0x03f3
+#define SMAP_RX_EMPTY 0x8000
+#define EMAC_MODE0 0x2000
+#define EMAC_MODE1 0x2004
+#define EMAC_TXMODE0 0x2008
+#define EMAC_TXMODE1 0x200c
+#define EMAC_RXMODE 0x2010
+#define EMAC_IRQ_STATUS 0x2014
+#define EMAC_IRQ_ENABLE 0x2018
+#define EMAC_MAC_HI 0x201c
+#define EMAC_MAC_LO 0x2020
+#define EMAC_HASH 0x2040
+#define EMAC_IFG 0x2058
+#define EMAC_MDIO 0x205c
+#define EMAC_TX_THRESHOLD 0x2060
+#define EMAC_RX_WATERMARK 0x2064
+#define EMAC_RESET BIT(29)
+#define EMAC_ENABLE (BIT(28) | BIT(27))
+#define EMAC_DUPLEX BIT(31)
+#define EMAC_IGNORE_SQE BIT(24)
+#define EMAC_SPEED100 BIT(22)
+#define EMAC_MODE1_DEFAULT (EMAC_IGNORE_SQE | (2u << 20) | (1u << 18) | BIT(15))
+#define EMAC_GET_PACKET BIT(31)
+#define EMAC_RX_DEFAULT (BIT(31) | BIT(30) | BIT(22) | BIT(20))
+#define EMAC_RX_PROMISC BIT(24)
+#define EMAC_RX_ALLMULTI BIT(23)
+#define EMAC_RX_MULTICAST BIT(19)
+#define EMAC_IRQ_ALL 0x03ff03fbu
+#define EMAC_IRQ_DEAD (BIT(9) | BIT(8) | BIT(5))
+#define EMAC_MDIO_DONE BIT(15)
+#define EMAC_MDIO_ERROR BIT(14)
+#define EMAC_MDIO_READ BIT(12)
+#define EMAC_MDIO_WRITE BIT(13)
+#endif

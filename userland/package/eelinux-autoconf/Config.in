@@ -1,0 +1,4 @@
+config BR2_PACKAGE_EELINUX_AUTOCONF
+	bool "GNU autoconf on the target"
+	select BR2_PACKAGE_PERL
+	select BR2_PACKAGE_EELINUX_M4

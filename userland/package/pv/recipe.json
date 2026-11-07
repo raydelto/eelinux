@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "pv",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.pv",
+  "symbol": "BR2_PACKAGE_PV",
+  "version": "1.12.7",
+  "recipe": "package/pv/pv.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "5326ed7ee95ef18039390c0b17891ac28985ac7c7a4235070fab767c1fe37bd8",
+      "filename": "pv-1.12.7.tar.gz"
+    }
+  ],
+  "release_url": "https://www.ivarch.com/programs/pv.shtml"
+}

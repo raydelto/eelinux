@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "iproute2",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.iproute2",
+  "symbol": "BR2_PACKAGE_IPROUTE2",
+  "version": "7.3.0",
+  "recipe": "package/iproute2/iproute2.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "5c1789d290bba048a6135ed1ab81b0402dd0fb528d1f1421765c42b1fc3d6289",
+      "filename": "iproute2-7.3.0.tar.xz"
+    }
+  ],
+  "release_url": "https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/"
+}

@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xcmsdb",
+  "kind": "application",
+  "program": "xcmsdb",
+  "version": "1.0.7",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xcmsdb-1.0.7.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xcmsdb-1.0.7.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "5ec4068e488187b05ea92ee1362c96b78a90f19ccc7a1844c5921d70626bbc38",
+      "filename": "xcmsdb-1.0.7.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "87bd13930385c16689bfb6eefe47860f3741ccede9ddee4a860bb763937828808aca2c2fcc56637c06c3b9f1a5ee5ffd5cadc039d93ff7b2375a004867ef9f22",
+      "filename": "xcmsdb-1.0.7.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

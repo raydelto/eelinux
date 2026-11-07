@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_beforelight",
+  "kind": "application",
+  "program": "beforelight",
+  "version": "1.0.6",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/beforelight-1.0.6.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/beforelight-1.0.6.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "53f0bf085b7272ebbf626d1b9b0ad320d1a07bc1fe7f3ae260c86a71a857ad28",
+      "filename": "beforelight-1.0.6.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "48a165d151676f6d213883bee98b34007403a77e025253c8649f9a0f5ea258b09381ab523a5e906030ac9fc8245fce2c6beaf9ad0f81116e302d51ad4a0fad5a",
+      "filename": "beforelight-1.0.6.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xinput",
+  "kind": "application",
+  "program": "xinput",
+  "version": "1.6.4",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xinput-1.6.4.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xinput-1.6.4.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "ad04d00d656884d133110eeddc34e9c69e626ebebbbab04dc95791c2907057c8",
+      "filename": "xinput-1.6.4.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "6734860852715e5cb9d26259a173e42413fc037546ed7fa4173ffa802c2619ee0322bed228a28cd1911be759d860070867d9b89b115f37323cca1c9ef75354b9",
+      "filename": "xinput-1.6.4.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

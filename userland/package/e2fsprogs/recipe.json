@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "e2fsprogs",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.e2fsprogs",
+  "symbol": "BR2_PACKAGE_E2FSPROGS",
+  "version": "1.47.4",
+  "recipe": "package/e2fsprogs/e2fsprogs.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "fd5bf388cbdbe006a3d3b318d983b2948382440acc85a87f1e7d108653e8db0b",
+      "filename": "e2fsprogs-1.47.4.tar.xz"
+    }
+  ],
+  "release_url": "https://www.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.4/"
+}

@@ -1,0 +1,230 @@
+--- a/man/twm.man
++++ b/man/twm.man
+@@ -1204,6 +1204,10 @@
+ This function lowers the top-most window that occludes another window.
+ .IP "\fBf.circleup\fP" 8
+ This function raises the bottom-most window that is occluded by another window.
++.IP "\fBf.close\fP" 8
++Requests that the selected application close through WM_DELETE_WINDOW.
++For older applications without this protocol, terminates their X connection.
++On the icon manager, hides the window list.
+ .IP "\fBf.colormap\fP \fIstring\fP" 8
+ This function rotates the colormaps (obtained from the WM_COLORMAP_WINDOWS
+ property on the window) that \fItwm\fP will display when the pointer
+@@ -1392,6 +1396,10 @@
+ If
+ the selected window has not selected for this message, the keyboard bell
+ will be rung.
++.IP "\fBf.shade\fP" 8
++Toggles between a title bar and the full window. The client remains mapped
++at its full size. Moving or minimizing preserves this state; resizing or
++zooming first restores the body. Windows without a title bar are unchanged.
+ .IP "\fBf.showiconmgr\fP" 8
+ This function maps the current icon manager.
+ .IP "\fBf.sorticonmgr\fP" 8
+--- a/src/add_window.c
++++ b/src/add_window.c
+@@ -178,6 +178,7 @@
+     }
+     tmp_win->w = w;
+     tmp_win->zoomed = ZOOM_NONE;
++    tmp_win->shaded = False;
+     tmp_win->iconmgr = (short) iconm;
+     tmp_win->iconmgrp = iconp;
+     tmp_win->cmaps.number_cwins = 0;
+--- a/src/menus.c
++++ b/src/menus.c
+@@ -1367,6 +1367,12 @@
+         }
+         break;
+ 
++    case F_SHADE:
++        if (DeferExecution(context, func, Scr->SelectCursor))
++            return TRUE;
++        SetWindowShade(tmp_win, !tmp_win->shaded);
++        break;
++
+     case F_RESIZE:
+         EventHandler[EnterNotify] = HandleUnknown;
+         EventHandler[LeaveNotify] = HandleUnknown;
+@@ -1374,6 +1380,7 @@
+             return TRUE;
+ 
+         PopDownMenu();
++        SetWindowShade(tmp_win, False);
+ 
+         if (pulldown)
+             XWarpPointer(dpy, None, Scr->Root,
+@@ -1390,8 +1397,8 @@
+                 /*
+                  * see if this is being done from the titlebar
+                  */
+-                fromtitlebar =
+-                    belongs_to_twm_window(tmp_win, eventp->xbutton.window);
++                /* Border drags need AutoRelativeResize edge selection. */
++                fromtitlebar = (context == C_TITLE);
+ 
+                 /* Save pointer position so we can tell if it was moved or
+                    not during the resize. */
+@@ -1869,6 +1876,7 @@
+             XKillClient(dpy, tmp_win->w);
+         break;
+ 
++    case F_CLOSE:
+     case F_DELETE:
+         if (DeferExecution(context, func, Scr->DestroyCursor))
+             return TRUE;
+@@ -1877,6 +1885,8 @@
+             HideIconManager();
+         else if (tmp_win->protocols & DoesWmDeleteWindow)
+             SendDeleteWindowMessage(tmp_win, LastTimestamp());
++        else if (func == F_CLOSE)
++            XKillClient(dpy, tmp_win->w);
+         else
+             Bell(XkbBI_MinorError, 0, tmp_win->w);
+         break;
+@@ -2255,6 +2265,9 @@
+         case F_LOWER:
+         case F_FOCUS:
+         case F_DESTROY:
++        case F_CLOSE:
++        case F_DELETE:
++        case F_SHADE:
+         case F_WINREFRESH:
+         case F_ZOOM:
+         case F_FULLZOOM:
+--- a/src/parse.c
++++ b/src/parse.c
+@@ -422,6 +422,7 @@
+     { "f.bottomzoom",           FKEYWORD, F_BOTTOMZOOM },
+     { "f.circledown",           FKEYWORD, F_CIRCLEDOWN },
+     { "f.circleup",             FKEYWORD, F_CIRCLEUP },
++    { "f.close",                FKEYWORD, F_CLOSE },
+     { "f.colormap",             FSKEYWORD, F_COLORMAP },
+     { "f.cut",                  FSKEYWORD, F_CUT },
+     { "f.cutfile",              FKEYWORD, F_CUTFILE },
+@@ -462,6 +463,7 @@
+     { "f.righticonmgr",         FKEYWORD, F_RIGHTICONMGR },
+     { "f.rightzoom",            FKEYWORD, F_RIGHTZOOM },
+     { "f.saveyourself",         FKEYWORD, F_SAVEYOURSELF },
++    { "f.shade",                FKEYWORD, F_SHADE },
+     { "f.showiconmgr",          FKEYWORD, F_SHOWLIST },
+     { "f.sorticonmgr",          FKEYWORD, F_SORTICONMGR },
+     { "f.source",               FSKEYWORD, F_BEEP },  /* XXX - don't work */
+--- a/src/parse.h
++++ b/src/parse.h
+@@ -145,6 +145,8 @@
+ #define F_CUTFILE               43
+ #define F_SHOWLIST              44
+ #define F_HIDELIST              45
++#define F_SHADE                 46
++#define F_CLOSE                 47
+ 
+ #define F_MENU                  101     /* string */
+ #define F_WARPNEXT              112     /* string */
+--- a/src/resize.c
++++ b/src/resize.c
+@@ -157,6 +157,8 @@
+                  GrabModeAsync, GrabModeAsync,
+                  Scr->Root, Scr->ResizeCursor, CurrentTime);
+ 
++    SetWindowShade(tmp_win, False);
++
+     XGetGeometry(dpy, (Drawable) tmp_win->frame, &junkRoot,
+                  &dragx, &dragy, (unsigned int *) &dragWidth,
+                  (unsigned int *) &dragHeight, &junkbw, &junkDepth);
+@@ -855,7 +857,8 @@
+     frame_wc.x = tmp_win->frame_x = x;
+     frame_wc.y = tmp_win->frame_y = y;
+     frame_wc.width = tmp_win->frame_width = w;
+-    frame_wc.height = tmp_win->frame_height = h;
++    tmp_win->frame_height = h;
++    frame_wc.height = tmp_win->shaded ? tmp_win->title_height : h;
+     frame_mask |= (CWX | CWY | CWWidth | CWHeight);
+     XConfigureWindow(dpy, tmp_win->frame, (unsigned) frame_mask, &frame_wc);
+ 
+@@ -878,7 +881,7 @@
+         XConfigureWindow(dpy, tmp_win->hilite_w, (unsigned) xwcm, &xwc);
+     }
+ 
+-    if (HasShape && reShape) {
++    if (HasShape && (reShape || tmp_win->shaded)) {
+         SetFrameShape(tmp_win);
+     }
+ 
+@@ -903,12 +906,30 @@
+     }
+ }
+ 
++/* Shade only the frame.  The client remains mapped at its original size,
++ * so no resize or withdrawal is delivered to the application.  SetupFrame
++ * keeps the logical full height current, including client configure requests
++ * and icon-manager growth while shaded. */
++void
++SetWindowShade(TwmWindow *tmp, Bool shaded)
++{
++    if (!tmp->title_height || tmp->shaded == shaded)
++        return;
++
++    tmp->shaded = shaded;
++    XResizeWindow(dpy, tmp->frame, (unsigned) tmp->frame_width,
++                  (unsigned) (shaded ? tmp->title_height : tmp->frame_height));
++    if (HasShape) {
++        /* Remove any previous client/squeezed shape before rebuilding it. */
++        XShapeCombineMask(dpy, tmp->frame, ShapeBounding, 0, 0, None, ShapeSet);
++        XShapeCombineMask(dpy, tmp->frame, ShapeClip, 0, 0, None, ShapeSet);
++        SetFrameShape(tmp);
++    }
++}
++
+ /**
+- * zooms window to full height of screen or to full height and width of screen.
+- * (Toggles so that it can undo the zoom - even when switching between fullzoom
+- * and vertical zoom.)
+- *
+- *  \param tmp_win  the TwmWindow pointer
++ * Zoom to screen height or full screen, toggling back to the saved geometry.
++ * Changing zoom modes retains the original restore geometry.
+  */
+ void
+ fullzoom(TwmWindow *tmp_win, int flag)
+@@ -916,6 +937,8 @@
+     Window junkRoot;
+     unsigned int junkbw, junkDepth;
+     int basex, basey;
++
++    SetWindowShade(tmp_win, False);
+ 
+     XGetGeometry(dpy, (Drawable) tmp_win->frame, &junkRoot,
+                  &dragx, &dragy, (unsigned int *) &dragWidth,
+@@ -1003,6 +1026,10 @@
+ void
+ SetFrameShape(TwmWindow *tmp)
+ {
++    /* The physical frame clips the mapped body below the title. */
++    if (tmp->shaded)
++        return;
++
+     /*
+      * see if the titlebar needs to move
+      */
+--- a/src/resize.h
++++ b/src/resize.h
+@@ -72,6 +72,7 @@
+ extern void MenuEndResize(TwmWindow *tmp_win);
+ extern void MenuStartResize(TwmWindow *tmp_win, int x, int y, int w, int h);
+ extern void SetFrameShape(TwmWindow *tmp);
++extern void SetWindowShade(TwmWindow *tmp, Bool shaded);
+ extern void SetupFrame(TwmWindow *tmp_win, int x, int y, int w, int h, int bw,
+                        Bool sendEvent);
+ extern void SetupWindow(TwmWindow *tmp_win, int x, int y, int w, int h, int bw);
+--- a/src/twm.h
++++ b/src/twm.h
+@@ -298,6 +298,7 @@
+     int save_frame_width;       /* width of frame */
+     int save_frame_height;      /* height of frame */
+     short zoomed;               /* is the window zoomed? */
++    Bool shaded;                /* clip the body, preserving client geometry */
+     short wShaped;              /* this window has a bounding shape */
+     unsigned long protocols;    /* which protocols this window handles */
+     Colormaps cmaps;            /* colormaps for this application */

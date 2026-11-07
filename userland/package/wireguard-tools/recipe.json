@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "wireguard-tools",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.wireguard-tools",
+  "symbol": "BR2_PACKAGE_WIREGUARD_TOOLS",
+  "version": "1.0.20260223",
+  "recipe": "package/wireguard-tools/wireguard-tools.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "af459827b80bfd31b83b08077f4b5843acb7d18ad9a33a2ef532d3090f291fbf",
+      "filename": "wireguard-tools-1.0.20260223.tar.xz"
+    }
+  ],
+  "release_url": "https://git.zx2c4.com/wireguard-tools/refs/tags"
+}

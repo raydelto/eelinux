@@ -1,0 +1,16 @@
+--- a/gdb/gdb_curses.h
++++ b/gdb/gdb_curses.h
+@@ -80,4 +80,13 @@
+ #undef reg
+ #endif
+ 
++/* A curses library configured without stdbool may expose its C ABI through
++   a bool macro, even in C++.  Keep its already parsed declarations intact,
++   but do not let that macro replace GDB's C++ bool keyword.  */
++#ifdef __cplusplus
++#ifdef bool
++#undef bool
++#endif
++#endif
++
+ #endif /* GDB_GDB_CURSES_H */

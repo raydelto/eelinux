@@ -1,0 +1,197 @@
+{
+  "schema": 1,
+  "source": {
+    "repository": "https://github.com/frno7/iopmod.git",
+    "revision": "12cdf14b78ed5e648ffe1d52e6754f00b3b69001"
+  },
+  "source_manifest_sha256": "c1a17fc91e7b294c7cc7967429bbd2b5e4210448ce28b49cdbb65afd4cdb9937",
+  "recipe_sha256": {
+    "scripts/iop_dev9.py": "a84cd582716ab8c912defa692cc68d0cbcbdbbffa89d060c9d2ce24f22155028",
+    "kernel/iop-compat/string.h": "ab84d18ef8d411611c699192fdf49c733ef57aa7e7fcb80b0a71b88013136e1b",
+    "kernel/iop-compat/sys/types.h": "a3f052cccc105d89d2aed9b268c6b0819a9724298cddf963c609ddcd710c4b0f",
+    "kernel/iop-overlay/module/dev9.c": "33c80a0d7d70c4e4d20d581850070c69c5765dbe8b7e8d639615f190d16e2ca2",
+    "kernel/iop-overlay/builtin/spd-irq.c": "8de39e7d16f84c775dda8a4515646b81d06d6be80d26103caf8c820e386f3c2f"
+  },
+  "adapted_source_sha256": {
+    "module/dev9.c": "33c80a0d7d70c4e4d20d581850070c69c5765dbe8b7e8d639615f190d16e2ca2",
+    "builtin/spd-irq.c": "8de39e7d16f84c775dda8a4515646b81d06d6be80d26103caf8c820e386f3c2f",
+    "module/irqrelay.c": "1db5c2742882ead4c8eb34a9ebd0bf899f5c689fd118676728d49c6e9c16f29f",
+    "include/iopmod/module/dev9.h": "ae10a7f8d1bf9b42e54c5ec693b032b67c288c8a77f0dc48d824d722c85f1d52",
+    ".eelinux-iop.ld": "0fe9fce893e5ce854690e417400c66ac5aec18fee1964374b57792665a16a27b"
+  },
+  "module_versions": {
+    "dev9": "0x0101"
+  },
+  "dev9_library_version": "0x0100",
+  "transport": {
+    "dev9_command": "0x8000001c",
+    "rearm_command": "0x8000001b"
+  },
+  "compiler": "mipsel-none-elf-",
+  "compiler_version": "mipsel-none-elf-gcc (GCC) 15.2.0",
+  "compiler_flags": "-O0 -march=r3000 -EL -msoft-float -fomit-frame-pointer -fno-pic -mno-abicalls -fno-common -ffreestanding -static -fno-strict-aliasing -nostdlib -mlong-calls -mno-gpopt -mno-shared -G0 -ffunction-sections -fdata-sections -Wall -Iinclude -I${PROJECT}/kernel/iop-compat",
+  "firmware_sha256": {
+    "irq.irx": "8dc2e0c0c47f4ff76e6ae7b5cebd4064b4d82324ad4816a2439d389f554bea45",
+    "irqrelay.irx": "e5cc191f7ad4e221fa9110d9f642eae921831c700b16c00abc65ee1b77a7be02",
+    "ata.irx": "572df70f266888498440cc838d2f8fd11315a71b225c63afccab8ee5302e8db4",
+    "dev9.irx": "440eb1ef74fb971640159e190ad7c4fdfccf2027b08398307d82dd49f735e4ce",
+    "gamepad.irx": "f88d003d66bf1255c58b254b5c1ae28312c2357606e83f818447ed070c9d1190",
+    "printk.irx": "984824081f5c41975182569f90650e4ac7e3154d60a3aa159fecedfb48e651e0"
+  },
+  "firmware_bytes": {
+    "irq.irx": 9644,
+    "irqrelay.irx": 12268,
+    "ata.irx": 29140,
+    "dev9.irx": 16100,
+    "gamepad.irx": 12040,
+    "printk.irx": 10220
+  },
+  "validation": {
+    "six_actual_irx_cross_built": true,
+    "original_vendor_unchanged": true,
+    "actual_dev9_module_version": "0x0101",
+    "actual_dev9_export_library_version": "0x0100",
+    "host_tests_passed": 12,
+    "actual_c_asan_ubsan_tests": 8,
+    "actual_loader_start_result_asan_ubsan_tests": 8,
+    "emulator_module_residency_tested": true,
+    "emulator_eth0_registration_tested": true,
+    "emulator_eeprom_mac_tested": true,
+    "emulator_ext4_root_tested": true,
+    "emulator_packet_delivery_tested": false,
+    "hardware_packet_delivery_tested": false,
+    "optimization_qualification": {
+      "setting": "-O0",
+      "upstream_default": "-O0",
+      "optimized_result": "Same-source -O2 printk, DEV9 and IRQ returned MODULE_EXIT; the isolated six-module -O0 comparison returned MODULE_RESIDENT and booted.",
+      "root_cause_fully_diagnosed": false
+    },
+    "limitations": [
+      "Inherited IOP module-loader and IRQ-resource RPC waits remain synchronous/unbounded.",
+      "Optimized IRX startup/relocation behavior remains unqualified; production retains upstream -O0.",
+      "Real Slim, Fat Network Adaptor and early PCMCIA packet acceptance remains pending.",
+      "PCMCIA hot removal/reinsertion and AIF development units remain unqualified."
+    ]
+  },
+  "latest_2026_10_02_aligned_firmware": {
+    "manifest": {
+      "schema": 1,
+      "source": {
+        "repository": "https://github.com/frno7/iopmod.git",
+        "revision": "12cdf14b78ed5e648ffe1d52e6754f00b3b69001"
+      },
+      "source_manifest_sha256": "c1a17fc91e7b294c7cc7967429bbd2b5e4210448ce28b49cdbb65afd4cdb9937",
+      "recipe_sha256": {
+        "scripts/iop_dev9.py": "7e689f5523b4753f2a83baf877d0a8fbb8f936893f0d37ef4f26288eb8185c34",
+        "kernel/iop-compat/string.h": "ab84d18ef8d411611c699192fdf49c733ef57aa7e7fcb80b0a71b88013136e1b",
+        "kernel/iop-compat/sys/types.h": "a3f052cccc105d89d2aed9b268c6b0819a9724298cddf963c609ddcd710c4b0f",
+        "kernel/iop-overlay/module/dev9.c": "d11fc117d03550d2a2550e779fc51ea2d83f17cdb6b210f52a54815bb35313ff",
+        "kernel/iop-overlay/builtin/spd-irq.c": "8de39e7d16f84c775dda8a4515646b81d06d6be80d26103caf8c820e386f3c2f"
+      },
+      "adapted_source_sha256": {
+        "module/dev9.c": "d11fc117d03550d2a2550e779fc51ea2d83f17cdb6b210f52a54815bb35313ff",
+        "builtin/spd-irq.c": "8de39e7d16f84c775dda8a4515646b81d06d6be80d26103caf8c820e386f3c2f",
+        "module/irqrelay.c": "dabb16b4b0da4097ce47c90f789c93180dbf423fa8d6791f4c9d6ace9da60963",
+        "include/iopmod/module/dev9.h": "ae10a7f8d1bf9b42e54c5ec693b032b67c288c8a77f0dc48d824d722c85f1d52",
+        ".eelinux-iop.ld": "3238268d95e9bb0ec1bad5bc1163b4c05603d2dccd6fbe86158cbe530780adc0"
+      },
+      "module_versions": {
+        "dev9": "0x0101"
+      },
+      "dev9_library_version": "0x0100",
+      "transport": {
+        "dev9_command": "0x8000001c",
+        "rearm_command": "0x8000001b"
+      },
+      "compiler": "/home/machaddr/.local/eelinux-ps2dev/ps2dev/iop/bin/mipsel-none-elf-",
+      "compiler_version": "mipsel-none-elf-gcc (GCC) 15.2.0",
+      "compiler_flags": "-O0 -march=r3000 -EL -msoft-float -fomit-frame-pointer -fno-pic -mno-abicalls -fno-common -ffreestanding -static -fno-strict-aliasing -nostdlib -mlong-calls -mno-gpopt -mno-shared -G0 -ffunction-sections -fdata-sections -Wall -Iinclude -I/mnt/c/Users/sedzc/Documents/EEOS-Linux/kernel/iop-compat",
+      "firmware_sha256": {
+        "irq.irx": "8cea3261c5c44f84d02b93eda81612c5a0a00e3976aa24569a805757b6e46720",
+        "irqrelay.irx": "91ab6816422bb437a55123e05e5bc91561f631259c2a6a43b18555101ef72d20",
+        "ata.irx": "a0d91721fa06dc7d50632bf6335cfda0a33c4c62401c4e905afa792e432faa74",
+        "dev9.irx": "95936332510cee9c41d62f8a78e708f3a773d5df5d9902934ab2bc95cbe57711",
+        "gamepad.irx": "9995ce395c3f0c452a634428791907626e22315650a9dcedded070f0431008c9",
+        "printk.irx": "87c9d03b518a3fbfbdea1833b022115ba0bddfdecaf78b85c2bd0f25c160b9bc"
+      },
+      "firmware_bytes": {
+        "irq.irx": 9596,
+        "irqrelay.irx": 9308,
+        "ata.irx": 29092,
+        "dev9.irx": 16108,
+        "gamepad.irx": 12004,
+        "printk.irx": 10244
+      }
+    },
+    "layouts": {
+      "ata.irx": {
+        "sha256": "a0d91721fa06dc7d50632bf6335cfda0a33c4c62401c4e905afa792e432faa74",
+        "file_bytes": 29092,
+        "load_file_bytes": 25600,
+        "load_memory_bytes": 25600,
+        "text_bytes": 9088,
+        "data_bytes": 16512,
+        "bss_bytes": 0,
+        "file_boundary_word_aligned": true,
+        "module_sizes_match_load": true
+      },
+      "dev9.irx": {
+        "sha256": "95936332510cee9c41d62f8a78e708f3a773d5df5d9902934ab2bc95cbe57711",
+        "file_bytes": 16108,
+        "load_file_bytes": 11328,
+        "load_memory_bytes": 11520,
+        "text_bytes": 11312,
+        "data_bytes": 16,
+        "bss_bytes": 192,
+        "file_boundary_word_aligned": true,
+        "module_sizes_match_load": true
+      },
+      "gamepad.irx": {
+        "sha256": "9995ce395c3f0c452a634428791907626e22315650a9dcedded070f0431008c9",
+        "file_bytes": 12004,
+        "load_file_bytes": 8208,
+        "load_memory_bytes": 8240,
+        "text_bytes": 8208,
+        "data_bytes": 0,
+        "bss_bytes": 32,
+        "file_boundary_word_aligned": true,
+        "module_sizes_match_load": true
+      },
+      "irq.irx": {
+        "sha256": "8cea3261c5c44f84d02b93eda81612c5a0a00e3976aa24569a805757b6e46720",
+        "file_bytes": 9596,
+        "load_file_bytes": 6992,
+        "load_memory_bytes": 7104,
+        "text_bytes": 6992,
+        "data_bytes": 0,
+        "bss_bytes": 112,
+        "file_boundary_word_aligned": true,
+        "module_sizes_match_load": true
+      },
+      "irqrelay.irx": {
+        "sha256": "91ab6816422bb437a55123e05e5bc91561f631259c2a6a43b18555101ef72d20",
+        "file_bytes": 9308,
+        "load_file_bytes": 6272,
+        "load_memory_bytes": 6432,
+        "text_bytes": 6272,
+        "data_bytes": 0,
+        "bss_bytes": 160,
+        "file_boundary_word_aligned": true,
+        "module_sizes_match_load": true
+      },
+      "printk.irx": {
+        "sha256": "87c9d03b518a3fbfbdea1833b022115ba0bddfdecaf78b85c2bd0f25c160b9bc",
+        "file_bytes": 10244,
+        "load_file_bytes": 8640,
+        "load_memory_bytes": 8640,
+        "text_bytes": 8640,
+        "data_bytes": 0,
+        "bss_bytes": 0,
+        "file_boundary_word_aligned": true,
+        "module_sizes_match_load": true
+      }
+    },
+    "startup_evidence": "iop-startup-validation.json",
+    "physical_USB_root_tested": false
+  }
+}

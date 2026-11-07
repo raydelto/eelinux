@@ -1,0 +1,111 @@
+--- a/linux-user/syscall.c
++++ b/linux-user/syscall.c
+@@ -1244,7 +1244,7 @@
+ #endif
+ 
+ #if defined(TARGET_NR_clock_settime64) || defined(TARGET_NR_futex_time64) || \
+-    defined(TARGET_NR_pselect6_time64)
++    defined(TARGET_NR_pselect6_time64) || defined(TARGET_NR_ppoll_time64)
+ static inline abi_long target_to_host_timespec64(struct timespec *host_ts,
+                                                  abi_ulong target_addr)
+ {
+@@ -2590,7 +2590,36 @@
+         }
+         break;
+     case SOL_TCP:
+-        /* TCP options all take an 'int' value.  */
++#ifdef TCP_CONGESTION
++        if (optname == TCP_CONGESTION) {
++            void *buffer = NULL;
++
++            /* Linux returns an opaque byte string, including its terminator
++             * when the caller's buffer has room.  Do not endian-swap or
++             * truncate it through the single-integer option path. */
++            if (get_user_u32(len, optlen)) {
++                return -TARGET_EFAULT;
++            }
++            if (len < 0) {
++                return -TARGET_EINVAL;
++            }
++            if (len) {
++                buffer = lock_user(VERIFY_WRITE, optval_addr, len, 0);
++                if (!buffer) {
++                    return -TARGET_EFAULT;
++                }
++            }
++            lv = len;
++            ret = get_errno(getsockopt(sockfd, level, optname, buffer, &lv));
++            unlock_user(buffer, optval_addr,
++                        ret < 0 ? 0 : MIN(lv, (socklen_t)len));
++            if (ret >= 0 && put_user_u32(lv, optlen)) {
++                return -TARGET_EFAULT;
++            }
++            return ret;
++        }
++#endif
++        /* Other supported TCP options use the existing integer path. */
+     int_case:
+         if (get_user_u32(len, optlen))
+             return -TARGET_EFAULT;
+@@ -10025,13 +10054,16 @@
+     case TARGET_NR__newselect:
+         return do_select(arg1, arg2, arg3, arg4, arg5);
+ #endif
+-#if defined(TARGET_NR_poll) || defined(TARGET_NR_ppoll)
++#if defined(TARGET_NR_poll) || defined(TARGET_NR_ppoll) || defined(TARGET_NR_ppoll_time64)
+ # ifdef TARGET_NR_poll
+     case TARGET_NR_poll:
+ # endif
+ # ifdef TARGET_NR_ppoll
+     case TARGET_NR_ppoll:
+ # endif
++# ifdef TARGET_NR_ppoll_time64
++    case TARGET_NR_ppoll_time64:
++# endif
+         {
+             struct target_pollfd *target_pfd;
+             unsigned int nfds = arg2;
+@@ -10059,15 +10091,25 @@
+             }
+ 
+             switch (num) {
+-# ifdef TARGET_NR_ppoll
++# if defined(TARGET_NR_ppoll) || defined(TARGET_NR_ppoll_time64)
++#  ifdef TARGET_NR_ppoll
+             case TARGET_NR_ppoll:
++#  endif
++#  ifdef TARGET_NR_ppoll_time64
++            case TARGET_NR_ppoll_time64:
++#  endif
+             {
+                 struct timespec _timeout_ts, *timeout_ts = &_timeout_ts;
+                 target_sigset_t *target_set;
+                 sigset_t _set, *set = &_set;
+ 
+                 if (arg3) {
+-                    if (target_to_host_timespec(timeout_ts, arg3)) {
++                    if (
++#  ifdef TARGET_NR_ppoll_time64
++                        num == TARGET_NR_ppoll_time64 ?
++                        target_to_host_timespec64(timeout_ts, arg3) :
++#  endif
++                        target_to_host_timespec(timeout_ts, arg3)) {
+                         unlock_user(target_pfd, arg1, 0);
+                         return -TARGET_EFAULT;
+                     }
+@@ -10095,7 +10137,14 @@
+                                            set, SIGSET_T_SIZE));
+ 
+                 if (!is_error(ret) && arg3) {
+-                    host_to_target_timespec(arg3, timeout_ts);
++#  ifdef TARGET_NR_ppoll_time64
++                    if (num == TARGET_NR_ppoll_time64) {
++                        host_to_target_timespec64(arg3, timeout_ts);
++                    } else
++#  endif
++                    {
++                        host_to_target_timespec(arg3, timeout_ts);
++                    }
+                 }
+                 if (arg4) {
+                     unlock_user(target_set, arg4, 0);

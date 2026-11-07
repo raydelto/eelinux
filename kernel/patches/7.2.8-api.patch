@@ -1,0 +1,1437 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -1047,6 +1047,26 @@
+ 		Hikari
+ 	  Say Y here for most Octeon reference boards.
+ 
++config SONY_PS2
++	bool "Sony PlayStation 2"
++	select BOOT_ELF32
++	select CEVT_R4K
++	select CSRC_R4K
++	select DMA_NONCOHERENT
++	select HARDIRQS_SW_RESEND
++	select HAVE_PATA_PLATFORM
++	select IRQ_MIPS_CPU
++	select MIPS_L1_CACHE_SHIFT_6
++	select NO_IOPORT_MAP
++	select SYS_HAS_CPU_R5900
++	select SYS_HAS_EARLY_PRINTK
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select SYS_SUPPORTS_LITTLE_ENDIAN
++	select SYS_SUPPORTS_ZBOOT
++	select USB_OHCI_LITTLE_ENDIAN
++	help
++	  This enables support for the Sony PlayStation 2.
++
+ endchoice
+ 
+ source "arch/mips/alchemy/Kconfig"
+@@ -1618,6 +1638,14 @@
+ 	  NEC VR5500 and VR5500A series processors implement 64-bit MIPS IV
+ 	  instruction set.
+ 
++config CPU_R5900
++	bool "R5900"
++	depends on SYS_HAS_CPU_R5900
++	select CPU_SUPPORTS_32BIT_KERNEL
++	select IRQ_MIPS_CPU
++	help
++	  Toshiba R5900 processor (Emotion Engine in the Sony PlayStation 2).
++
+ config CPU_NEVADA
+ 	bool "RM52xx"
+ 	depends on SYS_HAS_CPU_NEVADA
+@@ -3182,3 +3210,5 @@
+ endmenu
+ 
+ source "arch/mips/kvm/Kconfig"
++
++source "arch/mips/ps2/Kconfig"
+--- a/arch/mips/Kbuild.platforms
++++ b/arch/mips/Kbuild.platforms
+@@ -34,5 +34,7 @@
+ platform-$(CONFIG_SNI_RM)		+= sni/
+ platform-$(CONFIG_MACH_TX49XX)		+= txx9/
+ 
++platform-$(CONFIG_SONY_PS2) += ps2/
++
+ # include the platform specific files
+ include $(patsubst %/, $(srctree)/arch/mips/%/Platform, $(platform-y))
+--- a/arch/mips/ps2/Platform
++++ b/arch/mips/ps2/Platform
+@@ -1,7 +1,6 @@
+ #
+ # PlayStation 2
+ #
+-platform-$(CONFIG_SONY_PS2)	+= ps2/
+ cflags-$(CONFIG_SONY_PS2)	+= -I$(srctree)/arch/mips/include/asm/mach-ps2
+ load-$(CONFIG_SONY_PS2)		+= 0x80010000
+ zload-$(CONFIG_SONY_PS2)	+= 0x00800000
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -162,6 +162,7 @@
+ 			-Wa,--trap
+ cflags-$(CONFIG_CPU_R5500)	+= $(call cc-option,-march=r5500,-march=mips4) \
+ 			-Wa,--trap
++cflags-$(CONFIG_CPU_R5900) += -march=r5900 -Wa,--trap
+ cflags-$(CONFIG_CPU_NEVADA)	+= $(call cc-option,-march=rm5200,-march=mips4) \
+ 			-Wa,--trap
+ cflags-$(CONFIG_CPU_RM7000)	+= $(call cc-option,-march=rm7000,-march=mips4) \
+--- a/arch/mips/include/asm/cpu.h
++++ b/arch/mips/include/asm/cpu.h
+@@ -306,7 +306,7 @@
+ 	CPU_R4400PC, CPU_R4400SC, CPU_R4400MC, CPU_R4600, CPU_R4640, CPU_R4650,
+ 	CPU_R4700, CPU_R5000, CPU_R5500, CPU_NEVADA, CPU_R10000,
+ 	CPU_R12000, CPU_R14000, CPU_R16000, CPU_RM7000,
+-	CPU_SR71000, CPU_TX49XX,
++	CPU_SR71000, CPU_TX49XX, CPU_R5900,
+ 
+ 	/*
+ 	 * MIPS32 class processors
+--- a/drivers/ata/Kconfig
++++ b/drivers/ata/Kconfig
+@@ -1192,3 +1192,12 @@
+ 
+ endif # ATA_SFF
+ endif # ATA
++
++config PATA_PS2
++	tristate "PlayStation 2 PATA support"
++	depends on SONY_PS2
++	help
++	  This option enables support for PATA interface harddisks, found
++	  on PlayStation 2 models SCPH 10000-500xx having an appropriate
++	  network adapter accessory.
++
+--- a/drivers/ata/Makefile
++++ b/drivers/ata/Makefile
+@@ -131,3 +131,5 @@
+ libata-$(CONFIG_ATA_ACPI)	+= libata-acpi.o
+ libata-$(CONFIG_SATA_ZPODD)	+= libata-zpodd.o
+ libata-$(CONFIG_PATA_TIMINGS)	+= libata-pata-timings.o
++
++obj-$(CONFIG_PATA_PS2) += pata_ps2.o
+--- a/drivers/rtc/Kconfig
++++ b/drivers/rtc/Kconfig
+@@ -2172,4 +2172,14 @@
+ 	  If this driver is compiled as a module, it will be named
+ 	  rtc-hid-sensor-time.
+ 
++config RTC_DRV_PS2
++	tristate "PlayStation 2 RTC"
++	depends on SONY_PS2
++	default y
++	help
++	  Say yes here to get support for the PlayStation 2 real-time clock.
++
++	  This driver can also be built as a module. If so, the module
++	  will be called rtc-ps2.
++
+ endif # RTC_CLASS
+--- a/drivers/rtc/Makefile
++++ b/drivers/rtc/Makefile
+@@ -199,3 +199,5 @@
+ obj-$(CONFIG_RTC_DRV_X1205)	+= rtc-x1205.o
+ obj-$(CONFIG_RTC_DRV_XGENE)	+= rtc-xgene.o
+ obj-$(CONFIG_RTC_DRV_ZYNQMP)	+= rtc-zynqmp.o
++
++obj-$(CONFIG_RTC_DRV_PS2) += rtc-ps2.o
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -732,3 +732,12 @@
+ 	  by the Xen host (usually Dom0).
+ 	  Only needed if the kernel is running in a Xen guest and generic
+ 	  access to a USB device is needed.
++
++config USB_OHCI_HCD_PS2
++	tristate "OHCI support for the Sony PlayStation 2"
++	depends on SONY_PS2
++	select GENERIC_ALLOCATOR
++	default y
++	help
++	 Enable support for the Sony PlayStation 2 OHCI controller.
++
+--- a/drivers/usb/host/Makefile
++++ b/drivers/usb/host/Makefile
+@@ -89,3 +89,5 @@
+ obj-$(CONFIG_USB_HCD_SSB)	+= ssb-hcd.o
+ obj-$(CONFIG_USB_MAX3421_HCD)	+= max3421-hcd.o
+ obj-$(CONFIG_USB_XEN_HCD)	+= xen-hcd.o
++
++obj-$(CONFIG_USB_OHCI_HCD_PS2) += ohci-ps2.o
+--- a/drivers/tty/serial/Kconfig
++++ b/drivers/tty/serial/Kconfig
+@@ -1596,3 +1596,23 @@
+ 
+ config SERIAL_MCTRL_GPIO
+ 	tristate
++
++config SERIAL_PS2_UART
++	tristate "PS2 serial port"
++	depends on SONY_PS2
++	select SERIAL_CORE
++	default n
++	help
++	  Driver for the PlayStation 2 UART/SIO port. You can see the output
++	  with a serial cable connected to the internal serial pins of the
++	  PlayStation 2. To use it as system console, specify the kernel
++	  parameter "console=ttyS0".
++
++config SERIAL_PS2_UART_CONSOLE
++	bool "PS2 serial port console"
++	depends on SERIAL_PS2_UART=y
++	select SERIAL_CORE_CONSOLE
++	select SERIAL_EARLYCON
++	help
++	  Enable the PlayStation 2 UART/SIO port for the system console.
++
+--- a/drivers/tty/serial/Makefile
++++ b/drivers/tty/serial/Makefile
+@@ -98,3 +98,5 @@
+ 
+ obj-$(CONFIG_KGDB_SERIAL_CONSOLE) += kgdboc.o
+ obj-$(CONFIG_SERIAL_NUVOTON_MA35D1) += ma35d1_serial.o
++
++obj-$(CONFIG_SERIAL_PS2_UART) += ps2_uart.o
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -198,3 +198,5 @@
+ 
+ obj-$(CONFIG_DIBS)		+= dibs/
+ obj-$(CONFIG_S390)		+= s390/
++
++obj-$(CONFIG_SONY_PS2) += ps2/
+--- a/drivers/gpu/drm/Kconfig
++++ b/drivers/gpu/drm/Kconfig
+@@ -370,3 +370,5 @@
+ # Separate option because drm_panel_orientation_quirks.c is shared with fbdev
+ config DRM_PANEL_ORIENTATION_QUIRKS
+ 	tristate
++
++source "drivers/gpu/drm/gs/Kconfig"
+--- a/drivers/gpu/drm/Makefile
++++ b/drivers/gpu/drm/Makefile
+@@ -256,3 +256,5 @@
+ 
+ $(obj)/%.hdrtest: $(src)/%.h FORCE
+ 	$(call if_changed_dep,hdrtest)
++
++obj-$(CONFIG_DRM_GS) += gs/
+--- a/include/uapi/linux/serial_core.h
++++ b/include/uapi/linux/serial_core.h
+@@ -234,4 +234,6 @@
+ /* Generic type identifier for ports which type is not important to userspace. */
+ #define PORT_GENERIC	(-1)
+ 
++/* PlayStation 2 EE UART, experimental downstream type. */
++#define PORT_PS2_UART 124
+ #endif /* _UAPILINUX_SERIAL_CORE_H */
+--- a/drivers/ps2/gs.c
++++ b/drivers/ps2/gs.c
+@@ -313,9 +313,9 @@
+ 	return 0;
+ }
+ 
+-static int gs_remove(struct platform_device *pdev)
+-{
+-	return 0;
++static void gs_remove(struct platform_device *pdev)
++{
++	return;
+ }
+ 
+ static struct platform_driver gs_driver = {
+--- a/drivers/ps2/iop-module-sysfs.c
++++ b/drivers/ps2/iop-module-sysfs.c
+@@ -212,11 +212,11 @@
+ 	return err;
+ }
+ 
+-static int iop_remove(struct platform_device *pdev)
++static void iop_remove(struct platform_device *pdev)
+ {
+ 	iop_modules_remove_sysfs(&pdev->dev);
+ 
+-	return 0;
++	return;
+ }
+ 
+ static struct platform_driver iop_driver = {
+--- a/drivers/ata/pata_ps2.c
++++ b/drivers/ata/pata_ps2.c
+@@ -289,9 +289,14 @@
+ 	ATA_PIO_SHT(DRV_NAME),
+ };
+ 
++static enum ata_completion_errors pata_ps2_qc_prep(struct ata_queued_cmd *qc)
++{
++	return 0;
++}
++
+ static struct ata_port_operations pata_ps2_port_ops = {
+ 	.inherits		= &ata_sff_port_ops,
+-	.qc_prep		= ata_noop_qc_prep,
++	.qc_prep		= pata_ps2_qc_prep,
+ 	.qc_issue		= pata_ps2_qc_issue,
+ 	.cable_detect		= ata_cable_unknown,
+ 	.set_piomode		= pata_ps2_set_piomode,
+@@ -439,13 +444,13 @@
+ 	return err;
+ }
+ 
+-static int pata_ps2_remove(struct platform_device *pdev)
++static void pata_ps2_remove(struct platform_device *pdev)
+ {
+ 	struct ata_host *host = dev_get_drvdata(&pdev->dev);
+ 
+ 	ata_host_detach(host);
+ 
+-	return 0;
++	return;
+ }
+ 
+ static struct platform_driver pata_ps2_driver = {
+--- a/drivers/tty/serial/ps2_uart.c
++++ b/drivers/tty/serial/ps2_uart.c
+@@ -83,7 +83,7 @@
+ }
+ 
+ static void ps2_uart_set_termios(struct uart_port *port,
+-				 struct ktermios *termios, struct ktermios *old)
++				 struct ktermios *termios, const struct ktermios *old)
+ {
+ }
+ 
+@@ -116,7 +116,8 @@
+ 
+ static void ps2_uart_tx_chars(struct uart_port *port)
+ {
+-	struct circ_buf *xmit = &port->state->xmit;
++	struct tty_port *tport = &port->state->port;
++	unsigned char ch;
+ 
+ 	if (port->x_char) {
+ 		ps2_uart_putchar_block(port->x_char);
+@@ -124,23 +125,20 @@
+ 		port->x_char = 0;
+ 		return;
+ 	}
+-	if (uart_circ_empty(xmit) || uart_tx_stopped(port)) {
++	if (kfifo_is_empty(&tport->xmit_fifo) || uart_tx_stopped(port)) {
+ 		ps2_uart_stop_tx(port);
+ 		return;
+ 	}
+ 
+ 	while ((inw(SIO_ISR) & 0xf000) != 0x8000) {
+-		if (uart_circ_empty(xmit))
++		if (!uart_fifo_get(port, &ch))
+ 			break;
+-		outb(xmit->buf[xmit->tail], SIO_TXFIFO);
+-		xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
+-		port->icount.tx++;
+-	}
+-
+-	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
++		outb(ch, SIO_TXFIFO);
++	}
++
++	if (kfifo_len(&tport->xmit_fifo) < WAKEUP_CHARS)
+ 		uart_write_wakeup(port);
+-
+-	if (uart_circ_empty(xmit))
++	if (kfifo_is_empty(&tport->xmit_fifo))
+ 		ps2_uart_stop_tx(port);
+ }
+ 
+@@ -148,10 +146,9 @@
+ {
+ 	struct uart_port *port;
+ 	struct tty_struct *tty;
+-	struct circ_buf *xmit;
+ 	int irx;
+ 
+-	struct ps2_uart *pp = from_timer(pp, t, timer);
++	struct ps2_uart *pp = timer_container_of(pp, t, timer);
+ 	port = &pp->port;
+ 	if (!port)
+ 		return;
+@@ -168,8 +165,7 @@
+ 	ps2_uart_tx_chars(port);
+ 
+ 	/* Restart the timer */
+-	xmit = &port->state->xmit;
+-	if ((uart_circ_chars_pending(xmit) > 0) || (irx > 0))
++	if (!kfifo_is_empty(&port->state->port.xmit_fifo) || (irx > 0))
+ 		/* Transmit/Receive ASAP */
+ 		mod_timer(&pp->timer, jiffies + 1);
+ 	else
+@@ -192,7 +188,7 @@
+ static void ps2_uart_shutdown(struct uart_port *port)
+ {
+ 	/* Stop timer */
+-	del_timer_sync(&ps2_uart_dev->timer);
++	timer_delete_sync(&ps2_uart_dev->timer);
+ }
+ 
+ static const char *ps2_uart_type(struct uart_port *port)
+@@ -307,7 +303,7 @@
+ 	return result;
+ }
+ 
+-static int ps2_uart_remove(struct platform_device *dev)
++static void ps2_uart_remove(struct platform_device *dev)
+ {
+ 	struct uart_port *port = platform_get_drvdata(dev);
+ 
+@@ -315,7 +311,7 @@
+ 		uart_remove_one_port(&ps2_uart_driver, port);
+ 	platform_set_drvdata(dev, NULL);
+ 
+-	return 0;
++	return;
+ }
+ 
+ static struct platform_driver ps2_uart_platform_driver = {
+@@ -389,7 +385,7 @@
+ 	platform_driver_unregister(&ps2_uart_platform_driver);
+ 	platform_device_unregister(ps2_uart_plat_devs);
+ 	uart_unregister_driver(&ps2_uart_driver);
+-	del_timer_sync(&ps2_uart_dev->timer);
++	timer_delete_sync(&ps2_uart_dev->timer);
+ 	kfree(ps2_uart_dev);
+ 	ps2_uart_dev = NULL;
+ 
+--- a/drivers/usb/host/ohci-ps2.c
++++ b/drivers/usb/host/ohci-ps2.c
+@@ -84,6 +84,8 @@
+ {
+ 	struct ohci_hcd	*ohci = hcd_to_ohci(hcd);
+ 	struct ohci_regs __iomem *regs = ohci->regs;
++	const u32 enabled = ohci_readl(ohci, &regs->intrenable);
++	irqreturn_t status;
+ 
+ 	/*
+ 	 * OHCI_INTR_MIE needs to be disabled, most likely due to a
+@@ -92,7 +94,14 @@
+ 	 */
+ 	ohci_writel(ohci, OHCI_INTR_MIE, &regs->intrdisable);
+ 
+-	return ohci_irq(hcd);	/* Call normal IRQ handler. */
++	status = ohci_irq(hcd);	/* Call normal IRQ handler. */
++	/* A delayed SIF relay may find its interrupt already acknowledged. */
++	if (status == IRQ_NONE && (enabled & OHCI_INTR_MIE) &&
++	    ohci->rh_state == OHCI_RH_RUNNING) {
++		ohci_writel(ohci, OHCI_INTR_MIE, &regs->intrenable);
++		(void)ohci_readl(ohci, &regs->control);	/* Flush the write. */
++	}
++	return status;
+ }
+ 
+ static int iopheap_alloc_dma_buffer(struct platform_device *pdev, size_t size)
+@@ -203,7 +212,7 @@
+ 	return err;
+ }
+ 
+-static int ohci_hcd_ps2_remove(struct platform_device *pdev)
++static void ohci_hcd_ps2_remove(struct platform_device *pdev)
+ {
+ 	struct usb_hcd *hcd = platform_get_drvdata(pdev);
+ 
+@@ -217,7 +226,7 @@
+ 
+ 	usb_put_hcd(hcd);
+ 
+-	return 0;
++	return;
+ }
+ 
+ static struct platform_driver ohci_hcd_ps2_driver = {
+--- a/drivers/video/fbdev/ps2fb.c
++++ b/drivers/video/fbdev/ps2fb.c
+@@ -42,6 +42,7 @@
+ #include <linux/mm.h>
+ #include <linux/module.h>
+ #include <linux/of_device.h>
++#include <linux/platform_device.h>
+ #include <linux/string.h>
+ #include <linux/uaccess.h>
+ 
+@@ -2247,7 +2248,7 @@
+ 	info->fix.smem_len = GS_MEMORY_SIZE;
+ 
+ 	info->fbops = &fbops;
+-	info->flags = FBINFO_DEFAULT |
++	info->flags =
+ 		      FBINFO_HWACCEL_COPYAREA |
+ 		      FBINFO_HWACCEL_FILLRECT |
+ 		      FBINFO_HWACCEL_IMAGEBLIT |
+@@ -2264,8 +2265,8 @@
+ 	 * BITBLTBUF for pixel format CT32 requires divisibility by 2,
+ 	 * and CT16 requires divisibility by 4. So 4 is a safe choice.
+ 	 */
+-	info->pixmap.blit_x = block_dimensions(GS_PSMT4_BLOCK_WIDTH, 4);
+-	info->pixmap.blit_y = block_dimensions(GS_PSMT4_BLOCK_HEIGHT, 1);
++	info->pixmap.blit_x[0] = block_dimensions(GS_PSMT4_BLOCK_WIDTH, 4);
++	info->pixmap.blit_y[0] = block_dimensions(GS_PSMT4_BLOCK_HEIGHT, 1);
+ 
+ 	info->pseudo_palette = par->pseudo_palette;
+ 
+@@ -2302,7 +2303,7 @@
+ 
+ 	fill_modes(&pdev->dev, &info->modelist);
+ 
+-	strlcpy(info->fix.id, "PS2 GS", ARRAY_SIZE(info->fix.id));
++	strscpy(info->fix.id, "PS2 GS", ARRAY_SIZE(info->fix.id));
+ 	info->fix.accel = FB_ACCEL_PLAYSTATION_2;
+ 
+ 	err = init_console_buffer(pdev, info);
+@@ -2361,21 +2362,19 @@
+ 	return err;
+ }
+ 
+-static int ps2fb_remove(struct platform_device *pdev)
++static void ps2fb_remove(struct platform_device *pdev)
+ {
+ 	struct fb_info *info = platform_get_drvdata(pdev);
+ 	struct ps2fb_par *par;
+-	int err = 0;
+ 
+ 	if (!info)
+-		return 0;
++		return;
+ 	par = info->par;
+ 	unregister_framebuffer(info);
+ 
+ 	/* info->par and the log device remain valid until DMA has drained. */
+ 	if (!gif_wait()) {
+ 		dev_err(&pdev->dev, "Failed to complete GIF DMA transfer\n");
+-		err = -EBUSY;
+ 		/* DMAC still owns this page: retain it rather than free live DMA. */
+ 	} else {
+ 		free_page((unsigned long)par->package.buffer);
+@@ -2385,7 +2384,7 @@
+ 	platform_set_drvdata(pdev, NULL);
+ 	framebuffer_release(info);
+ 
+-	return err;
++	return;
+ }
+ 
+ static struct platform_driver ps2fb_driver = {
+--- a/drivers/rtc/rtc-ps2.c
++++ b/drivers/rtc/rtc-ps2.c
+@@ -39,14 +39,12 @@
+ {
+ 	struct rtc_device *rtc;
+ 
+-	rtc = devm_rtc_device_register(&pdev->dev,
+-		DRVNAME, &ps2_rtc_ops, THIS_MODULE);
++	rtc = devm_rtc_allocate_device(&pdev->dev);
+ 	if (IS_ERR(rtc))
+ 		return PTR_ERR(rtc);
+-
+-	rtc->uie_unsupported = 1;
+-
+-	return 0;
++	rtc->ops = &ps2_rtc_ops;
++	clear_bit(RTC_FEATURE_UPDATE_INTERRUPT, rtc->features);
++	return devm_rtc_register_device(rtc);
+ }
+ 
+ static struct platform_driver ps2_rtc_driver = {
+--- a/drivers/ps2/gs-irq.c
++++ b/drivers/ps2/gs-irq.c
+@@ -68,10 +68,6 @@
+ 	return IRQ_HANDLED;
+ }
+ 
+-static struct irqaction cascade_gs_irqaction = {
+-	.name = "GS cascade",
+-	.handler = gs_cascade,
+-};
+ 
+ int gs_irq_init(void)
+ {
+@@ -85,7 +81,7 @@
+ 		irq_set_chip_and_handler(gs_irqs[i].irq,
+ 			&gs_irqs[i].irq_chip, handle_level_irq);
+ 
+-	err = setup_irq(IRQ_INTC_GS, &cascade_gs_irqaction);
++	err = request_irq(IRQ_INTC_GS, gs_cascade, IRQF_NO_THREAD, "GS cascade", NULL);
+ 	if (err)
+ 		pr_err("gs-irq: Failed to setup GS IRQs (err = %d)\n", err);
+ 
+--- a/drivers/ps2/gs-registers.c
++++ b/drivers/ps2/gs-registers.c
+@@ -15,6 +15,18 @@
+ #include <asm/io.h>
+ 
+ #include <asm/mach-ps2/gs-registers.h>
++
++static inline u64 ps2_gs_readq(unsigned long addr)
++{
++	mb();
++	return __raw_readq((void __iomem *)CKSEG1ADDR(addr));
++}
++
++static inline void ps2_gs_writeq(u64 value, unsigned long addr)
++{
++	__raw_writeq(value, (void __iomem *)CKSEG1ADDR(addr));
++	mb();
++}
+ 
+ /* Shadow write-only privileged Graphics Synthesizer registers. */
+ static struct {
+@@ -56,7 +68,7 @@
+ #define GS_DEFINE_RQ_RW_REG(reg, addr)					\
+ 	u64 gs_readq_##reg(void)					\
+ 	{								\
+-		return inq(addr);					\
++		return ps2_gs_readq(addr);					\
+ 	}								\
+ 	EXPORT_SYMBOL_GPL(gs_readq_##reg)
+ 
+@@ -64,7 +76,7 @@
+ #define GS_DEFINE_WQ_RW_REG(reg, addr)					\
+ 	void gs_writeq_##reg(u64 value)					\
+ 	{								\
+-		outq(value, addr);					\
++		ps2_gs_writeq(value, addr);					\
+ 	}								\
+ 	EXPORT_SYMBOL_GPL(gs_writeq_##reg)
+ 
+@@ -103,7 +115,7 @@
+ 		spin_lock_irqsave(&gs_registers.lock, flags);		\
+ 		gs_registers.reg.value = value;				\
+ 		gs_registers.reg.valid = true;				\
+-		outq(value, addr);					\
++		ps2_gs_writeq(value, addr);					\
+ 		spin_unlock_irqrestore(&gs_registers.lock, flags);	\
+ 	}								\
+ 	EXPORT_SYMBOL_GPL(gs_writeq_##reg)
+@@ -176,7 +188,7 @@
+ 	WARN_ON_ONCE(!gs_registers.imr.valid);
+ 	value = value ^ gs_registers.imr.value;
+ 	gs_registers.imr.value = value;
+-	outq(value, GS_IMR);
++	ps2_gs_writeq(value, GS_IMR);
+ 
+ 	spin_unlock_irqrestore(&gs_registers.lock, flags);
+ 
+--- a/arch/mips/include/asm/mach-ps2/gif.h
++++ b/arch/mips/include/asm/mach-ps2/gif.h
+@@ -70,6 +70,7 @@
+  *
+  * Return: %true if ready to transfer data, otherwise %false
+  */
++bool gif_busy(void);
+ bool gif_wait(void);
+ 
+ void gif_write(union gif_data *base_package, size_t package_count);
+--- a/drivers/ps2/gs-sysfs.c
++++ b/drivers/ps2/gs-sysfs.c
+@@ -139,6 +139,9 @@
+ #define for_each_line(s, n)						\
+ 	for (n = 0; (s)[n] != '\0'; n += line_size(&(s)[n]))
+ 
++#define __PS2_COUNT_ARGS(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, N, ...) N
++#define PS2_COUNT_ARGS(...) __PS2_COUNT_ARGS(_, ##__VA_ARGS__, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
++
+ #define SYSFS_STATEMENT1(prefix_, macro_)				\
+ 	prefix_##macro_;
+ 
+@@ -283,7 +286,7 @@
+ #define SHOW_SYSFS_SYMBOL_STRING(field_, prefix_, ...)			\
+ 	!valid ? "" :							\
+ 	CONCATENATE(SHOW_SYSFS_SYMBOL_STRING,				\
+-		COUNT_ARGS(__VA_ARGS__))(field_, prefix_, __VA_ARGS__)
++		PS2_COUNT_ARGS(__VA_ARGS__))(field_, prefix_, __VA_ARGS__)
+ 
+ #define SHOW_SYSFS_SYMBOL_FIELD(field_, ...)			\
+ 	n += scnprintf(&buf[n], PAGE_SIZE - n, #field_ "%s\n",		\
+@@ -307,7 +310,7 @@
+ #define SYSFS_SHOW(reg, str, ...)					\
+ 	SHOW_SYSFS_REGISTER(reg, str,					\
+ 		CONCATENATE(SYSFS_STATEMENT,				\
+-			COUNT_ARGS(__VA_ARGS__))(SHOW_, __VA_ARGS__))
++			PS2_COUNT_ARGS(__VA_ARGS__))(SHOW_, __VA_ARGS__))
+ 
+ #define STORE_SYSFS_DECNUM_FIELD(field_)				\
+ 	do {								\
+@@ -346,7 +349,7 @@
+ 
+ #define STORE_SYSFS_SYMBOL_FIELD(field_, ...)			\
+ 	CONCATENATE(STORE_SYSFS_SYMBOL_FIELD,				\
+-		COUNT_ARGS(__VA_ARGS__))(field_, gs_##field_, __VA_ARGS__)
++		PS2_COUNT_ARGS(__VA_ARGS__))(field_, gs_##field_, __VA_ARGS__)
+ 
+ #define STORE_SYSFS_REGISTER(reg, str, ...)				\
+ 	static ssize_t store_##reg(struct device *device,		\
+@@ -366,7 +369,7 @@
+ #define SYSFS_STORE(reg, str, ...)					\
+ 	STORE_SYSFS_REGISTER(reg, str,				\
+ 		CONCATENATE(SYSFS_STATEMENT,				\
+-			COUNT_ARGS(__VA_ARGS__))(STORE_, __VA_ARGS__))
++			PS2_COUNT_ARGS(__VA_ARGS__))(STORE_, __VA_ARGS__))
+ 
+ #define SYSFS_RO_REG(reg, str, ...)					\
+ 	SYSFS_SHOW(reg, str, __VA_ARGS__)				\
+--- a/drivers/ps2/iop-irq.c
++++ b/drivers/ps2/iop-irq.c
+@@ -8,6 +8,7 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/module.h>
++#include <linux/mutex.h>
+ #include <linux/types.h>
+ 
+ #include <asm/mach-ps2/iop-module.h>
+@@ -47,67 +48,67 @@
+ };
+ 
+ static struct sif_rpc_client iop_irq_rpc;
++static DEFINE_MUTEX(iop_irq_lock);
++static bool irq_relay;
+ 
+-static unsigned int iop_irq_startup(struct irq_data *data)
++static int iop_irq_request_resources(struct irq_data *data)
+ {
+-	static bool irq_relay = false;
+-
+ 	const struct iop_rpc_relay_map arg = {
+ 		.iop = data->irq - IOP_IRQ_BASE,
+ 		.map = data->irq,
+ 		.rpc = true,	/* FIXME: Also implement SMFLAG relay */
+ 	};
+-	s32 status;
++	s32 status = 0;
+ 	int err;
+ 
+-	BUG_ON(in_irq());
+-
++	/* This callback runs before the IRQ descriptor's raw spinlock. */
++	mutex_lock(&iop_irq_lock);
+ 	if (!irq_relay) {
+ 		int id;
+ 
+-		/*
+-		 * The main reason for requesting the IOP IRQ relay module here
+-		 * instead of in irqrelay_init() is that now the console may be
+-		 * visible to print messages if there are problems.
+-		 */
+ 		id = iop_module_request("irqrelay", 0x0100, NULL);
+-		if (id < 0)
+-			return id;
++		if (id < 0) {
++			err = id;
++			goto out;
++		}
+ 
+ 		err = sif_rpc_bind(&iop_irq_rpc, SIF_SID_IRQ_RELAY);
+ 		if (err < 0) {
+ 			pr_err("%s: sif_rpc_bind failed with %d\n",
+ 				__func__, err);
+-			return err;
++			goto out;
+ 		}
+-
+ 		irq_relay = true;
+ 	}
+ 
+ 	err = sif_rpc(&iop_irq_rpc, rpo_request_irq,
+ 		&arg, sizeof(arg),
+ 		&status, sizeof(status));
+-
+ 	pr_debug("%s: err %d status %d\n", __func__, err, status);
+-
+-	return err < 0 ? err : status;
++	if (err >= 0)
++		err = status;
++out:
++	mutex_unlock(&iop_irq_lock);
++	return err;
+ }
+ 
+-static void iop_irq_shutdown(struct irq_data *data)
++static void iop_irq_release_resources(struct irq_data *data)
+ {
+ 	const struct iop_rpc_relay_release arg = {
+ 		.iop = data->irq - IOP_IRQ_BASE,
+ 	};
+-	s32 status;
++	s32 status = 0;
+ 	int err;
+ 
+-	BUG_ON(in_irq());
+-
++	/* The last free_irq() has dropped the descriptor lock and synced IRQs. */
++	mutex_lock(&iop_irq_lock);
+ 	err = sif_rpc(&iop_irq_rpc, rpo_release_irq,
+ 		&arg, sizeof(arg),
+ 		&status, sizeof(status));
+-
+-	pr_debug("%s: err %d status %d\n", __func__, err, status);
++	if (err < 0 || status)
++		pr_warn("%s: relay release failed: RPC %d status %d\n",
++			__func__, err, status);
++	mutex_unlock(&iop_irq_lock);
+ }
+ 
+ #define IOP_IRQ_TYPE(irq_, name_)					\
+@@ -115,8 +116,8 @@
+ 		.irq = irq_,						\
+ 		.irq_chip = {						\
+ 			.name = name_,					\
+-			.irq_startup = iop_irq_startup,			\
+-			.irq_shutdown = iop_irq_shutdown,		\
++			.irq_request_resources = iop_irq_request_resources,			\
++			.irq_release_resources = iop_irq_release_resources,		\
+ 		}							\
+ 	}
+ 
+--- a/arch/mips/ps2/dmac-irq.c
++++ b/arch/mips/ps2/dmac-irq.c
+@@ -78,10 +78,6 @@
+ 	return IRQ_HANDLED;
+ }
+ 
+-static struct irqaction cascade_dmac_irqaction = {
+-	.name = "DMAC cascade",
+-	.handler = dmac_cascade,
+-};
+ 
+ int __init dmac_irq_init(void)
+ {
+@@ -94,7 +90,7 @@
+ 		irq_set_chip_and_handler(dmac_irqs[i].irq,
+ 			&dmac_irqs[i].irq_chip, handle_level_irq);
+ 
+-	err = setup_irq(IRQ_C0_DMAC, &cascade_dmac_irqaction);
++	err = request_irq(IRQ_C0_DMAC, dmac_cascade, IRQF_NO_THREAD, "DMAC cascade", NULL);
+ 	if (err)
+ 		pr_err("irq: Failed to setup DMAC IRQs (err = %d)\n", err);
+ 
+--- a/arch/mips/ps2/intc-irq.c
++++ b/arch/mips/ps2/intc-irq.c
+@@ -80,10 +80,6 @@
+ 	return status;
+ }
+ 
+-static struct irqaction cascade_intc_irqaction = {
+-	.name = "INTC cascade",
+-	.handler = intc_cascade,
+-};
+ 
+ void intc_sif_irq(unsigned int irq)
+ {
+@@ -110,7 +106,7 @@
+ 	irq_set_irq_type(IRQ_INTC_VB_ON, IRQ_TYPE_EDGE_RISING);
+ 	irq_set_irq_type(IRQ_INTC_VB_OFF, IRQ_TYPE_EDGE_FALLING);
+ 
+-	err = setup_irq(IRQ_C0_INTC, &cascade_intc_irqaction);
++	err = request_irq(IRQ_C0_INTC, intc_cascade, IRQF_NO_THREAD, "INTC cascade", NULL);
+ 	if (err)
+ 		pr_err("irq: Failed to setup INTC IRQs (err = %d)\n", err);
+ 
+--- a/arch/mips/ps2/time.c
++++ b/arch/mips/ps2/time.c
+@@ -144,7 +144,10 @@
+ 	timer0_clockevent_device.cpumask = cpumask_of(smp_processor_id());
+ 	clockevents_register_device(&timer0_clockevent_device);
+ 	timer0_irqaction.dev_id = &timer0_clockevent_device;
+-	setup_irq(IRQ_INTC_TIMER0, &timer0_irqaction);
++	if (request_irq(IRQ_INTC_TIMER0, timer0_irqaction.handler,
++			timer0_irqaction.flags, timer0_irqaction.name,
++			timer0_irqaction.dev_id))
++		panic("PS2: unable to register timer0 interrupt\n");
+ 
+ 	/* FIXME: Timer 1 is free and can also be configured as clock event source. */
+ 
+--- a/arch/mips/ps2/memory.c
++++ b/arch/mips/ps2/memory.c
+@@ -8,6 +8,7 @@
+ #include <linux/init.h>
+ #include <linux/ioport.h>
+ #include <linux/mm.h>
++#include <linux/memblock.h>
+ #include <linux/types.h>
+ 
+ #include <asm/bootinfo.h>
+@@ -38,9 +39,9 @@
+ 	iomem_resource.start = 0x00000000;
+ 	iomem_resource.end   = KSEG2 - 1;
+ 
+-	add_memory_region(0x00000000, 0x02000000, BOOT_MEM_RAM);
+-	add_memory_region(ROM0_BASE, ROM0_SIZE, BOOT_MEM_ROM_DATA);
+-	add_memory_region(ROM1_BASE, ROM1_SIZE, BOOT_MEM_ROM_DATA);
++	memblock_add(0x00000000, 0x02000000);
++	memblock_reserve(ROM0_BASE, ROM0_SIZE);
++	memblock_reserve(ROM1_BASE, ROM1_SIZE);
+ 
+ 	set_io_port_base(CKSEG1);	/* KSEG1 is uncached */
+ }
+--- a/arch/mips/ps2/reboot.c
++++ b/arch/mips/ps2/reboot.c
+@@ -17,7 +17,8 @@
+ {
+ 	scmd_power_off();
+ 
+-	cpu_relax_forever();
++	for (;;)
++		cpu_relax();
+ }
+ 
+ static int __init ps2_init_reboot(void)
+--- a/arch/mips/ps2/scmd.c
++++ b/arch/mips/ps2/scmd.c
+@@ -350,7 +350,7 @@
+ 	u8 status;
+ 	int err;
+ 
+-	rtc_time_to_tm(t + UTC_TO_JST, &tm);
++	rtc_time64_to_tm(t + UTC_TO_JST, &tm);
+ 	rtc.second = bin2bcd(tm.tm_sec);
+ 	rtc.minute = bin2bcd(tm.tm_min);
+ 	rtc.hour   = bin2bcd(tm.tm_hour);
+--- a/arch/mips/include/asm/stackframe.h
++++ b/arch/mips/include/asm/stackframe.h
+@@ -392,6 +392,58 @@
+ 		cfi_ld	sp, PT_R29, \docfi
+ 		.endm
+ 
++#ifdef CONFIG_CPU_R5900
++		/*
++		 * Reset bits 127..64 of 128-bit multimedia registers.
++		 *
++		 * Bits 127..64 are not used by the kernel but can be modified
++		 * by applications using the R5900 specific multimedia
++		 * instructions. Clearing them prevents leaking information
++		 * between processes. This is a provisional measure until full
++		 * 128-bit registers are saved/restored, possibly using SQ/LQ.
++		 */
++		.macro	RESET_MMR
++		.set	push
++		.set	noreorder
++		.set	noat
++		pcpyld	$1, $0, $1
++		pcpyld	$2, $0, $2
++		pcpyld	$3, $0, $3
++		pcpyld	$4, $0, $4
++		pcpyld	$5, $0, $5
++		pcpyld	$6, $0, $6
++		pcpyld	$7, $0, $7
++		pcpyld	$8, $0, $8
++		pcpyld	$9, $0, $9
++		pcpyld	$10, $0, $10
++		pcpyld	$11, $0, $11
++		pcpyld	$12, $0, $12
++		pcpyld	$13, $0, $13
++		pcpyld	$14, $0, $14
++		pcpyld	$15, $0, $15
++		pcpyld	$16, $0, $16
++		pcpyld	$17, $0, $17
++		pcpyld	$18, $0, $18
++		pcpyld	$19, $0, $19
++		pcpyld	$20, $0, $20
++		pcpyld	$21, $0, $21
++		pcpyld	$22, $0, $22
++		pcpyld	$23, $0, $23
++		pcpyld	$24, $0, $24
++		pcpyld	$25, $0, $25
++		pcpyld	$26, $0, $26
++		pcpyld	$27, $0, $27
++		pcpyld	$28, $0, $28
++		pcpyld	$29, $0, $29
++		pcpyld	$30, $0, $30
++		pcpyld	$31, $0, $31
++		.set	pop
++		.endm
++#else
++		.macro	RESET_MMR
++		.endm
++#endif
++
+ #if defined(CONFIG_CPU_R3000)
+ 
+ 		.macro	RESTORE_SOME docfi=0
+--- a/arch/mips/include/asm/cacheops.h
++++ b/arch/mips/include/asm/cacheops.h
+@@ -54,14 +54,20 @@
+ #define Hit_Invalidate_I		(Cache_I | Hit_Invalidate)
+ #define Hit_Invalidate_D		(Cache_D | Hit_Invalidate)
+ #define Hit_Writeback_Inv_D		(Cache_D | Hit_Writeback_Inv)
++#endif
+ 
+ /*
+  * R4000-specific cacheops
+  */
+ #define Create_Dirty_Excl_D		(Cache_D | 0x0c)
++#ifdef CONFIG_CPU_R5900
++#define Fill_I				0x0e
++#define Hit_Writeback_D			0x1c
++#else
+ #define Fill_I				(Cache_I | 0x14)
+ #define Hit_Writeback_I			(Cache_I | Hit_Writeback)
+ #define Hit_Writeback_D			(Cache_D | Hit_Writeback)
++#endif
+ 
+ /*
+  * R4000SC and R4400SC-specific cacheops
+--- a/arch/mips/include/asm/r4kcache.h
++++ b/arch/mips/include/asm/r4kcache.h
+@@ -42,7 +42,12 @@
+  *  - We need a properly sign extended address for 64-bit code.	 To get away
+  *    without ifdefs we let the compiler do it by a type cast.
+  */
++#ifdef CONFIG_CPU_R5900
++/* R5900 instruction-index operations require address bit31 clear. */
++#define INDEX_BASE	0
++#else
+ #define INDEX_BASE	CKSEG0
++#endif
+ 
+ #define _cache_op(insn, op, addr)					\
+ 	__asm__ __volatile__(						\
+@@ -57,52 +62,66 @@
+ #define cache_op(op, addr)						\
+ 	_cache_op(kernel_cache, op, addr)
+ 
++#ifdef CONFIG_CPU_R5900
++#define r5900_kernel_cache_d(op, base) \
++        "sync.l\n" kernel_cache(op, base) "sync.l\n"
++#define r5900_kernel_cache_i(op, base) \
++        "sync.p\n" kernel_cache(op, base) "sync.p\n"
++#define cache_op_d(op, addr) _cache_op(r5900_kernel_cache_d, op, addr)
++#define cache_op_i(op, addr) _cache_op(r5900_kernel_cache_i, op, addr)
++#else
++#define cache_op_d cache_op
++#define cache_op_i cache_op
++#endif
++#define cache_op_s cache_op
++#define cache_op_t cache_op
++
+ static inline void flush_icache_line_indexed(unsigned long addr)
+ {
+-	cache_op(Index_Invalidate_I, addr);
++	cache_op_i(Index_Invalidate_I, addr);
+ }
+ 
+ static inline void flush_dcache_line_indexed(unsigned long addr)
+ {
+-	cache_op(Index_Writeback_Inv_D, addr);
++	cache_op_d(Index_Writeback_Inv_D, addr);
+ }
+ 
+ static inline void flush_scache_line_indexed(unsigned long addr)
+ {
+-	cache_op(Index_Writeback_Inv_SD, addr);
++	cache_op_s(Index_Writeback_Inv_SD, addr);
+ }
+ 
+ static inline void flush_icache_line(unsigned long addr)
+ {
+ 	switch (boot_cpu_type()) {
+ 	case CPU_LOONGSON2EF:
+-		cache_op(Hit_Invalidate_I_Loongson2, addr);
++		cache_op_i(Hit_Invalidate_I_Loongson2, addr);
+ 		break;
+ 
+ 	default:
+-		cache_op(Hit_Invalidate_I, addr);
++		cache_op_i(Hit_Invalidate_I, addr);
+ 		break;
+ 	}
+ }
+ 
+ static inline void flush_dcache_line(unsigned long addr)
+ {
+-	cache_op(Hit_Writeback_Inv_D, addr);
++	cache_op_d(Hit_Writeback_Inv_D, addr);
+ }
+ 
+ static inline void invalidate_dcache_line(unsigned long addr)
+ {
+-	cache_op(Hit_Invalidate_D, addr);
++	cache_op_d(Hit_Invalidate_D, addr);
+ }
+ 
+ static inline void invalidate_scache_line(unsigned long addr)
+ {
+-	cache_op(Hit_Invalidate_SD, addr);
++	cache_op_s(Hit_Invalidate_SD, addr);
+ }
+ 
+ static inline void flush_scache_line(unsigned long addr)
+ {
+-	cache_op(Hit_Writeback_Inv_SD, addr);
++	cache_op_s(Hit_Writeback_Inv_SD, addr);
+ }
+ 
+ #ifdef CONFIG_EVA
+@@ -154,6 +173,38 @@
+ })
+ #endif
+ 
++#if defined(CONFIG_CPU_R5900) && !defined(CONFIG_EVA)
++#define __r5900_protected_cache_op(sync_insn, op, addr)				\
++({								\
++	int __err = 0;						\
++	__asm__ __volatile__(					\
++	"	.set	push			\n"		\
++	"	.set	noreorder		\n"		\
++	"	.set "MIPS_ISA_ARCH_LEVEL"	\n"		\
++	sync_insn "\n"					\
++	"1:	cache	%1, (%2)		\n"		\
++	sync_insn "\n"					\
++	"2:	.insn				\n"		\
++	"	.set	pop			\n"		\
++	"	.section .fixup,\"ax\"		\n"		\
++	"3:	li	%0, %3			\n"		\
++	"	j	2b			\n"		\
++	"	.previous			\n"		\
++	"	.section __ex_table,\"a\"	\n"		\
++	"	"STR(PTR_WD)" 1b, 3b		\n"		\
++	"	.previous"					\
++	: "+r" (__err)						\
++	: "i" (op), "r" (addr), "i" (-EFAULT));			\
++	__err;							\
++})
++#define protected_cache_op_d(op, addr) __r5900_protected_cache_op("sync.l", op, addr)
++#define protected_cache_op_i(op, addr) __r5900_protected_cache_op("sync.p", op, addr)
++#else
++#define protected_cache_op_d protected_cache_op
++#define protected_cache_op_i protected_cache_op
++#endif
++#define protected_cache_op_s protected_cache_op
++
+ /*
+  * The next two are for badland addresses like signal trampolines.
+  */
+@@ -161,10 +212,10 @@
+ {
+ 	switch (boot_cpu_type()) {
+ 	case CPU_LOONGSON2EF:
+-		return protected_cache_op(Hit_Invalidate_I_Loongson2, addr);
++		return protected_cache_op_i(Hit_Invalidate_I_Loongson2, addr);
+ 
+ 	default:
+-		return protected_cache_op(Hit_Invalidate_I, addr);
++		return protected_cache_op_i(Hit_Invalidate_I, addr);
+ 	}
+ }
+ 
+@@ -176,12 +227,12 @@
+  */
+ static inline int protected_writeback_dcache_line(unsigned long addr)
+ {
+-	return protected_cache_op(Hit_Writeback_Inv_D, addr);
++	return protected_cache_op_d(Hit_Writeback_Inv_D, addr);
+ }
+ 
+ static inline int protected_writeback_scache_line(unsigned long addr)
+ {
+-	return protected_cache_op(Hit_Writeback_Inv_SD, addr);
++	return protected_cache_op_s(Hit_Writeback_Inv_SD, addr);
+ }
+ 
+ /*
+@@ -189,7 +240,7 @@
+  */
+ static inline void invalidate_tcache_page(unsigned long addr)
+ {
+-	cache_op(Page_Invalidate_T, addr);
++	cache_op_t(Page_Invalidate_T, addr);
+ }
+ 
+ #define cache_unroll(times, insn, op, addr, lsize) do {			\
+@@ -197,8 +248,83 @@
+ 	unroll(times, _cache_op, insn, op, (addr) + (i++ * (lsize)));	\
+ } while (0)
+ 
++#ifdef CONFIG_CPU_R5900
++#define cache64_unroll32_d(base,op)					\
++	__asm__ __volatile__(						\
++	"	.set push					\n"	\
++	"	.set noreorder					\n"	\
++	"	.set mips3					\n"	\
++	"	sync.l						\n"	\
++	"	cache %1, 0x000(%0); sync.l; cache %1, 0x040(%0); sync.l	\n"	\
++	"	cache %1, 0x080(%0); sync.l; cache %1, 0x0c0(%0); sync.l	\n"	\
++	"	cache %1, 0x100(%0); sync.l; cache %1, 0x140(%0); sync.l	\n"	\
++	"	cache %1, 0x180(%0); sync.l; cache %1, 0x1c0(%0); sync.l	\n"	\
++	"	cache %1, 0x200(%0); sync.l; cache %1, 0x240(%0); sync.l	\n"	\
++	"	cache %1, 0x280(%0); sync.l; cache %1, 0x2c0(%0); sync.l	\n"	\
++	"	cache %1, 0x300(%0); sync.l; cache %1, 0x340(%0); sync.l	\n"	\
++	"	cache %1, 0x380(%0); sync.l; cache %1, 0x3c0(%0); sync.l	\n"	\
++	"	cache %1, 0x400(%0); sync.l; cache %1, 0x440(%0); sync.l	\n"	\
++	"	cache %1, 0x480(%0); sync.l; cache %1, 0x4c0(%0); sync.l	\n"	\
++	"	cache %1, 0x500(%0); sync.l; cache %1, 0x540(%0); sync.l	\n"	\
++	"	cache %1, 0x580(%0); sync.l; cache %1, 0x5c0(%0); sync.l	\n"	\
++	"	cache %1, 0x600(%0); sync.l; cache %1, 0x640(%0); sync.l	\n"	\
++	"	cache %1, 0x680(%0); sync.l; cache %1, 0x6c0(%0); sync.l	\n"	\
++	"	cache %1, 0x700(%0); sync.l; cache %1, 0x740(%0); sync.l	\n"	\
++	"	cache %1, 0x780(%0); sync.l; cache %1, 0x7c0(%0); sync.l	\n"	\
++	"	.set pop					\n"	\
++		:							\
++		: "r" (base),						\
++		  "i" (op));
++
++#define cache64_unroll32_i(base,op)					\
++	__asm__ __volatile__(						\
++	"	.set push					\n"	\
++	"	.set noreorder					\n"	\
++	"	.set mips3					\n"	\
++	"	sync.p						\n"	\
++	"	cache %1, 0x000(%0); cache %1, 0x040(%0)	\n"	\
++	"	cache %1, 0x080(%0); cache %1, 0x0c0(%0)	\n"	\
++	"	cache %1, 0x100(%0); cache %1, 0x140(%0)	\n"	\
++	"	cache %1, 0x180(%0); cache %1, 0x1c0(%0)	\n"	\
++	"	cache %1, 0x200(%0); cache %1, 0x240(%0)	\n"	\
++	"	cache %1, 0x280(%0); cache %1, 0x2c0(%0)	\n"	\
++	"	cache %1, 0x300(%0); cache %1, 0x340(%0)	\n"	\
++	"	cache %1, 0x380(%0); cache %1, 0x3c0(%0)	\n"	\
++	"	cache %1, 0x400(%0); cache %1, 0x440(%0)	\n"	\
++	"	cache %1, 0x480(%0); cache %1, 0x4c0(%0)	\n"	\
++	"	cache %1, 0x500(%0); cache %1, 0x540(%0)	\n"	\
++	"	cache %1, 0x580(%0); cache %1, 0x5c0(%0)	\n"	\
++	"	cache %1, 0x600(%0); cache %1, 0x640(%0)	\n"	\
++	"	cache %1, 0x680(%0); cache %1, 0x6c0(%0)	\n"	\
++	"	cache %1, 0x700(%0); cache %1, 0x740(%0)	\n"	\
++	"	cache %1, 0x780(%0); cache %1, 0x7c0(%0)	\n"	\
++	"	sync.p						\n"	\
++	"	.set pop					\n"	\
++		:							\
++		: "r" (base),						\
++		  "i" (op));
++#define cache_unroll32_d(op, addr, lsize) do { \
++        if ((lsize) == 64) { \
++                cache64_unroll32_d(addr, op); \
++        } else { \
++                cache_unroll(32, kernel_cache, op, addr, lsize); \
++        } \
++} while (0)
++#define cache_unroll32_i(op, addr, lsize) do { \
++        if ((lsize) == 64) { \
++                cache64_unroll32_i(addr, op); \
++        } else { \
++                cache_unroll(32, kernel_cache, op, addr, lsize); \
++        } \
++} while (0)
++#else
++#define cache_unroll32_d(op, addr, lsize) cache_unroll(32, kernel_cache, op, addr, lsize)
++#define cache_unroll32_i(op, addr, lsize) cache_unroll(32, kernel_cache, op, addr, lsize)
++#endif
++#define cache_unroll32_s(op, addr, lsize) cache_unroll(32, kernel_cache, op, addr, lsize)
++
+ /* build blast_xxx, blast_xxx_page, blast_xxx_page_indexed */
+-#define __BUILD_BLAST_CACHE(pfx, desc, indexop, hitop, lsize, extra)	\
++#define __BUILD_BLAST_CACHE(fn_pfx, pfx, desc, indexop, hitop, lsize, extra)	\
+ static inline void extra##blast_##pfx##cache##lsize(void)		\
+ {									\
+ 	unsigned long start = INDEX_BASE;				\
+@@ -210,7 +336,7 @@
+ 									\
+ 	for (ws = 0; ws < ws_end; ws += ws_inc)				\
+ 		for (addr = start; addr < end; addr += lsize * 32)	\
+-			cache_unroll(32, kernel_cache, indexop,		\
++			cache_unroll32##fn_pfx(indexop,		\
+ 				     addr | ws, lsize);			\
+ }									\
+ 									\
+@@ -220,7 +346,7 @@
+ 	unsigned long end = page + PAGE_SIZE;				\
+ 									\
+ 	do {								\
+-		cache_unroll(32, kernel_cache, hitop, start, lsize);	\
++		cache_unroll32##fn_pfx(hitop, start, lsize);	\
+ 		start += lsize * 32;					\
+ 	} while (start < end);						\
+ }									\
+@@ -237,30 +363,30 @@
+ 									\
+ 	for (ws = 0; ws < ws_end; ws += ws_inc)				\
+ 		for (addr = start; addr < end; addr += lsize * 32)	\
+-			cache_unroll(32, kernel_cache, indexop,		\
++			cache_unroll32##fn_pfx(indexop,		\
+ 				     addr | ws, lsize);			\
+ }
+ 
+-__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 16, )
+-__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 16, )
+-__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 16, )
+-__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 32, )
+-__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 32, )
+-__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I_Loongson2, 32, loongson2_)
+-__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 32, )
+-__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 64, )
+-__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 64, )
+-__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 64, )
+-__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 128, )
+-__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 128, )
+-__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 128, )
+-
+-__BUILD_BLAST_CACHE(inv_d, dcache, Index_Writeback_Inv_D, Hit_Invalidate_D, 16, )
+-__BUILD_BLAST_CACHE(inv_d, dcache, Index_Writeback_Inv_D, Hit_Invalidate_D, 32, )
+-__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 16, )
+-__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 32, )
+-__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 64, )
+-__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 128, )
++__BUILD_BLAST_CACHE(_d, d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 16, )
++__BUILD_BLAST_CACHE(_i, i, icache, Index_Invalidate_I, Hit_Invalidate_I, 16, )
++__BUILD_BLAST_CACHE(_s, s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 16, )
++__BUILD_BLAST_CACHE(_d, d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 32, )
++__BUILD_BLAST_CACHE(_i, i, icache, Index_Invalidate_I, Hit_Invalidate_I, 32, )
++__BUILD_BLAST_CACHE(_i, i, icache, Index_Invalidate_I, Hit_Invalidate_I_Loongson2, 32, loongson2_)
++__BUILD_BLAST_CACHE(_s, s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 32, )
++__BUILD_BLAST_CACHE(_d, d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 64, )
++__BUILD_BLAST_CACHE(_i, i, icache, Index_Invalidate_I, Hit_Invalidate_I, 64, )
++__BUILD_BLAST_CACHE(_s, s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 64, )
++__BUILD_BLAST_CACHE(_d, d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 128, )
++__BUILD_BLAST_CACHE(_i, i, icache, Index_Invalidate_I, Hit_Invalidate_I, 128, )
++__BUILD_BLAST_CACHE(_s, s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 128, )
++
++__BUILD_BLAST_CACHE(_d, inv_d, dcache, Index_Writeback_Inv_D, Hit_Invalidate_D, 16, )
++__BUILD_BLAST_CACHE(_d, inv_d, dcache, Index_Writeback_Inv_D, Hit_Invalidate_D, 32, )
++__BUILD_BLAST_CACHE(_s, inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 16, )
++__BUILD_BLAST_CACHE(_s, inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 32, )
++__BUILD_BLAST_CACHE(_s, inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 64, )
++__BUILD_BLAST_CACHE(_s, inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 128, )
+ 
+ #define __BUILD_BLAST_USER_CACHE(pfx, desc, indexop, hitop, lsize) \
+ static inline void blast_##pfx##cache##lsize##_user_page(unsigned long page) \
+@@ -301,17 +427,17 @@
+ 	}								\
+ }
+ 
+-__BUILD_BLAST_CACHE_RANGE(d, dcache, Hit_Writeback_Inv_D, protected_, )
+-__BUILD_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I, protected_, )
+-__BUILD_BLAST_CACHE_RANGE(s, scache, Hit_Writeback_Inv_SD, protected_, )
+-__BUILD_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I_Loongson2, \
++__BUILD_BLAST_CACHE_RANGE(_d, d, dcache, Hit_Writeback_Inv_D, protected_, )
++__BUILD_BLAST_CACHE_RANGE(_i, i, icache, Hit_Invalidate_I, protected_, )
++__BUILD_BLAST_CACHE_RANGE(_s, s, scache, Hit_Writeback_Inv_SD, protected_, )
++__BUILD_BLAST_CACHE_RANGE(_i, i, icache, Hit_Invalidate_I_Loongson2, \
+ 	protected_, loongson2_)
+-__BUILD_BLAST_CACHE_RANGE(d, dcache, Hit_Writeback_Inv_D, , )
+-__BUILD_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I, , )
+-__BUILD_BLAST_CACHE_RANGE(s, scache, Hit_Writeback_Inv_SD, , )
++__BUILD_BLAST_CACHE_RANGE(_d, d, dcache, Hit_Writeback_Inv_D, , )
++__BUILD_BLAST_CACHE_RANGE(_i, i, icache, Hit_Invalidate_I, , )
++__BUILD_BLAST_CACHE_RANGE(_s, s, scache, Hit_Writeback_Inv_SD, , )
+ /* blast_inv_dcache_range */
+-__BUILD_BLAST_CACHE_RANGE(inv_d, dcache, Hit_Invalidate_D, , )
+-__BUILD_BLAST_CACHE_RANGE(inv_s, scache, Hit_Invalidate_SD, , )
++__BUILD_BLAST_CACHE_RANGE(_d, inv_d, dcache, Hit_Invalidate_D, , )
++__BUILD_BLAST_CACHE_RANGE(_s, inv_s, scache, Hit_Invalidate_SD, , )
+ 
+ /* Currently, this is very specific to Loongson-3 */
+ #define __BUILD_BLAST_CACHE_NODE(pfx, desc, indexop, hitop, lsize)	\
+--- a/arch/mips/include/asm/vermagic.h
++++ b/arch/mips/include/asm/vermagic.h
+@@ -32,6 +32,8 @@
+ #define MODULE_PROC_FAMILY "R5000 "
+ #elif defined CONFIG_CPU_R5500
+ #define MODULE_PROC_FAMILY "R5500 "
++#elif defined CONFIG_CPU_R5900
++#define MODULE_PROC_FAMILY "R5900 "
+ #elif defined CONFIG_CPU_NEVADA
+ #define MODULE_PROC_FAMILY "NEVADA "
+ #elif defined CONFIG_CPU_R10000
+--- a/arch/mips/lib/memset.S
++++ b/arch/mips/lib/memset.S
+@@ -10,6 +10,7 @@
+  */
+ #include <linux/export.h>
+ #include <asm/asm.h>
++#include <asm/asmmacro.h>
+ #include <asm/asm-offsets.h>
+ #include <asm/regdef.h>
+ 
+--- a/arch/mips/boot/compressed/decompress.c
++++ b/arch/mips/boot/compressed/decompress.c
+@@ -34,7 +34,8 @@
+ 	puts(x);
+ 	puts("\n\n -- System halted");
+ 
+-	cpu_relax_forever();	/* Halt */
++	for (;;)
++		barrier();	/* Halt */
+ }
+ 
+ /* activate the code for pre-boot environment */
+--- a/arch/mips/boot/compressed/head.S
++++ b/arch/mips/boot/compressed/head.S
+@@ -21,6 +21,13 @@
+ 	move	s1, a1
+ 	move	s2, a2
+ 	move	s3, a3
++
++#ifdef CONFIG_CPU_R5900
++	/* Kernel mode, IE off, EE EIE on; loaders may start in user mode. */
++	li	k0, 0x30010000
++	mtc0	k0, $12
++	sync.p
++#endif
+ 
+ 	/* Clear BSS */
+ 	PTR_LA	a0, _edata
+--- a/arch/mips/kernel/unaligned.c
++++ b/arch/mips/kernel/unaligned.c
+@@ -203,7 +203,45 @@
+ 		break;
+ #endif
+ 	case spec3_op:
+-		if (insn.dsp_format.func == lx_op) {
++		if (IS_ENABLED(CONFIG_CPU_R5900)) {
++			/*
++			 * On the R5900, a valid RDHWR instruction
++			 *
++			 *     +--------+-------+----+----+-------+--------+
++			 *     | 011111 | 00000 | rt | rd | 00000 | 111011 |
++			 *     +--------+-------+----+----+-------+--------+
++			 *          6       5      5    5     5        6
++			 *
++			 * having rd $29 (MIPS_HWR_ULR) is interpreted as
++			 * the R5900 specific SQ instruction
++			 *
++			 *     +--------+-------+----+---------------------+
++			 *     | 011111 |  base | rt |        offset       |
++			 *     +--------+-------+----+---------------------+
++			 *          6       5      5            16
++			 *
++			 * being (where rd usually is $3)
++			 *
++			 *     sq v1,-6085(zero)
++			 *
++			 * that asserts an address exception since -6085(zero)
++			 * always resolves to 0xffffe83b in 32-bit KSEG2.
++			 *
++			 * Other legacy values of rd, such as MIPS_HWR_CPUNUM,
++			 * are ignored.
++			 */
++			if (insn.r_format.func == rdhwr_op &&
++			    insn.r_format.rd == MIPS_HWR_ULR &&
++			    insn.r_format.rs == 0 &&
++			    insn.r_format.re == 0) {
++				if (compute_return_epc(regs) < 0 ||
++				    simulate_rdhwr(regs, insn.r_format.rd,
++						   insn.r_format.rt) < 0)
++					goto sigill;
++				return;
++			}
++			goto sigbus;
++		} else if (insn.dsp_format.func == lx_op) {
+ 			switch (insn.dsp_format.op) {
+ 			case lwx_op:
+ 				if (user && !access_ok(addr, 4))
+--- a/arch/mips/include/asm/traps.h
++++ b/arch/mips/include/asm/traps.h
+@@ -46,6 +46,7 @@
+ asmlinkage void do_bp(struct pt_regs *regs);
+ asmlinkage void do_tr(struct pt_regs *regs);
+ asmlinkage void do_ri(struct pt_regs *regs);
++int simulate_rdhwr(struct pt_regs *regs, int rd, int rt);
+ asmlinkage void do_cpu(struct pt_regs *regs);
+ asmlinkage void do_msa_fpe(struct pt_regs *regs, unsigned int msacsr);
+ asmlinkage void do_msa(struct pt_regs *regs);

@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "lzip",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.lzip",
+  "symbol": "BR2_PACKAGE_LZIP",
+  "version": "1.26",
+  "recipe": "package/lzip/lzip.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "641cf30961525cbe3b340cc883436c8854e9f5032f459f444de4782b621e6572",
+      "filename": "lzip-1.26.tar.gz"
+    }
+  ],
+  "release_url": "https://download-mirror.savannah.nongnu.org/releases/lzip/"
+}

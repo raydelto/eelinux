@@ -1,0 +1,17 @@
+Subject: [PATCH] command line: pass an explicit truth value for the filter
+
+The curses bool ABI may use an integer type rather than C's _Bool.
+Compare the optional filter pointer explicitly instead of relying on a
+pointer-to-_Bool conversion at this call boundary.
+
+--- a/CommandLine.c
++++ b/CommandLine.c
+@@ -377,7 +377,7 @@
+    MainPanel* panel = MainPanel_new();
+    Machine_setTablesPanel(host, (Panel*) panel);
+ 
+-   MainPanel_updateLabels(panel, settings->ss->treeView, flags.commFilter);
++   MainPanel_updateLabels(panel, settings->ss->treeView, flags.commFilter != NULL);
+ 
+    State state = {
+       .host = host,

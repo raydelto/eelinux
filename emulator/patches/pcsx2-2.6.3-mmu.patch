@@ -1,0 +1,1014 @@
+--- a/pcsx2/R5900.h
++++ b/pcsx2/R5900.h
+@@ -4,6 +4,7 @@
+ #pragma once
+ 
+ #include "common/Pcsx2Defs.h"
++#include "R5900MMU.h"
+ 
+ #include <array>
+ 
+@@ -216,6 +217,10 @@
+ 	constexpr u32 Mask() const { return PageMask.Mask; }
+ 	constexpr bool isGlobal() const { return EntryLo0.G && EntryLo1.G; }
+ 	constexpr bool isSPR() const { return EntryLo0.S; }
++	constexpr bool matches(u32 address, u8 asid) const
++	{
++		return R5900::MMU::Matches(EntryHi.UL, PageMask.UL, isGlobal(), address, asid, isSPR());
++	}
+ 
+ 	constexpr bool operator==(const tlbs& other) const
+ 	{
+@@ -354,6 +359,7 @@
+ 
+ extern R5900cpu *Cpu;
+ extern R5900cpu intCpu;
++extern thread_local R5900::MMU::AccessContext cpuMemoryContext;
+ extern R5900cpu recCpu;
+ 
+ enum EE_intProcessStatus
+@@ -397,7 +403,10 @@
+ extern uint dmacInterrupt();
+ 
+ extern void cpuReset();
+-extern void cpuException(u32 code, u32 bd);
++extern int cpuFindTLBEntry(u32 address, u8 asid);
++extern void cpuException(u32 code, u32 bd, bool tlb_refill = true);
++extern void cpuAddressError(u32 addr, bool store, u32 bd);
++extern void cpuTlbModify(u32 addr, u32 bd);
+ extern void cpuTlbMissR(u32 addr, u32 bd);
+ extern void cpuTlbMissW(u32 addr, u32 bd);
+ extern void cpuTestHwInts();
+--- a/pcsx2/R5900.cpp
++++ b/pcsx2/R5900.cpp
+@@ -64,6 +64,7 @@
+ 	cachedTlbs.count = 0;
+ 
+ 	cpuRegs.pc				= 0xbfc00000; //set pc reg to stack
++	cpuRegs.CP0.n.Random	= 47; // Hardware upper bound; Wired resets to zero.
+ 	cpuRegs.CP0.n.Config	= 0x440;
+ 	cpuRegs.CP0.n.Status.val= 0x70400004; //0x10900000 <-- wrong; // COP0 enabled | BEV = 1 | TS = 1
+ 	cpuRegs.CP0.n.PRid		= 0x00002e20; // PRevID = Revision ID, same as R5900
+@@ -91,13 +92,24 @@
+ 	CBreakPoints::ClearSkipFirst();
+ }
+ 
+-__ri void cpuException(u32 code, u32 bd)
++int cpuFindTLBEntry(u32 address, u8 asid)
++{
++	for (int i = 0; i < 48; i++)
++	{
++		if (tlb[i].matches(address, asid))
++			return i;
++	}
++	return -1;
++}
++
++__ri void cpuException(u32 code, u32 bd, bool tlb_refill)
+ {
+ 	bool errLevel2, checkStatus;
+ 	u32 offset = 0;
+ 
+     cpuRegs.branch = 0;		// Tells the interpreter that an exception occurred during a branch.
+-	cpuRegs.CP0.n.Cause = code & 0xffff;
++	// A nested exception must not change the saved branch-delay indication.
++	cpuRegs.CP0.n.Cause = (cpuRegs.CP0.n.Cause & 0x80000000) | (code & 0xffff);
+ 
+ 	if(cpuRegs.CP0.n.Status.b.ERL == 0)
+ 	{
+@@ -105,12 +117,7 @@
+ 		errLevel2 = false;
+ 		checkStatus = (cpuRegs.CP0.n.Status.b.BEV == 0); //  for TLB/general exceptions
+ 
+-		if (((code & 0x7C) >= 0x8) && ((code & 0x7C) <= 0xC))
+-			offset = 0x0; //TLB Refill
+-		else if ((code & 0x7C) == 0x0)
+-			offset = 0x200; //Interrupt
+-		else
+-			offset = 0x180; // Everything else
++		offset = R5900::MMU::ExceptionOffset(code, tlb_refill, cpuRegs.CP0.n.Status.b.EXL);
+ 	}
+ 	else
+ 	{
+@@ -140,7 +147,7 @@
+ 		cpuRegs.CP0.n.Status.b.EXL = 1;
+ 		if (bd)
+ 		{
+-			Console.Warning("branch delay!!");
++			CPU_LOG("Branch delay exception at %08x", cpuRegs.pc);
+ 			cpuRegs.CP0.n.EPC = cpuRegs.pc - 4;
+ 			cpuRegs.CP0.n.Cause |= 0x80000000;
+ 		}
+@@ -164,6 +171,14 @@
+ 	cpuUpdateOperationMode();
+ }
+ 
++void cpuAddressError(u32 addr, bool store, u32 bd)
++{
++	cpuRegs.CP0.n.BadVAddr = addr;
++	// Interpreter fetch pre-increments PC before accessing instruction/data.
++	cpuRegs.pc -= 4;
++	cpuException(store ? 0x14 : 0x10, bd);
++}
++
+ void cpuTlbMiss(u32 addr, u32 bd, u32 excode)
+ {
+ 	// Avoid too much spamming on the interpreter
+@@ -172,13 +187,20 @@
+ 				cpuRegs.pc, cpuRegs.cycle, addr, cpuRegs.CP0.n.Status.val, excode);
+ 	}
+ 
++	// An invalid entry still matches its VPN2/ASID and uses the general vector.
++	// Check before replacing EntryHi with the faulting VPN2.
++	const bool refill = cpuFindTLBEntry(addr, static_cast<u8>(cpuRegs.CP0.n.EntryHi)) < 0;
+ 	cpuRegs.CP0.n.BadVAddr = addr;
+ 	cpuRegs.CP0.n.Context &= 0xFF80000F;
+ 	cpuRegs.CP0.n.Context |= (addr >> 9) & 0x007FFFF0;
+ 	cpuRegs.CP0.n.EntryHi = (addr & 0xFFFFE000) | (cpuRegs.CP0.n.EntryHi & 0x1FFF);
+ 
+ 	cpuRegs.pc -= 4;
+-	cpuException(excode, bd);
++	cpuException(excode, bd, refill);
++}
++
++void cpuTlbModify(u32 addr, u32 bd) {
++	cpuTlbMiss(addr, bd, EXC_CODE_Mod);
+ }
+ 
+ void cpuTlbMissR(u32 addr, u32 bd) {
+--- a/pcsx2/COP0.cpp
++++ b/pcsx2/COP0.cpp
+@@ -363,8 +363,8 @@
+ 	// Non-SPR entries default to uncached on reserved cache modes.
+ 	if (tlb[i].isSPR())
+ 	{
+-		tlb[i].EntryLo0.C = 3;
+-		tlb[i].EntryLo1.C = 3;
++		tlb[i].EntryLo0.C = 2;
++		tlb[i].EntryLo1.C = 2;
+ 	}
+ 	else
+ 	{
+@@ -440,9 +440,9 @@
+ 	{
+ 		const u8 j = cpuRegs.CP0.n.Random & 0x3f;
+ 
+-		if (j > 47)
+-		{
+-			Console.Warning("TLBWR with random > 47! (%d)", j);
++		if (!R5900::MMU::RandomIndexWritable(j, cpuRegs.CP0.n.Wired))
++		{
++			Console.Warning("TLBWR outside the unwired TLB range! (%d)", j);
+ 			return;
+ 		}
+ 
+@@ -456,33 +456,9 @@
+ 
+ 	void TLBP()
+ 	{
+-		int i;
+-
+-		union
+-		{
+-			struct
+-			{
+-				u32 VPN2 : 19;
+-				u32 VPN2X : 2;
+-				u32 G : 3;
+-				u32 ASID : 8;
+-			} s;
+-			u32 u;
+-		} EntryHi32;
+-
+-		EntryHi32.u = cpuRegs.CP0.n.EntryHi;
+-
+-		cpuRegs.CP0.n.Index = 0xFFFFFFFF;
+-		for (i = 0; i < 48; i++)
+-		{
+-			if (tlb[i].VPN2() == ((~tlb[i].Mask()) & (EntryHi32.s.VPN2)) && ((tlb[i].isGlobal()) || ((tlb[i].EntryHi.ASID & 0xff) == EntryHi32.s.ASID)))
+-			{
+-				cpuRegs.CP0.n.Index = i;
+-				break;
+-			}
+-		}
+-		if (cpuRegs.CP0.n.Index == 0xFFFFFFFF)
+-			cpuRegs.CP0.n.Index = 0x80000000;
++		const int index = cpuFindTLBEntry(cpuRegs.CP0.n.EntryHi,
++			static_cast<u8>(cpuRegs.CP0.n.EntryHi));
++		cpuRegs.CP0.n.Index = index < 0 ? 0x80000000 : static_cast<u32>(index);
+ 	}
+ 
+ 	void MFC0()
+@@ -543,6 +519,13 @@
+ 		//if(bExecBIOS == FALSE && _Rd_ == 25) Console.WriteLn("MTC0 _Rd_ %x = %x", _Rd_, cpuRegs.CP0.r[_Rd_]);
+ 		switch (_Rd_)
+ 		{
++			case 1: // Random is read-only.
++				break;
++
++			case 6: // Writing Wired resets Random, including its phase.
++				cpuRegs.CP0.n.Wired = cpuRegs.GPR.r[_Rt_].UL[0] & 0x3f;
++				cpuRegs.CP0.n.Random = 47;
++				break;
+ 			case 9:
+ 				cpuRegs.lastCOP0Cycle = cpuRegs.cycle;
+ 				cpuRegs.CP0.r[9] = cpuRegs.GPR.r[_Rt_].UL[0];
+--- a/pcsx2/Interpreter.cpp
++++ b/pcsx2/Interpreter.cpp
+@@ -22,6 +22,7 @@
+ static std::string disOut;
+ static bool intExitExecution = false;
+ static fastjmp_buf intJmpBuf;
++thread_local R5900::MMU::AccessContext cpuMemoryContext = R5900::MMU::AccessContext::Host;
+ static u32 intLastBranchTo;
+ 
+ void intEventTest();
+@@ -152,6 +153,8 @@
+ 
+ static void execI()
+ {
++	const auto previousMemoryContext = cpuMemoryContext;
++	cpuMemoryContext = R5900::MMU::AccessContext::Host;
+ 	// execI is called for every instruction so it must remains as light as possible.
+ 	// If you enable the next define, Interpreter will be much slower (around
+ 	// ~4fps on 3.9GHz Haswell vs ~8fps (even 10fps on dev build))
+@@ -173,8 +176,16 @@
+ 	// and it expects the PC counter to be pre-incremented
+ 	cpuRegs.pc += 4;
+ 
+-	// interprete instruction
+-	cpuRegs.code = memRead32( pc );
++	if (pc & 3) [[unlikely]]
++	{
++		cpuAddressError(pc, false, cpuRegs.branch);
++		Cpu->CancelInstruction();
++	}
++
++	// Architectural fetch and data references use the active guest MMU.
++	cpuMemoryContext = R5900::MMU::AccessContext::Fetch;
++	cpuRegs.code = memRead32(pc);
++	cpuMemoryContext = R5900::MMU::AccessContext::Data;
+ 
+ 	const OPCODE& opcode = GetCurrentInstruction();
+ #if 0
+@@ -213,7 +224,10 @@
+ 
+ 	cpuBlockCycles += opcode.cycles * (2 - ((cpuRegs.CP0.n.Config >> 18) & 0x1));
+ 
++	// Random decrements for each executed instruction, including delay slots.
++	cpuRegs.CP0.n.Random = R5900::MMU::NextRandom(cpuRegs.CP0.n.Random, cpuRegs.CP0.n.Wired);
+ 	opcode.interpret();
++	cpuMemoryContext = previousMemoryContext;
+ }
+ 
+ static __fi void _doBranch_shared(u32 tar)
+@@ -555,14 +569,18 @@
+ 
+ void intEventTest()
+ {
+-	// Perform counters, ints, and IOP updates:
++	// Device/event callbacks are host accesses, not guest instructions.
++	const auto previousMemoryContext = cpuMemoryContext;
++	cpuMemoryContext = R5900::MMU::AccessContext::Host;
+ 	_cpuEventTest_Shared();
++	cpuMemoryContext = previousMemoryContext;
+ 
+ 	if (intExitExecution)
+ 	{
+ 		intExitExecution = false;
+ 		if (CHECK_EEREC)
+ 			writebackCache();
++		cpuMemoryContext = R5900::MMU::AccessContext::Host;
+ 		fastjmp_jmp(&intJmpBuf, 1);
+ 	}
+ }
+@@ -577,13 +595,15 @@
+ 	{
+ 		if (CHECK_EEREC)
+ 			writebackCache();
++		cpuMemoryContext = R5900::MMU::AccessContext::Host;
+ 		fastjmp_jmp(&intJmpBuf, 1);
+ 	}
+ }
+ 
+ static void intCancelInstruction()
+ {
+-	// See execute function.
++	// fastjmp does not unwind C++ scopes; reset the context explicitly.
++	cpuMemoryContext = R5900::MMU::AccessContext::Host;
+ 	fastjmp_jmp(&intJmpBuf, 0);
+ }
+ 
+@@ -591,7 +611,9 @@
+ {
+ 	// This will come back as zero the first time it runs, or on instruction cancel.
+ 	// It will come back as nonzero when we exit execution.
+-	if (fastjmp_set(&intJmpBuf) != 0)
++	const int exitExecution = fastjmp_set(&intJmpBuf);
++	cpuMemoryContext = R5900::MMU::AccessContext::Host;
++	if (exitExecution != 0)
+ 		return;
+ 
+ 	for (;;)
+--- a/pcsx2/vtlb.cpp
++++ b/pcsx2/vtlb.cpp
+@@ -161,31 +161,100 @@
+ // --------------------------------------------------------------------------------------
+ // See recVTLB.cpp for the dynarec versions.
+ 
++// Enforce segment privileges before either pointer or handler access.
++// External tools use the separate vtlb_ramRead/memSafeRead interfaces.
++static __fi void CheckInterpreterAddress(u32 address, bool store)
++{
++	if (Cpu == &intCpu && cpuMemoryContext != R5900::MMU::AccessContext::Host &&
++		!R5900::MMU::AddressAllowed(address, cpuRegs.CP0.n.Status.val))
++	{
++		cpuAddressError(address, store, cpuRegs.branch);
++		Cpu->CancelInstruction();
++	}
++}
++
++static thread_local bool guestPhysicalCacheable;
++
++VTLBVirtual vtlb_ResolveInterpreterMapping(u32 address, bool store, bool* cached)
++{
++	const bool guest = Cpu == &intCpu && cpuMemoryContext != R5900::MMU::AccessContext::Host;
++	if (!guest)
++	{
++		*cached = CheckCache(address);
++		return vtlbdata.vmap[address >> VTLB_PAGE_BITS];
++	}
++	CheckInterpreterAddress(address, store);
++	const auto result = R5900::MMU::Resolve(address, cpuRegs.CP0.n.Status.val, cpuRegs.CP0.n.Config,
++		static_cast<u8>(cpuRegs.CP0.n.EntryHi), store, [](unsigned index) {
++			return R5900::MMU::Entry{tlb[index].PageMask.UL, tlb[index].EntryHi.UL,
++				tlb[index].EntryLo0.UL, tlb[index].EntryLo1.UL};
++		});
++	using R5900::MMU::Translation;
++	if (result.kind == Translation::AddressError)
++		cpuAddressError(address, store, cpuRegs.branch);
++	else if (result.kind == Translation::Refill || result.kind == Translation::Invalid)
++	{
++		if (store) cpuTlbMissW(address, cpuRegs.branch);
++		else cpuTlbMissR(address, cpuRegs.branch);
++	}
++	else if (result.kind == Translation::Modified)
++		cpuTlbModify(address, cpuRegs.branch);
++	else
++	{
++		*cached = guestPhysicalCacheable = result.cache_mode == 3 && (cpuRegs.CP0.n.Config & 0x10000);
++		const u32 virtualPage = address & ~VTLB_PAGE_MASK;
++		if (result.kind == Translation::Scratchpad)
++			return VTLBVirtual::fromPointer(reinterpret_cast<uptr>(eeMem->Scratch) +
++				(result.physical & ~VTLB_PAGE_MASK), virtualPage);
++		const u32 physicalPage = result.physical & ~VTLB_PAGE_MASK;
++		const auto physical = result.physical < VTLB_PMAP_SZ ? vtlbdata.pmap[result.physical >> VTLB_PAGE_BITS] :
++			VTLBPhysical::fromHandler(UnmappedPhyHandler);
++		return VTLBVirtual(physical, physicalPage, virtualPage);
++	}
++	// No pointer, cache or device access is allowed after a translation fault.
++	Cpu->CancelInstruction();
++	return VTLBVirtual(); // CancelInstruction does not return.
++}
++
++static bool CacheablePhysicalAccess(u32 address)
++{
++	return Cpu == &intCpu && cpuMemoryContext != R5900::MMU::AccessContext::Host ?
++		guestPhysicalCacheable : CheckCache(address);
++}
++
++static uptr InvalidPhysicalCacheKey(u32 address)
++{
++	// A physical handler key is a cache tag only; validPFN=false forbids dereference.
++	return VTLBVirtual(VTLBPhysical::fromHandler(UnmappedPhyHandler), address & ~VTLB_PAGE_MASK,
++		address & ~VTLB_PAGE_MASK).assumePtr(address);
++}
++
+ template <typename DataType>
+ DataType vtlb_memRead(u32 addr)
+ {
+ 	static const uint DataSize = sizeof(DataType) * 8;
+-	auto vmv = vtlbdata.vmap[addr >> VTLB_PAGE_BITS];
++	bool cached;
++	auto vmv = vtlb_ResolveInterpreterMapping(addr, false, &cached);
+ 
+ 	if (!vmv.isHandler(addr))
+ 	{
+ 		if (!CHECK_EEREC)
+ 		{
+-			if (CHECK_CACHE && CheckCache(addr))
++			if (CHECK_CACHE && cached)
+ 			{
+ 				switch (DataSize)
+ 				{
+ 					case 8:
+-						return readCache8(addr);
++						return readCache8(addr, true, vmv.assumePtr(addr));
+ 						break;
+ 					case 16:
+-						return readCache16(addr);
++						return readCache16(addr, true, vmv.assumePtr(addr));
+ 						break;
+ 					case 32:
+-						return readCache32(addr);
++						return readCache32(addr, true, vmv.assumePtr(addr));
+ 						break;
+ 					case 64:
+-						return readCache64(addr);
++						return readCache64(addr, true, vmv.assumePtr(addr));
+ 						break;
+ 
+ 						jNO_DEFAULT;
+@@ -220,15 +289,16 @@
+ 
+ RETURNS_R128 vtlb_memRead128(u32 mem)
+ {
+-	auto vmv = vtlbdata.vmap[mem >> VTLB_PAGE_BITS];
++	bool cached;
++	auto vmv = vtlb_ResolveInterpreterMapping(mem, false, &cached);
+ 
+ 	if (!vmv.isHandler(mem))
+ 	{
+ 		if (!CHECK_EEREC)
+ 		{
+-			if (CHECK_CACHE && CheckCache(mem))
++			if (CHECK_CACHE && cached)
+ 			{
+-				return readCache128(mem);
++				return readCache128(mem, true, vmv.assumePtr(mem));
+ 			}
+ 		}
+ 
+@@ -247,28 +317,28 @@
+ void vtlb_memWrite(u32 addr, DataType data)
+ {
+ 	static const uint DataSize = sizeof(DataType) * 8;
+-
+-	auto vmv = vtlbdata.vmap[addr >> VTLB_PAGE_BITS];
++	bool cached;
++	auto vmv = vtlb_ResolveInterpreterMapping(addr, true, &cached);
+ 
+ 	if (!vmv.isHandler(addr))
+ 	{
+ 		if (!CHECK_EEREC)
+ 		{
+-			if (CHECK_CACHE && CheckCache(addr))
++			if (CHECK_CACHE && cached)
+ 			{
+ 				switch (DataSize)
+ 				{
+ 					case 8:
+-						writeCache8(addr, data);
++						writeCache8(addr, data, true, vmv.assumePtr(addr));
+ 						return;
+ 					case 16:
+-						writeCache16(addr, data);
++						writeCache16(addr, data, true, vmv.assumePtr(addr));
+ 						return;
+ 					case 32:
+-						writeCache32(addr, data);
++						writeCache32(addr, data, true, vmv.assumePtr(addr));
+ 						return;
+ 					case 64:
+-						writeCache64(addr, data);
++						writeCache64(addr, data, true, vmv.assumePtr(addr));
+ 						return;
+ 				}
+ 			}
+@@ -287,16 +357,17 @@
+ 
+ void TAKES_R128 vtlb_memWrite128(u32 mem, r128 value)
+ {
+-	auto vmv = vtlbdata.vmap[mem >> VTLB_PAGE_BITS];
++	bool cached;
++	auto vmv = vtlb_ResolveInterpreterMapping(mem, true, &cached);
+ 
+ 	if (!vmv.isHandler(mem))
+ 	{
+ 		if (!CHECK_EEREC)
+ 		{
+-			if (CHECK_CACHE && CheckCache(mem))
++			if (CHECK_CACHE && cached)
+ 			{
+ 				alignas(16) const u128 r = r128_to_u128(value);
+-				writeCache128(mem, &r);
++				writeCache128(mem, &r, true, vmv.assumePtr(mem));
+ 				return;
+ 			}
+ 		}
+@@ -517,6 +588,8 @@
+ 		GoemonTlbMissDebug();
+ 
+ 	// Hack to handle expected tlb miss by some games.
++	if (Cpu == &intCpu && cpuMemoryContext == R5900::MMU::AccessContext::Host)
++		return; // A debugger/PINE access must never jump into the guest CPU loop.
+ 	if (Cpu == &intCpu)
+ 	{
+ 		if (mode)
+@@ -549,6 +622,8 @@
+ // time of the exception.
+ static __ri void vtlb_BusError(u32 addr, u32 mode)
+ {
++	if (Cpu == &intCpu && cpuMemoryContext == R5900::MMU::AccessContext::Host)
++		return;
+ 	const std::string message(fmt::format("Bus Error, addr=0x{:x} [{}]", addr, mode ? "store" : "load"));
+ 	if (EmuConfig.Cpu.Recompiler.PauseOnTLBMiss)
+ 	{
+@@ -574,33 +649,33 @@
+ template <typename OperandType>
+ static OperandType vtlbUnmappedPReadSm(u32 addr) {
+ 	vtlb_BusError(addr, 0);
+-	if (!CHECK_EEREC && CHECK_CACHE && CheckCache(addr)){
++	if (!CHECK_EEREC && CHECK_CACHE && CacheablePhysicalAccess(addr)){
+ 		switch (sizeof(OperandType)) {
+-			case 1: return readCache8(addr, false);
+-			case 2: return readCache16(addr, false);
+-			case 4: return readCache32(addr, false);
+-			case 8: return readCache64(addr, false);
++			case 1: return readCache8(addr, false, InvalidPhysicalCacheKey(addr));
++			case 2: return readCache16(addr, false, InvalidPhysicalCacheKey(addr));
++			case 4: return readCache32(addr, false, InvalidPhysicalCacheKey(addr));
++			case 8: return readCache64(addr, false, InvalidPhysicalCacheKey(addr));
+ 			default: pxFail("Invalid data size for unmapped physical cache load");
+ 		}
+ 	}
+ 	return 0;
+ }
+-static RETURNS_R128 vtlbUnmappedPReadLg(u32 addr) { vtlb_BusError(addr, 0); if (!CHECK_EEREC && CHECK_CACHE && CheckCache(addr)){ return readCache128(addr, false); } return r128_zero(); }
++static RETURNS_R128 vtlbUnmappedPReadLg(u32 addr) { vtlb_BusError(addr, 0); if (!CHECK_EEREC && CHECK_CACHE && CacheablePhysicalAccess(addr)){ return readCache128(addr, false, InvalidPhysicalCacheKey(addr)); } return r128_zero(); }
+ 
+ template <typename OperandType>
+ static void vtlbUnmappedPWriteSm(u32 addr, OperandType data) {
+ 	vtlb_BusError(addr, 1);
+-	if (!CHECK_EEREC && CHECK_CACHE && CheckCache(addr)) {
++	if (!CHECK_EEREC && CHECK_CACHE && CacheablePhysicalAccess(addr)) {
+ 		switch (sizeof(OperandType)) {
+-			case 1: writeCache8(addr, data, false); break;
+-			case 2: writeCache16(addr, data, false); break;
+-			case 4: writeCache32(addr, data, false); break;
+-			case 8: writeCache64(addr, data, false); break;
++			case 1: writeCache8(addr, data, false, InvalidPhysicalCacheKey(addr)); break;
++			case 2: writeCache16(addr, data, false, InvalidPhysicalCacheKey(addr)); break;
++			case 4: writeCache32(addr, data, false, InvalidPhysicalCacheKey(addr)); break;
++			case 8: writeCache64(addr, data, false, InvalidPhysicalCacheKey(addr)); break;
+ 			default: pxFail("Invalid data size for unmapped physical cache store");
+ 		}
+ 	}
+ }
+-static void TAKES_R128 vtlbUnmappedPWriteLg(u32 addr, r128 data) { vtlb_BusError(addr, 1); if (!CHECK_EEREC && CHECK_CACHE && CheckCache(addr)) { writeCache128(addr, reinterpret_cast<mem128_t*>(&data) /*Safe??*/, false); }}
++static void TAKES_R128 vtlbUnmappedPWriteLg(u32 addr, r128 data) { vtlb_BusError(addr, 1); if (!CHECK_EEREC && CHECK_CACHE && CacheablePhysicalAccess(addr)) { writeCache128(addr, reinterpret_cast<mem128_t*>(&data) /*Safe??*/, false, InvalidPhysicalCacheKey(addr)); }}
+ // clang-format on
+ 
+ // --------------------------------------------------------------------------------------
+--- a/pcsx2/R5900OpcodeImpl.cpp
++++ b/pcsx2/R5900OpcodeImpl.cpp
+@@ -258,8 +258,14 @@
+ 	Int_COP2PrintTable[_Rs_]();
+ }
+ 
+-void Unknown() {
++void Unknown()
++{
+ 	CPU_LOG("%8.8lx: Unknown opcode called", cpuRegs.pc);
++	// The R5900 raises RI for unsupported instructions, including LL/SC.
++	// Guest kernels may emulate them; do not execute them as silent no-ops.
++	cpuRegs.pc -= 4;
++	cpuException(0x28, cpuRegs.branch);
++	Cpu->CancelInstruction();
+ }
+ 
+ void MMI_Unknown() { Console.Warning("Unknown MMI opcode called"); }
+@@ -509,11 +515,7 @@
+ 
+ __noinline static void RaiseAddressError(u32 addr, bool store)
+ {
+-	const std::string message(fmt::format("Address Error, addr=0x{:x} [{}]", addr, store ? "store" : "load"));
+-
+-	// TODO: This doesn't actually get raised in the CPU yet.
+-	Console.Error(message);
+-
++	cpuAddressError(addr, store, cpuRegs.branch);
+ 	Cpu->CancelInstruction();
+ }
+ 
+@@ -905,7 +907,7 @@
+ // This function is the only one that uses Sifcmd.h in Pcsx2.
+ #include "Sifcmd.h"
+ 
+-void SYSCALL()
++static void HandleBIOSSyscall()
+ {
+ 	u8 call;
+ 
+@@ -1205,6 +1207,19 @@
+ 	cpuException(0x20, cpuRegs.branch);
+ }
+ 
++void SYSCALL()
++{
++	if (EmuConfig.Cpu.EnableBIOSHLE)
++	{
++		HandleBIOSSyscall();
++		return;
++	}
++	// With interception disabled, every SYSCALL reaches the guest exception handler.
++	// The instruction itself does not decode service registers or access memory.
++	cpuRegs.pc -= 4;
++	cpuException(0x20, cpuRegs.branch);
++}
++
+ void BREAK() {
+ 	cpuRegs.pc -= 4;
+ 	cpuException(0x24, cpuRegs.branch);
+--- a/pcsx2/IopIrq.cpp
++++ b/pcsx2/IopIrq.cpp
+@@ -24,7 +24,10 @@
+ 
+ void usbInterrupt()
+ {
+-	iopIntcIrq(22);
++	// The delayed event may outlive the OHCI interrupt output.
++	// Recheck after acknowledgment, masking, reset or device shutdown.
++	if (USB::IRQPending())
++		iopIntcIrq(22);
+ }
+ 
+ void usbIrq(int cycles)
+--- a/pcsx2/USB/USB.h
++++ b/pcsx2/USB/USB.h
+@@ -83,6 +83,9 @@
+ 	/// Reads a device-specific configuration string.
+ 	std::string GetConfigString(SettingsInterface& si, u32 port, const char* devname, const char* key, const char* default_value = "");
+ 
++	/// Returns the current OHCI interrupt output, including its master enable.
++	bool IRQPending();
++
+ 	/// Handles loading/saving save state.
+ 	bool DoState(StateWrapper& sw);
+ } // namespace USB
+--- a/pcsx2/USB/USB.cpp
++++ b/pcsx2/USB/USB.cpp
+@@ -46,6 +46,12 @@
+ int64_t g_usb_frame_time = 0;
+ int64_t g_usb_bit_time = 0;
+ int64_t g_usb_last_cycle = 0;
++
++bool USB::IRQPending()
++{
++	return s_qemu_ohci && (s_qemu_ohci->intr & OHCI_INTR_MIE) &&
++		(s_qemu_ohci->intr_status & s_qemu_ohci->intr);
++}
+ 
+ std::string USB::GetConfigSection(int port)
+ {
+--- a/pcsx2/Cache.h
++++ b/pcsx2/Cache.h
+@@ -11,13 +11,13 @@
+ // Dumps all dirty cache entries to memory
+ // This is necessary to fix a bug when enabled the recompiler while the cache was enabled.
+ void writebackCache();
+-void writeCache8(u32 mem, u8 value, bool validPFN = true);
+-void writeCache16(u32 mem, u16 value, bool validPFN = true);
+-void writeCache32(u32 mem, u32 value, bool validPFN = true);
+-void writeCache64(u32 mem, const u64 value, bool validPFN = true);
+-void writeCache128(u32 mem, const mem128_t* value, bool validPFN = true);
+-u8 readCache8(u32 mem, bool validPFN = true);
+-u16 readCache16(u32 mem, bool validPFN = true);
+-u32 readCache32(u32 mem, bool validPFN = true);
+-u64 readCache64(u32 mem, bool validPFN = true);
+-RETURNS_R128 readCache128(u32 mem, bool validPFN = true);
++void writeCache8(u32 mem, u8 value, bool validPFN = true, uptr translatedPointer = 0);
++void writeCache16(u32 mem, u16 value, bool validPFN = true, uptr translatedPointer = 0);
++void writeCache32(u32 mem, u32 value, bool validPFN = true, uptr translatedPointer = 0);
++void writeCache64(u32 mem, const u64 value, bool validPFN = true, uptr translatedPointer = 0);
++void writeCache128(u32 mem, const mem128_t* value, bool validPFN = true, uptr translatedPointer = 0);
++u8 readCache8(u32 mem, bool validPFN = true, uptr translatedPointer = 0);
++u16 readCache16(u32 mem, bool validPFN = true, uptr translatedPointer = 0);
++u32 readCache32(u32 mem, bool validPFN = true, uptr translatedPointer = 0);
++u64 readCache64(u32 mem, bool validPFN = true, uptr translatedPointer = 0);
++RETURNS_R128 readCache128(u32 mem, bool validPFN = true, uptr translatedPointer = 0);
+--- a/pcsx2/Cache.cpp
++++ b/pcsx2/Cache.cpp
+@@ -202,17 +202,17 @@
+ 	return check(0) || check(1);
+ }
+ 
+-static int getFreeCache(u32 mem, int* way, bool validPFN)
++static int getFreeCache(u32 mem, int* way, bool validPFN, uptr translatedPointer)
+ {
+ 	const int setIdx = cache.setIdxFor(mem);
+ 	CacheSet& set = cache.sets[setIdx];
+ 	VTLBVirtual vmv = vtlbdata.vmap[mem >> VTLB_PAGE_BITS];
+ 
+ 	*way = set.tags[0].lrf() ^ set.tags[1].lrf();
+-	if (validPFN)
++	if (validPFN && !translatedPointer)
+ 		pxAssertMsg(!vmv.isHandler(mem), "Cache currently only supports non-handler addresses!");
+ 
+-	uptr ppf = vmv.assumePtr(mem);
++	uptr ppf = translatedPointer ? translatedPointer : vmv.assumePtr(mem);
+ 
+ 	[[unlikely]]
+ 	if ((cpuRegs.CP0.n.Config & 0x10000) == 0)
+@@ -262,10 +262,10 @@
+ }
+ 
+ template <bool Write, int Bytes>
+-void* prepareCacheAccess(u32 mem, int* way, int* idx, bool validPFN = true)
++void* prepareCacheAccess(u32 mem, int* way, int* idx, bool validPFN = true, uptr translatedPointer = 0)
+ {
+ 	*way = 0;
+-	*idx = getFreeCache(mem, way, validPFN);
++	*idx = getFreeCache(mem, way, validPFN, translatedPointer);
+ 	CacheLine line = cache.lineAt(*idx, *way);
+ 	if (Write)
+ 		line.tag.setDirty();
+@@ -274,49 +274,49 @@
+ }
+ 
+ template <typename Int>
+-void writeCache(u32 mem, Int value, bool validPFN)
++void writeCache(u32 mem, Int value, bool validPFN, uptr translatedPointer)
+ {
+ 	int way, idx;
+-	void* addr = prepareCacheAccess<true, sizeof(Int)>(mem, &way, &idx, validPFN);
++	void* addr = prepareCacheAccess<true, sizeof(Int)>(mem, &way, &idx, validPFN, translatedPointer);
+ 
+ 	CACHE_LOG("writeCache%d %8.8x adding to %d, way %d, value %llx", 8 * sizeof(value), mem, idx, way, value);
+ 	*reinterpret_cast<Int*>(addr) = value;
+ }
+ 
+-void writeCache8(u32 mem, u8 value, bool validPFN)
+-{
+-	writeCache<u8>(mem, value, validPFN);
+-}
+-
+-void writeCache16(u32 mem, u16 value, bool validPFN)
+-{
+-	writeCache<u16>(mem, value, validPFN);
+-}
+-
+-void writeCache32(u32 mem, u32 value, bool validPFN)
+-{
+-	writeCache<u32>(mem, value, validPFN);
+-}
+-
+-void writeCache64(u32 mem, const u64 value, bool validPFN)
+-{
+-	writeCache<u64>(mem, value, validPFN);
+-}
+-
+-void writeCache128(u32 mem, const mem128_t* value, bool validPFN)
++void writeCache8(u32 mem, u8 value, bool validPFN, uptr translatedPointer)
++{
++	writeCache<u8>(mem, value, validPFN, translatedPointer);
++}
++
++void writeCache16(u32 mem, u16 value, bool validPFN, uptr translatedPointer)
++{
++	writeCache<u16>(mem, value, validPFN, translatedPointer);
++}
++
++void writeCache32(u32 mem, u32 value, bool validPFN, uptr translatedPointer)
++{
++	writeCache<u32>(mem, value, validPFN, translatedPointer);
++}
++
++void writeCache64(u32 mem, const u64 value, bool validPFN, uptr translatedPointer)
++{
++	writeCache<u64>(mem, value, validPFN, translatedPointer);
++}
++
++void writeCache128(u32 mem, const mem128_t* value, bool validPFN, uptr translatedPointer)
+ {
+ 	int way, idx;
+-	void* addr = prepareCacheAccess<true, sizeof(mem128_t)>(mem, &way, &idx, validPFN);
++	void* addr = prepareCacheAccess<true, sizeof(mem128_t)>(mem, &way, &idx, validPFN, translatedPointer);
+ 
+ 	CACHE_LOG("writeCache128 %8.8x adding to %d, way %x, lo %llx, hi %llx", mem, idx, way, value->lo, value->hi);
+ 	*reinterpret_cast<mem128_t*>(addr) = *value;
+ }
+ 
+ template <typename Int>
+-Int readCache(u32 mem, bool validPFN)
++Int readCache(u32 mem, bool validPFN, uptr translatedPointer)
+ {
+ 	int way, idx;
+-	void* addr = prepareCacheAccess<false, sizeof(Int)>(mem, &way, &idx, validPFN);
++	void* addr = prepareCacheAccess<false, sizeof(Int)>(mem, &way, &idx, validPFN, translatedPointer);
+ 
+ 	Int value = *reinterpret_cast<Int*>(addr);
+ 	CACHE_LOG("readCache%d %8.8x from %d, way %d, value %llx", 8 * sizeof(value), mem, idx, way, value);
+@@ -324,30 +324,30 @@
+ }
+ 
+ 
+-u8 readCache8(u32 mem, bool validPFN)
+-{
+-	return readCache<u8>(mem, validPFN);
+-}
+-
+-u16 readCache16(u32 mem, bool validPFN)
+-{
+-	return readCache<u16>(mem, validPFN);
+-}
+-
+-u32 readCache32(u32 mem, bool validPFN)
+-{
+-	return readCache<u32>(mem, validPFN);
+-}
+-
+-u64 readCache64(u32 mem, bool validPFN)
+-{
+-	return readCache<u64>(mem, validPFN);
+-}
+-
+-RETURNS_R128 readCache128(u32 mem, bool validPFN)
++u8 readCache8(u32 mem, bool validPFN, uptr translatedPointer)
++{
++	return readCache<u8>(mem, validPFN, translatedPointer);
++}
++
++u16 readCache16(u32 mem, bool validPFN, uptr translatedPointer)
++{
++	return readCache<u16>(mem, validPFN, translatedPointer);
++}
++
++u32 readCache32(u32 mem, bool validPFN, uptr translatedPointer)
++{
++	return readCache<u32>(mem, validPFN, translatedPointer);
++}
++
++u64 readCache64(u32 mem, bool validPFN, uptr translatedPointer)
++{
++	return readCache<u64>(mem, validPFN, translatedPointer);
++}
++
++RETURNS_R128 readCache128(u32 mem, bool validPFN, uptr translatedPointer)
+ {
+ 	int way, idx;
+-	void* addr = prepareCacheAccess<false, sizeof(mem128_t)>(mem, &way, &idx, validPFN);
++	void* addr = prepareCacheAccess<false, sizeof(mem128_t)>(mem, &way, &idx, validPFN, translatedPointer);
+ 	r128 value = r128_load(addr);
+ 	u64* vptr = reinterpret_cast<u64*>(&value);
+ 	CACHE_LOG("readCache128 %8.8x from %d, way %d, lo %llx, hi %llx", mem, idx, way, vptr[0], vptr[1]);
+@@ -359,7 +359,8 @@
+ {
+ 	const int index = cache.setIdxFor(addr);
+ 	CacheSet& set = cache.sets[index];
+-	VTLBVirtual vmv = vtlbdata.vmap[addr >> VTLB_PAGE_BITS];
++	bool cached;
++	VTLBVirtual vmv = vtlb_ResolveInterpreterMapping(addr, false, &cached);
+ 	uptr ppf = vmv.assumePtr(addr);
+ 	int way;
+ 
+--- a/pcsx2/vtlb.h
++++ b/pcsx2/vtlb.h
+@@ -246,3 +246,6 @@
+ 	u32 key; // uniq number attached to an allocation
+ 	u32 unk5;
+ };
++
++// Guest references use the active ASID/V/D; host references retain manual mappings.
++extern vtlb_private::VTLBVirtual vtlb_ResolveInterpreterMapping(u32 address, bool store, bool* cached);
+--- a/pcsx2/Config.h
++++ b/pcsx2/Config.h
+@@ -661,7 +661,8 @@
+ 	{
+ 		BITFIELD32()
+ 		bool
+-			ExtraMemory : 1;
++			ExtraMemory : 1,
++			EnableBIOSHLE : 1; // Optional BIOS syscall interception; BIOS execution is unaffected.
+ 		BITFIELD_END
+ 
+ 		RecompilerOptions Recompiler;
+--- a/pcsx2/Pcsx2Config.cpp
++++ b/pcsx2/Pcsx2Config.cpp
+@@ -589,7 +589,7 @@
+ 
+ bool Pcsx2Config::CpuOptions::operator==(const CpuOptions& right) const
+ {
+-	return OpEqu(FPUFPCR) && OpEqu(FPUDivFPCR) && OpEqu(VU0FPCR) && OpEqu(VU1FPCR) && OpEqu(Recompiler);
++	return OpEqu(FPUFPCR) && OpEqu(FPUDivFPCR) && OpEqu(VU0FPCR) && OpEqu(VU1FPCR) && OpEqu(Recompiler) && OpEqu(EnableBIOSHLE);
+ }
+ 
+ Pcsx2Config::CpuOptions::CpuOptions()
+@@ -603,6 +603,7 @@
+ 	VU0FPCR = DEFAULT_VU_FP_CONTROL_REGISTER;
+ 	VU1FPCR = DEFAULT_VU_FP_CONTROL_REGISTER;
+ 	ExtraMemory = false;
++	EnableBIOSHLE = true;
+ }
+ 
+ void Pcsx2Config::CpuOptions::ApplySanityCheck()
+@@ -632,6 +633,7 @@
+ 	read_fpcr(VU1FPCR, "VU1");
+ 
+ 	SettingsWrapBitBool(ExtraMemory);
++	SettingsWrapBitBool(EnableBIOSHLE);
+ 
+ 	Recompiler.LoadSave(wrap);
+ }
+--- /dev/null
++++ b/pcsx2/R5900MMU.h
+@@ -0,0 +1,99 @@
++// SPDX-License-Identifier: GPL-3.0+
++// R5900/TX79 TLB matching, level-1 vectors and interpreter Random semantics.
++#pragma once
++
++#include <cstdint>
++
++namespace R5900::MMU
++{
++	// EXL/ERL force kernel mode regardless of Status.KSU.
++	constexpr bool AddressAllowed(std::uint32_t address, std::uint32_t status)
++	{
++		if ((status & 0x06) || (status & 0x18) == 0)
++			return true;
++		if ((status & 0x18) == 0x08) // Supervisor: kuseg and ksseg.
++			return address < 0x80000000 || (address >= 0xc0000000 && address < 0xe0000000);
++		return address < 0x80000000; // User; reserved KSU=3 has no extra privileges.
++	}
++
++	constexpr bool Matches(std::uint32_t entry_hi, std::uint32_t page_mask,
++		bool global, std::uint32_t address, std::uint8_t asid, bool scratchpad = false)
++	{
++		const std::uint32_t pair_mask = scratchpad ? 0x3fff : ((page_mask & 0x01ffe000) | 0x1fff);
++		return (entry_hi & ~pair_mask) == (address & ~pair_mask) &&
++			(global || static_cast<std::uint8_t>(entry_hi) == asid);
++	}
++
++	constexpr std::uint32_t ExceptionOffset(std::uint32_t code, bool refill, bool exl)
++	{
++		if (exl)
++			return 0x180;
++		const std::uint32_t exception = code & 0x7c;
++		if ((exception == 0x08 || exception == 0x0c) && refill)
++			return 0x000;
++		return exception == 0 ? 0x200 : 0x180;
++	}
++
++	constexpr std::uint32_t NextRandom(std::uint32_t current, std::uint32_t wired)
++	{
++		return current <= (wired & 0x3f) || current > 47 ? 47 : current - 1;
++	}
++
++	constexpr bool RandomIndexWritable(std::uint32_t index, std::uint32_t wired)
++	{
++		return index < 48 && index >= (wired & 0x3f);
++	}
++	// Raw entries keep this resolver independent of emulator storage/layout.
++	struct Entry
++	{
++		std::uint32_t mask, hi, lo0, lo1;
++	};
++
++	enum class AccessContext { Host, Fetch, Data };
++	enum class Translation { Physical, Scratchpad, AddressError, Refill, Invalid, Modified };
++	struct Resolution
++	{
++		Translation kind;
++		std::uint32_t physical;
++		std::uint8_t cache_mode;
++		int index;
++	};
++
++	// The caller checks faults before accessing either memory, cache or MMIO.
++	template <typename ReadEntry>
++	constexpr Resolution Resolve(std::uint32_t address, std::uint32_t status,
++		std::uint32_t config, std::uint8_t asid, bool store, ReadEntry read_entry,
++		unsigned count = 48)
++	{
++		if (!AddressAllowed(address, status))
++			return {Translation::AddressError, 0, 2, -1};
++		if ((status & 4) && address < 0x80000000) // ERL: direct, uncached kuseg.
++			return {Translation::Physical, address, 2, -1};
++		if (address >= 0x80000000 && address < 0xa0000000)
++			return {Translation::Physical, address & 0x1fffffff, static_cast<std::uint8_t>(config & 7), -1};
++		if (address >= 0xa0000000 && address < 0xc0000000)
++			return {Translation::Physical, address & 0x1fffffff, 2, -1};
++		for (unsigned index = 0; index < count; ++index)
++		{
++			const Entry entry = read_entry(index);
++			const bool scratchpad = (entry.lo0 & 0x80000000) != 0;
++			const bool global = (entry.lo0 & entry.lo1 & 1) != 0;
++			if (!Matches(entry.hi, entry.mask, global, address, asid, scratchpad))
++				continue;
++			// SPR spans 16 KiB; both halves must have equal V/D on hardware.
++			const std::uint32_t half_mask = scratchpad ? 0x1fff :
++				(((entry.mask & 0x01ffe000) | 0x1fff) >> 1);
++			const std::uint32_t lo = (address & (half_mask + 1)) ? entry.lo1 : entry.lo0;
++			if (!(lo & 2))
++				return {Translation::Invalid, 0, 2, static_cast<int>(index)};
++			if (store && !(lo & 4))
++				return {Translation::Modified, 0, 2, static_cast<int>(index)};
++			if (scratchpad)
++				return {Translation::Scratchpad, address & 0x3fff, 2, static_cast<int>(index)};
++			const std::uint32_t physical = (((lo & 0x03ffffc0) << 6) & ~half_mask) |
++				(address & half_mask);
++			return {Translation::Physical, physical, static_cast<std::uint8_t>((lo >> 3) & 7), static_cast<int>(index)};
++		}
++		return {Translation::Refill, 0, 2, -1};
++	}
++}

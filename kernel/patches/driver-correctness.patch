@@ -1,0 +1,227 @@
+--- a/drivers/ps2/iop-module-request.c
++++ b/drivers/ps2/iop-module-request.c
+@@ -1062,9 +1062,9 @@
+ 		pr_warn("sif: Failed to patch IOP with %d\n", err);
+ 
+ 	iop_module_device = root_device_register("iop-module");
+-	if (!iop_module_device) {
++	if (IS_ERR(iop_module_device)) {
+ 		pr_err("iop-module: Failed to register root device\n");
+-		return -ENOMEM;
++		return PTR_ERR(iop_module_device);
+ 	}
+ 
+ 	err = sif_request_cmd(SIF_CMD_PRINTK, cmd_printk, NULL);
+--- a/drivers/usb/host/ohci-ps2.c
++++ b/drivers/usb/host/ohci-ps2.c
+@@ -2,7 +2,7 @@
+ /*
+  * PlayStation 2 USB 1.1 OHCI host controller (HCD)
+  *
+- * Copyright (C) 2017 JÃ¼rgen Urban
++ * Copyright (C) 2017 Jürgen Urban
+  * Copyright (C) 2018 Fredrik Noring
+  */
+ 
+@@ -167,8 +167,8 @@
+ 	hcd->rsrc_start = regs->start;
+ 	hcd->rsrc_len = resource_size(regs);
+ 	hcd->regs = ioremap(hcd->rsrc_start, hcd->rsrc_len);
+-	if (IS_ERR(hcd->regs)) {
+-		err = PTR_ERR(hcd->regs);
++	if (!hcd->regs) {
++		err = -ENOMEM;
+ 		dev_err(dev, "ioremap failed with %d\n", err);
+ 		goto err_ioremap;
+ 	}
+@@ -259,6 +259,6 @@
+ 
+ MODULE_DESCRIPTION(DRIVER_DESC);
+ MODULE_AUTHOR("Fredrik Noring");
+-MODULE_AUTHOR("JÃ¼rgen Urban");
++MODULE_AUTHOR("Jürgen Urban");
+ MODULE_LICENSE("GPL");
+ MODULE_ALIAS("platform:" DRV_NAME);
+--- a/drivers/gpu/drm/gs/gs_drm.c
++++ b/drivers/gpu/drm/gs/gs_drm.c
+@@ -325,7 +325,8 @@
+ {
+ 	printk("drm: %s\n", __func__);
+ 
+-	return 0;	/* FIXME */
++	/* Buffer allocation and GS upload are not implemented yet. */
++	return -EOPNOTSUPP;
+ }
+ 
+ static struct drm_driver gs_driver = {
+@@ -695,8 +696,8 @@
+ 
+ static int gs_remove(struct platform_device *pdev)
+ {
+-	struct drm_device *dev = platform_get_drvdata(pdev);
+-	struct gs_device *gs = dev->dev_private;
++	struct gs_device *gs = platform_get_drvdata(pdev);
++	struct drm_device *dev = gs ? &gs->dev : NULL;
+ 	int err = 0;
+ 
+ 	printk("drm: %s\n", __func__);
+@@ -705,16 +706,20 @@
+ 		drm_fb_helper_fbdev_teardown(dev);
+ 		drm_dev_unregister(dev);
+ 		drm_mode_config_cleanup(dev);
+-		drm_dev_put(dev);
+-	}
++	}
++
++	if (!gs)
++		return 0;
+ 
+ 	if (!gif_wait()) {
+-		dev_err(dev->dev, "Failed to complete GIF DMA transfer\n");
++		dev_err(&pdev->dev, "Failed to complete GIF DMA transfer\n");
+ 		err = -EBUSY;
++		/* DMAC still owns this page: retain it rather than free live DMA. */
++	} else {
++		free_page((unsigned long)gs->ps2par.package.buffer);
+ 	}
+ 	enable_irq(IRQ_DMAC_GIF);
+-
+-	free_page((unsigned long)gs->ps2par.package.buffer);
++	drm_dev_put(dev);
+ 
+ 	return err;
+ }
+--- a/drivers/video/fbdev/ps2fb.c
++++ b/drivers/video/fbdev/ps2fb.c
+@@ -2364,22 +2364,26 @@
+ static int ps2fb_remove(struct platform_device *pdev)
+ {
+ 	struct fb_info *info = platform_get_drvdata(pdev);
+-	struct ps2fb_par *par = info->par;
++	struct ps2fb_par *par;
+ 	int err = 0;
+ 
+-	if (info != NULL) {
+-		unregister_framebuffer(info);
+-		fb_dealloc_cmap(&info->cmap);
+-
+-		framebuffer_release(info);
+-	}
+-
++	if (!info)
++		return 0;
++	par = info->par;
++	unregister_framebuffer(info);
++
++	/* info->par and the log device remain valid until DMA has drained. */
+ 	if (!gif_wait()) {
+-		fb_err(info, "Failed to complete GIF DMA transfer\n");
++		dev_err(&pdev->dev, "Failed to complete GIF DMA transfer\n");
+ 		err = -EBUSY;
++		/* DMAC still owns this page: retain it rather than free live DMA. */
++	} else {
++		free_page((unsigned long)par->package.buffer);
+ 	}
+ 	enable_irq(IRQ_DMAC_GIF);
+-	free_page((unsigned long)par->package.buffer);
++	fb_dealloc_cmap(&info->cmap);
++	platform_set_drvdata(pdev, NULL);
++	framebuffer_release(info);
+ 
+ 	return err;
+ }
+--- a/drivers/tty/serial/ps2_uart.c
++++ b/drivers/tty/serial/ps2_uart.c
+@@ -184,7 +184,6 @@
+ static int ps2_uart_startup(struct uart_port *port)
+ {
+ 	/* Create timer for transmit */
+-	timer_setup(&ps2_uart_dev->timer, ps2_uart_timer, 0);
+ 	mod_timer(&ps2_uart_dev->timer, jiffies + DELAY_TIME_MS * HZ / 1000);
+ 
+ 	return 0;
+@@ -193,7 +192,7 @@
+ static void ps2_uart_shutdown(struct uart_port *port)
+ {
+ 	/* Stop timer */
+-	del_timer(&ps2_uart_dev->timer);
++	del_timer_sync(&ps2_uart_dev->timer);
+ }
+ 
+ static const char *ps2_uart_type(struct uart_port *port)
+@@ -298,10 +297,13 @@
+ static int ps2_uart_probe(struct platform_device *dev)
+ {
+ 	int result;
++	ps2_uart_dev->port.dev = &dev->dev;
+ 	result = uart_add_one_port(&ps2_uart_driver, &ps2_uart_dev->port);
+ 	if (result != 0) {
+ 		pr_err(PS2_UART_DRIVER_NAME ": Failed to register UART port\n");
+ 	}
++	if (!result)
++		platform_set_drvdata(dev, &ps2_uart_dev->port);
+ 	return result;
+ }
+ 
+@@ -309,8 +311,9 @@
+ {
+ 	struct uart_port *port = platform_get_drvdata(dev);
+ 
+-	uart_remove_one_port(&ps2_uart_driver, port);
+-	kfree(port);
++	if (port)
++		uart_remove_one_port(&ps2_uart_driver, port);
++	platform_set_drvdata(dev, NULL);
+ 
+ 	return 0;
+ }
+@@ -336,6 +339,7 @@
+ 		return -ENOMEM;
+ 	}
+ 
++	timer_setup(&ps2_uart_dev->timer, ps2_uart_timer, 0);
+ 	result = uart_register_driver(&ps2_uart_driver);
+ 	if (result != 0) {
+ 		pr_err(PS2_UART_DRIVER_NAME
+@@ -349,12 +353,17 @@
+ 		pr_err(PS2_UART_DRIVER_NAME
+ 		       ": Failed to alloc platform device\n");
+ 		uart_unregister_driver(&ps2_uart_driver);
++		kfree(ps2_uart_dev);
+ 		return -ENOMEM;
+ 	}
+ 
+ 	result = platform_device_add(ps2_uart_plat_devs);
+-	if (result)
++	if (result) {
+ 		platform_device_put(ps2_uart_plat_devs);
++		uart_unregister_driver(&ps2_uart_driver);
++		kfree(ps2_uart_dev);
++		return result;
++	}
+ 
+ 	ps2_uart_dev->port.line = 0;
+ 	ps2_uart_dev->port.ops = &ps2_uart_ops;
+@@ -365,7 +374,9 @@
+ 	if (result != 0) {
+ 		pr_err(PS2_UART_DRIVER_NAME
+ 		       ": Failed to register platform driver\n");
++		platform_device_unregister(ps2_uart_plat_devs);
+ 		uart_unregister_driver(&ps2_uart_driver);
++		kfree(ps2_uart_dev);
+ 	}
+ 
+ 	pr_info(PS2_UART_DRIVER_NAME ": module loaded\n");
+@@ -376,9 +387,11 @@
+ void __exit ps2_uart_exit(void)
+ {
+ 	platform_driver_unregister(&ps2_uart_platform_driver);
++	platform_device_unregister(ps2_uart_plat_devs);
+ 	uart_unregister_driver(&ps2_uart_driver);
+ 	del_timer_sync(&ps2_uart_dev->timer);
+-	kfree(&ps2_uart_dev);
++	kfree(ps2_uart_dev);
++	ps2_uart_dev = NULL;
+ 
+ 	pr_info(PS2_UART_DRIVER_NAME ": module unloaded\n");
+ };

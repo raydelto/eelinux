@@ -1,0 +1,294 @@
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_gs_texture.c
+@@ -0,0 +1,47 @@
++/* SPDX-License-Identifier: MIT */
++#define _POSIX_C_SOURCE 200809L
++#include "ps2_gs_texture.h"
++#include <errno.h>
++#include <sys/ioctl.h>
++#include <time.h>
++_Static_assert(sizeof(struct ps2gs_texture_vertex) == 28, "texture vertex ABI");
++_Static_assert(sizeof(struct ps2gs_texture_triangle) == 100, "texture triangle ABI");
++_Static_assert(sizeof(struct ps2gs_texture_submit) == 40, "texture submit ABI");
++static int fail(struct ps2_render_client *r, int error)
++{
++    if (!r->gs->error) r->gs->error = error;
++    r->count = 0; errno = r->gs->error; return -1;
++}
++int ps2_texture_triangles(struct ps2_render_client *r, uint32_t texture_handle,
++                          const struct ps2gs_texture_triangle *triangles, unsigned count)
++{
++    const struct ps2_surface *color = ps2_surface_lookup(r->gs, r->target);
++    const struct ps2_surface *texture = texture_handle ? ps2_surface_lookup(r->gs, texture_handle) : NULL;
++    if (r->gs->error) return fail(r, r->gs->error);
++    if (!(r->gs->caps.features & PS2GS_HW_TEXTURE)) return fail(r, ENOTSUP);
++    if (!color || !texture || color == texture || !triangles || !count || count > 64 ||
++        texture->width > 1024 || texture->height > 1024) return fail(r, EINVAL);
++    for (unsigned i = 0; i < count; ++i) {
++        const struct ps2gs_texture_triangle *t = &triangles[i];
++        if ((t->flags & ~(PS2GS_DEPTH_TEST | PS2GS_TEXTURE_MODULATE)) ||
++            t->reserved[0] || t->reserved[1] || t->reserved[2] ||
++            ((t->flags & PS2GS_DEPTH_TEST) && !r->depth)) return fail(r, EINVAL);
++        for (unsigned j = 0; j < 3; ++j) {
++            const struct ps2gs_texture_vertex *v = &t->v[j];
++            if (v->q < 0x39800000 || v->q > 0x45800000 || v->s > v->q || v->t > v->q ||
++                v->position.x > color->width * 16 || v->position.y > color->height * 16 ||
++                v->position.z > 65535) return fail(r, EINVAL);
++        }
++    }
++    if (ps2_render_flush(r)) return -1;
++    struct ps2gs_texture_submit submit = { .abi = PS2GS_ABI_VERSION, .target = r->target,
++        .depth = r->depth, .texture = texture_handle, .count = count, .width = color->width,
++        .height = color->height, .bits_per_pixel = color->bits_per_pixel, .triangles = (uintptr_t)triangles };
++    for (unsigned attempt = 0; attempt < 100; ++attempt) {
++        if (!ioctl(r->gs->fd, PS2GS_TEXTURE_SUBMIT, &submit)) return 0;
++        if (errno != EAGAIN) return fail(r, errno);
++        struct timespec delay = {.tv_nsec = 10000000};
++        while (nanosleep(&delay, &delay)) if (errno != EINTR) return fail(r, errno);
++    }
++    return fail(r, EAGAIN);
++}
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_gs_texture.h
+@@ -0,0 +1,10 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_GS_TEXTURE_CLIENT_H
++#define PS2_GS_TEXTURE_CLIENT_H
++#include "ps2_gs_render.h"
++#include "ps2-gs-texture.h"
++/* Synchronous sampling on the same exclusive file. Fences queued rendering
++ * first. No raw GS addresses, CPU rasterization or retries after effects. */
++int ps2_texture_triangles(struct ps2_render_client *, uint32_t texture,
++                         const struct ps2gs_texture_triangle *, unsigned count);
++#endif
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2-gs-texture.h
+@@ -0,0 +1,31 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_TEXTURE_H
++#define _UAPI_PS2_GS_TEXTURE_H
++#include "ps2-gs-render.h"
++#define PS2GS_HW_TEXTURE (1U << 7)
++#define PS2GS_TEXTURE_MODULATE (1U << 1)
++/* STQ are positive IEEE-754 binary32 bit patterns, not kernel floats.
++ * S/Q and T/Q are normalized to TEX0's rounded power-of-two size, in [0,1];
++ * Q is bounded to [2^-12,2^12]. Logical region clamp bounds NPOT sampling.
++ * RGB level-zero CT16/CT32, nearest sampling, logical region clamp.
++ * RGB replace or modulate; no texture alpha, blending, mipmaps or shaders.
++ */
++struct ps2gs_texture_vertex {
++	struct ps2gs_vertex position;
++	__u32 s, t, q;
++};
++struct ps2gs_texture_triangle {
++	__u32 flags, reserved[3];
++	struct ps2gs_texture_vertex v[3];
++};
++struct ps2gs_texture_submit {
++	__u32 abi, target, depth, texture;
++	__u32 count, width, height, bits_per_pixel;
++	__aligned_u64 triangles;
++};
++/* texture must be a nonzero color handle owned by this file and must differ
++ * from target. Texture dimensions are <=1024. All triangles are snapshotted
++ * and checked before drawing; each packet invalidates the GS texture cache.
++ */
++#define PS2GS_TEXTURE_SUBMIT _IOW('G', 0x7a, struct ps2gs_texture_submit)
++#endif
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_sampler.c
+@@ -0,0 +1,91 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_sampler.h"
++#include "pipe/p_context.h"
++#include "util/u_inlines.h"
++#include <errno.h>
++#include <math.h>
++#include <stdlib.h>
++#include <string.h>
++struct ps2_sampler_view { struct pipe_sampler_view base; struct ps2_render_client *owner; };
++int ps2_sampler_state_supported(const struct pipe_sampler_state *s)
++{
++    return s && s->wrap_s == PIPE_TEX_WRAP_CLAMP_TO_EDGE && s->wrap_t == PIPE_TEX_WRAP_CLAMP_TO_EDGE &&
++        s->min_img_filter == PIPE_TEX_FILTER_NEAREST && s->mag_img_filter == PIPE_TEX_FILTER_NEAREST &&
++        s->min_mip_filter == PIPE_TEX_MIPFILTER_NONE && !s->compare_mode && !s->unnormalized_coords &&
++        s->max_anisotropy <= 1 && !s->seamless_cube_map && !s->reduction_mode &&
++        !s->lod_bias && isfinite(s->min_lod) && isfinite(s->max_lod) && s->min_lod <= s->max_lod;
++}
++struct pipe_sampler_view *ps2_sampler_view_create(struct pipe_context *ctx, struct ps2_render_client *r,
++    struct pipe_resource *texture, const struct pipe_sampler_view *t)
++{
++    if (!ctx || !ctx->sampler_view_destroy || !r || !texture || !t || ctx->screen != texture->screen ||
++        texture->target != PIPE_TEXTURE_2D || !(texture->bind & PIPE_BIND_SAMPLER_VIEW) ||
++        texture->width0 > 1024 || texture->height0 > 1024 || t->target != PIPE_TEXTURE_2D ||
++        t->format != texture->format || (t->format != PIPE_FORMAT_R8G8B8X8_UNORM &&
++        t->format != PIPE_FORMAT_R5G5B5X1_UNORM) || t->is_tex2d_from_buf ||
++        t->u.tex.first_level || t->u.tex.last_level || t->u.tex.first_layer || t->u.tex.last_layer ||
++        t->swizzle_r != PIPE_SWIZZLE_X || t->swizzle_g != PIPE_SWIZZLE_Y ||
++        t->swizzle_b != PIPE_SWIZZLE_Z || t->swizzle_a != PIPE_SWIZZLE_1 ||
++        ((struct ps2_resource*)texture)->owner != r->gs || !(r->gs->caps.features & PS2GS_HW_TEXTURE)) {
++        errno = ENOTSUP; return NULL;
++    }
++    struct ps2_sampler_view *view = calloc(1, sizeof(*view));
++    if (!view) return NULL;
++    view->base = *t; view->base.texture = NULL; view->base.context = ctx; view->owner = r;
++    pipe_reference_init(&view->base.reference, 1);
++    pipe_resource_reference(&view->base.texture, texture);
++    return &view->base;
++}
++void ps2_sampler_view_destroy(struct pipe_context *ctx, struct pipe_sampler_view *base)
++{
++    if (!base) return;
++    struct ps2_sampler_view *view = (struct ps2_sampler_view*)base;
++    (void)ctx;
++    ps2_render_flush(view->owner);
++    pipe_resource_reference(&base->texture, NULL); free(view);
++}
++int ps2_sampler_upload(struct ps2_render_client *r, struct pipe_resource *texture, const struct pipe_box *box,
++                       const void *pixels, size_t bytes, size_t stride)
++{
++    if (!texture || ((struct ps2_resource*)texture)->owner != r->gs) { errno = EXDEV; return -1; }
++    if (ps2_render_flush(r)) return -1;
++    return ps2_resource_upload(texture, 0, box, pixels, bytes, stride);
++}
++static int fail(struct ps2_render_target *t, int error)
++{
++    if (!t || !t->render || !t->render->gs) { errno = error; return -1; }
++    if (!t->render->gs->error) t->render->gs->error = error;
++    t->render->count = 0; errno = t->render->gs->error; return -1;
++}
++static unsigned channel(float v) { return v <= 0 ? 0 : v >= 1 ? 128 : (unsigned)(v*128 + 0.5f); }
++static uint32_t bits(float value) { uint32_t result; memcpy(&result, &value, sizeof(result)); return result; }
++static float coordinate_scale(unsigned size)
++{
++    unsigned padded=1; while (padded<size) padded*=2;
++    return (float)size/padded;
++}
++int ps2_sampler_triangle(struct ps2_render_target *t, struct pipe_sampler_view *view,
++    const struct pipe_sampler_state *state, const float p[3][4], const float uv[3][2],
++    const float color[3][4], int modulate, int depth_test)
++{
++    if (!t || !t->render || !t->color || !view || !p || !uv || !color ||
++        ((struct ps2_sampler_view*)view)->owner != t->render || view->texture == t->color ||
++        !ps2_sampler_state_supported(state) || (modulate != 0 && modulate != 1) ||
++        (depth_test != 0 && depth_test != 1) || (depth_test && !t->depth)) return fail(t, ENOTSUP);
++    struct ps2gs_texture_triangle triangle = { .flags =
++        (depth_test ? PS2GS_DEPTH_TEST : 0) | (modulate ? PS2GS_TEXTURE_MODULATE : 0) };
++    float scale_s=coordinate_scale(view->texture->width0), scale_t=coordinate_scale(view->texture->height0);
++    for (unsigned i = 0; i < 3; ++i) {
++        for (unsigned j = 0; j < 4; ++j) if (!isfinite(p[i][j]) || !isfinite(color[i][j])) return fail(t, EINVAL);
++        if (!isfinite(uv[i][0]) || !isfinite(uv[i][1]) || uv[i][0] < 0 || uv[i][0] > 1 ||
++            uv[i][1] < 0 || uv[i][1] > 1 || p[i][0] < 0 || p[i][1] < 0 ||
++            p[i][0] > t->color->width0 || p[i][1] > t->color->height0 ||
++            p[i][2] < 0 || p[i][2] > 1 || p[i][3] < 1.0f/4096 || p[i][3] > 4096) return fail(t, ENOTSUP);
++        struct ps2gs_texture_vertex *v = &triangle.v[i];
++        v->position = (struct ps2gs_vertex) { .x = p[i][0]*16+0.5f, .y = p[i][1]*16+0.5f,
++            .z = (1-p[i][2])*65535+0.5f, .rgba = channel(color[i][0]) | channel(color[i][1])<<8 |
++            channel(color[i][2])<<16 | channel(color[i][3])<<24 };
++        v->q = bits(p[i][3]); v->s = bits(uv[i][0]*scale_s*p[i][3]); v->t = bits(uv[i][1]*scale_t*p[i][3]);
++    }
++    return ps2_texture_triangles(t->render, ((struct ps2_resource*)view->texture)->handle, &triangle, 1);
++}
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_sampler.h
+@@ -0,0 +1,24 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_SAMPLER_H
++#define PS2_SAMPLER_H
++#include "ps2_render_target.h"
++#include "ps2_gs_texture.h"
++/* Real Gallium view/reference objects, level-zero native RGB only. The caller
++ * supplies its context's sampler_view_destroy callback. No GL caps implied. */
++int ps2_sampler_state_supported(const struct pipe_sampler_state *);
++struct pipe_sampler_view *ps2_sampler_view_create(struct pipe_context *, struct ps2_render_client *,
++    struct pipe_resource *, const struct pipe_sampler_view *);
++void ps2_sampler_view_destroy(struct pipe_context *, struct pipe_sampler_view *);
++int ps2_sampler_upload(struct ps2_render_client *, struct pipe_resource *, const struct pipe_box *,
++                       const void *, size_t bytes, size_t stride);
++/* position.xyz are window coordinates and normalized depth, position.w is
++ * reciprocal clip W. uv is normalized and bounded [0,1]. Computes STQ on CPU;
++ * interpolation, texture sampling and all pixel drawing execute in the GS. */
++int ps2_sampler_triangle(struct ps2_render_target *, struct pipe_sampler_view *,
++    const struct pipe_sampler_state *, const float position[3][4], const float uv[3][2],
++    const float color[3][4], int modulate, int depth_test);
++struct draw_stage *ps2_textured_draw_stage_create(struct draw_context *, struct ps2_render_target *,
++    struct pipe_sampler_view *, const struct pipe_sampler_state *, int modulate, int depth_test);
++int ps2_textured_draw_stage_outputs(struct draw_stage *, unsigned outputs,
++    unsigned position_slot, unsigned color_slot, unsigned texture_slot);
++#endif
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_textured_draw.c
+@@ -0,0 +1,73 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_sampler.h"
++#include "util/u_inlines.h"
++#include <errno.h>
++#include <stdlib.h>
++#include <string.h>
++struct ps2_texture_stage {
++    struct draw_stage base;
++    struct ps2_render_target *target;
++    struct pipe_sampler_view *view;
++    struct pipe_sampler_state sampler;
++    unsigned outputs, position, color, texture;
++    int modulate, depth;
++};
++static void reject(struct ps2_texture_stage *s)
++{
++    if (!s->target->render->gs->error) s->target->render->gs->error = ENOTSUP;
++    s->target->render->count = 0;
++}
++static void triangle(struct draw_stage *b, struct prim_header *p)
++{
++    struct ps2_texture_stage *s = (struct ps2_texture_stage*)b;
++    if (s->target->render->gs->error) return;
++    if (!s->outputs || !p) { reject(s); return; }
++    float positions[3][4], colors[3][4], uv[3][2];
++    for (unsigned i = 0; i < 3; ++i) {
++        if (!p->v[i] || p->v[i]->clipmask) { reject(s); return; }
++        memcpy(positions[i], p->v[i]->data[s->position], sizeof(positions[i]));
++        memcpy(colors[i], p->v[i]->data[s->color], sizeof(colors[i]));
++        memcpy(uv[i], p->v[i]->data[s->texture], sizeof(uv[i]));
++    }
++    ps2_sampler_triangle(s->target, s->view, &s->sampler, positions, uv, colors, s->modulate, s->depth);
++}
++static void unsupported(struct draw_stage *b, struct prim_header *p)
++{ (void)p; reject((struct ps2_texture_stage*)b); }
++static void flush(struct draw_stage *b, unsigned flags)
++{ (void)flags; ps2_render_flush(((struct ps2_texture_stage*)b)->target->render); }
++static void reset(struct draw_stage *b) { (void)b; }
++static void destroy(struct draw_stage *b)
++{
++    struct ps2_texture_stage *s = (struct ps2_texture_stage*)b;
++    ps2_render_flush(s->target->render);
++    pipe_sampler_view_reference(&s->view, NULL); free(s);
++}
++struct draw_stage *ps2_textured_draw_stage_create(struct draw_context *draw, struct ps2_render_target *target,
++    struct pipe_sampler_view *view, const struct pipe_sampler_state *sampler, int modulate, int depth_test)
++{
++    if (!draw || !target || !target->render || !target->color || !view ||
++        view->texture->screen != target->screen || !ps2_sampler_state_supported(sampler) ||
++        (modulate != 0 && modulate != 1) || (depth_test != 0 && depth_test != 1) ||
++        (depth_test && !target->depth) || target->render->gs->error) { errno = ENOTSUP; return NULL; }
++    struct ps2_texture_stage *s = calloc(1, sizeof(*s));
++    if (!s) return NULL;
++    s->target = target; s->sampler = *sampler; s->modulate = modulate; s->depth = depth_test;
++    pipe_sampler_view_reference(&s->view, view);
++    s->base.draw = draw; s->base.name = "ps2-gs-textured"; s->base.tri = triangle;
++    s->base.point = unsupported; s->base.line = unsupported; s->base.flush = flush;
++    s->base.reset_stipple_counter = reset; s->base.destroy = destroy;
++    return &s->base;
++}
++int ps2_textured_draw_stage_outputs(struct draw_stage *b, unsigned outputs,
++    unsigned position, unsigned color, unsigned texture)
++{
++    if (!b) { errno = EINVAL; return -1; }
++    struct ps2_texture_stage *s = (struct ps2_texture_stage*)b;
++    if (!outputs || outputs > PIPE_MAX_SHADER_OUTPUTS || position >= outputs || color >= outputs ||
++        texture >= outputs || position == color || position == texture || color == texture) {
++        reject(s); errno = ENOTSUP; return -1;
++    }
++    if (ps2_render_flush(s->target->render)) return -1;
++    s->outputs = outputs; s->position = position; s->color = color; s->texture = texture;
++    return 0;
++}

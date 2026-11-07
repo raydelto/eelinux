@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "name": "zip",
+  "engine": "Buildroot 2025.02.18 external tree",
+  "manifest_entry": "configs/packages.json:packages.zip",
+  "symbol": "BR2_PACKAGE_ZIP",
+  "version": "3.0",
+  "recipe": "package/zip/zip.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "f0e8bb1f9b7eb0b01285495a2699df3a4b766784c1765a8f1aeedf63c0806369",
+      "filename": "zip30.tar.gz"
+    }
+  ]
+}

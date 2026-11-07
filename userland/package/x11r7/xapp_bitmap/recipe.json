@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_bitmap",
+  "kind": "application",
+  "program": "bitmap",
+  "version": "1.1.2",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/bitmap-1.1.2.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/bitmap-1.1.2.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "5c6d2637244c575a9cc65a6b1ee15ced480ef0184821aceeab29650daf323c12",
+      "filename": "bitmap-1.1.2.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "571e2143f7bcc373f570bc1fad2b172de1792c301457ad3ca803d8a71df4163467579331ec1052be58e150dc45780ac7fe54611817b163ce4b3667ff2e2a281b",
+      "filename": "bitmap-1.1.2.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

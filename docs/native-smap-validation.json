@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "implementation": "native PS2 SMAP PIO/NAPI + bounded DEV9 control + IOP-owned shared IRQ mask",
+  "kernel": "7.2.8",
+  "default_selection": {
+    "PS2_SMAP": "y",
+    "PS2_IOP_BRIDGE": "y",
+    "PHYLIB": "y",
+    "USB_NET_DRIVERS": "n",
+    "USB_USBNET": "n",
+    "USB_RTL8152": "n",
+    "NET_VENDOR_*": "n"
+  },
+  "api_patch_sha256": "938d14893ed72828e47398321a12094f92055e8245761e67ab8ba885103ef5e6",
+  "driver_patch_sha256": "939b3ec5c588026297df76fff2e459a055d73fbe3293dc70fdd50c36f5c267f9",
+  "source_sha256": {
+    "drivers/net/ethernet/Kconfig": "0a40ea2f260aaa78d9ca736c8c20b382eeef6994dcfca2483c0e4c82df8abfb4",
+    "drivers/net/ethernet/Makefile": "e7d1f718092041f81d13e1734f922bf5f86c174f02a3e9f459d841c652364b73",
+    "drivers/net/ethernet/ps2/Kconfig": "55ff44444776fb70298edd090edd29a80eed269939301cccbe7a126119644b0d",
+    "drivers/net/ethernet/ps2/Makefile": "1484d1571679f42e53e9dabaff68e8a2deaf3b9618b0f9865a706cb79814b204",
+    "drivers/net/ethernet/ps2/ps2-smap.c": "356f1a53e82aa919c5186ae0597b090e62aa2d9626a29575373069fa390d33f4",
+    "drivers/net/ethernet/ps2/ps2-smap-core.h": "f168836a3719c29c38035176f6ac5dcfa9c9594878aa6a2a243fd342b6c38fec",
+    "drivers/net/ethernet/ps2/ps2-smap-regs.h": "f47012466516c10901b30efd81c355cb257199fab5acb61ea87ccc93c1243d36",
+    "arch/mips/ps2/Kconfig": "ae237f334a0c8c2005dc3a8672d9c0f0fb15a925b03d43d5d7a0ceebd91f1953",
+    "drivers/ps2/Makefile": "9571381328975409c0d87e2a2c7147f5899ed01b114244aca98bcceb0f0884cd",
+    "drivers/ps2/sif.c": "5f99863966fbced91d31a28430b66956332f701517e6a32d88f4172505efc4eb",
+    "arch/mips/include/asm/mach-ps2/sif.h": "8bea42adaa905f90c6f73341284f740943e806117877d737b0516792b80a017e",
+    "drivers/ps2/iop-heap.c": "027b06f58a2374a9d153813608f98d466979a0812ecb6769c40ab9b9b47aa931",
+    "arch/mips/include/asm/mach-ps2/iop-heap.h": "f6b9189889e7e763b3d1fbd4af083a24934d93b5a644d7f01b53e2210cdec81b",
+    "drivers/ps2/iop-module-request.c": "dda13bcfeb5dccf01add85ba33d600cbd9709cf1c5392113d0f1df54f4e8bb91"
+  },
+  "actual_integrated_builtin_build": {
+    "sha256": "6865b8b30eb0b9b194e5760c0f16e1119d5eaed45d334dab7d29f704b52efc61",
+    "bytes": 6736744,
+    "config_sha256": "568e8b8b9eaa1a3a2130a1ee86f336eeaedf2209205e77e3def2c90ef9dcfbc1",
+    "compiler": "mipsr5900el-unknown-linux-gnu-gcc (GCC) 16.2.0",
+    "compiler_sha256": "38faf931f66437ed1044bca20a95eed315c65b30d02b2cab89d5bbaf71361a1d",
+    "log_sha256": "90e470dc3090ba381a9e0600b4711eff696f5343071dd9730afdc286fd7da091",
+    "compiled_initcall_order_verified": [
+      {
+        "function": "sif_init",
+        "level": 6,
+        "table_symbol": "__initcall__kmod_sif__289_893_sif_init6",
+        "table_address": "0x804518ac",
+        "actual_function_pointer": "0x80441970"
+      },
+      {
+        "function": "iop_heap_init",
+        "level": 6,
+        "table_symbol": "__initcall__kmod_iop_heap__271_98_iop_heap_init6",
+        "table_address": "0x804518b0",
+        "actual_function_pointer": "0x80441ca8"
+      },
+      {
+        "function": "iop_module_init",
+        "level": 6,
+        "table_symbol": "__initcall__kmod_iop_module__293_1103_iop_module_init6",
+        "table_address": "0x804518b4",
+        "actual_function_pointer": "0x80441cf0"
+      },
+      {
+        "function": "iop_irq_init",
+        "level": 6,
+        "table_symbol": "__initcall__kmod_iop_irq__269_195_iop_irq_init6",
+        "table_address": "0x804518b8",
+        "actual_function_pointer": "0x80442148"
+      },
+      {
+        "function": "smap_init",
+        "level": 7,
+        "table_symbol": "__initcall__kmod_ps2_smap__459_844_smap_init7",
+        "table_address": "0x804518f8",
+        "actual_function_pointer": "0x804416d8"
+      }
+    ],
+    "required_builtin_entries": [
+      "kernel/drivers/net/ethernet/ps2/ps2-smap.ko",
+      "kernel/drivers/ps2/iop-memory.ko",
+      "kernel/drivers/ps2/sif.ko",
+      "kernel/drivers/ps2/iop-heap.ko",
+      "kernel/drivers/ps2/iop-module.ko",
+      "kernel/drivers/ps2/iop-irq.ko"
+    ],
+    "other_ethernet_netdev_drivers_built": false,
+    "scope": "linked built-in vmlinux and matching modules; old archive retained for parent boot rebuild"
+  },
+  "actual_modular_build": {
+    "sha256": "b9c6dd47c4139ddd38f6ea95df2aae3209b301cfb00e430a6b66aa9288380d71",
+    "bytes": 26044,
+    "scope": "earlier module build before built-in IOP conversion; historical proof retained"
+  },
+  "firmware_sha256": {
+    "irq.irx": "047b5b68ac572faf1e5c7a92d644ac8915285a5c224896d8643ea647faa3bf14",
+    "irqrelay.irx": "c91872e81e093384f89f9ea29b52dcb0d0b9edfef231d69fbd212220c18d6b41",
+    "ata.irx": "c51df51fbbe5bfdb6b1aaf87f8a131c7df2bfe4ddce1909849f1417c80af1959",
+    "dev9.irx": "ed29868dfd07ce681ec9e47f5050c98bb2cc25c3db46a780cb68434d1529ee9a",
+    "gamepad.irx": "203ab7f6f6fe6399d4ae739ca3cf370170b88ece896fb63c7a6b918328abe514",
+    "printk.irx": "a54e87e08afb9efb14b79ecc7e6bf509fc78bd7534cb2054da6e8e59008f43fb"
+  },
+  "firmware_provenance": "docs/iop-dev9-validation.json",
+  "tests": {
+    "test_command": "python3 -m unittest tests.test_ps2_smap -v",
+    "passed": 5,
+    "native_actual_handler_asan_ubsan_tests": 3
+  },
+  "physical_hardware_validated": false,
+  "ethernet_packets_observed": false,
+  "production_source_gate_changed": false,
+  "remaining": [
+    "Physical Slim, Fat Network Adaptor and early PCMCIA packet acceptance.",
+    "Inherited generic IOP module-loader and IRQ-resource RPC waits remain synchronous/unbounded.",
+    "PCMCIA hotplug and AIF development units remain unqualified.",
+    "No DEV9 DMA acceleration: the implemented packet path uses actual PIO."
+  ],
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

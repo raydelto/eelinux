@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "expect",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.expect",
+  "symbol": "BR2_PACKAGE_EXPECT",
+  "version": "5.45.4",
+  "recipe": "package/expect/expect.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "49a7da83b0bdd9f46d04a04deec19c7767bb9a323e40c4781f89caf760b92c34",
+      "filename": "expect5.45.4.tar.gz"
+    }
+  ],
+  "release_url": "https://core.tcl-lang.org/expect/home"
+}

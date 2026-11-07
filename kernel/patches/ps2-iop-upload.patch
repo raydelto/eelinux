@@ -1,0 +1,239 @@
+--- a/drivers/ps2/sif.c
++++ b/drivers/ps2/sif.c
+@@ -40,6 +40,7 @@
+ #include <linux/types.h>
+ 
+ #include <asm/io.h>
++#include <asm/mach-ps2/iop-memory.h>
+ 
+ #include <asm/mach-ps2/dmac.h>
+ #include <asm/mach-ps2/iop-error.h>
+@@ -282,9 +283,12 @@
+ 		goto out;
+ 	}
+ 
++	memset(dma_buffer, 0, dma_nbytes);
+ 	memcpy(&dma_buffer[0], &iop_dma_tag, sizeof(iop_dma_tag));
+-	memcpy(&dma_buffer[sizeof(iop_dma_tag)], header, header_size);
+-	memcpy(&dma_buffer[sizeof(iop_dma_tag) + header_size], src, nbytes);
++	if (header_size)
++		memcpy(&dma_buffer[sizeof(iop_dma_tag)], header, header_size);
++	if (nbytes)
++		memcpy(&dma_buffer[sizeof(iop_dma_tag) + header_size], src, nbytes);
+ 
+ 	madr = virt_to_phys(dma_buffer);
+ 	dma_cache_wback((unsigned long)dma_buffer, dma_nbytes);
+@@ -303,6 +307,43 @@
+ {
+ 	return sif1_write_ert_int_0(header, false, false, dst, src, nbytes);
+ }
++
++/* Use SIF DMA for IOP RAM: EE cache lines must never own IOP heap data.
++ * Round only within the caller's allocation, and never read past src.
++ */
++int sif_write_data(iop_addr_t dst, const void *src, size_t nbytes)
++{
++	const u8 *p = src;
++	bool reported = false;
++	int err;
++
++	if ((dst & 15) || nbytes > 0x200000 ||
++	    dst > 0x200000 - ALIGN(nbytes, 16))
++		return -EINVAL;
++	if (!nbytes)
++		return 0;
++	if (!src)
++		return -EINVAL;
++	while (nbytes) {
++		size_t count = min_t(size_t, nbytes, SIF1_BUFFER_SIZE - 16);
++		err = sif1_write(NULL, dst, p, count);
++		if (err)
++			return err;
++		/* Do not release dst or reuse the EE staging page during late DMA. */
++		while (!sif1_ready()) {
++			if (!reported) {
++				pr_warn("SIF: firmware DMA stalled; retaining transfer memory\n");
++				reported = true;
++			}
++			msleep(1);
++		}
++		dst += ALIGN(count, 16);
++		p += count;
++		nbytes -= count;
++	}
++	return 0;
++}
++EXPORT_SYMBOL_GPL(sif_write_data);
+ 
+ static int sif1_write_irq(const struct sif_cmd_header *header,
+ 	iop_addr_t dst, const void *src, size_t nbytes)
+@@ -415,6 +456,33 @@
+ 	return IRQ_HANDLED;
+ }
+ 
++static void sif_report_stall(struct sif_rpc_client *client,
++	u32 rpc_id, bool bind, bool *reported, u32 *last_phase)
++{
++	if (!*reported) {
++		pr_warn("SIF: IOP reply stalled (%s %u, server %#x, DMA %#x); keeping DMA memory owned\n",
++			bind ? "bind" : "RPC", rpc_id, client->server,
++			inl(DMAC_STAT_MASK));
++		*reported = true;
++	}
++	if (client->progress_addr) {
++		void __iomem *p = (void __iomem *)CKSEG1ADDR(
++			iop_bus_to_phys(client->progress_addr));
++		u32 phase = readl(p + 4);
++		if (readl(p) == 0x45454952 && phase != *last_phase) {
++			static const char * const names[] = {
++				"not entered", "entry", "CreateThread", "RPC queue",
++				"RPC register", "StartThread", "rearm handler",
++				"resident", "failed", "RPC worker"
++			};
++			pr_warn("IOP relay: phase %u (%s), result %d, thread %u\n",
++				phase, phase < ARRAY_SIZE(names) ? names[phase] : "unknown",
++				(s32)readl(p + 8), readl(p + 12));
++			*last_phase = phase;
++		}
++	}
++}
++
+ /**
+  * sif_rpc_bind - request a connection to an IOP RPC server
+  * @client: RPC client object to initialise
+@@ -452,9 +520,12 @@
+ 		return err;
+ 	}
+ 
+-	while (!wait_for_completion_timeout(&client->done, 5 * HZ))
+-		pr_warn("SIF: waiting for bind server %#x (DMA status %#x)\n",
+-			server_id, inl(DMAC_STAT_MASK));
++	{
++		bool reported = false;
++		u32 phase = ~0U;
++		while (!wait_for_completion_timeout(&client->done, 5 * HZ))
++			sif_report_stall(client, server_id, true, &reported, &phase);
++	}
+ 
+ 	return client->server ? 0 : -ENXIO;
+ }
+@@ -513,9 +584,12 @@
+ 		if (!wait_for_completion_timeout(&client->done, timeout))
+ 			return -ETIMEDOUT;
+ 	} else {
+-	while (!wait_for_completion_timeout(&client->done, 5 * HZ))
+-		pr_warn("SIF: waiting for RPC %u server %#x (DMA status %#x)\n",
+-			rpc_id, client->server, inl(DMAC_STAT_MASK));
++	{
++		bool reported = false;
++		u32 phase = ~0U;
++		while (!wait_for_completion_timeout(&client->done, 5 * HZ))
++			sif_report_stall(client, rpc_id, false, &reported, &phase);
++	}
+ 	}
+ 
+ 	dma_rmb();
+--- a/arch/mips/include/asm/mach-ps2/sif.h
++++ b/arch/mips/include/asm/mach-ps2/sif.h
+@@ -74,6 +74,9 @@
+ int sif_cmd_opt_data(u32 cmd, u32 opt, const void *pkt,
+ 	size_t pktsize, iop_addr_t dst, const void *src, size_t nbytes);
+ 
++/* dst allocation must include ALIGN(nbytes, 16) bytes. */
++int sif_write_data(iop_addr_t dst, const void *src, size_t nbytes);
++
+ int sif_cmd_data(u32 cmd, const void *pkt, size_t pktsize,
+ 	iop_addr_t dst, const void *src, size_t nbytes);
+ 
+@@ -107,6 +110,7 @@
+ struct sif_rpc_client
+ {
+ 	iop_addr_t server;
++	iop_addr_t progress_addr; /* Owned IOP startup mailbox, or zero. */
+ 	iop_addr_t server_buffer;
+ 
+ 	size_t client_size_max;
+--- a/drivers/ps2/iop-module-request.c
++++ b/drivers/ps2/iop-module-request.c
+@@ -693,7 +693,7 @@
+ 		char filepath[IOPMOD_MAX_PATH];
+ 		char arg[IOPMOD_MAX_ARG];
+ 	} link = {
+-		.addr = iop_alloc(nbyte),
++		.addr = iop_alloc(ALIGN(nbyte, 16)),
+ 		.arg_size = arg_size
+ 	};
+ 	struct {
+@@ -707,17 +707,34 @@
+ 	if (!link.addr)
+ 		return -ENOMEM;
+ 
+-	/* Copy the module to IOP memory. */
+-	memcpy(iop_bus_to_virt(link.addr), buf, nbyte);
+-
+-	/* Make the module visible to the IOP. */
+-	dma_cache_wback((unsigned long)iop_bus_to_virt(link.addr), nbyte);
++	/* EE cached stores can overwrite live IOP heap/cache-line neighbours.
++	 * Transfer IRX bytes with SIF1; LOADFILE runs only after DMA completes.
++	 */
++	err = sif_write_data(link.addr, buf, nbyte);
++	if (err)
++		goto err_out;
+ 
+ 	if (arg_size >= sizeof(link.arg)) {
+ 		err = -EOVERFLOW;
+ 		goto err_out;
+ 	}
+ 	memcpy(link.arg, arg_, arg_size);
++
++	if (!strcmp(irx_iopmod(buf)->name, "irqrelay")) {
++		const u32 initial[16] = { 0x45454952 };
++		iop_addr_t progress = iop_alloc(sizeof(initial));
++		if (!progress) {
++			err = -ENOMEM;
++			goto err_out;
++		}
++		load_file_rpc_client.progress_addr = progress;
++		err = sif_write_data(progress, initial, sizeof(initial));
++		if (err)
++			goto err_out;
++		/* No synchronous IOP logging is needed to observe entry progress. */
++		link.arg_size = snprintf(link.arg, sizeof(link.arg),
++			"ps2-progress=%08x", progress) + 1;
++	}
+ 
+ 	pr_info("IOP firmware: submit LOADFILE at %#x (%zu bytes)\n", link.addr, nbyte);
+ 	err = sif_rpc(&load_file_rpc_client, rpo_mod_buf_load,
+@@ -748,6 +765,10 @@
+ 	if (err < 0)
+ 		goto err_libraries;
+ 
++	if (load_file_rpc_client.progress_addr) {
++		iop_free(load_file_rpc_client.progress_addr);
++		load_file_rpc_client.progress_addr = 0;
++	}
+ 	iop_free(link.addr);
+ 	return 0;
+ 
+@@ -755,6 +776,10 @@
+ 	/* FIXME: Unlink module here */
+ 
+ err_out:
++	if (load_file_rpc_client.progress_addr) {
++		iop_free(load_file_rpc_client.progress_addr);
++		load_file_rpc_client.progress_addr = 0;
++	}
+ 	iop_free(link.addr);
+ 	return err;
+ }
+--- a/init/main.c
++++ b/init/main.c
+@@ -1475,7 +1475,7 @@
+ static void __init do_basic_setup(void)
+ {
+ #ifdef CONFIG_CPU_R5900
+-	pr_info("ps2: DMA handoff and fault summary kernel\n");
++	pr_info("ps2: aligned firmware and SIF startup kernel\n");
+ #endif
+ 	cpuset_init_smp();
+ 	ksysfs_init();

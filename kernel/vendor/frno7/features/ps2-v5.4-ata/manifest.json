@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "repository": "https://github.com/frno7/linux.git",
+  "revision": "36e7c3030580bb898f6985129a87a95194aeec0f",
+  "branch_hint": "ps2-v5.4-ata",
+  "comparison_revision": "77174dd4c8958a91aa5b76fb064a60eb68119e70",
+  "status": "experimental feature source snapshot, not applied to baseline or modern port; full branch includes older unrelated upstream changes and must not be merged blindly",
+  "files": [
+    {
+      "path": "drivers/ata/pata_ps2.c",
+      "sha256": "64a8425fdc8176419748a5423145a9a12d6007cd3b5bc9376ccd8b51926b4d1a",
+      "bytes": 13855
+    },
+    {
+      "path": "drivers/ps2/sif.c",
+      "sha256": "ea4fe4605a6c03680f0c049891e67adcb96828f667ad2721f78d3f8272d70c25",
+      "bytes": 21081
+    },
+    {
+      "path": "drivers/ps2/iop-module-request.c",
+      "sha256": "11920b233e5063b8b61808a7088b83c8be2e60676d35e3850d3d15ff2cef75bf",
+      "bytes": 28766
+    },
+    {
+      "path": "arch/mips/include/asm/mach-ps2/sif.h",
+      "sha256": "89186288c096776bde7b1cae9f2c12852313d49bfebf732e020e24d993ecfe00",
+      "bytes": 2795
+    }
+  ]
+}

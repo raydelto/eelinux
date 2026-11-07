@@ -1,0 +1,12 @@
+--- a/resize/main.c
++++ b/resize/main.c
+@@ -364,7 +364,8 @@
+ 		len = 2 * len;
+ 	}
+ 
+-	if (print_min_size)
++	/* Online resizing writes through the mounted filesystem ioctl. */
++	if (print_min_size || (mount_flags & EXT2_MF_MOUNTED))
+ 		open_flags = O_RDONLY;
+ 
+ 	fd = ext2fs_open_file(device_name, open_flags, 0);

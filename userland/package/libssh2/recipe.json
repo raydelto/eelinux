@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "libssh2",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.libssh2",
+  "symbol": "BR2_PACKAGE_LIBSSH2",
+  "version": "1.11.1",
+  "recipe": "package/libssh2/libssh2.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "8ddbd698403a2c3a9987df48f2940c6f6a9bddce28d37eb201938dd7755646f0",
+      "filename": "libssh2-1.11.1.tar.bz2"
+    }
+  ],
+  "release_url": "https://github.com/libssh2/libssh2/releases/tag/libssh2-1.11.1"
+}

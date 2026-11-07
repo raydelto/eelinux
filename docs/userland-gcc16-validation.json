@@ -1,0 +1,106 @@
+{
+  "status": "historical Kconfig/native-source verification preserved; latest toolchain and base build completed separately",
+  "buildroot": {
+    "version": "2025.02.18",
+    "url": "https://buildroot.org/downloads/buildroot-2025.02.18.tar.xz",
+    "sha256": "e38ad1df6ea0479fff6419a87a64535d02131674d463be154a763ef725b55321",
+    "checksum_provenance": "SHA256 calculated from official HTTPS release archive on 2026-10-01"
+  },
+  "work": "/home/machaddr/.cache/eelinux/userland-gcc16",
+  "source_marker_sha256": "9ee1fe1235d9345fd6803923eb51a8f6d959dfb355accad60c0f71d9be8bab29",
+  "patch_sha256": {
+    "buildroot-external-gcc16.patch": "ee16424f968fdbaaae284de953ca9501a19c68fdaa88433ea79f34a35f64a3d7",
+    "buildroot-r5900.patch": "10c23f6ff578bf1b732e1467e16d4c679ac8d82f80edd8cdc29d141ef2251f80"
+  },
+  "builder_sha256": "52d4a3b707b166df97aecb4513d03d0461686b5db62d90bf5734afa9593b20be",
+  "manifest_sha256": "020259638c17e5203c37cb57907fde046c78db10b7263fcbad1b6dfbad78b612",
+  "assumed_gcc": "16.2.0",
+  "assumed_kernel_headers": "7.2",
+  "assumed_features": [
+    "openmp",
+    "ssp",
+    "ssp-strong"
+  ],
+  "profiles": {
+    "base": {
+      "config_sha256": "87bd955731942319ef185f912578d06949a7102fe78f84abe95a260fe58c7605",
+      "kconfig_resolution": "passed",
+      "compiler_probed": false,
+      "packages_built": false,
+      "selected_native_gcc": false,
+      "selected_native_binutils": false
+    },
+    "desktop": {
+      "config_sha256": "c34c8e89868bb69c90ebe8a1199a6cb7744f2379390a1bbe826b038a0e806829",
+      "kconfig_resolution": "passed",
+      "compiler_probed": false,
+      "packages_built": false,
+      "selected_native_gcc": false,
+      "selected_native_binutils": false
+    },
+    "full": {
+      "config_sha256": "059f96decb34d2ab445ac37a39b165cc714051de069d449c5c54b920d90c9705",
+      "kconfig_resolution": "passed",
+      "compiler_probed": false,
+      "packages_built": false,
+      "selected_native_gcc": true,
+      "selected_native_binutils": true
+    }
+  },
+  "native_sources": [
+    {
+      "package": "eelinux-gcc",
+      "version": "16.2.0",
+      "archive_sha256": "e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e",
+      "license_hashes_verified": true,
+      "hash_file_sha256": "4a12098d4c6b6e620793a9cdff58315bf7f18e24b1b5ec1b3767a2590b2bcbf1"
+    },
+    {
+      "package": "eelinux-binutils",
+      "version": "2.47",
+      "archive_sha256": "154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff",
+      "license_hashes_verified": true,
+      "hash_file_sha256": "d2960f05045f393fdf881290230f631fc467e7d59634df029cfbf59c90606a2c"
+    }
+  ],
+  "historical_validation_sha256": "31f3c84c4e4e8fb9d365aeb2f9751d70dbfc742a044dbb50c11c764f78ee6d4e",
+  "latest_userland_built": true,
+  "latest_native_gcc_built": false,
+  "latest_native_binutils_built": false,
+  "linux_boot_pass": null,
+  "real_hardware_tested": false,
+  "full_mmi_or_asid_qualified": false,
+  "historical_configuration_scope": "Original source/cache and assumed7.2 headers retained; actual latest base probes verified5.4.221 UAPI headers in separate work",
+  "latest_base": {
+    "compiler_gcc": "16.2.0",
+    "binutils_release": "2.47",
+    "glibc": "2.44",
+    "linux_uapi_headers": "5.4.221",
+    "completed_target_packages": 38,
+    "completed_host_packages": 32,
+    "required_command_count": 78,
+    "target_elf_count": 310,
+    "elf_and_dynamic_library_audit": "passed; no unresolved interpreter or direct dependency",
+    "raw_buildroot_tar": {
+      "bytes": 43171840,
+      "sha256": "558f41e436ba802a8479683efd2c45c321c67533ed5b93ce5bed530e0f7f481e",
+      "scope": "Buildroot target plus project fbcheck and GNU libc getent; project runtime overlay and six staged IRX copied afterward are separate"
+    },
+    "reviewed_recipe_corrections": {
+      "scope": "GNU ed dialect correction followed by previously unbuilt Nano explicit pointer truth tests; all previously completed package stamp identities unchanged",
+      "old_external_tree_sha256": "c59d1ef3116732bcdd83ea1fd249efeef3af396b3b94b048e336332e8108e4b7",
+      "effective_external_tree_sha256": "98aa10ffe4a05da1d2f963a073b59c683419d68562cca128676e975cdac3a139",
+      "previous_external_digest_reproduced": true,
+      "completed_package_count_reused": 33,
+      "original_input_lock_preserved": true,
+      "general_cli_lock_validation_changed": false,
+      "make_jobs": 1,
+      "all_completed_target_packages_verified": 38,
+      "finalization_worker_correction": "development=False argument restored; no package rebuild",
+      "nano_patch_sha256": "abefb85887418089dbde6b7227d101bffbf7f0b1357347d410811757f2e2f17b"
+    },
+    "evidence": "userland/validation.json:latest_gnu_base",
+    "linux_user_smokes_passed": 8
+  },
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

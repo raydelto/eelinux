@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "traceroute",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.traceroute",
+  "symbol": "BR2_PACKAGE_TRACEROUTE",
+  "version": "2.1.6",
+  "recipe": "package/traceroute/traceroute.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "9ccef9cdb9d7a98ff7fbf93f79ebd0e48881664b525c4b232a0fcec7dcb9db5e",
+      "filename": "traceroute-2.1.6.tar.gz"
+    }
+  ],
+  "release_url": "https://sourceforge.net/projects/traceroute/files/"
+}

@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "cpulimit",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.cpulimit",
+  "symbol": "BR2_PACKAGE_CPULIMIT",
+  "version": "0.2",
+  "recipe": "package/cpulimit/cpulimit.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "64312f9ac569ddcadb615593cd002c94b76e93a0d4625d3ce1abb49e08e2c2da",
+      "filename": "cpulimit-0.2.tar.gz"
+    }
+  ],
+  "release_url": "https://api.github.com/repos/opsengine/cpulimit/tags"
+}

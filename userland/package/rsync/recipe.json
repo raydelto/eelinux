@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "rsync",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.rsync",
+  "symbol": "BR2_PACKAGE_RSYNC",
+  "version": "3.5.2",
+  "recipe": "package/rsync/rsync.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "a10d591825251e070f74c98df3daad195def4ed81b4a2de16169026aea33f6c8",
+      "filename": "rsync-3.5.2.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/RsyncProject/rsync/releases/tag/v3.5.2"
+}

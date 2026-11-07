@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "name": "bzip2",
+  "engine": "Buildroot 2025.02.18 external tree",
+  "manifest_entry": "configs/packages.json:packages.bzip2",
+  "symbol": "BR2_PACKAGE_BZIP2",
+  "version": "1.0.8",
+  "recipe": "package/bzip2/bzip2.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha512",
+      "digest": "083f5e675d73f3233c7930ebe20425a533feedeaaa9d8cc86831312a6581cefbe6ed0d08d2fa89be81082f2a5abdabca8b3c080bf97218a1bd59dc118a30b9f3",
+      "filename": "bzip2-1.0.8.tar.gz"
+    }
+  ]
+}

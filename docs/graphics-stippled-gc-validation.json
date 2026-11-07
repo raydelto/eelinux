@@ -1,0 +1,170 @@
+{
+  "schema": 1,
+  "updated": "2026-10-04",
+  "milestone": "native opaque stippled GC fills and Mesa monochrome-to-GS pattern adapter",
+  "implementation": [
+    "desktop/xorg/ps2_fill.c",
+    "desktop/xorg/ps2_fill.h",
+    "mesa/ps2/ps2_tile.c",
+    "mesa/ps2/ps2_tile.h"
+  ],
+  "build": {
+    "sha256": "54e4793e1efc29ca8cd4e3e10b65d4d254d6dee8b658c3a0d6de4d4e929ea55a"
+  },
+  "host": {
+    "sha256": "01ed94f3263b884ebe6f0d499cc8c89da6ff5b3fad53d320718abf70d5325ecb"
+  },
+  "build_log": {
+    "sha256": "3d84c34d58153d441c9b93995ee6f5e356cce157ff52ae15a74c0f34891fc1d4"
+  },
+  "archives": {
+    "libps2-gallium-stippled-gc.a": "619bc00d71744160d8941801bd94e1c3977e8cd50d0f18d916597fcae2ba51d7",
+    "libps2-xorg-stippled-gc.a": "c07ce8c972508ceb3c9e6890ff5d6e761394b48f70703542290b7457891f3943"
+  },
+  "patches": [
+    {
+      "patch": "userland/patches/xorg-ps2-stippled-gc.patch",
+      "sha256": "38b107ed5399bdbd4add07a217b7222e9a8060c4a3fe4ede68f8d177be0abd10",
+      "after": "xorg-ps2-tiled-gc.patch",
+      "prerequisite_patches": [
+        "xorg-ps2-raster.patch",
+        "xorg-ps2-surfaces.patch",
+        "xorg-ps2-rendering.patch",
+        "xorg-ps2-textures.patch",
+        "xorg-ps2-contexts.patch",
+        "xorg-ps2-glyphs.patch",
+        "xorg-ps2-gc.patch",
+        "xorg-ps2-logic.patch",
+        "xorg-ps2-solid-gc.patch",
+        "xorg-ps2-copy.patch",
+        "xorg-ps2-exa-copy.patch",
+        "xorg-ps2-blit.patch",
+        "xorg-ps2-copy-window.patch",
+        "xorg-ps2-paint-window.patch",
+        "xorg-ps2-tiled-paint.patch",
+        "xorg-ps2-tiled-gc.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    },
+    {
+      "patch": "userland/patches/mesa-ps2-stipple.patch",
+      "sha256": "5443743cc4c63d26d1f630ae1e4d435bd0f333e4f9dbb4e1a91d1c4b319f2071",
+      "after": "mesa-ps2-tile.patch",
+      "prerequisite_patches": [
+        "mesa-ps2-raster.patch",
+        "mesa-ps2-surfaces.patch",
+        "mesa-ps2-rendering.patch",
+        "mesa-ps2-textures.patch",
+        "mesa-ps2-contexts.patch",
+        "mesa-ps2-logic.patch",
+        "mesa-ps2-solid-batch.patch",
+        "mesa-ps2-copy-batch.patch",
+        "mesa-ps2-resource-copy.patch",
+        "mesa-ps2-blit.patch",
+        "mesa-ps2-tile.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    }
+  ],
+  "upstream_contracts": [
+    {
+      "sha256": "8a5e63b41834f0a31a63c3945481184a5a2241c9bd51d99d1a6babcd5f8683b9",
+      "contract": "tile pattern origin combines drawable and GC patOrg with destination backing offsets"
+    },
+    {
+      "sha256": "5e8efbffcb2a2ba42a5415b5912efcdbb19f93eb6aca0f20db9fb62840cf5623",
+      "contract": "tileIsPixel uses GC tile.pixel; FillSpans and PolyFillRect have different coordinate translation contracts"
+    }
+  ],
+  "server_bitmap_order": {
+    "path": "/home/machaddr/.cache/eelinux/desktop-xorg/output-desktop/staging/usr/include/xorg/servermd.h",
+    "sha256": "de319686c39d247137641c7c88dd96ce18bfe9bc85da082dc232da59aa2df7a6",
+    "target_bit_order": "LSBFirst"
+  },
+  "host_sanitizer_cases": 88,
+  "R5900_cases": 88,
+  "new_cases_per_environment": 14,
+  "regression_cases_per_environment": 74,
+  "checks": [
+    "rectangles",
+    "spans",
+    "redirected",
+    "colors",
+    "large",
+    "tiny",
+    "noop",
+    "preflight",
+    "allocation",
+    "seedfailure",
+    "expandfailure",
+    "laterfailure",
+    "bitorder",
+    "random"
+  ],
+  "native_path": "actual FillOpaqueStippled GCOps -> GC clipping -> Mesa monochrome snapshot -> GS Boolean pattern fills -> GS tile expansion/repeat",
+  "supported": [
+    "owned RGBX/CT32 and RGB555/CT16 destinations",
+    "read-only existing server-format depth-1 source pixmaps, up to 256x256 with padded strides",
+    "both source bit orders in the Mesa adapter; Xorg uses BITMAP_BIT_ORDER",
+    "foreground/background colors independent of tileIsPixel and tile.pixel",
+    "non-power-of-two periods, signed drawable-relative patOrg and redirected backing origins",
+    "rectangle and already-translated span callbacks, existing GC registry/lifetime contracts",
+    "all-zero/all-one/equal-color patterns, queue/no-op preservation and failure without replay"
+  ],
+  "opaque_stipple_ALU": "GXcopy/full RGB mask; GXnoop/zero RGB mask retain queued work",
+  "source_snapshot_max_bytes": 8192,
+  "color_pattern_max_logical_GS_bytes": 262144,
+  "heap_box_plan_max_bytes": 4096,
+  "expansion_scratch_max_logical_GS_bytes": 8192,
+  "max_input_rectangles_or_spans": 4096,
+  "max_clip_and_paint_boxes": 256,
+  "max_pixels_per_request": 1048576,
+  "max_output_pieces": 65536,
+  "max_texture_triangles_per_packet": 64,
+  "source_bitmap_snapshotted_before_queue_flush": true,
+  "GS_pattern_and_expansion_reserved_before_queue_flush": true,
+  "CPU_color_pixel_expansion": false,
+  "software_destination_rasterizer": false,
+  "GPU_pixel_readback": false,
+  "Damage_coverage": "GC composite clip; bookkeeping modeled, not actual Damage subsystem execution",
+  "actual_Damage_subsystem_executed": false,
+  "transparent_stipple_implemented": false,
+  "full_DDX_enabled": false,
+  "full_Mesa_GLX_enabled": false,
+  "shader_caps": 0,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "new_USB_image_packaged": true,
+  "new_PCSX2_pixels_verified": true,
+  "new_physical_PS2_pixels_verified": false,
+  "prior_qualified_fill_evidence": {
+    "path": "docs/graphics-tiled-gc-validation.json",
+    "sha256": "c61b285f7f24d390d29cbcbd6193f58092fcbf917de986517e2fe1e6242a1f8a"
+  },
+  "earlier_images_and_hardware_evidence_preserved": true,
+  "limitations": [
+    "transparent stipples and opaque stipple non-copy ALUs/partial masks remain unsupported",
+    "source must already be a valid CPU-resident server monochrome pixmap; depth-1 pixmap creation/drawing integration remains open",
+    "large patterns may require many native seed commands; sustained application performance is not measured",
+    "pattern/expansion resources remain subject to GS VRAM capacity",
+    "new physical pixels, actual X server/Damage and full DDX/Mesa/TWM integration require separate qualification"
+  ],
+  "result": "component checks, PCSX2 command/fence and qualitative visual review passed; physical and actual server qualification pending",
+  "runtime_validation": {
+    "path": "docs/graphics-stippled-gc-runtime-validation.json",
+    "sha256": "3733a9a77c1b2928ab0972da78f977940f57c831d2c9ee921696d70fbf5042f1"
+  },
+  "new_PCSX2_command_fence_checks_passed": true,
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

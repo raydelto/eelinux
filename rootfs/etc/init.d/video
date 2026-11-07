@@ -1,0 +1,27 @@
+#!/bin/bash
+MODE=576p
+RGB_SOG=0
+[[ ! -r /etc/default/ps2-video ]] || . /etc/default/ps2-video
+output=()
+case $RGB_SOG in
+    0) ;;
+    1) output=(--rgb-sog) ;;
+    *) printf 'ps2-video: invalid RGB_SOG preference; keeping boot mode\n' >&2; exit 1 ;;
+esac
+case ${1:-} in
+    start)
+        case $MODE in
+            auto) /usr/sbin/ps2-video "${output[@]}" auto ;;
+            pal|ntsc|480p|576p|720p|720p60|1080i|1080i60)
+                /usr/sbin/ps2-video set "$MODE" ;;
+            640x480|800x600|1024x768|1280x1024)
+                [[ $RGB_SOG == 1 ]] || { printf 'ps2-video: VGA preference requires RGB_SOG=1\n' >&2; exit 1; }
+                /usr/sbin/ps2-video "${output[@]}" set "$MODE" ;;
+            *) printf 'ps2-video: unsupported startup preference %s; keeping boot mode\n' "$MODE" >&2
+                exit 1 ;;
+        esac
+        ;;
+    status) /usr/sbin/ps2-video status ;;
+    stop) exit 0 ;;
+    *) printf 'Usage: video {start|stop|status}\n' >&2; exit 2 ;;
+esac

@@ -1,0 +1,841 @@
+{
+  "schema": 1,
+  "status": "passed",
+  "validation_date": "2026-10-01",
+  "cpu": "R5900",
+  "target_abi": "o32 little-endian soft float",
+  "source_commit": "5f48e76da75409ac7aa23716c8a626d8f40539ef",
+  "source_manifest_sha256": "fee8fcb19fbf2b73ef2bbd2df734534e1f9915aa4b508edf7c97eac1ba9e959f",
+  "emulator_version": "qemu-mipsel version 5.0.1",
+  "emulator_sha256": "4d0fb1ebf2bc18bf7bd92f329ab070d6d2b032f3ad5c05167325740fec1b31a6",
+  "host_kernel": "6.6.87.2-microsoft-standard-WSL2",
+  "cross_compiler": {
+    "tuple": "mipsr5900el-unknown-linux-gnu",
+    "gcc_version": "14.4.0"
+  },
+  "per_program_timeout_seconds": 15,
+  "arithmetic_source_sha256": "5cbc736769466fcab390086ac3aa9ac42864d44f76d29349a6bda9bdfa3a898b",
+  "staged_loader_and_library_elf_inventory": {
+    "/lib/ld.so.1": {
+      "resolved_guest_path": "/lib/ld.so.1",
+      "sha256": "faa60066f07e1698c66cdb5f02f3ddfaa6c31a801d6539022d5ecc20068d6b99",
+      "bytes": 210188
+    },
+    "/lib/libanl.so.1": {
+      "resolved_guest_path": "/lib/libanl.so.1",
+      "sha256": "624d0591d2681fc0ce1d176a51ede8d1c89f1966ae2563eaba2e5b4903045c5e",
+      "bytes": 66872
+    },
+    "/lib/libatomic.so.1": {
+      "resolved_guest_path": "/lib/libatomic.so.1.2.0",
+      "sha256": "7631a768e10e270748bd2676da2f84c21750e2ada1e12c0bf8702f728904c69d",
+      "bytes": 20524
+    },
+    "/lib/libatomic.so.1.2.0": {
+      "resolved_guest_path": "/lib/libatomic.so.1.2.0",
+      "sha256": "7631a768e10e270748bd2676da2f84c21750e2ada1e12c0bf8702f728904c69d",
+      "bytes": 20524
+    },
+    "/lib/libblkid.so.1": {
+      "resolved_guest_path": "/lib/libblkid.so.1.1.0",
+      "sha256": "6b7f70b72d7558869a64f1478287ed4f1a5a084ba38973dc427cd6d09167f19a",
+      "bytes": 425744
+    },
+    "/lib/libblkid.so.1.1.0": {
+      "resolved_guest_path": "/lib/libblkid.so.1.1.0",
+      "sha256": "6b7f70b72d7558869a64f1478287ed4f1a5a084ba38973dc427cd6d09167f19a",
+      "bytes": 425744
+    },
+    "/lib/libc.so.6": {
+      "resolved_guest_path": "/lib/libc.so.6",
+      "sha256": "5d215492398efcae3ed18e9adebaea986ff11afcf5aff98ba24e266c7f1b4c70",
+      "bytes": 2039040
+    },
+    "/lib/libdl.so.2": {
+      "resolved_guest_path": "/lib/libdl.so.2",
+      "sha256": "6ae1663e75d210a6077342373fe29d0caff028dd5cee199d9123cadb39b41bf7",
+      "bytes": 66872
+    },
+    "/lib/libfdisk.so.1": {
+      "resolved_guest_path": "/lib/libfdisk.so.1.1.0",
+      "sha256": "a7cff3897c78df845d993dff41740a895f460de75797f04accfa325545524104",
+      "bytes": 560564
+    },
+    "/lib/libfdisk.so.1.1.0": {
+      "resolved_guest_path": "/lib/libfdisk.so.1.1.0",
+      "sha256": "a7cff3897c78df845d993dff41740a895f460de75797f04accfa325545524104",
+      "bytes": 560564
+    },
+    "/lib/libgcc_s.so.1": {
+      "resolved_guest_path": "/lib/libgcc_s.so.1",
+      "sha256": "84b8141b163b870c81aa93888046012104b57931035720ee168030bff37177a3",
+      "bytes": 235648
+    },
+    "/lib/libgomp.so.1": {
+      "resolved_guest_path": "/lib/libgomp.so.1.0.0",
+      "sha256": "bc6e4c25c6d037070e735c06a3110be28261aadc4da5e1c29db6c03a52d4f466",
+      "bytes": 348920
+    },
+    "/lib/libgomp.so.1.0.0": {
+      "resolved_guest_path": "/lib/libgomp.so.1.0.0",
+      "sha256": "bc6e4c25c6d037070e735c06a3110be28261aadc4da5e1c29db6c03a52d4f466",
+      "bytes": 348920
+    },
+    "/lib/libm.so.6": {
+      "resolved_guest_path": "/lib/libm.so.6",
+      "sha256": "55d0b63f0d88744fe266dead76cf4b5dd54e11c4412a227bd6002aea940ec6ae",
+      "bytes": 739932
+    },
+    "/lib/libmount.so.1": {
+      "resolved_guest_path": "/lib/libmount.so.1.1.0",
+      "sha256": "ced36524011ab1339bc66512f63a01b7855c285163c2fafc20122de445348bf2",
+      "bytes": 496448
+    },
+    "/lib/libmount.so.1.1.0": {
+      "resolved_guest_path": "/lib/libmount.so.1.1.0",
+      "sha256": "ced36524011ab1339bc66512f63a01b7855c285163c2fafc20122de445348bf2",
+      "bytes": 496448
+    },
+    "/lib/libnsl.so.1": {
+      "resolved_guest_path": "/lib/libnsl.so.1",
+      "sha256": "9b371ede6870a869cebc193b5e5416eb832b1d802a731823ac1a260c5c1ec1f3",
+      "bytes": 138688
+    },
+    "/lib/libnss_dns.so.2": {
+      "resolved_guest_path": "/lib/libnss_dns.so.2",
+      "sha256": "3e2ea4400ab3d97deec710bca4e0e273a464e8c30c12c78670690cbebec9fd74",
+      "bytes": 66796
+    },
+    "/lib/libnss_files.so.2": {
+      "resolved_guest_path": "/lib/libnss_files.so.2",
+      "sha256": "41b2eeff9643129f214a34c4e0d79cc86427d6233ef56d8fc9e7b8b30ec2bc07",
+      "bytes": 66796
+    },
+    "/lib/libpam.so": {
+      "resolved_guest_path": "/lib/libpam.so.0.85.1",
+      "sha256": "0d94f6e0ec99e482f115faa74def76846431a0c0879f586814ae636919a6bee8",
+      "bytes": 70660
+    },
+    "/lib/libpam.so.0": {
+      "resolved_guest_path": "/lib/libpam.so.0.85.1",
+      "sha256": "0d94f6e0ec99e482f115faa74def76846431a0c0879f586814ae636919a6bee8",
+      "bytes": 70660
+    },
+    "/lib/libpam.so.0.85.1": {
+      "resolved_guest_path": "/lib/libpam.so.0.85.1",
+      "sha256": "0d94f6e0ec99e482f115faa74def76846431a0c0879f586814ae636919a6bee8",
+      "bytes": 70660
+    },
+    "/lib/libpam_misc.so": {
+      "resolved_guest_path": "/lib/libpam_misc.so.0.82.1",
+      "sha256": "19b324cf85abe6308c34302a5b822b17d69fcfd06eecfdb8b0d3c824f7276089",
+      "bytes": 67536
+    },
+    "/lib/libpam_misc.so.0": {
+      "resolved_guest_path": "/lib/libpam_misc.so.0.82.1",
+      "sha256": "19b324cf85abe6308c34302a5b822b17d69fcfd06eecfdb8b0d3c824f7276089",
+      "bytes": 67536
+    },
+    "/lib/libpam_misc.so.0.82.1": {
+      "resolved_guest_path": "/lib/libpam_misc.so.0.82.1",
+      "sha256": "19b324cf85abe6308c34302a5b822b17d69fcfd06eecfdb8b0d3c824f7276089",
+      "bytes": 67536
+    },
+    "/lib/libpamc.so": {
+      "resolved_guest_path": "/lib/libpamc.so.0.82.1",
+      "sha256": "f6ba5244cf68fe77aa6538c3a49308b60c7f70d64bbe6c5bb885e6311d9b6eb2",
+      "bytes": 67556
+    },
+    "/lib/libpamc.so.0": {
+      "resolved_guest_path": "/lib/libpamc.so.0.82.1",
+      "sha256": "f6ba5244cf68fe77aa6538c3a49308b60c7f70d64bbe6c5bb885e6311d9b6eb2",
+      "bytes": 67556
+    },
+    "/lib/libpamc.so.0.82.1": {
+      "resolved_guest_path": "/lib/libpamc.so.0.82.1",
+      "sha256": "f6ba5244cf68fe77aa6538c3a49308b60c7f70d64bbe6c5bb885e6311d9b6eb2",
+      "bytes": 67556
+    },
+    "/lib/libpthread.so.0": {
+      "resolved_guest_path": "/lib/libpthread.so.0",
+      "sha256": "a0709abc7e8dc15768770a0a14b94f601a08f100a0adc42594ec1771bcd35c08",
+      "bytes": 69120
+    },
+    "/lib/libresolv.so.2": {
+      "resolved_guest_path": "/lib/libresolv.so.2",
+      "sha256": "b6144c387488098a48503ee4dbb410eb68488d57959a90e0f373846448fae59e",
+      "bytes": 69896
+    },
+    "/lib/librt.so.1": {
+      "resolved_guest_path": "/lib/librt.so.1",
+      "sha256": "03c8a5ddc9f295e5fd4748980c8ff97e25ed036e63f36d5895797208e7e6dea0",
+      "bytes": 67204
+    },
+    "/lib/libsmartcols.so.1": {
+      "resolved_guest_path": "/lib/libsmartcols.so.1.1.0",
+      "sha256": "514308c117383e826391ea436a5cf6fbc5b46dcc98ceaa9c9053f32172376e4d",
+      "bytes": 358200
+    },
+    "/lib/libsmartcols.so.1.1.0": {
+      "resolved_guest_path": "/lib/libsmartcols.so.1.1.0",
+      "sha256": "514308c117383e826391ea436a5cf6fbc5b46dcc98ceaa9c9053f32172376e4d",
+      "bytes": 358200
+    },
+    "/lib/libssp.so.0": {
+      "resolved_guest_path": "/lib/libssp.so.0.0.0",
+      "sha256": "d360a38b1b2544b05fa40cdc3811265e92c409b66ee97c316b6ccc2321d1c0e3",
+      "bytes": 7276
+    },
+    "/lib/libssp.so.0.0.0": {
+      "resolved_guest_path": "/lib/libssp.so.0.0.0",
+      "sha256": "d360a38b1b2544b05fa40cdc3811265e92c409b66ee97c316b6ccc2321d1c0e3",
+      "bytes": 7276
+    },
+    "/lib/libstdc++.so.6": {
+      "resolved_guest_path": "/lib/libstdc++.so.6.0.33",
+      "sha256": "218397d4b3bf444d9c6d62293afe0c7f84676ae1d45d6ced41d4e8f64c65bb50",
+      "bytes": 2635364
+    },
+    "/lib/libstdc++.so.6.0.33": {
+      "resolved_guest_path": "/lib/libstdc++.so.6.0.33",
+      "sha256": "218397d4b3bf444d9c6d62293afe0c7f84676ae1d45d6ced41d4e8f64c65bb50",
+      "bytes": 2635364
+    },
+    "/lib/libutil.so.1": {
+      "resolved_guest_path": "/lib/libutil.so.1",
+      "sha256": "9061313701b0489b4ff6a9698b88a5d5df5bb56a50b269dd8b8392603793a6bb",
+      "bytes": 66872
+    },
+    "/lib/libuuid.so.1": {
+      "resolved_guest_path": "/lib/libuuid.so.1.3.0",
+      "sha256": "6028c9b5a8c7a666803ad4ef6d7a6596cb3c15fb902593ae0c2ab0bb279d293d",
+      "bytes": 68880
+    },
+    "/lib/libuuid.so.1.3.0": {
+      "resolved_guest_path": "/lib/libuuid.so.1.3.0",
+      "sha256": "6028c9b5a8c7a666803ad4ef6d7a6596cb3c15fb902593ae0c2ab0bb279d293d",
+      "bytes": 68880
+    },
+    "/lib/security/pam_access.so": {
+      "resolved_guest_path": "/lib/security/pam_access.so",
+      "sha256": "613e3420f058767b45c423509a74cf094f6348345cb73f0cdd6075960540e3dd",
+      "bytes": 67728
+    },
+    "/lib/security/pam_canonicalize_user.so": {
+      "resolved_guest_path": "/lib/security/pam_canonicalize_user.so",
+      "sha256": "5e979d0867af9afa379fcea0cb1e4210f5e507ccd3c1af2f5d31d7c63cab2620",
+      "bytes": 66932
+    },
+    "/lib/security/pam_debug.so": {
+      "resolved_guest_path": "/lib/security/pam_debug.so",
+      "sha256": "928247d315d998e1eff32a714b4d097248d9877b60a161efecc4f36e27943f27",
+      "bytes": 67324
+    },
+    "/lib/security/pam_deny.so": {
+      "resolved_guest_path": "/lib/security/pam_deny.so",
+      "sha256": "440316f103afcb308084677b5124a0e9b4538e11c5ce48fc9282acae91240d79",
+      "bytes": 66816
+    },
+    "/lib/security/pam_echo.so": {
+      "resolved_guest_path": "/lib/security/pam_echo.so",
+      "sha256": "c9b7f3714053b17201291e105ec65ee7e20a23cb11d284ed1e4c256ecd38eb1e",
+      "bytes": 67148
+    },
+    "/lib/security/pam_env.so": {
+      "resolved_guest_path": "/lib/security/pam_env.so",
+      "sha256": "4e3af14ed2f3a2e239a014dfb866ca5e68caa1a9fdba646a586800e181215cf5",
+      "bytes": 67672
+    },
+    "/lib/security/pam_exec.so": {
+      "resolved_guest_path": "/lib/security/pam_exec.so",
+      "sha256": "935d868f3d84a855eed01e8c0df70ce20f13ddbbea1a0808326349e027ec5c05",
+      "bytes": 67348
+    },
+    "/lib/security/pam_faildelay.so": {
+      "resolved_guest_path": "/lib/security/pam_faildelay.so",
+      "sha256": "16941419ae97e6f5ed2bf530214ee18d2822fc61431ba1bb64d0b28ef7f0e788",
+      "bytes": 66968
+    },
+    "/lib/security/pam_faillock.so": {
+      "resolved_guest_path": "/lib/security/pam_faillock.so",
+      "sha256": "2c923a3cbafc33bb53390109b14466184c14ea02f5d3b28a297621e64f093397",
+      "bytes": 67584
+    },
+    "/lib/security/pam_filter.so": {
+      "resolved_guest_path": "/lib/security/pam_filter.so",
+      "sha256": "2517e787e14656c2306119c3fb147bb6d102162902a0fdd7d8949f236c1e004a",
+      "bytes": 67224
+    },
+    "/lib/security/pam_ftp.so": {
+      "resolved_guest_path": "/lib/security/pam_ftp.so",
+      "sha256": "e80b37cb02f0f473f176572715110a35d01d9f0b5dd57db9db5d691fcb46b214",
+      "bytes": 66956
+    },
+    "/lib/security/pam_group.so": {
+      "resolved_guest_path": "/lib/security/pam_group.so",
+      "sha256": "2b7c74b40fff3f727f6d65710a9fa3d1bcd19d115add07a5ce8333a10816238b",
+      "bytes": 67428
+    },
+    "/lib/security/pam_issue.so": {
+      "resolved_guest_path": "/lib/security/pam_issue.so",
+      "sha256": "5d1780fa8a4e76a1c124216be374ccf09069796dea880fb68a537fd9a8edbdfe",
+      "bytes": 67368
+    },
+    "/lib/security/pam_keyinit.so": {
+      "resolved_guest_path": "/lib/security/pam_keyinit.so",
+      "sha256": "a8fa76b1141092276f8f1ed85faabc0ccc4fe376a84c9c8b146420fa17e89697",
+      "bytes": 67212
+    },
+    "/lib/security/pam_limits.so": {
+      "resolved_guest_path": "/lib/security/pam_limits.so",
+      "sha256": "4b7f21c815b169549e85ac8d79b4194eb9faea08eb5ee226c5444a367fcdc4be",
+      "bytes": 67460
+    },
+    "/lib/security/pam_listfile.so": {
+      "resolved_guest_path": "/lib/security/pam_listfile.so",
+      "sha256": "de202cbf042ca8aa299e342e0366e727d2ed51f1914c40a75ffe80a421d24aba",
+      "bytes": 67156
+    },
+    "/lib/security/pam_localuser.so": {
+      "resolved_guest_path": "/lib/security/pam_localuser.so",
+      "sha256": "578c64c76191510147817c1052f59446fa6e581b7f1d7121743ea71d738214be",
+      "bytes": 67092
+    },
+    "/lib/security/pam_loginuid.so": {
+      "resolved_guest_path": "/lib/security/pam_loginuid.so",
+      "sha256": "491a2b3b7fb9ec41bb893fada2fe2dcbc067d6bf516c7948a72fe81f27f04c44",
+      "bytes": 67024
+    },
+    "/lib/security/pam_mail.so": {
+      "resolved_guest_path": "/lib/security/pam_mail.so",
+      "sha256": "b9ed885ad841f27d071370ccfcc899bcd2f91e5a6bcd6ad6fe35bd203e44d550",
+      "bytes": 67304
+    },
+    "/lib/security/pam_mkhomedir.so": {
+      "resolved_guest_path": "/lib/security/pam_mkhomedir.so",
+      "sha256": "2f3efe04ed1892dbd55100b9e82b8e9d22f0e484da26b8df7233f5238583b95d",
+      "bytes": 67212
+    },
+    "/lib/security/pam_motd.so": {
+      "resolved_guest_path": "/lib/security/pam_motd.so",
+      "sha256": "78edfc19c452c16b630093fdcf28da3f4b00b4d8e9757b9e85131a13358d20fd",
+      "bytes": 67356
+    },
+    "/lib/security/pam_namespace.so": {
+      "resolved_guest_path": "/lib/security/pam_namespace.so",
+      "sha256": "ebfd7162ada3b6d8662a4bdd85648b03c4f46ff890cd8545d40904d99aa410c6",
+      "bytes": 68232
+    },
+    "/lib/security/pam_nologin.so": {
+      "resolved_guest_path": "/lib/security/pam_nologin.so",
+      "sha256": "b6c8be90937f74e9c9f1a39975311f702481ab61f39fd2c731ab5d4ce0d457ab",
+      "bytes": 67020
+    },
+    "/lib/security/pam_permit.so": {
+      "resolved_guest_path": "/lib/security/pam_permit.so",
+      "sha256": "382c3af3e2327aad58861e945350285545f267e3252107393e600d9c545b8428",
+      "bytes": 67240
+    },
+    "/lib/security/pam_pwhistory.so": {
+      "resolved_guest_path": "/lib/security/pam_pwhistory.so",
+      "sha256": "f990d9412062ed21c52002dc9938b93eed2b49c8d7f1523324df4f4cafe896e6",
+      "bytes": 67252
+    },
+    "/lib/security/pam_rhosts.so": {
+      "resolved_guest_path": "/lib/security/pam_rhosts.so",
+      "sha256": "c5444417f7203a2b429994adfaafe5b8bce2b0ee7cb081ebe8e75dae3ab375c1",
+      "bytes": 66940
+    },
+    "/lib/security/pam_rootok.so": {
+      "resolved_guest_path": "/lib/security/pam_rootok.so",
+      "sha256": "d846d10850cb00930a41d3681731097cc6e05946b2a0a94e892936c7b29446eb",
+      "bytes": 66976
+    },
+    "/lib/security/pam_securetty.so": {
+      "resolved_guest_path": "/lib/security/pam_securetty.so",
+      "sha256": "a4d232def61c0cbdc984fd05fd139d8639c6820c7da606a3fa00343d962ba5d0",
+      "bytes": 67076
+    },
+    "/lib/security/pam_setquota.so": {
+      "resolved_guest_path": "/lib/security/pam_setquota.so",
+      "sha256": "7b269e48ffee14ab910f52629fbecc583b3a03ff936af8d02d5d5730ac9cbc93",
+      "bytes": 67068
+    },
+    "/lib/security/pam_shells.so": {
+      "resolved_guest_path": "/lib/security/pam_shells.so",
+      "sha256": "df05976d9576f4d3b8d529a203b20eb19b606cff27fbc3b10d03edc81177142e",
+      "bytes": 67012
+    },
+    "/lib/security/pam_stress.so": {
+      "resolved_guest_path": "/lib/security/pam_stress.so",
+      "sha256": "56d7abab0e6ff0d3277c764fc7ce4e3b4f7a9988011f376dd8db5451e46f4da2",
+      "bytes": 67472
+    },
+    "/lib/security/pam_succeed_if.so": {
+      "resolved_guest_path": "/lib/security/pam_succeed_if.so",
+      "sha256": "bc9798eea12aefb356b62338d07886d7a45b25de78a4fbab210ad956073205a2",
+      "bytes": 67408
+    },
+    "/lib/security/pam_time.so": {
+      "resolved_guest_path": "/lib/security/pam_time.so",
+      "sha256": "796f743e94f51fda5195f712fd305b2d6eebc2ff7fb18961c29ce7b4a70b94cd",
+      "bytes": 67352
+    },
+    "/lib/security/pam_timestamp.so": {
+      "resolved_guest_path": "/lib/security/pam_timestamp.so",
+      "sha256": "80dfb084bb8c8de7a58c257d339a249ddac76a380a3b7ac222d84dbc2cbc3837",
+      "bytes": 67496
+    },
+    "/lib/security/pam_umask.so": {
+      "resolved_guest_path": "/lib/security/pam_umask.so",
+      "sha256": "1f8c3ff44272909c6b86fdda9356999b5d870ae6f9e8f21627cc8897350a74e6",
+      "bytes": 67012
+    },
+    "/lib/security/pam_unix.so": {
+      "resolved_guest_path": "/lib/security/pam_unix.so",
+      "sha256": "00b1ad90c7e9db31200f70cb99e1fb8439f55102e9e251d2c4da916c601ac35a",
+      "bytes": 69216
+    },
+    "/lib/security/pam_usertype.so": {
+      "resolved_guest_path": "/lib/security/pam_usertype.so",
+      "sha256": "5e0638330ea46850ca821e633cc1ab99ef4e42b65c2c11b26a0b814b5b82918d",
+      "bytes": 67184
+    },
+    "/lib/security/pam_warn.so": {
+      "resolved_guest_path": "/lib/security/pam_warn.so",
+      "sha256": "1975857cb72dabd129760f642a87db4cf8c8d138e3129e972f78958f8c5369a7",
+      "bytes": 67076
+    },
+    "/lib/security/pam_wheel.so": {
+      "resolved_guest_path": "/lib/security/pam_wheel.so",
+      "sha256": "eec52341a9faeac6e733adf4c08c91684992f024ba194ddba869642e41472226",
+      "bytes": 66992
+    },
+    "/lib/security/pam_xauth.so": {
+      "resolved_guest_path": "/lib/security/pam_xauth.so",
+      "sha256": "84fbc90c0d82c2ce4b5ce3402fc9aefd3f70bd6af5161d71494e19d7edaacd49",
+      "bytes": 67300
+    },
+    "/usr/lib/gawk/filefuncs.so": {
+      "resolved_guest_path": "/usr/lib/gawk/filefuncs.so",
+      "sha256": "a992d5b8d1a492b34dd6e72713375552ef69e6488c3a3447c6d80b3b3014c0f4",
+      "bytes": 68328
+    },
+    "/usr/lib/gawk/fnmatch.so": {
+      "resolved_guest_path": "/usr/lib/gawk/fnmatch.so",
+      "sha256": "be68833c5c53232cb93bb0e7a9f16d8cb4f787aff14819e00f36a29edc7bf9f8",
+      "bytes": 67212
+    },
+    "/usr/lib/gawk/fork.so": {
+      "resolved_guest_path": "/usr/lib/gawk/fork.so",
+      "sha256": "bfc5bd0d085e2d048461bd2f74d2b7eefdc50d39fe9f2421c20bdf7bfea4bbbc",
+      "bytes": 67292
+    },
+    "/usr/lib/gawk/inplace.so": {
+      "resolved_guest_path": "/usr/lib/gawk/inplace.so",
+      "sha256": "319e2211823a45de981d6475f16765bf1b8f936d890e0fb1d008a0c4bb49f184",
+      "bytes": 67220
+    },
+    "/usr/lib/gawk/intdiv.so": {
+      "resolved_guest_path": "/usr/lib/gawk/intdiv.so",
+      "sha256": "80cb2c941febf7a7fe2de7033d186a9d046445a6df5671d77727857f381cb8ef",
+      "bytes": 67232
+    },
+    "/usr/lib/gawk/ordchr.so": {
+      "resolved_guest_path": "/usr/lib/gawk/ordchr.so",
+      "sha256": "d033869bcc230f59efeb27eb793a3f528ff8a07474da455293370c4a900fd15a",
+      "bytes": 67168
+    },
+    "/usr/lib/gawk/readdir.so": {
+      "resolved_guest_path": "/usr/lib/gawk/readdir.so",
+      "sha256": "ae2b678b63dbdaea6000272adb0e1a6490b837a23c70539d77c388d2a0edf620",
+      "bytes": 67184
+    },
+    "/usr/lib/gawk/readfile.so": {
+      "resolved_guest_path": "/usr/lib/gawk/readfile.so",
+      "sha256": "ae0a2e66fcf49d0427f552beb39bce0c0da0ea45813f773429f9544aa93544ee",
+      "bytes": 67208
+    },
+    "/usr/lib/gawk/revoutput.so": {
+      "resolved_guest_path": "/usr/lib/gawk/revoutput.so",
+      "sha256": "c5d1cdbff5db1bb3a9be5e781b2beb6b78d2820a09497cd3c5e5c2836f25de96",
+      "bytes": 67124
+    },
+    "/usr/lib/gawk/revtwoway.so": {
+      "resolved_guest_path": "/usr/lib/gawk/revtwoway.so",
+      "sha256": "f5a26c395a6dabfbf3b8fd54fc183e09b232abd5b310d702d9c4f7880c460ab1",
+      "bytes": 67276
+    },
+    "/usr/lib/gawk/rwarray.so": {
+      "resolved_guest_path": "/usr/lib/gawk/rwarray.so",
+      "sha256": "069a97001d57ec64fcfe7cec674ceabd002bd0b92bff144d271f7a379acb0537",
+      "bytes": 67544
+    },
+    "/usr/lib/gawk/time.so": {
+      "resolved_guest_path": "/usr/lib/gawk/time.so",
+      "sha256": "25b33c66f201026c550614ae6659f501a90e21c147a56101c072ae33ceed9ce2",
+      "bytes": 67432
+    },
+    "/usr/lib/libblkid.so": {
+      "resolved_guest_path": "/lib/libblkid.so.1.1.0",
+      "sha256": "6b7f70b72d7558869a64f1478287ed4f1a5a084ba38973dc427cd6d09167f19a",
+      "bytes": 425744
+    },
+    "/usr/lib/libbz2.so": {
+      "resolved_guest_path": "/usr/lib/libbz2.so.1.0.8",
+      "sha256": "09fac97754fe4bfac929a269e37db05e4551a80e783428ff160775af4dc554e2",
+      "bytes": 71832
+    },
+    "/usr/lib/libbz2.so.1.0": {
+      "resolved_guest_path": "/usr/lib/libbz2.so.1.0.8",
+      "sha256": "09fac97754fe4bfac929a269e37db05e4551a80e783428ff160775af4dc554e2",
+      "bytes": 71832
+    },
+    "/usr/lib/libbz2.so.1.0.8": {
+      "resolved_guest_path": "/usr/lib/libbz2.so.1.0.8",
+      "sha256": "09fac97754fe4bfac929a269e37db05e4551a80e783428ff160775af4dc554e2",
+      "bytes": 71832
+    },
+    "/usr/lib/libcom_err.so": {
+      "resolved_guest_path": "/usr/lib/libcom_err.so.2.1",
+      "sha256": "bf28afb2a8a96bc4bc63b38876554e91c91c5cb94e6f897a6c5fe8fefde1c777",
+      "bytes": 67716
+    },
+    "/usr/lib/libcom_err.so.2": {
+      "resolved_guest_path": "/usr/lib/libcom_err.so.2.1",
+      "sha256": "bf28afb2a8a96bc4bc63b38876554e91c91c5cb94e6f897a6c5fe8fefde1c777",
+      "bytes": 67716
+    },
+    "/usr/lib/libcom_err.so.2.1": {
+      "resolved_guest_path": "/usr/lib/libcom_err.so.2.1",
+      "sha256": "bf28afb2a8a96bc4bc63b38876554e91c91c5cb94e6f897a6c5fe8fefde1c777",
+      "bytes": 67716
+    },
+    "/usr/lib/libcrypt.so": {
+      "resolved_guest_path": "/usr/lib/libcrypt.so.2.0.0",
+      "sha256": "4577781a1c59a6e48cf938df629ec61bd04d9d50b1323306030f50b2117737b7",
+      "bytes": 268752
+    },
+    "/usr/lib/libcrypt.so.2": {
+      "resolved_guest_path": "/usr/lib/libcrypt.so.2.0.0",
+      "sha256": "4577781a1c59a6e48cf938df629ec61bd04d9d50b1323306030f50b2117737b7",
+      "bytes": 268752
+    },
+    "/usr/lib/libcrypt.so.2.0.0": {
+      "resolved_guest_path": "/usr/lib/libcrypt.so.2.0.0",
+      "sha256": "4577781a1c59a6e48cf938df629ec61bd04d9d50b1323306030f50b2117737b7",
+      "bytes": 268752
+    },
+    "/usr/lib/libe2p.so": {
+      "resolved_guest_path": "/usr/lib/libe2p.so.2.3",
+      "sha256": "74363e4433b2ee47589239d4dc53d4e0e505b39623d50c871931e34bcb3eda92",
+      "bytes": 69840
+    },
+    "/usr/lib/libe2p.so.2": {
+      "resolved_guest_path": "/usr/lib/libe2p.so.2.3",
+      "sha256": "74363e4433b2ee47589239d4dc53d4e0e505b39623d50c871931e34bcb3eda92",
+      "bytes": 69840
+    },
+    "/usr/lib/libe2p.so.2.3": {
+      "resolved_guest_path": "/usr/lib/libe2p.so.2.3",
+      "sha256": "74363e4433b2ee47589239d4dc53d4e0e505b39623d50c871931e34bcb3eda92",
+      "bytes": 69840
+    },
+    "/usr/lib/libext2fs.so": {
+      "resolved_guest_path": "/usr/lib/libext2fs.so.2.4",
+      "sha256": "2ca53c9c1c3b34b870a2a7907c3c6ef34c0758c23114fe13119ebf5bb934f81e",
+      "bytes": 492128
+    },
+    "/usr/lib/libext2fs.so.2": {
+      "resolved_guest_path": "/usr/lib/libext2fs.so.2.4",
+      "sha256": "2ca53c9c1c3b34b870a2a7907c3c6ef34c0758c23114fe13119ebf5bb934f81e",
+      "bytes": 492128
+    },
+    "/usr/lib/libext2fs.so.2.4": {
+      "resolved_guest_path": "/usr/lib/libext2fs.so.2.4",
+      "sha256": "2ca53c9c1c3b34b870a2a7907c3c6ef34c0758c23114fe13119ebf5bb934f81e",
+      "bytes": 492128
+    },
+    "/usr/lib/libfdisk.so": {
+      "resolved_guest_path": "/lib/libfdisk.so.1.1.0",
+      "sha256": "a7cff3897c78df845d993dff41740a895f460de75797f04accfa325545524104",
+      "bytes": 560564
+    },
+    "/usr/lib/libformw.so": {
+      "resolved_guest_path": "/usr/lib/libformw.so.6.4",
+      "sha256": "5d5478b13ba1f403b11820148db3388b5e73b5ed70d31489c3ac5199dca0de2a",
+      "bytes": 75764
+    },
+    "/usr/lib/libformw.so.6": {
+      "resolved_guest_path": "/usr/lib/libformw.so.6.4",
+      "sha256": "5d5478b13ba1f403b11820148db3388b5e73b5ed70d31489c3ac5199dca0de2a",
+      "bytes": 75764
+    },
+    "/usr/lib/libformw.so.6.4": {
+      "resolved_guest_path": "/usr/lib/libformw.so.6.4",
+      "sha256": "5d5478b13ba1f403b11820148db3388b5e73b5ed70d31489c3ac5199dca0de2a",
+      "bytes": 75764
+    },
+    "/usr/lib/libhistory.so": {
+      "resolved_guest_path": "/usr/lib/libhistory.so.8.2",
+      "sha256": "29336a7ca97b0a5aeb30be1e514468cbb1847ffc233dba3dfd63c851bb5aa7d4",
+      "bytes": 69480
+    },
+    "/usr/lib/libhistory.so.8": {
+      "resolved_guest_path": "/usr/lib/libhistory.so.8.2",
+      "sha256": "29336a7ca97b0a5aeb30be1e514468cbb1847ffc233dba3dfd63c851bb5aa7d4",
+      "bytes": 69480
+    },
+    "/usr/lib/libhistory.so.8.2": {
+      "resolved_guest_path": "/usr/lib/libhistory.so.8.2",
+      "sha256": "29336a7ca97b0a5aeb30be1e514468cbb1847ffc233dba3dfd63c851bb5aa7d4",
+      "bytes": 69480
+    },
+    "/usr/lib/libkmod.so": {
+      "resolved_guest_path": "/usr/lib/libkmod.so.2.5.0",
+      "sha256": "65a1c222c576521c83d144e72176c878d856faf2f2e4cf4031e8ddb0af553716",
+      "bytes": 133268
+    },
+    "/usr/lib/libkmod.so.2": {
+      "resolved_guest_path": "/usr/lib/libkmod.so.2.5.0",
+      "sha256": "65a1c222c576521c83d144e72176c878d856faf2f2e4cf4031e8ddb0af553716",
+      "bytes": 133268
+    },
+    "/usr/lib/libkmod.so.2.5.0": {
+      "resolved_guest_path": "/usr/lib/libkmod.so.2.5.0",
+      "sha256": "65a1c222c576521c83d144e72176c878d856faf2f2e4cf4031e8ddb0af553716",
+      "bytes": 133268
+    },
+    "/usr/lib/liblzma.so": {
+      "resolved_guest_path": "/usr/lib/liblzma.so.5.6.4",
+      "sha256": "e98fef1136fd0b4f1c52641a6380988254857c4716e9cc1c5c403702309ee6c6",
+      "bytes": 210876
+    },
+    "/usr/lib/liblzma.so.5": {
+      "resolved_guest_path": "/usr/lib/liblzma.so.5.6.4",
+      "sha256": "e98fef1136fd0b4f1c52641a6380988254857c4716e9cc1c5c403702309ee6c6",
+      "bytes": 210876
+    },
+    "/usr/lib/liblzma.so.5.6.4": {
+      "resolved_guest_path": "/usr/lib/liblzma.so.5.6.4",
+      "sha256": "e98fef1136fd0b4f1c52641a6380988254857c4716e9cc1c5c403702309ee6c6",
+      "bytes": 210876
+    },
+    "/usr/lib/libmenuw.so": {
+      "resolved_guest_path": "/usr/lib/libmenuw.so.6.4",
+      "sha256": "c6b683387dcd881029e5112a8363495a2c664a0c88df09039fce30da6ad37f07",
+      "bytes": 69796
+    },
+    "/usr/lib/libmenuw.so.6": {
+      "resolved_guest_path": "/usr/lib/libmenuw.so.6.4",
+      "sha256": "c6b683387dcd881029e5112a8363495a2c664a0c88df09039fce30da6ad37f07",
+      "bytes": 69796
+    },
+    "/usr/lib/libmenuw.so.6.4": {
+      "resolved_guest_path": "/usr/lib/libmenuw.so.6.4",
+      "sha256": "c6b683387dcd881029e5112a8363495a2c664a0c88df09039fce30da6ad37f07",
+      "bytes": 69796
+    },
+    "/usr/lib/libmount.so": {
+      "resolved_guest_path": "/lib/libmount.so.1.1.0",
+      "sha256": "ced36524011ab1339bc66512f63a01b7855c285163c2fafc20122de445348bf2",
+      "bytes": 496448
+    },
+    "/usr/lib/libncursesw.so": {
+      "resolved_guest_path": "/usr/lib/libncursesw.so.6.4",
+      "sha256": "48bd2a5d213cda75043042154f8ffbe7a0a85a026977a83810c57b646bf4292a",
+      "bytes": 427524
+    },
+    "/usr/lib/libncursesw.so.6": {
+      "resolved_guest_path": "/usr/lib/libncursesw.so.6.4",
+      "sha256": "48bd2a5d213cda75043042154f8ffbe7a0a85a026977a83810c57b646bf4292a",
+      "bytes": 427524
+    },
+    "/usr/lib/libncursesw.so.6.4": {
+      "resolved_guest_path": "/usr/lib/libncursesw.so.6.4",
+      "sha256": "48bd2a5d213cda75043042154f8ffbe7a0a85a026977a83810c57b646bf4292a",
+      "bytes": 427524
+    },
+    "/usr/lib/libpanelw.so": {
+      "resolved_guest_path": "/usr/lib/libpanelw.so.6.4",
+      "sha256": "497d443788c2d25dafec9b5cd5f3fc61ca655d6a687fe5059a922803d6f30c01",
+      "bytes": 67412
+    },
+    "/usr/lib/libpanelw.so.6": {
+      "resolved_guest_path": "/usr/lib/libpanelw.so.6.4",
+      "sha256": "497d443788c2d25dafec9b5cd5f3fc61ca655d6a687fe5059a922803d6f30c01",
+      "bytes": 67412
+    },
+    "/usr/lib/libpanelw.so.6.4": {
+      "resolved_guest_path": "/usr/lib/libpanelw.so.6.4",
+      "sha256": "497d443788c2d25dafec9b5cd5f3fc61ca655d6a687fe5059a922803d6f30c01",
+      "bytes": 67412
+    },
+    "/usr/lib/libproc2.so": {
+      "resolved_guest_path": "/usr/lib/libproc2.so.1.0.0",
+      "sha256": "7527740d79ec83cee6106114dc7905687cec4d2d3aa4768d7ead9f012951c632",
+      "bytes": 228152
+    },
+    "/usr/lib/libproc2.so.1": {
+      "resolved_guest_path": "/usr/lib/libproc2.so.1.0.0",
+      "sha256": "7527740d79ec83cee6106114dc7905687cec4d2d3aa4768d7ead9f012951c632",
+      "bytes": 228152
+    },
+    "/usr/lib/libproc2.so.1.0.0": {
+      "resolved_guest_path": "/usr/lib/libproc2.so.1.0.0",
+      "sha256": "7527740d79ec83cee6106114dc7905687cec4d2d3aa4768d7ead9f012951c632",
+      "bytes": 228152
+    },
+    "/usr/lib/libreadline.so": {
+      "resolved_guest_path": "/usr/lib/libreadline.so.8.2",
+      "sha256": "040aaea4acb61181438cebd91803fd1127a724c7f03215cdbfb38864440b785f",
+      "bytes": 298180
+    },
+    "/usr/lib/libreadline.so.8": {
+      "resolved_guest_path": "/usr/lib/libreadline.so.8.2",
+      "sha256": "040aaea4acb61181438cebd91803fd1127a724c7f03215cdbfb38864440b785f",
+      "bytes": 298180
+    },
+    "/usr/lib/libreadline.so.8.2": {
+      "resolved_guest_path": "/usr/lib/libreadline.so.8.2",
+      "sha256": "040aaea4acb61181438cebd91803fd1127a724c7f03215cdbfb38864440b785f",
+      "bytes": 298180
+    },
+    "/usr/lib/libsmartcols.so": {
+      "resolved_guest_path": "/lib/libsmartcols.so.1.1.0",
+      "sha256": "514308c117383e826391ea436a5cf6fbc5b46dcc98ceaa9c9053f32172376e4d",
+      "bytes": 358200
+    },
+    "/usr/lib/libss.so": {
+      "resolved_guest_path": "/usr/lib/libss.so.2.0",
+      "sha256": "f7d427c87178169c8f85a825fe7a0a757d806665290285ea30e970ae064f884b",
+      "bytes": 68408
+    },
+    "/usr/lib/libss.so.2": {
+      "resolved_guest_path": "/usr/lib/libss.so.2.0",
+      "sha256": "f7d427c87178169c8f85a825fe7a0a757d806665290285ea30e970ae064f884b",
+      "bytes": 68408
+    },
+    "/usr/lib/libss.so.2.0": {
+      "resolved_guest_path": "/usr/lib/libss.so.2.0",
+      "sha256": "f7d427c87178169c8f85a825fe7a0a757d806665290285ea30e970ae064f884b",
+      "bytes": 68408
+    },
+    "/usr/lib/libsyslog.so": {
+      "resolved_guest_path": "/usr/lib/libsyslog.so.0.2.0",
+      "sha256": "828add890ed3e41a38b6f13bcd4e9c95df07fd762737955ead93f067f23d2c5f",
+      "bytes": 68196
+    },
+    "/usr/lib/libsyslog.so.0": {
+      "resolved_guest_path": "/usr/lib/libsyslog.so.0.2.0",
+      "sha256": "828add890ed3e41a38b6f13bcd4e9c95df07fd762737955ead93f067f23d2c5f",
+      "bytes": 68196
+    },
+    "/usr/lib/libsyslog.so.0.2.0": {
+      "resolved_guest_path": "/usr/lib/libsyslog.so.0.2.0",
+      "sha256": "828add890ed3e41a38b6f13bcd4e9c95df07fd762737955ead93f067f23d2c5f",
+      "bytes": 68196
+    },
+    "/usr/lib/libuuid.so": {
+      "resolved_guest_path": "/lib/libuuid.so.1.3.0",
+      "sha256": "6028c9b5a8c7a666803ad4ef6d7a6596cb3c15fb902593ae0c2ab0bb279d293d",
+      "bytes": 68880
+    }
+  },
+  "staged_runtime_library_hashes_unchanged_during_tests": true,
+  "tests": [
+    {
+      "name": "r5900-multiply",
+      "status": "passed",
+      "exit_code": 0,
+      "stdout": "R5900 MULT/MULTU GPR and HI/LO checks passed\n",
+      "stderr": "",
+      "expected_stdout": "R5900 MULT/MULTU GPR and HI/LO checks passed\n",
+      "seconds": 0.016,
+      "executable_sha256": "eaa27d7700f1ea6a87662189f1933fa5ece43ea64b18b843d043c2406267269c"
+    },
+    {
+      "name": "bash-builtins",
+      "status": "passed",
+      "exit_code": 0,
+      "stdout": "Bash arithmetic and builtins passed\n",
+      "stderr": "",
+      "expected_stdout": "Bash arithmetic and builtins passed\n",
+      "seconds": 0.035,
+      "executable_sha256": "a514d9f4a1ea4aaf5cb16e08e7a8aa9be5561fc2c653195e5b1fc8ed60a4318f"
+    },
+    {
+      "name": "gnu-coreutils-printf",
+      "status": "passed",
+      "exit_code": 0,
+      "stdout": "GNU 42\n",
+      "stderr": "",
+      "expected_stdout": "GNU 42\n",
+      "seconds": 0.016,
+      "executable_sha256": "4f10656bd875c8e27581a43bd989218e8ac7c272f866fa2f1f9f7bb6e2ec6868"
+    },
+    {
+      "name": "gnu-coreutils-sort",
+      "status": "passed",
+      "exit_code": 0,
+      "stdout": "alpha\nbeta\ngamma\n",
+      "stderr": "",
+      "expected_stdout": "alpha\nbeta\ngamma\n",
+      "seconds": 0.018,
+      "executable_sha256": "4f10656bd875c8e27581a43bd989218e8ac7c272f866fa2f1f9f7bb6e2ec6868"
+    },
+    {
+      "name": "gnu-coreutils-sha256sum",
+      "status": "passed",
+      "exit_code": 0,
+      "stdout": "994fa8bb52f72972c6717f74e6788525f89484c0038d85898c44fe7990eed87e  data.txt\n",
+      "stderr": "",
+      "expected_stdout": "994fa8bb52f72972c6717f74e6788525f89484c0038d85898c44fe7990eed87e  data.txt\n",
+      "seconds": 0.017,
+      "executable_sha256": "4f10656bd875c8e27581a43bd989218e8ac7c272f866fa2f1f9f7bb6e2ec6868"
+    },
+    {
+      "name": "gnu-sed-regex",
+      "status": "passed",
+      "exit_code": 0,
+      "stdout": "word=gamma\nword=alpha\nword=beta\n",
+      "stderr": "",
+      "expected_stdout": "word=gamma\nword=alpha\nword=beta\n",
+      "seconds": 0.024,
+      "executable_sha256": "9a5ebf038f7aec643ac23851898f5b3ec24bf78816e9ea3555b45a5b1171de1a"
+    },
+    {
+      "name": "gnu-gawk-softfloat",
+      "status": "passed",
+      "exit_code": 0,
+      "stdout": "-259\n",
+      "stderr": "",
+      "expected_stdout": "-259\n",
+      "seconds": 0.025,
+      "executable_sha256": "666afbba1b0e5cc495b5b006529bea0e18d84772a5997a06f1a09e51ae146217"
+    },
+    {
+      "name": "gnu-gzip-decompress",
+      "status": "passed",
+      "exit_code": 0,
+      "stdout": "eeLinux R5900 GNU userland\n",
+      "stderr": "",
+      "expected_stdout": "eeLinux R5900 GNU userland\n",
+      "seconds": 0.014,
+      "executable_sha256": "986816bc491a9c98b3ff576af7412ca1449aaa4113b7f8077b79a26552fdb27a"
+    }
+  ],
+  "filesystem_scope": "Selected target programs and temporary host data files; -L is a loader prefix, not a sandbox",
+  "binfmt_registration": false,
+  "chroot": false,
+  "pid1_or_service_execution": false,
+  "ps2_kernel_or_devices_tested": false,
+  "limitations": [
+    "This is a pinned experimental QEMU 5.0.1 fork, not current upstream QEMU.",
+    "The 93 vector multimedia MMI instructions and LQ/SQ are unsupported.",
+    "Linux-user translates guest syscalls to the host kernel; it does not execute the eeLinux kernel.",
+    "LL/SC and selected reserved instructions are emulated directly, so successful tests do not validate PS2 kernel trap emulation.",
+    "There is no PS2 system-mode, GS, IOP, SMAP Ethernet or other PS2-device emulation.",
+    "The loader prefix is not a filesystem sandbox; tests use selected programs and host temporary files only."
+  ]
+}

@@ -1,0 +1,343 @@
+--- a/hw/xfree86/drivers/ps2/ps2_glyph.c
++++ b/hw/xfree86/drivers/ps2/ps2_glyph.c
+@@ -19,6 +19,8 @@
+ #define SERVER_MSB_FIRST 1
+ #endif
+ static DevPrivateKeyRec glyph_key;
++Bool ps2_glyph_register_private(void)
++{ return dixRegisterPrivateKey(&glyph_key,PRIVATE_GC,0); }
+ static void fail(const char *reason) { FatalError("PS2 GS: native core glyph operation failed: %s\n",reason); }
+ static int32_t coordinate(int64_t value)
+ {
+@@ -123,7 +125,7 @@
+ {
+     struct ps2_render_client *render=ps2_pipe_context_render(context);
+     if(!gc || !b || b->gc || !gc->ops || gc->ops->PolyGlyphBlt==poly || !exa ||
+-        !render || render->gs!=exa->gs || !dixRegisterPrivateKey(&glyph_key,PRIVATE_GC,0) ||
++        !render || render->gs!=exa->gs || !ps2_glyph_register_private() ||
+         ps2_pipe_context_acquire(context)) return FALSE;
+     b->gc=gc; b->original=gc->ops; b->ops=*gc->ops; b->exa=exa; b->context=context;
+     b->ops.PolyGlyphBlt=poly; b->ops.ImageGlyphBlt=image;
+--- a/hw/xfree86/drivers/ps2/ps2_glyph.h
++++ b/hw/xfree86/drivers/ps2/ps2_glyph.h
+@@ -10,6 +10,9 @@
+     struct ps2_surface_exa *exa;
+     struct pipe_context *context;
+ };
++/* Register during DDX setup, before the first server GC allocation. Xorg
++ * cannot enlarge GC private storage after GCs already exist. */
++Bool ps2_glyph_register_private(void);
+ /* Zero-initialize and retain this per-GC object through GC destruction.
+  * DDX: detach before ValidateGC or DestroyGC; attach after ValidateGC and
+  * after EXA's GC setup. No additional ops wrapper may be inserted while
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_gc.c
+@@ -0,0 +1,277 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_gc.h"
++#include "os.h"
++#include "dixfont.h"
++#include <X11/fonts/fontstruct.h>
++#include <limits.h>
++#include <stdlib.h>
++#include <string.h>
++
++#define MAX_GCS 1024U
++struct ps2_gc_private {
++    struct ps2_gc_screen *owner;
++    struct ps2_gc_private *next, **previous;
++    GCPtr gc;
++    const GCFuncs *funcs;
++    struct ps2_glyph_gc glyph;
++};
++static DevPrivateKeyRec screen_key, gc_key;
++static const GCFuncs funcs;
++static Bool create_gc(GCPtr);
++static Bool close_screen(ScreenPtr);
++static void install_ops(GCPtr, struct ps2_gc_private *);
++
++static void fail(const char *reason)
++{
++    FatalError("PS2 GS: GC integration failed: %s\n", reason);
++}
++static struct ps2_gc_private *lookup(GCPtr gc)
++{
++    struct ps2_gc_private *p = dixLookupPrivate(&gc->devPrivates, &gc_key);
++    if (!p || p->gc != gc || !p->owner->installed)
++        fail("missing GC owner");
++    return p;
++}
++static void live(struct ps2_gc_private *p)
++{
++    if (ps2_pipe_context_acquire(p->owner->context))
++        fail("context is closed or failed");
++    ps2_pipe_context_release(p->owner->context);
++}
++static struct ps2_gc_private *begin(GCPtr gc)
++{
++    struct ps2_gc_private *p = lookup(gc);
++    if (gc->funcs != &funcs) fail("GC funcs changed without unwrapping");
++    ps2_glyph_gc_detach(&p->glyph);
++    gc->funcs = p->funcs;
++    return p;
++}
++static void finish(GCPtr gc, struct ps2_gc_private *p, Bool drawing)
++{
++    if (!gc->funcs || gc->funcs == &funcs || !gc->ops)
++        fail("lower GC callbacks are invalid");
++    p->funcs = gc->funcs;
++    gc->funcs = &funcs;
++    if (drawing) install_ops(gc, p);
++}
++static void validate(GCPtr gc, unsigned long changes, DrawablePtr drawable)
++{
++    live(lookup(gc));
++    struct ps2_gc_private *p = begin(gc);
++    if (!gc->funcs->ValidateGC) fail("missing ValidateGC");
++    gc->funcs->ValidateGC(gc, changes, drawable);
++    finish(gc, p, TRUE);
++}
++static void change(GCPtr gc, unsigned long mask)
++{
++    struct ps2_gc_private *p = begin(gc);
++    gc->funcs->ChangeGC(gc, mask);
++    finish(gc, p, FALSE);
++}
++static void copy_gc(GCPtr source, unsigned long mask, GCPtr destination)
++{
++    struct ps2_gc_private *p = begin(destination);
++    destination->funcs->CopyGC(source, mask, destination);
++    finish(destination, p, FALSE);
++}
++static void remove_gc(struct ps2_gc_private *p)
++{
++    *p->previous = p->next;
++    if (p->next) p->next->previous = p->previous;
++    --p->owner->count;
++    dixSetPrivate(&p->gc->devPrivates, &gc_key, NULL);
++}
++static void destroy(GCPtr gc)
++{
++    struct ps2_gc_private *p = begin(gc);
++    remove_gc(p);
++    /* The lower callback may release GC private storage; do not touch gc after. */
++    gc->funcs->DestroyGC(gc);
++    free(p);
++}
++static void change_clip(GCPtr gc, int type, void *value, int count)
++{
++    struct ps2_gc_private *p = begin(gc);
++    gc->funcs->ChangeClip(gc, type, value, count);
++    finish(gc, p, FALSE);
++}
++static void destroy_clip(GCPtr gc)
++{
++    struct ps2_gc_private *p = begin(gc);
++    gc->funcs->DestroyClip(gc);
++    finish(gc, p, FALSE);
++}
++static void copy_clip(GCPtr destination, GCPtr source)
++{
++    struct ps2_gc_private *p = begin(destination);
++    destination->funcs->CopyClip(destination, source);
++    finish(destination, p, FALSE);
++}
++static const GCFuncs funcs = {
++    validate, change, copy_gc, destroy, change_clip, destroy_clip, copy_clip
++};
++
++/* Lower EXA/damage ops can replace both tables while dispatching. Restore the
++ * native hooks around every non-text op instead of copying those ops blindly. */
++#define FORWARD_VOID(name, signature, arguments) \
++static void forward_##name signature { \
++    live(lookup(gc)); \
++    struct ps2_gc_private *p = begin(gc); \
++    if (!gc->ops->name) fail("missing " #name); \
++    gc->ops->name arguments; \
++    finish(gc, p, TRUE); \
++}
++FORWARD_VOID(FillSpans, (DrawablePtr d, GCPtr gc, int n, DDXPointPtr points, int *widths, int sorted),
++             (d, gc, n, points, widths, sorted))
++FORWARD_VOID(SetSpans, (DrawablePtr d, GCPtr gc, char *bits, DDXPointPtr points, int *widths, int n, int sorted),
++             (d, gc, bits, points, widths, n, sorted))
++FORWARD_VOID(PutImage, (DrawablePtr d, GCPtr gc, int depth, int x, int y, int w, int h, int pad, int format, char *bits),
++             (d, gc, depth, x, y, w, h, pad, format, bits))
++FORWARD_VOID(PolyPoint, (DrawablePtr d, GCPtr gc, int mode, int n, DDXPointPtr points), (d, gc, mode, n, points))
++FORWARD_VOID(Polylines, (DrawablePtr d, GCPtr gc, int mode, int n, DDXPointPtr points), (d, gc, mode, n, points))
++FORWARD_VOID(PolySegment, (DrawablePtr d, GCPtr gc, int n, xSegment *segments), (d, gc, n, segments))
++FORWARD_VOID(PolyRectangle, (DrawablePtr d, GCPtr gc, int n, xRectangle *rects), (d, gc, n, rects))
++FORWARD_VOID(PolyArc, (DrawablePtr d, GCPtr gc, int n, xArc *arcs), (d, gc, n, arcs))
++FORWARD_VOID(FillPolygon, (DrawablePtr d, GCPtr gc, int shape, int mode, int n, DDXPointPtr points),
++             (d, gc, shape, mode, n, points))
++FORWARD_VOID(PolyFillRect, (DrawablePtr d, GCPtr gc, int n, xRectangle *rects), (d, gc, n, rects))
++FORWARD_VOID(PolyFillArc, (DrawablePtr d, GCPtr gc, int n, xArc *arcs), (d, gc, n, arcs))
++FORWARD_VOID(PushPixels, (GCPtr gc, PixmapPtr bitmap, DrawablePtr d, int w, int h, int x, int y),
++             (gc, bitmap, d, w, h, x, y))
++#undef FORWARD_VOID
++#define FORWARD_REGION(name, signature, arguments) \
++static RegionPtr forward_##name signature { \
++    live(lookup(gc)); \
++    struct ps2_gc_private *p = begin(gc); \
++    if (!gc->ops->name) fail("missing " #name); \
++    RegionPtr region = gc->ops->name arguments; \
++    finish(gc, p, TRUE); \
++    return region; \
++}
++FORWARD_REGION(CopyArea, (DrawablePtr source, DrawablePtr d, GCPtr gc, int x, int y, int w, int h, int dx, int dy),
++               (source, d, gc, x, y, w, h, dx, dy))
++FORWARD_REGION(CopyPlane, (DrawablePtr source, DrawablePtr d, GCPtr gc, int x, int y, int w, int h, int dx, int dy, unsigned long plane),
++               (source, d, gc, x, y, w, h, dx, dy, plane))
++#undef FORWARD_REGION
++
++static int text(DrawablePtr d, GCPtr gc, int x, int y, int count,
++                unsigned char *chars, Bool wide, Bool image)
++{
++    struct ps2_gc_private *p = lookup(gc);
++    live(p);
++    if (gc->ops != &p->glyph.ops || !p->glyph.gc || count < 0 || count > 255 ||
++        (count && !chars) || !gc->font || !gc->font->get_glyphs)
++        fail("invalid core text request");
++    if (!count) return x;
++    CharInfoPtr glyphs[255];
++    unsigned long n = 0;
++    FontEncoding encoding = wide ?
++        (gc->font->info.lastRow ? TwoD16Bit : Linear16Bit) : Linear8Bit;
++    GetGlyphs(gc->font, count, chars, encoding, &n, glyphs);
++    if (n > (unsigned)count) fail("font returned too many glyphs");
++    int64_t end = x;
++    for (unsigned long i = 0; i < n; ++i) {
++        if (!glyphs[i]) fail("font returned null glyph");
++        end += glyphs[i]->metrics.characterWidth;
++    }
++    if (end < INT_MIN || end > INT_MAX) fail("text advance overflow");
++    if (n) {
++        if (image) gc->ops->ImageGlyphBlt(d, gc, x, y, n, glyphs, NULL);
++        else gc->ops->PolyGlyphBlt(d, gc, x, y, n, glyphs, NULL);
++    }
++    return end;
++}
++static int poly8(DrawablePtr d, GCPtr gc, int x, int y, int n, char *chars)
++{ return text(d, gc, x, y, n, (unsigned char *)chars, FALSE, FALSE); }
++static int poly16(DrawablePtr d, GCPtr gc, int x, int y, int n, unsigned short *chars)
++{ return text(d, gc, x, y, n, (unsigned char *)chars, TRUE, FALSE); }
++static void image8(DrawablePtr d, GCPtr gc, int x, int y, int n, char *chars)
++{ (void)text(d, gc, x, y, n, (unsigned char *)chars, FALSE, TRUE); }
++static void image16(DrawablePtr d, GCPtr gc, int x, int y, int n, unsigned short *chars)
++{ (void)text(d, gc, x, y, n, (unsigned char *)chars, TRUE, TRUE); }
++static void install_ops(GCPtr gc, struct ps2_gc_private *p)
++{
++    if (!ps2_glyph_gc_attach(gc, &p->glyph, p->owner->exa, p->owner->context))
++        fail("cannot attach native glyph operations");
++#define FORWARD(name) p->glyph.ops.name = forward_##name
++    FORWARD(FillSpans); FORWARD(SetSpans); FORWARD(PutImage);
++    FORWARD(CopyArea); FORWARD(CopyPlane); FORWARD(PolyPoint); FORWARD(Polylines);
++    FORWARD(PolySegment); FORWARD(PolyRectangle); FORWARD(PolyArc);
++    FORWARD(FillPolygon); FORWARD(PolyFillRect); FORWARD(PolyFillArc); FORWARD(PushPixels);
++#undef FORWARD
++    p->glyph.ops.PolyText8 = poly8; p->glyph.ops.PolyText16 = poly16;
++    p->glyph.ops.ImageText8 = image8; p->glyph.ops.ImageText16 = image16;
++}
++static Bool complete(const GCFuncs *f)
++{
++    return f && f->ValidateGC && f->ChangeGC && f->CopyGC && f->DestroyGC &&
++           f->ChangeClip && f->DestroyClip && f->CopyClip;
++}
++static Bool create_gc(GCPtr gc)
++{
++    struct ps2_gc_screen *b = dixLookupPrivate(&gc->pScreen->devPrivates, &screen_key);
++    if (!b || !b->installed || b->count == MAX_GCS ||
++        ps2_pipe_context_acquire(b->context)) return FALSE;
++    ps2_pipe_context_release(b->context);
++    struct ps2_gc_private *p = calloc(1, sizeof(*p));
++    if (!p) return FALSE;
++    b->screen->CreateGC = b->CreateGC;
++    Bool ok = b->screen->CreateGC(gc);
++    b->CreateGC = b->screen->CreateGC;
++    b->screen->CreateGC = create_gc;
++    if (!ok) { free(p); return FALSE; }
++    if (!complete(gc->funcs) || !gc->ops) {
++        if (gc->funcs && gc->funcs->DestroyGC) gc->funcs->DestroyGC(gc);
++        free(p); return FALSE;
++    }
++    p->owner = b; p->gc = gc; p->funcs = gc->funcs;
++    p->next = b->gcs; p->previous = &b->gcs;
++    if (p->next) p->next->previous = &p->next;
++    b->gcs = p; ++b->count;
++    dixSetPrivate(&gc->devPrivates, &gc_key, p);
++    gc->funcs = &funcs;
++    return TRUE;
++}
++static Bool close_screen(ScreenPtr screen)
++{
++    struct ps2_gc_screen *b = dixLookupPrivate(&screen->devPrivates, &screen_key);
++    if (!b) fail("missing screen owner");
++    CloseScreenProcPtr lower = b->CloseScreen;
++    ps2_gc_screen_cleanup(b);
++    return lower(screen);
++}
++Bool ps2_gc_screen_prepare(ScreenPtr screen, struct ps2_gc_screen *b,
++                           struct ps2_surface_exa *exa, struct pipe_context *context)
++{
++    struct ps2_render_client *render = ps2_pipe_context_render(context);
++    if (!screen || !b || b->installed || !screen->CreateGC || !screen->CloseScreen ||
++        screen->CreateGC == create_gc || !exa || !render || render->gs != exa->gs ||
++        !dixRegisterPrivateKey(&screen_key, PRIVATE_SCREEN, 0) ||
++        !dixRegisterPrivateKey(&gc_key, PRIVATE_GC, 0) ||
++        !ps2_glyph_register_private() ||
++        dixLookupPrivate(&screen->devPrivates, &screen_key) ||
++        ps2_pipe_context_acquire(context)) return FALSE;
++    *b = (struct ps2_gc_screen){.screen = screen, .exa = exa, .context = context,
++        .CreateGC = screen->CreateGC, .CloseScreen = screen->CloseScreen, .installed = TRUE};
++    dixSetPrivate(&screen->devPrivates, &screen_key, b);
++    screen->CreateGC = create_gc; screen->CloseScreen = close_screen;
++    return TRUE;
++}
++void ps2_gc_screen_cleanup(struct ps2_gc_screen *b)
++{
++    if (!b || !b->installed) return;
++    if (b->screen->CreateGC != create_gc || b->screen->CloseScreen != close_screen)
++        fail("screen callbacks changed without unwrapping");
++    b->screen->CreateGC = b->CreateGC; b->screen->CloseScreen = b->CloseScreen;
++    while (b->gcs) {
++        struct ps2_gc_private *p = b->gcs;
++        ps2_glyph_gc_detach(&p->glyph);
++        if (p->gc->funcs == &funcs) p->gc->funcs = p->funcs;
++        remove_gc(p);
++        free(p);
++    }
++    struct pipe_context *context = b->context;
++    dixSetPrivate(&b->screen->devPrivates, &screen_key, NULL);
++    memset(b, 0, sizeof(*b));
++    ps2_pipe_context_release(context);
++}
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_gc.h
+@@ -0,0 +1,28 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_GC_H
++#define PS2_GC_H
++#include "ps2_glyph.h"
++
++struct ps2_gc_private;
++struct ps2_gc_screen {
++    ScreenPtr screen;
++    struct ps2_surface_exa *exa;
++    struct pipe_context *context;
++    CreateGCProcPtr CreateGC;
++    CloseScreenProcPtr CloseScreen;
++    struct ps2_gc_private *gcs;
++    unsigned count;
++    Bool installed;
++};
++/* Zero-initialize screen-owned state. Install after EXA/damage setup, before
++ * any server GC allocation: prepare registers every native GC private key.
++ * The screen holds a lease; validated GCs retain additional glyph leases.
++ * Cleanup restores
++ * screen/GC callbacks before releasing them and before lower CloseScreen.
++ * Additional owners of CreateGC/CloseScreen must unwrap before cleanup.
++ * Single submission thread; at most 1024 managed GCs. This component does not
++ * supply screen initialization, unsupported raster operations or an X DDX. */
++Bool ps2_gc_screen_prepare(ScreenPtr, struct ps2_gc_screen *,
++                           struct ps2_surface_exa *, struct pipe_context *);
++void ps2_gc_screen_cleanup(struct ps2_gc_screen *);
++#endif

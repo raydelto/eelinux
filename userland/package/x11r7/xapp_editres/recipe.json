@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_editres",
+  "kind": "application",
+  "program": "editres",
+  "version": "1.1.1",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/editres-1.1.1.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/editres-1.1.1.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "e0a29b2f5e178362f71950c45ec49b43ccc75cacf44356948377e71cdfee119b",
+      "filename": "editres-1.1.1.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "0a0dba9d80363296e333d6f0cefb622cdb38b596b6e5a2ea1fb458c5cb136b2e53a3e3965e1e3699c4346699a6f541f49e3ec27d619f7236b5a13ea20d5c5237",
+      "filename": "editres-1.1.1.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

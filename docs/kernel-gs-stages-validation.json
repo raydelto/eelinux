@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "validation_date": "2026-10-02",
+  "purpose": "stopping compressed-kernel stage diagnostics; not bootable Linux sessions",
+  "baseline": "preserved cache-handoff PAL/root2 audit; Debian14.2 kernel compiler and GNU14 early-root; not the new ext4/SMAP kernel",
+  "baseline_image_sha256": "f407a6048fb5c67baa80785cdd92672cf2f25f741ebe41d7de9aaf8eb6a431f4",
+  "baseline_vmlinux_sha256": "45342ca61c0439471e079c6784672d0f0f4d66279d72ddf1a1d788ba30abca8f",
+  "baseline_head_recompile_byte_exact": true,
+  "baseline_stripped_ELF_relink_byte_exact": true,
+  "same_compressed_kernel_payload_and_other_link_objects": true,
+  "all_preserved_inputs_byte_exact_after": true,
+  "compiler": "mipsel-linux-gnu-gcc (Debian 14.2.0-13) 14.2.0",
+  "preserved_input_sha256": {
+    "private-cache-probe/arch/mips/boot/compressed/head.S": "d0b9b33cf073ec82d97234e5dd6a11dc373cc8850a9c617b9c4e59b4123ecaac",
+    "private-cache-probe/arch/mips/boot/compressed/ld.script": "07f02fbff1efe4a11ee5cec1a4ec03e0c2789ce410bf91adbd334b0a02e801e8",
+    "baseline-output/vmlinux": "45342ca61c0439471e079c6784672d0f0f4d66279d72ddf1a1d788ba30abca8f",
+    "baseline-output/vmlinuz": "f407a6048fb5c67baa80785cdd92672cf2f25f741ebe41d7de9aaf8eb6a431f4",
+    "baseline-output/.config": "53239eafcb472feeea9c7770f02c50753c54004ef339a7e5cb8471ed5b5f99eb",
+    "baseline-output/arch/mips/boot/compressed/head.o": "57d69cba8003e452c89346d6a711f314a20f88427e0763a38c655d3c3fc50abd",
+    "baseline-output/arch/mips/boot/compressed/decompress.o": "1ce69665bc404dccdae5c3de38feb18a7a4c804efb7fb571308f6331ad9b1ee6",
+    "baseline-output/arch/mips/boot/compressed/string.o": "9e178040cf2f24c504e729e7abd198595950aac7c02299190e996641b0c13107",
+    "baseline-output/arch/mips/boot/compressed/bswapsi.o": "24b4d106135170d84036f86be3fba9465455c46e5eaa09abc9352a58ea642023",
+    "baseline-output/arch/mips/boot/compressed/cache.o": "e240210cb4939185f96cc425cdbd92e9dc13d6759863c0925bb75a0fad24f8fb",
+    "baseline-output/arch/mips/boot/compressed/piggy.o": "540d87caa219af4e8d64444b56d6ced826d8651ca576acc7900d12f23661aa40",
+    "project/kernel/patches/7.2.8-api.patch": "938d14893ed72828e47398321a12094f92055e8245761e67ab8ba885103ef5e6",
+    "project/boot/gs-probe.S": "dfbdb1ea54cdd3bf18b4d2cfbf1a614b90315054b14537135525c98aa000ccb6",
+    "canonical-source/arch/mips/boot/compressed/head.S": "896cfb0d04c35821a06f29612259c4bdcf3298bd1d1805b9342d79ff36f16cae",
+    "canonical-source/arch/mips/boot/compressed/Makefile": "6d0a7e1b31148fb87dd4553778cfb82ebf285e0ad84dc36de17954fde9fec13e",
+    "canonical-source/arch/mips/boot/compressed/cache.S": "9fd07e0aacf978ec634e764b4a78d6d128ecaf7be25dbe0a69db2d0cf6be336a",
+    "canonical-source/include/linux/compiler-version.h": "71b523f4f5ae572c6cee7fb2d62617ef900f3024619b1a61c8d9e758dfa002c8",
+    "canonical-source/include/linux/kconfig.h": "1b51cc51b6e4beb9b249853e0a0774f63679599f9a27b9e9fb8cc26ca14265f1",
+    "baseline-output/include/generated/autoconf.h": "4f2566594670e7d0cb0c3360115bcbb9b4efce2ccf6afb9c6d66b392c28ae13f",
+    "canonical-source/arch/mips/include/asm/asm.h": "da92ec2427ae03a6085c7a87249471009f268d72d2ca556ecfad960fe13eb673",
+    "canonical-source/arch/mips/include/uapi/asm/sgidefs.h": "d20cd8d9b3898e9f013da1451028a5a4719f5928cdfb5ec25c6e7eb21d80070c",
+    "canonical-source/arch/mips/include/asm/asm-eva.h": "c9fa577768d91ce9bae7fa1880f8dd87a7451526cd81df002498a968889efbfd",
+    "canonical-source/arch/mips/include/asm/isa-rev.h": "92fbaf1c56556f0585df5179a395fe4ff09e18d256546e26aa9a7735bc4fc474",
+    "canonical-source/arch/mips/include/asm/regdef.h": "263aecb471e94d62fef2e7ca15ce9283cd20e2e78a7cda3e8e5676f32cbd4104"
+  },
+  "variants": {
+    "EEYELLOW.ELF": {
+      "stage": "after_BSS",
+      "expected_color": "yellow",
+      "image_sha256": "eb3d64073494efaffa3d5c20829da1f26e4f81e5b3873abba3af09591006bcbb",
+      "image_bytes": 2501048,
+      "source_sha256": "705d90fc5ac3de6024b6a5164e3fe2271a388beeb20891e90f9d09422955ab33",
+      "head_object_sha256": "b46f27710d1f2dd173dbf8fd1d5eb60bd7defbdb06da5c5945169824dde2a079",
+      "checks": {
+        "pre_checkpoint_instruction_words_byte_exact": true,
+        "BSS_loop_four_words_with_NOP_delay": true,
+        "exact_two_native_SD_no_two_SW_macro": true,
+        "stopping_branch_NOP_delay": true,
+        "marker_physical_address": 8388672,
+        "layout": {
+          "ram_bytes": 33554432,
+          "kernel_physical_ranges": [
+            [
+              65536,
+              4800320
+            ]
+          ],
+          "compressed_physical_ranges": [
+            [
+              8388608,
+              16074688
+            ]
+          ],
+          "decompressor_overlap_check": "passed"
+        }
+      },
+      "disk_or_password_required": false,
+      "hardware_tested": true,
+      "hardware_result": "expected color observed; user-reported SCPH-90001 via PS2-to-HDMI"
+    },
+    "EEGREEN.ELF": {
+      "stage": "after_decompression",
+      "expected_color": "green",
+      "image_sha256": "4f4228a9f9df92b90785d1cf7e46d4b35dad9ea07821d0572b55253af847b0b6",
+      "image_bytes": 2501048,
+      "source_sha256": "eff62a67232cf7a5e7a11eae8204a42c35aee36bfe4e0dcc8ae4f999baea1617",
+      "head_object_sha256": "a0f1ff2f1d3ed25f23aea1688a284ea04dfe5bf6ad027ef4a1d0ac89ee83cbb0",
+      "checks": {
+        "pre_checkpoint_instruction_words_byte_exact": true,
+        "BSS_loop_four_words_with_NOP_delay": true,
+        "exact_two_native_SD_no_two_SW_macro": true,
+        "stopping_branch_NOP_delay": true,
+        "marker_physical_address": 8388704,
+        "layout": {
+          "ram_bytes": 33554432,
+          "kernel_physical_ranges": [
+            [
+              65536,
+              4800320
+            ]
+          ],
+          "compressed_physical_ranges": [
+            [
+              8388608,
+              16074688
+            ]
+          ],
+          "decompressor_overlap_check": "passed"
+        }
+      },
+      "disk_or_password_required": false,
+      "hardware_tested": true,
+      "hardware_result": "expected color observed; user-reported SCPH-90001 via PS2-to-HDMI"
+    },
+    "EECYAN.ELF": {
+      "stage": "after_D_cache_writeback_and_I_cache_invalidation",
+      "expected_color": "cyan",
+      "image_sha256": "dc756b672c25d1ab052beb6c0608526b8edd6c1885f2828e4f210b29d93920ee",
+      "image_bytes": 2501048,
+      "source_sha256": "6ff135cba39ad331477fa9463436bc218fc36f4b78a438dc8d0c5a634ee9fdb0",
+      "head_object_sha256": "35ad52dab7e5740e67fe43a6c5b38b885379bd38653133fa7ec969ec78330aaa",
+      "checks": {
+        "pre_checkpoint_instruction_words_byte_exact": true,
+        "BSS_loop_four_words_with_NOP_delay": true,
+        "exact_two_native_SD_no_two_SW_macro": true,
+        "stopping_branch_NOP_delay": true,
+        "marker_physical_address": 8388736,
+        "layout": {
+          "ram_bytes": 33554432,
+          "kernel_physical_ranges": [
+            [
+              65536,
+              4800320
+            ]
+          ],
+          "compressed_physical_ranges": [
+            [
+              8388608,
+              16074688
+            ]
+          ],
+          "decompressor_overlap_check": "passed"
+        }
+      },
+      "disk_or_password_required": false,
+      "hardware_tested": true,
+      "hardware_result": "expected color observed; user-reported SCPH-90001 via PS2-to-HDMI"
+    }
+  },
+  "inherited_initramfs_unpacked_bytes": 1454592,
+  "inherited_early_module_count": 16,
+  "inherited_firmware_count": 6,
+  "gs_registers": {
+    "BGCOLOR": "0xb20000e0",
+    "PMODE": "0xb2000000",
+    "PMODE_value": "0xA5",
+    "native_store_bits": 64,
+    "preserves_existing_video_timings": true,
+    "regdef_macro_guard": "temporarily undefine and restore gp so .set gp=64 reaches assembler unchanged"
+  },
+  "real_hardware_observation": {
+    "standalone_EERED": "user reported solid red",
+    "yellow_green_cyan": "user reported each expected color",
+    "main_kernel_entry_magenta": "user reported expected magenta",
+    "R5900_sync_guard_candidate": "user reported blank; candidate did not resolve physical boot"
+  },
+  "kernel_boot_or_disk_mount_claimed": false,
+  "source_acceptance_gate": "closed;64 rejected files require review",
+  "exact_build_worker_sha256": "eb493f2219f2baf16eb36d5319c621acd573ee70d38ed1424d218676de1d9181",
+  "hardware_evidence_scope": "stopping bootstrap checkpoints only; physical Linux boot remains unverified",
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

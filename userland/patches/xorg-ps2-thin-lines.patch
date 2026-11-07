@@ -1,0 +1,116 @@
+--- a/hw/xfree86/drivers/ps2/ps2_solid.c
++++ b/hw/xfree86/drivers/ps2/ps2_solid.c
+@@ -6,6 +6,7 @@
+ #include "regionstr.h"
+ #include "damage.h"
+ #include "os.h"
++#include "miline.h"
+ #include <errno.h>
+ #include <limits.h>
+ #include <stdlib.h>
+@@ -123,20 +124,26 @@
+ }
+ /* Thin line segments exclude the last endpoint, unless include_last is set.
+  * This avoids double-XOR at polyline joins and closed rectangle corners. */
+-static void segment(struct plan *p, int64_t x1, int64_t y1, int64_t x2, int64_t y2, Bool include_last)
+-{
+-    if (x1 != x2 && y1 != y2) fail(p, "diagonal thin line is not implemented");
+-    if (x1 == x2 && y1 == y2) {
+-        if (include_last) append(p, x1+p->tx, y1+p->ty, x1+p->tx+1, y1+p->ty+1);
+-    } else if (y1 == y2) {
+-        int64_t left = min64(x1,x2), right = max64(x1,x2)+1;
+-        if (!include_last) { if (x2 > x1) --right; else ++left; }
+-        append(p, left+p->tx, y1+p->ty, right+p->tx, y1+p->ty+1);
+-    } else {
+-        int64_t top = min64(y1,y2), bottom = max64(y1,y2)+1;
+-        if (!include_last) { if (y2 > y1) --bottom; else ++top; }
+-        append(p, x1+p->tx, top+p->ty, x1+p->tx+1, bottom+p->ty);
+-    }
++static int line_run(void *data,const rectangle *r)
++{ append(data,r->x1,r->y1,r->x2,r->y2);return 0; }
++static void segment(struct plan *p,int64_t x1,int64_t y1,int64_t x2,int64_t y2,Bool include_last)
++{
++    x1+=p->tx;y1+=p->ty;x2+=p->tx;y2+=p->ty;
++    if(x1<INT32_MIN || x1>INT32_MAX || y1<INT32_MIN || y1>INT32_MAX ||
++       x2<INT32_MIN || x2>INT32_MAX || y2<INT32_MIN || y2>INT32_MAX)
++        fail(p,"line coordinate overflow");
++    /* miZeroLine clips to the drawable before FillSpans/composite clipping and
++     * saturates the upper drawable coordinates to INT16_MAX. Keep the original
++     * endpoints for raster phase, then translate the bounds into backing storage. */
++    int64_t left=p->gc->miTranslate ? p->drawable->x : 0;
++    int64_t top=p->gc->miTranslate ? p->drawable->y : 0;
++    int64_t right=min64(left+p->drawable->width-1,INT16_MAX)+1;
++    int64_t bottom=min64(top+p->drawable->height-1,INT16_MAX)+1;
++    rectangle bounds={max64(left-p->ox,0),max64(top-p->oy,0),
++        min64(right-p->ox,p->width),min64(bottom-p->oy,p->height)};
++    if(bounds.x1>=bounds.x2 || bounds.y1>=bounds.y2) return;
++    if(ps2_pipe_zero_line(x1,y1,x2,y2,miGetZeroLineBias(p->drawable->pScreen)&255,
++                         include_last,&bounds,line_run,p)) fail(p,"line planning failed");
+ }
+ static void fill_spans(DrawablePtr d, GCPtr gc, int n, DDXPointPtr points, int *widths, int sorted)
+ {
+@@ -173,13 +180,13 @@
+ }
+ static void segments(DrawablePtr d,GCPtr gc,int n,xSegment *segs)
+ {
+-    struct plan p; begin(&p,d,gc,n,segs,TRUE,TRUE);
++    struct plan p; begin(&p,d,gc,n,segs,FALSE,TRUE);
+     for(int i=0;i<n;++i) segment(&p,segs[i].x1,segs[i].y1,segs[i].x2,segs[i].y2,gc->capStyle!=CapNotLast);
+     finish(&p);
+ }
+ static void lines(DrawablePtr d,GCPtr gc,int mode,int n,DDXPointPtr pts)
+ {
+-    struct plan p; begin(&p,d,gc,n,pts,TRUE,TRUE); check_mode(&p,mode);
++    struct plan p; begin(&p,d,gc,n,pts,FALSE,TRUE); check_mode(&p,mode);
+     if(n<2) { finish(&p); return; }
+     int64_t x=pts[0].x,y=pts[0].y;
+     for(int i=1;i<n;++i) {
+@@ -188,12 +195,12 @@
+         segment(&p,x,y,nx,ny,FALSE); x=nx; y=ny;
+     }
+     if(gc->capStyle!=CapNotLast && (n==2 || x!=pts[0].x || y!=pts[0].y))
+-        append(&p,x+p.tx,y+p.ty,x+p.tx+1,y+p.ty+1);
++        segment(&p,x,y,x,y,TRUE);
+     finish(&p);
+ }
+ static void rectangles(DrawablePtr d,GCPtr gc,int n,xRectangle *rects)
+ {
+-    struct plan p; begin(&p,d,gc,n,rects,TRUE,TRUE);
++    struct plan p; begin(&p,d,gc,n,rects,FALSE,TRUE);
+     for(int i=0;i<n;++i) {
+         int64_t x=rects[i].x,y=rects[i].y;
+         /* Match miPolyRectangle's zero-width path coordinate saturation. */
+--- a/hw/xfree86/drivers/ps2/ps2_solid.h
++++ b/hw/xfree86/drivers/ps2/ps2_solid.h
+@@ -10,8 +10,9 @@
+     Bool installed;
+ };
+ /* Install after ps2_gc_screen_prepare, on the same submission thread.
+- * Solid fills/points and zero-width solid axis-aligned lines use native GS
+- * Boolean drawing. Unsupported states terminate; no CPU pixel fallback.
++ * Solid fills/points and zero-width solid lines in all octants use native GS
++ * Boolean drawing. CPU geometry planning preserves Xorg zero-line bias;
++ * line pixels use fgPixel independently of fillStyle. Unsupported states terminate; no CPU pixel fallback.
+  * At most 4096 inputs, 256 clip boxes and 16384 clipped rectangles per request.
+  * Cleanup before ps2_gc_screen_cleanup; CloseScreen enforces this ordering.
+  * Other CloseScreen wrappers must unwrap first. State must outlive the screen.
+--- a/hw/xfree86/drivers/ps2/ps2_solid_batch.h
++++ b/hw/xfree86/drivers/ps2/ps2_solid_batch.h
+@@ -13,4 +13,17 @@
+ int ps2_pipe_solid_rectangles(struct pipe_context *, uint32_t handle,
+     const struct ps2_pipe_solid_box *, unsigned count, uint32_t color,
+     uint32_t plane_mask, unsigned alu);
++/* Geometry-only zero-width line planner. Bounds are half-open destination
++ * coordinates. Octant bits are X-decreasing=4, Y-decreasing=2, Y-major=1;
++ * bias bit N prefers the axial pixel on an exact tie in octant N, as in Xorg.
++ * The original line phase is preserved when clipped, including huge endpoints.
++ * Emits disjoint horizontal/vertical runs in traversal order, excludes the last
++ * endpoint unless requested, and propagates callback failure. No allocation,
++ * submission or colour destination access occurs here. Caller must collect and
++ * preflight the complete request before ps2_pipe_solid_rectangles.
++ */
++typedef int (*ps2_pipe_line_emit)(void *, const struct ps2_pipe_solid_box *);
++int ps2_pipe_zero_line(int32_t x1, int32_t y1, int32_t x2, int32_t y2,
++    unsigned bias, int include_last, const struct ps2_pipe_solid_box *bounds,
++    ps2_pipe_line_emit, void *data);
+ #endif

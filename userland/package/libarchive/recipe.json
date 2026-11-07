@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "libarchive",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.libarchive",
+  "symbol": "BR2_PACKAGE_LIBARCHIVE",
+  "version": "3.8.11",
+  "recipe": "package/libarchive/libarchive.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "a3dc0872b1b39da34dc18ef1b944f0f11ffd37425d70ae04be679279f1cf43d2",
+      "filename": "libarchive-3.8.11.tar.xz"
+    }
+  ],
+  "release_url": "https://github.com/libarchive/libarchive/releases/latest"
+}

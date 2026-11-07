@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xgc",
+  "kind": "application",
+  "program": "xgc",
+  "version": "1.0.7",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xgc-1.0.7.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xgc-1.0.7.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "d858258c05eaac2d1f48bb44820dc2dce0a68601a14fff97853c72b48d1b7d08",
+      "filename": "xgc-1.0.7.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "2d994c1dfa93b8c99756336d099737025d97ae0e6ec102e964ffe4a46209e518917fb2bc57bf0274010e099742bd50fcdebdaf9add0d9c02849edb220bced4a7",
+      "filename": "xgc-1.0.7.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": true,
+  "runtime_qualification": {
+    "scope": "emulator application smoke checks; not exhaustive feature qualification",
+    "record": "docs/desktop-applications-r41-validation.json"
+  }
+}

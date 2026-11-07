@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "name": "automake",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "1.19",
+    "url": "https://ftp.gnu.org/gnu/automake/automake-1.19.tar.xz",
+    "gnu": true,
+    "filename": "automake-1.19.tar.xz",
+    "sha256": "e3e2c2e3abf37898138db5b6c1d1dc35c9160c5978be7947d2c741705251d445",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Thu 10 Sep 2026 06:01:41 AM WEST\ngpgv:                using EDDSA key D5D527E7E338A682CBADB1C1217FCF7314636C07\ngpgv: Good signature from \"Kamila Szewczyk <k@iczelia.net>\"\ngpgv:                 aka \"Kamila Szewczyk <szewczyk@cs.uni-saarland.de>\"\ngpgv:                 aka \"Kamila Szewczyk <kamila@cs.fs.uni-saarland.de>\"\ngpgv:                 aka \"Kamila Szewczyk <kszewczyk@acm.org>\"\ngpgv:                 aka \"Kamila Szewczyk <kasz00001@stud.uni-saarland.de>\"\ngpgv:                 aka \"Kamila Szewczyk <kamila@dyalog.com>\"\n"
+  },
+  "source_archive": "../../sources/automake-1.19.tar.xz",
+  "configure_options": [],
+  "configure_environment": {
+    "ac_cv_path_PERL": "/usr/bin/perl"
+  },
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false
+}

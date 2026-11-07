@@ -1,0 +1,168 @@
+--- a/drivers/net/ethernet/ps2/ps2-smap.c
++++ b/drivers/net/ethernet/ps2/ps2-smap.c
+@@ -57,7 +57,7 @@
+ 	struct completion dev9_done;
+ 	struct dev9_reply dev9_info;
+ 	u32 cookie, dev9_op;
+-	bool dev9_waiting, running, failed, closing;
++	bool dev9_waiting, running, failed, closing, mdio_pending;
+ 	unsigned int irq_count, rearm_attempts, rx_index;
+ 	struct smap_tx_ring tx;
+ 	struct rtnl_link_stats64 stats;
+@@ -181,21 +181,32 @@
+ 	/* Only the IOP changes SPEED's shared Ethernet/ATA interrupt mask. */
+ 	mutex_lock(&s->mdio_lock);
+ 	emac_write(EMAC_IRQ_ENABLE, 0);
+-	emac_write(EMAC_MODE0, EMAC_RESET);
+-	err = read_poll_timeout(emac_read, value, !(value & EMAC_RESET),
+-				10, 10000, false, EMAC_MODE0);
+-	if (err)
+-		goto out;
++	/* Both the SDK and original Linux driver reset the FIFOs before EMAC.
++	 * A warm emulator must not be a prerequisite for cold hardware setup.
++	 */
+ 	smap_write8(SMAP_TX_CTRL, 1);
+ 	smap_write8(SMAP_RX_CTRL, 1);
+ 	err = read_poll_timeout(smap_read8, value, !(value & 1),
+ 				10, 10000, false, SMAP_TX_CTRL);
+-	if (err)
++	if (err) {
++		netdev_err(s->ndev, "TX FIFO reset timed out\n");
+ 		goto out;
++	}
+ 	err = read_poll_timeout(smap_read8, value, !(value & 1),
+ 				10, 10000, false, SMAP_RX_CTRL);
+-	if (err)
++	if (err) {
++		netdev_err(s->ndev, "RX FIFO reset timed out\n");
+ 		goto out;
++	}
++	emac_write(EMAC_MODE0, EMAC_RESET);
++	err = read_poll_timeout(emac_read, value, !(value & EMAC_RESET),
++				10, 10000, false, EMAC_MODE0);
++	if (err) {
++		netdev_err(s->ndev, "EMAC reset timed out\n");
++		goto out;
++	}
++	/* Reset terminates any previous station-management transaction. */
++	s->mdio_pending = false;
+ 	smap_write8(SMAP_BD_MODE, 0);
+ 	smap_write16(SMAP_CLEAR, SMAP_IRQ_MASK);
+ 	emac_write(EMAC_IRQ_STATUS, emac_read(EMAC_IRQ_STATUS));
+@@ -233,14 +244,20 @@
+ 	if (phy < 0 || phy > 31 || reg < 0 || reg > 31)
+ 		return -EINVAL;
+ 	mutex_lock(&s->mdio_lock);
+-	/* Do not overwrite a timed-out operation that is still owned by hardware. */
+-	err = read_poll_timeout(emac_read, value, value & EMAC_MDIO_DONE,
+-				10, 2000, false, EMAC_MDIO);
+-	if (err)
+-		goto out;
++	/* A reset station-management register need not have DONE set. Only wait
++	 * for an operation we actually submitted; preserve ownership on timeout.
++	 */
++	if (s->mdio_pending) {
++		err = read_poll_timeout(emac_read, value, value & EMAC_MDIO_DONE,
++					10, 2000, false, EMAC_MDIO);
++		if (err)
++			goto out;
++		s->mdio_pending = false;
++	}
+ 	command = (phy << 5) | reg;
+ 	command |= data < 0 ? EMAC_MDIO_READ : EMAC_MDIO_WRITE | ((u32)data << 16);
+ 	spin_lock_irqsave(&s->lock, flags);
++	s->mdio_pending = true;
+ 	emac_write(EMAC_MDIO, command);
+ 	spin_unlock_irqrestore(&s->lock, flags);
+ 	err = read_poll_timeout(emac_read, value, value & EMAC_MDIO_DONE,
+@@ -248,12 +265,13 @@
+ 	/* The hardware requires a second read after completion for PHY data. */
+ 	if (!err) {
+ 		value = emac_read(EMAC_MDIO);
++		s->mdio_pending = false;
+ 		if (value & EMAC_MDIO_ERROR)
+ 			err = -EIO;
+ 	}
+ out:
+ 	mutex_unlock(&s->mdio_lock);
+-	return err ? err : data < 0 ? (value >> 16) : 0;
++	return err ? err : data < 0 ? (int)(value >> 16) : 0;
+ }
+ 
+ static int smap_mdio_read(struct mii_bus *bus, int phy, int reg)
+@@ -695,8 +713,10 @@
+ 	BUILD_BUG_ON(sizeof(struct dev9_reply) != 20);
+ 	/* The existing firmware loader is synchronous; no DEV9 power work in its init. */
+ 	err = iop_module_request("dev9", 0x0101, NULL);
+-	if (err < 0)
++	if (err < 0) {
++		dev_err(&pdev->dev, "DEV9 firmware unavailable: %d\n", err);
+ 		return err;
++	}
+ 	ndev = alloc_etherdev(sizeof(*s));
+ 	if (!ndev)
+ 		return -ENOMEM;
+@@ -712,11 +732,14 @@
+ 	s->mode1 = EMAC_MODE1_DEFAULT;
+ 	s->rx_mode = EMAC_RX_DEFAULT;
+ 	err = smap_dev9_control(s, DEV9_ACQUIRE);
+-	if (err)
++	if (err) {
++		dev_err(&pdev->dev, "DEV9 factory-MAC acquisition failed: %d\n", err);
+ 		goto err_free;
++	}
+ 	if (!(smap_read16(SMAP_CAPS) & SMAP_CAP_ETH) ||
+ 	    (s->dev9_info.hardware != 0x20 && s->dev9_info.hardware != 0x30)) {
+ 		err = -ENODEV;
++		dev_err(&pdev->dev, "SMAP capability/DEV9 variant unavailable\n");
+ 		goto err_lease;
+ 	}
+ 	if (!is_valid_ether_addr(s->dev9_info.mac) ||
+@@ -732,8 +755,10 @@
+ 		goto err_lease;
+ 	}
+ 	err = smap_hw_reset(s);
+-	if (err)
++	if (err) {
++		dev_err(&pdev->dev, "SMAP hardware reset failed: %d\n", err);
+ 		goto err_region;
++	}
+ 	s->mii = mdiobus_alloc();
+ 	if (!s->mii) {
+ 		err = -ENOMEM;
+@@ -746,17 +771,22 @@
+ 	s->mii->parent = &pdev->dev;
+ 	snprintf(s->mii->id, MII_BUS_ID_SIZE, "ps2-smap-%d", pdev->id);
+ 	err = mdiobus_register(s->mii);
+-	if (err)
++	if (err) {
++		dev_err(&pdev->dev, "MDIO discovery failed: %d\n", err);
+ 		goto err_mii;
++	}
+ 	s->phy = phy_find_first(s->mii);
+ 	if (!s->phy) {
+ 		err = -ENODEV;
++		dev_err(&pdev->dev, "no PHY responded on SMAP MDIO bus\n");
+ 		goto err_bus;
+ 	}
+ 	s->phy->irq = PHY_POLL;
+ 	err = phy_connect_direct(ndev, s->phy, smap_adjust_link, PHY_INTERFACE_MODE_MII);
+-	if (err)
++	if (err) {
++		dev_err(&pdev->dev, "PHY attachment failed: %d\n", err);
+ 		goto err_bus;
++	}
+ 	phy_set_max_speed(s->phy, SPEED_100);
+ 	ndev->netdev_ops = &smap_netdev_ops;
+ 	ndev->ethtool_ops = &smap_ethtool_ops;
+--- a/init/main.c
++++ b/init/main.c
+@@ -1451,7 +1451,7 @@
+ static void __init do_basic_setup(void)
+ {
+ #ifdef CONFIG_CPU_R5900
+-	pr_info("ps2: page-cache writeback kernel\n");
++	pr_info("ps2: SMAP cold-start kernel\n");
+ #endif
+ 	cpuset_init_smp();
+ 	ksysfs_init();

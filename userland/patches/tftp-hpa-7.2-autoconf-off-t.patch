@@ -1,0 +1,17 @@
+--- a/config.h
++++ b/config.h
+@@ -308,13 +308,11 @@
+ #define TYPE_MKMASK(t,x) ((t)(x) + ((t)(x) - 1))
+ #define TYPE_MAX(t)	 TYPE_MKMASK(t, (t)1 << (sizeof(t)*CHAR_BIT-1-IS_SIGNED(t)))
+ #define TYPE_MIN(t)	 ((t)~TYPE_MAX(t))
+ 
+ /* off_t and OFF_T_MAX */
+-#ifndef HAVE_OFF_T
+-typedef long off_t;
+-#endif
++/* AC_TYPE_OFF_T supplies a fallback in config/config.h when needed. */
+ #ifndef OFF_T_MAX
+ #define OFF_T_MAX TYPE_MAX(off_t)
+ #endif
+ 
+ /* netinet/in.h, and possible missing pieces */

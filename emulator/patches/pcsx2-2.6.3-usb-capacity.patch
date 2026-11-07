@@ -1,0 +1,23 @@
+--- a/pcsx2/USB/usb-msd/usb-msd.cpp
++++ b/pcsx2/USB/usb-msd/usb-msd.cpp
+@@ -662,9 +662,9 @@
+ 			case READ_CAPACITY_10:
+ 				memset(s->f.buf, 0, sizeof(s->f.buf));
+ 
+-				if (s->file_size == 0) //TODO
++				if (s->file_size < LBA_BLOCK_SIZE)
+ 				{
+ 					s->f.result = COMMAND_FAILED;
+ 					set_sense(s, SENSE_CODE(UNKNOWN_ERROR));
+ 					break;
+ 				}
+@@ -674,7 +674,8 @@
+ 				//right?
+ 				*blk_len = LBA_BLOCK_SIZE; //descriptor is currently max 64 bytes for bulk though
+ 
+-				lbas = s->file_size / LBA_BLOCK_SIZE;
++				// READ CAPACITY reports the last address, not the block count.
++				lbas = s->file_size / LBA_BLOCK_SIZE - 1;
+ 				if (lbas > 0xFFFFFFFF)
+ 				{
+ 					s->f.result = COMMAND_FAILED;

@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_appres",
+  "kind": "application",
+  "program": "appres",
+  "version": "1.0.7",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/appres-1.0.7.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/appres-1.0.7.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "1114b189239fd87a8d1db433edcb4486346d29912132b91eaeee5667f13b819f",
+      "filename": "appres-1.0.7.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "5948f869124dd7160ffe109b0fc7ccdca45c3b3f551a382a0bcf2c2af9e3832b0d4451e2868ca93a38de8e8e2caf1946ac72936b3256e99a32437d0ddd937a60",
+      "filename": "appres-1.0.7.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

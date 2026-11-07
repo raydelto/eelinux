@@ -1,0 +1,2494 @@
+{
+  "schema": 1,
+  "date": "2026-11-06",
+  "target": "R5900 Linux, little endian o32 soft float",
+  "application_CFLAGS": [
+    "-march=r5900",
+    "-mabi=32",
+    "-msoft-float",
+    "-mno-llsc",
+    "-mfix-r5900"
+  ],
+  "glibc_2_44_atomic_policy": "R5900 with Linux LL/SC trap emulation",
+  "IOP_firmware_CPU": "Separate R3000 IOP; not R5900 GNU userland",
+  "purpose": "Package sources and recipes. A built state does not imply image or hardware qualification.",
+  "native_build_output": "/home/machaddr/.cache/eelinux/native-tools-latest/target",
+  "compiler_build_output": "/home/machaddr/.cache/eelinux/native-gcc16/output-full/target",
+  "packages": {
+    "acl": {
+      "version": "2.4.0",
+      "sources": [
+        "sources/acl-2.4.0.tar.xz"
+      ],
+      "recipe": "package/acl/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "atftp": {
+      "version": "0.8.1",
+      "sources": [
+        "sources/atftp-0.8.1.tar.gz"
+      ],
+      "recipe": "package/atftp/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "attr": {
+      "version": "2.6.0",
+      "sources": [
+        "sources/attr-2.6.0.tar.xz"
+      ],
+      "recipe": "package/attr/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "autoconf": {
+      "version": "2.73",
+      "source": "sources/autoconf-2.73.tar.xz",
+      "sha256": "9fd672b1c8425fac2fa67fa0477b990987268b90ff36d5f016dae57be0d6b52e",
+      "upstream": "https://ftp.gnu.org/gnu/autoconf/autoconf-2.73.tar.xz",
+      "recipe": "package/autoconf/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "automake": {
+      "version": "1.19",
+      "source": "sources/automake-1.19.tar.xz",
+      "sha256": "e3e2c2e3abf37898138db5b6c1d1dc35c9160c5978be7947d2c741705251d445",
+      "upstream": "https://ftp.gnu.org/gnu/automake/automake-1.19.tar.xz",
+      "recipe": "package/automake/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "bash": {
+      "version": "5.3",
+      "source": "sources/bash-5.3.tar.gz",
+      "sha256": "0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba",
+      "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3.tar.gz",
+      "recipe": "package/bash/recipe.json",
+      "state": "Linux-user qualified; media pending",
+      "runtime_qualified": false,
+      "linux_user_qualified": true,
+      "media_qualified": false,
+      "physical_hardware_tested": false,
+      "native_build_output": "/home/machaddr/.cache/eelinux/native-updates-20261106/target",
+      "native_build_report": "/home/machaddr/.cache/eelinux/native-updates-20261106/build.json",
+      "runtime_report": "build/admin-work/native-updates-runtime.json",
+      "qualification_scope": "actual R5900 Linux-user execution, qualified SDK dependency providers; final media tested separately",
+      "qualification_check_count": 11,
+      "upstream_patchlevel": 20,
+      "effective_version": "5.3.20",
+      "upstream_patches": [
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-001",
+          "sha256": "1f608434364af86b9b45c8b0ea3fb3b165fb830d27697e6cdfc7ac17dee3287f",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-001"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-002",
+          "sha256": "e385548a00130765ec7938a56fbdca52447ab41fabc95a25f19ade527e282001",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-002"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-003",
+          "sha256": "f245d9c7dc3f5a20d84b53d249334747940936f09dc97e1dcb89fc3ab37d60ed",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-003"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-004",
+          "sha256": "9591d245045529f32f0812f94180b9d9ce9023f5a765c039b852e5dfc99747d0",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-004"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-005",
+          "sha256": "cca1ef52dbbf433bc98e33269b64b2c814028efe2538be1e2c9a377da90bc99d",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-005"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-006",
+          "sha256": "29119addefed8eff91ae37fd51822c31780ee30d4a28376e96002706c995ff10",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-006"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-007",
+          "sha256": "c0976bbfffa1453c7cfdd62058f206a318568ff2d690f5d4fa048793fa3eb299",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-007"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-008",
+          "sha256": "097cd723cbfb8907674ac32214063a3fd85282657ec5b4e544d2c0f719653fb4",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-008"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-009",
+          "sha256": "eee30fe78a4b0cb2fe20e010e00308899cfc613e0774ebb3c8557a1552f24f8c",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-009"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-010",
+          "sha256": "cf76f1cce2ea300c18bff9f002d21f280cc931acd17c28518110b93fe6e72569",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-010"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-011",
+          "sha256": "0298df8f5ea2a31d3be43ed7d269c5b3c7c342dd5b570bea7f64d66dcbbe7531",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-011"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-012",
+          "sha256": "d71379b39bebaedaf123414414e77fb458a0a43b9ad3116594c6df7ca6754573",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-012"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-013",
+          "sha256": "042f9cda967e24bf4211944697441e93d06ff42b4b998629a98a1b249279f200",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-013"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-014",
+          "sha256": "bd4360b401d38507e358783dcad8536a99c6789f0d3a5bd0cfb8c4a34144696c",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-014"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-015",
+          "sha256": "55b79ceee2fc27f6767eed697e939a7eb2fe2a28c01556bd75f18d581014f46e",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-015"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-016",
+          "sha256": "9ea29b266b7d24cb34d0ff3f1c4631e4d527bfe2d1ef15d17cdb924bf31ef767",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-016"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-017",
+          "sha256": "443b927b45c1558ca72052410f8b8f6e5152b617ed707061a2781d4375b0d1c3",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-017"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-018",
+          "sha256": "ae715d76c50341d7d7095e9a8d2eeed1ca9546152c2ac7289206f90cf30ac697",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-018"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-019",
+          "sha256": "a25c581e4d0057dea3833918438a930e2e86ee4c6dc17fe15267b7f04cbc4e3d",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-019"
+        },
+        {
+          "path": "userland/package/bash/upstream-patches/bash53-020",
+          "sha256": "df217ed3a9122aa2286d9b67bbe348661b6a9db262b580c29150dae55d532896",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-020"
+        }
+      ]
+    },
+    "bash-completion": {
+      "version": "2.18.0",
+      "sources": [
+        "sources/bash-completion-2.18.0.tar.xz"
+      ],
+      "recipe": "package/bash-completion/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "bc": {
+      "version": "1.08.2",
+      "source": "sources/bc-1.08.2.tar.gz",
+      "sha256": "ae470fec429775653e042015edc928d07c8c3b2fc59765172a330d3d87785f86",
+      "upstream": "https://ftp.gnu.org/gnu/bc/bc-1.08.2.tar.gz",
+      "recipe": "package/bc/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "bind": {
+      "version": "9.20.26",
+      "sources": [],
+      "recipe": "package/bind/recipe.json",
+      "state": "locked upstream recipe; unselected because legacy __sync_4 operations are unavailable on the R5900 -mno-llsc toolchain",
+      "runtime_qualified": false
+    },
+    "binutils": {
+      "version": "2.47",
+      "source": "sources/binutils-2.47.tar.xz",
+      "sha256": "154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff",
+      "upstream": "https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz",
+      "recipe": "package/binutils/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "bison": {
+      "version": "3.8.2",
+      "source": "sources/bison-3.8.2.tar.xz",
+      "sha256": "9bba0214ccf7f1079c5d59210045227bcf619519840ebfa80cd3849cff5a5bf2",
+      "upstream": "https://ftp.gnu.org/gnu/bison/bison-3.8.2.tar.xz",
+      "recipe": "package/bison/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "bmon": {
+      "version": "5.0",
+      "sources": [
+        "sources/bmon-5.0.tar.gz"
+      ],
+      "recipe": "package/bmon/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "bridge-utils": {
+      "version": "1.7.1",
+      "sources": [
+        "sources/bridge-utils-1.7.1.tar.xz"
+      ],
+      "recipe": "package/bridge-utils/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "bzip2": {
+      "version": "1.0.8",
+      "sources": [
+        "sources/bzip2-1.0.8.tar.gz"
+      ],
+      "recipe": "package/bzip2/recipe.json",
+      "state": "baseline recipe; see configs/packages.json for selection",
+      "runtime_qualified": false
+    },
+    "c-ares": {
+      "version": "1.34.9",
+      "sources": [
+        "sources/c-ares-1.34.9.tar.gz"
+      ],
+      "recipe": "package/c-ares/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "ca-certificates": {
+      "version": "20260223",
+      "sources": [
+        "sources/ca-certificates_20260223.tar.xz"
+      ],
+      "recipe": "package/ca-certificates/recipe.json",
+      "state": "baseline recipe; see configs/packages.json for selection",
+      "runtime_qualified": false
+    },
+    "cifs-utils": {
+      "version": "7.9",
+      "sources": [
+        "sources/cifs-utils-7.9.tar.bz2"
+      ],
+      "recipe": "package/cifs-utils/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "conntrack-tools": {
+      "version": "1.4.9",
+      "sources": [
+        "sources/conntrack-tools-1.4.9.tar.xz"
+      ],
+      "recipe": "package/conntrack-tools/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "coreutils": {
+      "version": "9.12",
+      "source": "sources/coreutils-9.12.tar.xz",
+      "sha256": "a480198559733e9b3da999e90543ac6f888a2caa544d8d664c5a1f17e528e210",
+      "upstream": "https://ftp.gnu.org/gnu/coreutils/coreutils-9.12.tar.xz",
+      "recipe": "package/coreutils/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "cpio": {
+      "version": "2.15",
+      "source": "sources/cpio-2.15.tar.bz2",
+      "sha256": "937610b97c329a1ec9268553fb780037bcfff0dcffe9725ebc4fd9c1aa9075db",
+      "upstream": "https://ftp.gnu.org/gnu/cpio/cpio-2.15.tar.bz2",
+      "recipe": "package/cpio/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "cpulimit": {
+      "version": "0.2",
+      "sources": [
+        "sources/cpulimit-0.2.tar.gz"
+      ],
+      "recipe": "package/cpulimit/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "dialog": {
+      "version": "1.3-20260721",
+      "sources": [
+        "sources/dialog-1.3-20260721.tgz"
+      ],
+      "recipe": "package/dialog/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "diffutils": {
+      "version": "3.12",
+      "source": "sources/diffutils-3.12.tar.xz",
+      "sha256": "7c8b7f9fc8609141fdea9cece85249d308624391ff61dedaf528fcb337727dfd",
+      "upstream": "https://ftp.gnu.org/gnu/diffutils/diffutils-3.12.tar.xz",
+      "recipe": "package/diffutils/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "dos2unix": {
+      "version": "7.5.7",
+      "sources": [
+        "sources/dos2unix-7.5.7.tar.gz"
+      ],
+      "recipe": "package/dos2unix/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "dosfstools": {
+      "version": "4.2",
+      "sources": [
+        "sources/dosfstools-4.2.tar.gz"
+      ],
+      "recipe": "package/dosfstools/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "e2fsprogs": {
+      "version": "1.47.4",
+      "sources": [
+        "sources/e2fsprogs-1.47.4.tar.xz"
+      ],
+      "recipe": "package/e2fsprogs/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "ed": {
+      "version": "1.22.6",
+      "source": "sources/ed-1.22.6.tar.lz",
+      "sha256": "3f33b22135219c39c3c695f7b7171c2567d3e2a17c798c0a90607320cbb268f2",
+      "upstream": "https://ftp.gnu.org/gnu/ed/ed-1.22.6.tar.lz",
+      "recipe": "package/ed/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "eelinux-dhcpcd": {
+      "version": "10.5.2",
+      "sources": [
+        "sources/dhcpcd-10.5.2.tar.xz"
+      ],
+      "recipe": "package/eelinux-dhcpcd/recipe.json",
+      "state": "baseline recipe; see configs/packages.json for selection",
+      "runtime_qualified": false
+    },
+    "eelinux-openssl3-compat": {
+      "version": "3.5.9",
+      "sources": [
+        "sources/openssl-3.5.9.tar.gz"
+      ],
+      "recipe": "package/eelinux-openssl3-compat/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "eelinux-tcl86-compat": {
+      "version": "8.6.18",
+      "sources": [
+        "sources/tcl8.6.18-src.tar.gz"
+      ],
+      "recipe": "package/eelinux-tcl86-compat/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "ethtool": {
+      "version": "7.2",
+      "sources": [
+        "sources/ethtool-7.2.tar.xz"
+      ],
+      "recipe": "package/ethtool/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "eudev": {
+      "version": "3.2.14",
+      "sources": [
+        "sources/eudev-3.2.14.tar.gz"
+      ],
+      "recipe": "package/eudev/recipe.json",
+      "state": "baseline recipe; see configs/packages.json for selection",
+      "runtime_qualified": false
+    },
+    "expect": {
+      "version": "5.45.4",
+      "sources": [
+        "sources/expect5.45.4.tar.gz"
+      ],
+      "recipe": "package/expect/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "file": {
+      "version": "5.48",
+      "sources": [
+        "sources/file-5.48.tar.gz"
+      ],
+      "recipe": "package/file/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "findutils": {
+      "version": "4.11.0",
+      "source": "sources/findutils-4.11.0.tar.xz",
+      "sha256": "bfd19cb06cc71f3352d567e90284d8cdac02ac89774bbeadf0b533b0c11432fd",
+      "upstream": "https://ftp.gnu.org/gnu/findutils/findutils-4.11.0.tar.xz",
+      "recipe": "package/findutils/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "flex": {
+      "version": "2.6.4",
+      "source": "sources/flex-2.6.4.tar.gz",
+      "sha256": "e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995",
+      "upstream": "https://github.com/westes/flex/releases/download/v2.6.4/flex-2.6.4.tar.gz",
+      "recipe": "package/flex/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "fping": {
+      "version": "5.5",
+      "sources": [
+        "sources/fping-5.5.tar.gz"
+      ],
+      "recipe": "package/fping/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "gawk": {
+      "version": "5.4.1",
+      "source": "sources/gawk-5.4.1.tar.xz",
+      "sha256": "07f6f7342b7febe4313fc2c2542ad93d64fe20ad8717200109f105a826f5fd37",
+      "upstream": "https://ftp.gnu.org/gnu/gawk/gawk-5.4.1.tar.xz",
+      "recipe": "package/gawk/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "gcc": {
+      "version": "16.2.0",
+      "source": "sources/gcc-16.2.0.tar.xz",
+      "sha256": "e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e",
+      "upstream": "https://ftp.gnu.org/gnu/gcc/gcc-16.2.0/gcc-16.2.0.tar.xz",
+      "recipe": "package/gcc/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "gdb": {
+      "version": "18.1",
+      "source": "sources/gdb-18.1.tar.xz",
+      "sha256": "cd9fc3fe2b47743840e42c1592d3d87f8302eb18639c0b8b4ba0898002e2348f",
+      "upstream": "https://sourceware.org/pub/gdb/releases/gdb-18.1.tar.xz",
+      "recipe": "package/gdb/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "glibc": {
+      "version": "2.44",
+      "source": "sources/glibc-2.44.tar.xz",
+      "sha256": "37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667",
+      "upstream": "https://ftp.gnu.org/gnu/glibc/glibc-2.44.tar.xz",
+      "recipe": "package/glibc/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "grep": {
+      "version": "3.12",
+      "source": "sources/grep-3.12.tar.xz",
+      "sha256": "2649b27c0e90e632eadcd757be06c6e9a4f48d941de51e7c0f83ff76408a07b9",
+      "upstream": "https://ftp.gnu.org/gnu/grep/grep-3.12.tar.xz",
+      "recipe": "package/grep/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "gzip": {
+      "version": "1.15",
+      "source": "sources/gzip-1.15.tar.xz",
+      "sha256": "9aa0cc780dec156b8282844833b342ab7cb08c25d2cd9a1869cdd0df31deff48",
+      "upstream": "https://ftp.gnu.org/gnu/gzip/gzip-1.15.tar.xz",
+      "recipe": "package/gzip/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "htop": {
+      "version": "3.5.3",
+      "sources": [
+        "sources/htop-3.5.3.tar.xz"
+      ],
+      "recipe": "package/htop/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "iftop": {
+      "version": "1.0pre4",
+      "sources": [
+        "sources/iftop-1.0pre4.tar.gz"
+      ],
+      "recipe": "package/iftop/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "ipcalc": {
+      "version": "1.2.0",
+      "sources": [
+        "sources/ipcalc-1.2.0.tar.bz2"
+      ],
+      "recipe": "package/ipcalc/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "iperf": {
+      "version": "2.2.1",
+      "sources": [
+        "sources/iperf-2.2.1.tar.gz"
+      ],
+      "recipe": "package/iperf/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "iperf3": {
+      "version": "3.22",
+      "sources": [
+        "sources/iperf-3.22.tar.gz"
+      ],
+      "recipe": "package/iperf3/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "iproute2": {
+      "version": "7.3.0",
+      "sources": [
+        "sources/iproute2-7.3.0.tar.xz"
+      ],
+      "recipe": "package/iproute2/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "ipset": {
+      "version": "7.24",
+      "sources": [
+        "sources/ipset-7.24.tar.bz2"
+      ],
+      "recipe": "package/ipset/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "iptables": {
+      "version": "1.8.13",
+      "sources": [
+        "sources/iptables-1.8.13.tar.xz"
+      ],
+      "recipe": "package/iptables/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "iptraf-ng": {
+      "version": "1.2.2",
+      "sources": [
+        "sources/iptraf-ng-1.2.2.tar.gz"
+      ],
+      "recipe": "package/iptraf-ng/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "iputils": {
+      "version": "20250605",
+      "sources": [
+        "sources/iputils-20250605.tar.gz"
+      ],
+      "recipe": "package/iputils/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "iw": {
+      "version": "6.17",
+      "sources": [
+        "sources/iw-6.17.tar.xz"
+      ],
+      "recipe": "package/iw/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "jq": {
+      "version": "1.8.2",
+      "sources": [
+        "sources/jq-1.8.2.tar.gz"
+      ],
+      "recipe": "package/jq/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "kmod": {
+      "version": "34.3",
+      "sources": [
+        "sources/kmod-34.3.tar.xz"
+      ],
+      "recipe": "package/kmod/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "less": {
+      "version": "710",
+      "sources": [
+        "sources/less-710.tar.gz"
+      ],
+      "recipe": "package/less/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "lftp": {
+      "version": "4.9.3",
+      "sources": [
+        "sources/lftp-4.9.3.tar.xz"
+      ],
+      "recipe": "package/lftp/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "libarchive": {
+      "version": "3.8.11",
+      "sources": [
+        "sources/libarchive-3.8.11.tar.xz"
+      ],
+      "recipe": "package/libarchive/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "libcurl": {
+      "version": "8.23.0",
+      "sources": [
+        "sources/curl-8.23.0.tar.xz"
+      ],
+      "recipe": "package/libcurl/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "libffi": {
+      "version": "3.8.0",
+      "source": "sources/libffi-3.8.0.tar.gz",
+      "sha256": "7da3e2d9a171eb0a038f592ecad3ff2bb2550f3496d87b3b29ad0cf4430c0db4",
+      "upstream": "https://github.com/libffi/libffi/releases/download/v3.8.0/libffi-3.8.0.tar.gz",
+      "recipe": "package/libffi/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "libidn2": {
+      "version": "2.3.8",
+      "sources": [
+        "sources/libidn2-2.3.8.tar.gz"
+      ],
+      "recipe": "package/libidn2/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "libldns": {
+      "version": "1.9.2",
+      "sources": [
+        "sources/ldns-1.9.2.tar.gz"
+      ],
+      "recipe": "package/libldns/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "libmnl": {
+      "version": "1.0.5",
+      "sources": [
+        "sources/libmnl-1.0.5.tar.bz2"
+      ],
+      "recipe": "package/libmnl/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "libnetfilter_conntrack": {
+      "version": "1.1.1",
+      "sources": [
+        "sources/libnetfilter_conntrack-1.1.1.tar.xz"
+      ],
+      "recipe": "package/libnetfilter_conntrack/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "libnftnl": {
+      "version": "1.3.2",
+      "sources": [
+        "sources/libnftnl-1.3.2.tar.xz"
+      ],
+      "recipe": "package/libnftnl/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "libnl": {
+      "version": "3.12.0",
+      "sources": [
+        "sources/libnl-3.12.0.tar.gz"
+      ],
+      "recipe": "package/libnl/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "libopenssl": {
+      "version": "4.1.0",
+      "sources": [
+        "sources/openssl-4.1.0.tar.gz"
+      ],
+      "recipe": "package/libopenssl/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "libpcap": {
+      "version": "1.11.0",
+      "sources": [
+        "sources/libpcap-1.11.0.tar.gz"
+      ],
+      "recipe": "package/libpcap/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "libssh2": {
+      "version": "1.11.1",
+      "sources": [
+        "sources/libssh2-1.11.1.tar.bz2"
+      ],
+      "recipe": "package/libssh2/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "libtalloc": {
+      "version": "2.5.0",
+      "sources": [
+        "sources/talloc-2.5.0.tar.gz"
+      ],
+      "recipe": "package/libtalloc/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "libtool": {
+      "version": "2.6.2",
+      "source": "sources/libtool-2.6.2.tar.xz",
+      "sha256": "2ef1067c16c97db930fd740cc9bc3d3ba9a583804ae5ac42cc3e8719e49e191e",
+      "upstream": "https://ftp.gnu.org/gnu/libtool/libtool-2.6.2.tar.xz",
+      "recipe": "package/libtool/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "libusb": {
+      "recipe": "package/libusb/recipe.json",
+      "version": "1.0.30",
+      "sources": [
+        "sources/libusb-1.0.30.tar.bz2"
+      ],
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "lsof": {
+      "version": "4.99.7",
+      "sources": [
+        "sources/lsof-4.99.7.tar.gz"
+      ],
+      "recipe": "package/lsof/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "lynx": {
+      "version": "2.9.3",
+      "source": "sources/lynx2.9.3.tar.bz2",
+      "sha256": "174b7f2866a60f3247ba75f5c7dbb10b124aede4a1359312de15f3bfebd2050f",
+      "upstream": "https://invisible-mirror.net/archives/lynx/tarballs/lynx2.9.3.tar.bz2",
+      "recipe": "package/lynx/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "lz4": {
+      "version": "1.11.0",
+      "sources": [
+        "sources/lz4-1.11.0.tar.gz"
+      ],
+      "recipe": "package/lz4/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "lzip": {
+      "version": "1.26",
+      "sources": [
+        "sources/lzip-1.26.tar.gz"
+      ],
+      "recipe": "package/lzip/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "lzop": {
+      "version": "1.04",
+      "sources": [
+        "sources/lzop-1.04.tar.gz"
+      ],
+      "recipe": "package/lzop/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "m4": {
+      "version": "1.4.21",
+      "source": "sources/m4-1.4.21.tar.xz",
+      "sha256": "f25c6ab51548a73a75558742fb031e0625d6485fe5f9155949d6486a2408ab66",
+      "upstream": "https://ftp.gnu.org/gnu/m4/m4-1.4.21.tar.xz",
+      "recipe": "package/m4/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "make": {
+      "version": "4.4.1",
+      "source": "sources/make-4.4.1.tar.gz",
+      "sha256": "dd16fb1d67bfab79a72f5e8390735c49e3e8e70b4945a15ab1f81ddb78658fb3",
+      "upstream": "https://ftp.gnu.org/gnu/make/make-4.4.1.tar.gz",
+      "recipe": "package/make/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "mc": {
+      "version": "4.8.33",
+      "sources": [
+        "sources/mc-4.8.33.tar.xz"
+      ],
+      "recipe": "package/mc/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "mesa": {
+      "version": "24.0.9",
+      "source": "sources/mesa-24.0.9.tar.xz",
+      "sha256": "51aa686ca4060e38711a9e8f60c8f1efaa516baf411946ed7f2c265cd582ca4c",
+      "recipe": "package/mesa/recipe.json",
+      "state": "native GS components built; full OpenGL/GLX pending",
+      "runtime_qualified": false
+    },
+    "mtools": {
+      "version": "4.0.50",
+      "sources": [
+        "sources/mtools-4.0.50.tar.bz2"
+      ],
+      "recipe": "package/mtools/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "mtr": {
+      "version": "0.96",
+      "sources": [
+        "sources/mtr-0.96.tar.gz"
+      ],
+      "recipe": "package/mtr/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "nano": {
+      "version": "9.3",
+      "source": "sources/nano-9.3.tar.xz",
+      "sha256": "a9affc52c9596ee0682bcdd4ceb3c0b235eb221d83d733dfd9b0dff45897cb0d",
+      "upstream": "https://ftp.gnu.org/gnu/nano/nano-9.3.tar.xz",
+      "recipe": "package/nano/recipe.json",
+      "state": "Linux-user qualified; media pending",
+      "runtime_qualified": false,
+      "linux_user_qualified": true,
+      "media_qualified": false,
+      "physical_hardware_tested": false,
+      "native_build_output": "/home/machaddr/.cache/eelinux/native-updates-20261106/target",
+      "native_build_report": "/home/machaddr/.cache/eelinux/native-updates-20261106/build.json",
+      "runtime_report": "build/admin-work/native-updates-runtime.json",
+      "qualification_scope": "actual R5900 Linux-user execution, qualified SDK dependency providers; final media tested separately",
+      "qualification_check_count": 11
+    },
+    "ncdu": {
+      "version": "1.22",
+      "sources": [
+        "sources/ncdu-1.22.tar.gz"
+      ],
+      "recipe": "package/ncdu/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "ncftp": {
+      "version": "3.3.0",
+      "sources": [
+        "sources/ncftp-3.3.0-src.tar.gz"
+      ],
+      "recipe": "package/ncftp/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "ncurses": {
+      "version": "6.4$(if 20230603,-20230603)",
+      "sources": [
+        "sources/ncurses-6.4-20230603.tar.gz"
+      ],
+      "recipe": "package/ncurses/recipe.json",
+      "state": "baseline recipe; see configs/packages.json for selection",
+      "runtime_qualified": false
+    },
+    "net-tools": {
+      "version": "2.10",
+      "sources": [
+        "sources/net-tools-2.10.tar.xz"
+      ],
+      "recipe": "package/net-tools/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "netcat": {
+      "version": "0.7.1",
+      "sources": [
+        "sources/netcat-0.7.1.tar.bz2"
+      ],
+      "recipe": "package/netcat/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "nethogs": {
+      "version": "0.9.0",
+      "sources": [
+        "sources/nethogs-0.9.0.tar.gz"
+      ],
+      "recipe": "package/nethogs/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "nfs-utils": {
+      "version": "3.1.1",
+      "sources": [
+        "sources/nfs-utils-3.1.1.tar.xz"
+      ],
+      "recipe": "package/nfs-utils/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "nftables": {
+      "version": "1.1.7",
+      "sources": [
+        "sources/nftables-1.1.7.tar.xz"
+      ],
+      "recipe": "package/nftables/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "ngrep": {
+      "version": "1.49.0",
+      "sources": [
+        "sources/ngrep-1.49.0.tar.gz"
+      ],
+      "recipe": "package/ngrep/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "nload": {
+      "version": "0.7.4",
+      "sources": [
+        "sources/nload-0.7.4.tar.gz"
+      ],
+      "recipe": "package/nload/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "nmap": {
+      "version": "7.993",
+      "sources": [
+        "sources/nmap-7.993.tar.bz2"
+      ],
+      "recipe": "package/nmap/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "ntp": {
+      "version": "4.2.8p18",
+      "sources": [
+        "sources/ntp-4.2.8p18.tar.gz"
+      ],
+      "recipe": "package/ntp/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "openssh": {
+      "version": "10.6p2",
+      "sources": [
+        "sources/openssh-10.6p2.tar.gz"
+      ],
+      "recipe": "package/openssh/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "openvpn": {
+      "version": "2.7.9",
+      "sources": [
+        "sources/openvpn-2.7.9.tar.gz"
+      ],
+      "recipe": "package/openvpn/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "patch": {
+      "version": "2.8.1",
+      "source": "sources/patch-2.8.1.tar.xz",
+      "sha256": "3240c7959c5347c8ed347e3c4201c0337bf4240d5cf09d68889e58eeaba30e17",
+      "upstream": "https://ftp.gnu.org/gnu/patch/patch-2.8.1.tar.xz",
+      "recipe": "package/patch/recipe.json",
+      "state": "Linux-user qualified; media pending",
+      "runtime_qualified": false,
+      "linux_user_qualified": true,
+      "media_qualified": false,
+      "physical_hardware_tested": false,
+      "native_build_output": "/home/machaddr/.cache/eelinux/native-updates-20261106/target",
+      "native_build_report": "/home/machaddr/.cache/eelinux/native-updates-20261106/build.json",
+      "runtime_report": "build/admin-work/native-updates-runtime.json",
+      "qualification_scope": "actual R5900 Linux-user execution, qualified SDK dependency providers; final media tested separately",
+      "qualification_check_count": 11
+    },
+    "perl": {
+      "version": "5.44.0",
+      "source": "sources/perl-5.44.0.tar.xz",
+      "sha256": "505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91",
+      "upstream": "https://www.cpan.org/src/5.0/perl-5.44.0.tar.xz",
+      "recipe": "package/perl/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "perl-cross": {
+      "version": "1.6.5",
+      "source": "sources/perl-cross-1.6.5.tar.gz",
+      "sha256": "81130cd4b8c6d9eb2a1959f37d44391a46ad6a6794fc41fed5441f74e85e3dd0",
+      "upstream": "https://github.com/arsv/perl-cross/releases/download/1.6.5/perl-cross-1.6.5.tar.gz",
+      "recipe": "package/perl-cross/recipe.json",
+      "state": "source verified; build pending",
+      "runtime_qualified": false
+    },
+    "pkgconf": {
+      "version": "3.0.10",
+      "source": "sources/pkgconf-3.0.10.tar.xz",
+      "sha256": "9371b2f6372da574d4c6dc96fe9b1463037bcf6afcb6671c1555afde7b17e2de",
+      "upstream": "https://distfiles.ariadne.space/pkgconf/pkgconf-3.0.10.tar.xz",
+      "recipe": "package/pkgconf/recipe.json",
+      "state": "Linux-user qualified; media pending",
+      "runtime_qualified": false,
+      "linux_user_qualified": true,
+      "media_qualified": false,
+      "physical_hardware_tested": false,
+      "native_build_output": "/home/machaddr/.cache/eelinux/native-updates-20261106/target",
+      "native_build_report": "/home/machaddr/.cache/eelinux/native-updates-20261106/build.json",
+      "runtime_report": "build/admin-work/native-updates-runtime.json",
+      "qualification_scope": "actual R5900 Linux-user execution, qualified SDK dependency providers; final media tested separately",
+      "qualification_check_count": 11
+    },
+    "procps-ng": {
+      "version": "4.0.7",
+      "sources": [
+        "sources/procps-ng-4.0.7.tar.xz"
+      ],
+      "recipe": "package/procps-ng/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "psmisc": {
+      "version": "23.7",
+      "sources": [
+        "sources/psmisc-23.7.tar.xz"
+      ],
+      "recipe": "package/psmisc/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "pv": {
+      "version": "1.12.7",
+      "sources": [
+        "sources/pv-1.12.7.tar.gz"
+      ],
+      "recipe": "package/pv/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "python3": {
+      "version": "3.15.2",
+      "source": "sources/Python-3.15.2.tar.xz",
+      "sha256": "8b5536d280142ecf6cdfe15d12a21ba1c65e300bbf7b28a8d0cdb849575797de",
+      "upstream": "https://www.python.org/ftp/python/3.15.2/Python-3.15.2.tar.xz",
+      "recipe": "package/python3/recipe.json",
+      "state": "Linux-user qualified; media pending",
+      "runtime_qualified": false,
+      "linux_user_qualified": true,
+      "media_qualified": false,
+      "physical_hardware_tested": false,
+      "native_build_output": "/home/machaddr/.cache/eelinux/native-updates-20261106/target",
+      "native_build_report": "/home/machaddr/.cache/eelinux/native-updates-20261106/build.json",
+      "runtime_report": "build/admin-work/native-updates-runtime.json",
+      "qualification_scope": "actual R5900 Linux-user execution, qualified SDK dependency providers; final media tested separately",
+      "qualification_check_count": 11
+    },
+    "readline": {
+      "version": "8.3",
+      "source": "sources/readline-8.3.tar.gz",
+      "sha256": "fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc",
+      "upstream": "https://ftp.gnu.org/gnu/readline/readline-8.3.tar.gz",
+      "recipe": "package/readline/recipe.json",
+      "state": "Linux-user qualified; media pending",
+      "runtime_qualified": false,
+      "linux_user_qualified": true,
+      "media_qualified": false,
+      "physical_hardware_tested": false,
+      "native_build_output": "/home/machaddr/.cache/eelinux/native-updates-20261106/target",
+      "native_build_report": "/home/machaddr/.cache/eelinux/native-updates-20261106/build.json",
+      "runtime_report": "build/admin-work/native-updates-runtime.json",
+      "qualification_scope": "actual R5900 Linux-user execution, qualified SDK dependency providers; final media tested separately",
+      "qualification_check_count": 11,
+      "upstream_patchlevel": 6,
+      "effective_version": "8.3.6",
+      "upstream_patches": [
+        {
+          "path": "userland/package/readline/upstream-patches/readline83-001",
+          "sha256": "21f0a03106dbe697337cd25c70eb0edbaa2bdb6d595b45f83285cdd35bac84de",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/readline/readline-8.3-patches/readline83-001"
+        },
+        {
+          "path": "userland/package/readline/upstream-patches/readline83-002",
+          "sha256": "e27364396ba9f6debf7cbaaf1a669e2b2854241ae07f7eca74ca8a8ba0c97472",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/readline/readline-8.3-patches/readline83-002"
+        },
+        {
+          "path": "userland/package/readline/upstream-patches/readline83-003",
+          "sha256": "72dee13601ce38f6746eb15239999a7c56f8e1ff5eb1ec8153a1f213e4acdb29",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/readline/readline-8.3-patches/readline83-003"
+        },
+        {
+          "path": "userland/package/readline/upstream-patches/readline83-004",
+          "sha256": "1f189c4566aa35950964647b9ec3be1a821e42b86048129c63eb7f9d4d2f5a74",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/readline/readline-8.3-patches/readline83-004"
+        },
+        {
+          "path": "userland/package/readline/upstream-patches/readline83-005",
+          "sha256": "5481adbe161c9f6ba972c74db9e18c7aa351d3df3035cc4a673a1aa06247d1c6",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/readline/readline-8.3-patches/readline83-005"
+        },
+        {
+          "path": "userland/package/readline/upstream-patches/readline83-006",
+          "sha256": "4ebd261a608287796e171af0ea9af5a1e3122e46672accda2484b6698c47c1a4",
+          "strip": 0,
+          "upstream": "https://ftp.gnu.org/gnu/readline/readline-8.3-patches/readline83-006"
+        }
+      ],
+      "runtime_evidence_detail": "Used by --with-installed-readline Bash and Python readline import in the eleven passing checks"
+    },
+    "rpcbind": {
+      "version": "1.3.1",
+      "sources": [
+        "sources/rpcbind-1.3.1.tar.bz2"
+      ],
+      "recipe": "package/rpcbind/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "rsync": {
+      "version": "3.5.2",
+      "sources": [
+        "sources/rsync-3.5.2.tar.gz"
+      ],
+      "recipe": "package/rsync/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "s6-dns": {
+      "version": "2.4.1.3",
+      "sources": [
+        "sources/s6-dns-2.4.1.3.tar.gz"
+      ],
+      "recipe": "package/s6-dns/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "screen": {
+      "version": "5.0.2",
+      "source": "sources/screen-5.0.2.tar.gz",
+      "sha256": "ca9a2c7e240919bc7ac12124593ae4529bb4eb5f7349d8857829b7e3f0b3b332",
+      "upstream": "https://ftp.gnu.org/gnu/screen/screen-5.0.2.tar.gz",
+      "recipe": "package/screen/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "sources": [
+        "sources/screen-5.0.2.tar.gz"
+      ],
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "sed": {
+      "version": "4.10",
+      "source": "sources/sed-4.10.tar.xz",
+      "sha256": "b8e72182b2ec96a3574e2998c47b7aaa64cc20ce000d8e9ac313cc07cecf28c7",
+      "upstream": "https://ftp.gnu.org/gnu/sed/sed-4.10.tar.xz",
+      "recipe": "package/sed/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "shadow": {
+      "version": "4.20.3",
+      "sources": [
+        "sources/shadow-4.20.3.tar.xz"
+      ],
+      "recipe": "package/shadow/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "skalibs": {
+      "version": "2.16.0.0",
+      "sources": [
+        "sources/skalibs-2.16.0.0.tar.gz"
+      ],
+      "recipe": "package/skalibs/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "socat": {
+      "version": "1.8.1.3",
+      "sources": [
+        "sources/socat-1.8.1.3.tar.gz"
+      ],
+      "recipe": "package/socat/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "sqlite": {
+      "version": "3.54.1",
+      "sources": [
+        "sources/sqlite-autoconf-3540100.tar.gz"
+      ],
+      "recipe": "package/sqlite/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "strace": {
+      "version": "7.3",
+      "sources": [
+        "sources/strace-7.3.tar.xz"
+      ],
+      "recipe": "package/strace/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "sysklogd": {
+      "version": "2.8.0",
+      "sources": [
+        "sources/sysklogd-2.8.0.tar.gz"
+      ],
+      "recipe": "package/sysklogd/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "sysvinit": {
+      "version": "3.18",
+      "sources": [
+        "sources/sysvinit-3.18.tar.xz"
+      ],
+      "recipe": "package/sysvinit/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "tar": {
+      "version": "1.35",
+      "source": "sources/tar-1.35.tar.xz",
+      "sha256": "4d62ff37342ec7aed748535323930c7cf94acf71c3591882b26a7ea50f3edc16",
+      "upstream": "https://ftp.gnu.org/gnu/tar/tar-1.35.tar.xz",
+      "recipe": "package/tar/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "tcl": {
+      "version": "9.1.0",
+      "sources": [
+        "sources/tcl9.1.0-src.tar.gz"
+      ],
+      "recipe": "package/tcl/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "tcpdump": {
+      "version": "4.99.7",
+      "sources": [
+        "sources/tcpdump-4.99.7.tar.gz"
+      ],
+      "recipe": "package/tcpdump/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "tcping": {
+      "version": "2.1.0",
+      "sources": [
+        "sources/tcping-2.1.0.tar.gz"
+      ],
+      "recipe": "package/tcping/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "tftpd": {
+      "version": "7.2",
+      "sources": [
+        "sources/tftp-hpa-7.2.tar.xz"
+      ],
+      "recipe": "package/tftpd/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "time": {
+      "version": "1.10",
+      "sources": [
+        "sources/time-1.10.tar.xz"
+      ],
+      "recipe": "package/time/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "tmux": {
+      "version": "3.8",
+      "sources": [
+        "sources/tmux-3.8.tar.gz"
+      ],
+      "recipe": "package/tmux/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "traceroute": {
+      "version": "2.1.6",
+      "sources": [
+        "sources/traceroute-2.1.6.tar.gz"
+      ],
+      "recipe": "package/traceroute/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "tree": {
+      "version": "2.3.2",
+      "sources": [
+        "sources/tree-2.3.2.tgz"
+      ],
+      "recipe": "package/tree/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "unbound": {
+      "version": "1.26.2",
+      "sources": [
+        "sources/unbound-1.26.2.tar.gz"
+      ],
+      "recipe": "package/unbound/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "unzip": {
+      "version": "6.0",
+      "sources": [],
+      "recipe": "package/unzip/recipe.json",
+      "state": "selected pinned Buildroot recipe; build/runtime qualification pending",
+      "runtime_qualified": false
+    },
+    "usbutils": {
+      "version": "020",
+      "sources": [
+        "sources/usbutils-020.tar.xz"
+      ],
+      "recipe": "package/usbutils/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "util-linux": {
+      "version": "2.42.4",
+      "sources": [
+        "sources/util-linux-2.42.4.tar.xz"
+      ],
+      "recipe": "package/util-linux/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "vim": {
+      "version": "9.2.1302",
+      "source": "sources/vim-9.2.1302.tar.gz",
+      "sha256": "a9d2a2f57d5d3149cff8342b8a0b063d410df5d5a4b46d898610059648b6a17e",
+      "upstream": "https://github.com/vim/vim/archive/refs/tags/v9.2.1302.tar.gz",
+      "recipe": "package/vim/recipe.json",
+      "state": "Linux-user qualified; media pending",
+      "runtime_qualified": false,
+      "linux_user_qualified": true,
+      "media_qualified": false,
+      "physical_hardware_tested": false,
+      "native_build_output": "/home/machaddr/.cache/eelinux/native-updates-20261106/target",
+      "native_build_report": "/home/machaddr/.cache/eelinux/native-updates-20261106/build.json",
+      "runtime_report": "build/admin-work/native-updates-runtime.json",
+      "qualification_scope": "actual R5900 Linux-user execution, qualified SDK dependency providers; final media tested separately",
+      "qualification_check_count": 11
+    },
+    "wget": {
+      "version": "1.25.0",
+      "source": "sources/wget-1.25.0.tar.gz",
+      "sha256": "766e48423e79359ea31e41db9e5c289675947a7fcf2efdcedb726ac9d0da3784",
+      "upstream": "https://ftp.gnu.org/gnu/wget/wget-1.25.0.tar.gz",
+      "recipe": "package/wget/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "whois": {
+      "version": "5.6.6",
+      "sources": [
+        "sources/whois-5.6.6.tar.gz"
+      ],
+      "recipe": "package/whois/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "wireguard-tools": {
+      "version": "1.0.20260223",
+      "sources": [
+        "sources/wireguard-tools-1.0.20260223.tar.xz"
+      ],
+      "recipe": "package/wireguard-tools/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "wireless-regdb": {
+      "version": "2026.09.03",
+      "sources": [
+        "sources/wireless-regdb-2026.09.03.tar.xz"
+      ],
+      "recipe": "package/wireless-regdb/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "wireless_tools": {
+      "version": "30.pre9",
+      "sources": [
+        "sources/wireless_tools.30.pre9.tar.gz"
+      ],
+      "recipe": "package/wireless_tools/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "wpa_supplicant": {
+      "version": "2.12",
+      "sources": [
+        "sources/wpa_supplicant-2.12.tar.gz"
+      ],
+      "recipe": "package/wpa_supplicant/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    },
+    "x11r7/xapp_appres": {
+      "version": "1.0.7",
+      "source": "sources/appres-1.0.7.tar.xz",
+      "sha256": "1114b189239fd87a8d1db433edcb4486346d29912132b91eaeee5667f13b819f",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/appres-1.0.7.tar.xz",
+      "recipe": "package/x11r7/xapp_appres/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_bdftopcf": {
+      "version": "1.1",
+      "source": "sources/bdftopcf-1.1.tar.bz2",
+      "sha256": "4b4df05fc53f1e98993638d6f7e178d95b31745c4568cee407e167491fd311a2",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/bdftopcf-1.1.tar.bz2",
+      "recipe": "package/x11r7/xapp_bdftopcf/recipe.json",
+      "state": "cross-built; emulator smoke checks passed; included in r41 USB image",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    "x11r7/xapp_beforelight": {
+      "version": "1.0.6",
+      "source": "sources/beforelight-1.0.6.tar.xz",
+      "sha256": "53f0bf085b7272ebbf626d1b9b0ad320d1a07bc1fe7f3ae260c86a71a857ad28",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/beforelight-1.0.6.tar.xz",
+      "recipe": "package/x11r7/xapp_beforelight/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_bitmap": {
+      "version": "1.1.2",
+      "source": "sources/bitmap-1.1.2.tar.xz",
+      "sha256": "5c6d2637244c575a9cc65a6b1ee15ced480ef0184821aceeab29650daf323c12",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/bitmap-1.1.2.tar.xz",
+      "recipe": "package/x11r7/xapp_bitmap/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_editres": {
+      "version": "1.1.1",
+      "source": "sources/editres-1.1.1.tar.xz",
+      "sha256": "e0a29b2f5e178362f71950c45ec49b43ccc75cacf44356948377e71cdfee119b",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/editres-1.1.1.tar.xz",
+      "recipe": "package/x11r7/xapp_editres/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_fonttosfnt": {
+      "version": "1.2.5",
+      "source": "sources/fonttosfnt-1.2.5.tar.xz",
+      "sha256": "2e251e66e8753c08aa280b26fd4a10d0d88e7d9bba5c8aac3d3fb36705e5918e",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/fonttosfnt-1.2.5.tar.xz",
+      "recipe": "package/x11r7/xapp_fonttosfnt/recipe.json",
+      "state": "cross-built; emulator smoke checks passed; included in r41 USB image",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    "x11r7/xapp_iceauth": {
+      "version": "1.0.11",
+      "source": "sources/iceauth-1.0.11.tar.xz",
+      "sha256": "9d633cf0d4d1d98e3ef02d18660372958b60a67016e8a72cd04093a8d8f8d4e9",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/iceauth-1.0.11.tar.xz",
+      "recipe": "package/x11r7/xapp_iceauth/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_ico": {
+      "version": "1.0.7",
+      "source": "sources/ico-1.0.7.tar.xz",
+      "sha256": "56a96d6429c387e54aec23b522f548487d5db8296092f21bb289b67845069915",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/ico-1.0.7.tar.xz",
+      "recipe": "package/x11r7/xapp_ico/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_listres": {
+      "version": "1.0.7",
+      "source": "sources/listres-1.0.7.tar.xz",
+      "sha256": "d7bdc7354a53f3786487399b6d5ea8169fac9ddac2c751c530383c777d1af139",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/listres-1.0.7.tar.xz",
+      "recipe": "package/x11r7/xapp_listres/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_mkfontscale": {
+      "version": "1.2.4",
+      "source": "sources/mkfontscale-1.2.4.tar.xz",
+      "sha256": "a01492a17a9b6c0ee3f92ee578850e305315b9f298da5f006a1cd4b51db01a5e",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/mkfontscale-1.2.4.tar.xz",
+      "recipe": "package/x11r7/xapp_mkfontscale/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_oclock": {
+      "version": "1.0.6",
+      "source": "sources/oclock-1.0.6.tar.xz",
+      "sha256": "3ee85e5e2d211eca7bdb8b2fe0e3baf31998829af48198b5fa9bbee2aa0d24be",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/oclock-1.0.6.tar.xz",
+      "recipe": "package/x11r7/xapp_oclock/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_rendercheck": {
+      "version": "1.5",
+      "source": "sources/rendercheck-1.5.tar.bz2",
+      "sha256": "00605679436d65ccf9a6f1f1cb206df7a2e8b28a7821e867922d2b14b009f1cc",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/rendercheck-1.5.tar.bz2",
+      "recipe": "package/x11r7/xapp_rendercheck/recipe.json",
+      "state": "cross-built; emulator smoke checks passed; included in r41 USB image",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    "x11r7/xapp_rgb": {
+      "version": "1.1.1",
+      "source": "sources/rgb-1.1.1.tar.xz",
+      "sha256": "c80ff280a02f56c30fadc2dfa210fc6979c4ab968afa315278cb97768b64ecab",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/rgb-1.1.1.tar.xz",
+      "recipe": "package/x11r7/xapp_rgb/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_sessreg": {
+      "version": "1.1.4",
+      "source": "sources/sessreg-1.1.4.tar.xz",
+      "sha256": "4e85b52f4f65a93449753bfb00ceb5d77f3317e24d07dc23147f2f116c785350",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/sessreg-1.1.4.tar.xz",
+      "recipe": "package/x11r7/xapp_sessreg/recipe.json",
+      "state": "cross-built; emulator smoke checks passed; included in r41 USB image",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    "x11r7/xapp_setxkbmap": {
+      "version": "1.3.5",
+      "source": "sources/setxkbmap-1.3.5.tar.xz",
+      "sha256": "360193cecc93f906d8383a8fb5c1f3a7eed35e6ced0e118a64ee56ae13c88cac",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/setxkbmap-1.3.5.tar.xz",
+      "recipe": "package/x11r7/xapp_setxkbmap/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_smproxy": {
+      "version": "1.0.8",
+      "source": "sources/smproxy-1.0.8.tar.xz",
+      "sha256": "fee584eae2ec1ce2d178d72d3b484920271ba68a27935769cefbafbc3a2ff6c8",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/smproxy-1.0.8.tar.xz",
+      "recipe": "package/x11r7/xapp_smproxy/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_twm": {
+      "version": "1.0.13",
+      "source": "sources/twm-1.0.13.tar.xz",
+      "sha256": "966c4df15757645943a916c1beee4ff4065b44fde00cf01f8477d8c1d0cba2b6",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/twm-1.0.13.tar.xz",
+      "recipe": "package/x11r7/xapp_twm/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_viewres": {
+      "version": "1.0.8",
+      "source": "sources/viewres-1.0.8.tar.xz",
+      "sha256": "4b221c2b103390b166633612b9abf8036cbbe90605dbd8a37cf2a377fa2b6cd2",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/viewres-1.0.8.tar.xz",
+      "recipe": "package/x11r7/xapp_viewres/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_x11perf": {
+      "version": "1.6.1",
+      "source": "sources/x11perf-1.6.1.tar.bz2",
+      "sha256": "1c7e0b8ffc2794b4ccf11e04d551823abe0ea47b4f7db0637390db6fbe817c34",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/x11perf-1.6.1.tar.bz2",
+      "recipe": "package/x11r7/xapp_x11perf/recipe.json",
+      "state": "cross-built; emulator smoke checks passed; included in r41 USB image",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    "x11r7/xapp_xauth": {
+      "version": "1.1.5",
+      "source": "sources/xauth-1.1.5.tar.xz",
+      "sha256": "a4000e2f441facebf569026bedecc23ba262cc6927be52070abe0002625cfbe0",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xauth-1.1.5.tar.xz",
+      "recipe": "package/x11r7/xapp_xauth/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xbiff": {
+      "version": "1.0.6",
+      "source": "sources/xbiff-1.0.6.tar.xz",
+      "sha256": "a85f34361c317ca216f42da9ee069a68b4beffd8dc0c973c9c339c8dd1d7d62a",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xbiff-1.0.6.tar.xz",
+      "recipe": "package/x11r7/xapp_xbiff/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xbitmaps": {
+      "version": "1.1.0",
+      "source": "sources/xbitmaps-1.1.0.tar.bz2",
+      "sha256": "c9a2059c8b0636b7ee1169647bb22f6eb4a0589e36fdb98936002e2569ad8761",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xbitmaps-1.1.0.tar.bz2",
+      "recipe": "package/x11r7/xapp_xbitmaps/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xcalc": {
+      "version": "1.1.3",
+      "source": "sources/xcalc-1.1.3.tar.xz",
+      "sha256": "86e157b6174678675a4a912995dccd0ff4e2ce32b01bdd6f91bfe93333324980",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xcalc-1.1.3.tar.xz",
+      "recipe": "package/x11r7/xapp_xcalc/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xclipboard": {
+      "version": "1.1.6",
+      "source": "sources/xclipboard-1.1.6.tar.xz",
+      "sha256": "d7c7a74ed0a4c8983b7dd47301a91c3da48e1027e9338705cad5be8d15c0d1f1",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xclipboard-1.1.6.tar.xz",
+      "recipe": "package/x11r7/xapp_xclipboard/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xclock": {
+      "version": "1.2.1",
+      "source": "sources/xclock-1.2.1.tar.xz",
+      "sha256": "e326cac20f7ad2af5412b9c4b70b1c3d392e08cd3cc6246e0a77b7c3935a4851",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xclock-1.2.1.tar.xz",
+      "recipe": "package/x11r7/xapp_xclock/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xcmsdb": {
+      "version": "1.0.7",
+      "source": "sources/xcmsdb-1.0.7.tar.xz",
+      "sha256": "5ec4068e488187b05ea92ee1362c96b78a90f19ccc7a1844c5921d70626bbc38",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xcmsdb-1.0.7.tar.xz",
+      "recipe": "package/x11r7/xapp_xcmsdb/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xconsole": {
+      "version": "1.1.1",
+      "source": "sources/xconsole-1.1.1.tar.xz",
+      "sha256": "d412abbea2423f2930443c43db1c83d7d0cf2b677419b86ed54aa5d47f072322",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xconsole-1.1.1.tar.xz",
+      "recipe": "package/x11r7/xapp_xconsole/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xcursorgen": {
+      "version": "1.0.9",
+      "source": "sources/xcursorgen-1.0.9.tar.xz",
+      "sha256": "0cc9e156ac84ca16ea902710af35e0faffa51d13797071e3b4b6cc7cbd493bbc",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xcursorgen-1.0.9.tar.xz",
+      "recipe": "package/x11r7/xapp_xcursorgen/recipe.json",
+      "state": "cross-built; emulator smoke checks passed; included in r41 USB image",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    "x11r7/xapp_xditview": {
+      "version": "1.0.7",
+      "source": "sources/xditview-1.0.7.tar.xz",
+      "sha256": "039e2d447fa409d4bb25c4e87cf09b4d4b3eff2d3af5aee8e7e52165a3259fd7",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xditview-1.0.7.tar.xz",
+      "recipe": "package/x11r7/xapp_xditview/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xdpyinfo": {
+      "version": "1.4.0",
+      "source": "sources/xdpyinfo-1.4.0.tar.xz",
+      "sha256": "dc1de6e6e091ed46c4837b0ae9811e8182f7be0d2af638cab3e530ff081a48b6",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xdpyinfo-1.4.0.tar.xz",
+      "recipe": "package/x11r7/xapp_xdpyinfo/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xedit": {
+      "version": "1.2.5",
+      "source": "sources/xedit-1.2.5.tar.xz",
+      "sha256": "733460cbf20a9d88e2a482ff1b288f51a97150cff807c7ffb98d2430546c8867",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xedit-1.2.5.tar.xz",
+      "recipe": "package/x11r7/xapp_xedit/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xev": {
+      "version": "1.2.7",
+      "source": "sources/xev-1.2.7.tar.xz",
+      "sha256": "95167895924de58e34b1013b2b0c8476e90d0888c6c39e7ae9bc35e3a19dba04",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xev-1.2.7.tar.xz",
+      "recipe": "package/x11r7/xapp_xev/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xeyes": {
+      "version": "1.3.1",
+      "source": "sources/xeyes-1.3.1.tar.xz",
+      "sha256": "5608d76b7b1aac5ed7f22f1b6b5ad74ef98c8693220f32b4b87dccee4a956eaa",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xeyes-1.3.1.tar.xz",
+      "recipe": "package/x11r7/xapp_xeyes/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xfd": {
+      "version": "1.1.6",
+      "source": "sources/xfd-1.1.6.tar.xz",
+      "sha256": "8f78ffcda2d58c66226daa957ad045839053ecdd44448124c20392ed9ff2f33b",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xfd-1.1.6.tar.xz",
+      "recipe": "package/x11r7/xapp_xfd/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xfontsel": {
+      "version": "1.1.2",
+      "source": "sources/xfontsel-1.1.2.tar.xz",
+      "sha256": "78ff018757c7b22137cf5d3526ef5e9388bc0cdead1f00daf2c898e2e274553f",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xfontsel-1.1.2.tar.xz",
+      "recipe": "package/x11r7/xapp_xfontsel/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xgc": {
+      "version": "1.0.7",
+      "source": "sources/xgc-1.0.7.tar.xz",
+      "sha256": "d858258c05eaac2d1f48bb44820dc2dce0a68601a14fff97853c72b48d1b7d08",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xgc-1.0.7.tar.xz",
+      "recipe": "package/x11r7/xapp_xgc/recipe.json",
+      "state": "cross-built; emulator smoke checks passed; included in r41 USB image",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    "x11r7/xapp_xhost": {
+      "version": "1.0.10",
+      "source": "sources/xhost-1.0.10.tar.xz",
+      "sha256": "a8afd70059479c712948b895e41c35a4a8bfcede3ba2d5a4b855c88bbb725be1",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xhost-1.0.10.tar.xz",
+      "recipe": "package/x11r7/xapp_xhost/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xinit": {
+      "version": "1.4.4",
+      "source": "sources/xinit-1.4.4.tar.xz",
+      "sha256": "40a47c7a164c7f981ce3787b4b37f7e411fb43231dcde543d70094075dacfef9",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xinit-1.4.4.tar.xz",
+      "recipe": "package/x11r7/xapp_xinit/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xinput": {
+      "version": "1.6.4",
+      "source": "sources/xinput-1.6.4.tar.xz",
+      "sha256": "ad04d00d656884d133110eeddc34e9c69e626ebebbbab04dc95791c2907057c8",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xinput-1.6.4.tar.xz",
+      "recipe": "package/x11r7/xapp_xinput/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xkbcomp": {
+      "version": "1.5.0",
+      "source": "sources/xkbcomp-1.5.0.tar.xz",
+      "sha256": "2ac31f26600776db6d9cd79b3fcd272263faebac7eb85fb2f33c7141b8486060",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xkbcomp-1.5.0.tar.xz",
+      "recipe": "package/x11r7/xapp_xkbcomp/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xkbevd": {
+      "version": "1.1.6",
+      "source": "sources/xkbevd-1.1.6.tar.xz",
+      "sha256": "d9b401f84cf8568342ff63b1ffc6aecd3877579256d89fe6408645e2741b073e",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xkbevd-1.1.6.tar.xz",
+      "recipe": "package/x11r7/xapp_xkbevd/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xkbprint": {
+      "version": "1.0.8",
+      "source": "sources/xkbprint-1.0.8.tar.xz",
+      "sha256": "6dbb3dc79b1d1e17045a65f86e7581e149c75ee5aacae69a6cf685acf78fc31b",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xkbprint-1.0.8.tar.xz",
+      "recipe": "package/x11r7/xapp_xkbprint/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xkbutils": {
+      "version": "1.0.7",
+      "source": "sources/xkbutils-1.0.7.tar.xz",
+      "sha256": "5f37be0ee31ada114415780c562638a1b4f03b385e56449927bf0d5665787a26",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xkbutils-1.0.7.tar.xz",
+      "recipe": "package/x11r7/xapp_xkbutils/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xkill": {
+      "version": "1.0.7",
+      "source": "sources/xkill-1.0.7.tar.xz",
+      "sha256": "5ff264bc4eebc0459255a92036dc8dc84b6d48caef8509f88a783beaadea750b",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xkill-1.0.7.tar.xz",
+      "recipe": "package/x11r7/xapp_xkill/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xload": {
+      "version": "1.2.2",
+      "source": "sources/xload-1.2.2.tar.xz",
+      "sha256": "112a75e481783b52a20d37367f57983d60919f78059f0e107458dde236804131",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xload-1.2.2.tar.xz",
+      "recipe": "package/x11r7/xapp_xload/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xlogo": {
+      "version": "1.0.7",
+      "source": "sources/xlogo-1.0.7.tar.xz",
+      "sha256": "8a3f67b20407a53286a7de1a04dbda12d272234d59ef35e68ecfaf7633d83624",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xlogo-1.0.7.tar.xz",
+      "recipe": "package/x11r7/xapp_xlogo/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xlsatoms": {
+      "version": "1.1.5",
+      "source": "sources/xlsatoms-1.1.5.tar.xz",
+      "sha256": "9ac9400328fbeffe15c9d94a90dedb90d09dcaa9d51482efabc55b33a736e317",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xlsatoms-1.1.5.tar.xz",
+      "recipe": "package/x11r7/xapp_xlsatoms/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xlsclients": {
+      "version": "1.1.6",
+      "source": "sources/xlsclients-1.1.6.tar.xz",
+      "sha256": "909810a3fdbd01d84747907f2c0cc32ee732e77afc88cb310abb9d155b2a0807",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xlsclients-1.1.6.tar.xz",
+      "recipe": "package/x11r7/xapp_xlsclients/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xlsfonts": {
+      "version": "1.0.9",
+      "source": "sources/xlsfonts-1.0.9.tar.xz",
+      "sha256": "a6a2e291801458d92510263b175d16f98024dc3816ebddbde79b5009f6c3b065",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xlsfonts-1.0.9.tar.xz",
+      "recipe": "package/x11r7/xapp_xlsfonts/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xmag": {
+      "version": "1.0.8",
+      "source": "sources/xmag-1.0.8.tar.xz",
+      "sha256": "326d3c583d795bb53ac609d144e7f7fb1499baba7eaec14b8e6cd232ea069532",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xmag-1.0.8.tar.xz",
+      "recipe": "package/x11r7/xapp_xmag/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xman": {
+      "version": "1.2.0",
+      "source": "sources/xman-1.2.0.tar.xz",
+      "sha256": "f18db80bd72a0c27cf38b2a7b75485ee48cd22aab10f2ff58de54d83e268b406",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xman-1.2.0.tar.xz",
+      "recipe": "package/x11r7/xapp_xman/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xmessage": {
+      "version": "1.0.7",
+      "source": "sources/xmessage-1.0.7.tar.xz",
+      "sha256": "703fccb7a0b772d61d7e603c189b9739866aa97ba985c727275420f829a30356",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xmessage-1.0.7.tar.xz",
+      "recipe": "package/x11r7/xapp_xmessage/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xmodmap": {
+      "version": "1.0.12",
+      "source": "sources/xmodmap-1.0.12.tar.xz",
+      "sha256": "fc54b9b5bbf2ae58ba8f9d42bd051c41c7438377400c42c17d7496d19e1bb3ce",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xmodmap-1.0.12.tar.xz",
+      "recipe": "package/x11r7/xapp_xmodmap/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xmore": {
+      "version": "1.0.4",
+      "source": "sources/xmore-1.0.4.tar.xz",
+      "sha256": "7eb560dbc1de4e43c64fe491ad73907a29d734cca82a9ad82c7d3feb9cdb0a9a",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xmore-1.0.4.tar.xz",
+      "recipe": "package/x11r7/xapp_xmore/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xpr": {
+      "version": "1.2.1",
+      "source": "sources/xpr-1.2.1.tar.xz",
+      "sha256": "0a5b947cd5e3990c9fcd04fdf92603241de4a55a29b89d4e8a0e473320b778ba",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xpr-1.2.1.tar.xz",
+      "recipe": "package/x11r7/xapp_xpr/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xprop": {
+      "version": "1.2.8",
+      "source": "sources/xprop-1.2.8.tar.xz",
+      "sha256": "d689e2adb7ef7b439f6469b51cda8a7daefc83243854c2a3b8f84d0f029d67ee",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xprop-1.2.8.tar.xz",
+      "recipe": "package/x11r7/xapp_xprop/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xrandr": {
+      "version": "1.5.4",
+      "source": "sources/xrandr-1.5.4.tar.xz",
+      "sha256": "2cafccb2aaf2491a4068676117a0d4f90ab307724b96fffc54cd1da953779400",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xrandr-1.5.4.tar.xz",
+      "recipe": "package/x11r7/xapp_xrandr/recipe.json",
+      "state": "cross-built; emulator smoke checks passed; included in r41 USB image",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    "x11r7/xapp_xrdb": {
+      "version": "1.2.3",
+      "source": "sources/xrdb-1.2.3.tar.xz",
+      "sha256": "c88f560243278c896ce4fc92ae5a45a2b505a316ffa427fe55b02e5d5914c4e4",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xrdb-1.2.3.tar.xz",
+      "recipe": "package/x11r7/xapp_xrdb/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xrefresh": {
+      "version": "1.1.1",
+      "source": "sources/xrefresh-1.1.1.tar.xz",
+      "sha256": "e947048130f6300e8be86573af8f225b486884fac14fcfe01bd913b41fa73bd3",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xrefresh-1.1.1.tar.xz",
+      "recipe": "package/x11r7/xapp_xrefresh/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xrestop": {
+      "version": "0.6",
+      "source": "sources/xrestop-0.6.tar.xz",
+      "sha256": "2e2ec111c4b2798b5dc2dc2b3ec7af4f6b261946e903b8e14db046831d203b29",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xrestop-0.6.tar.xz",
+      "recipe": "package/x11r7/xapp_xrestop/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xscope": {
+      "version": "1.4.5",
+      "source": "sources/xscope-1.4.5.tar.xz",
+      "sha256": "5f125d4c94e19e4be48edc43691e46df0b82f0b6ead95453dc7ac775a0d70066",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xscope-1.4.5.tar.xz",
+      "recipe": "package/x11r7/xapp_xscope/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xset": {
+      "version": "1.2.6",
+      "source": "sources/xset-1.2.6.tar.xz",
+      "sha256": "623837349ea887bc003f01ee2e4b6b8ddd9c2774f632c6d70eead1b56306b695",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xset-1.2.6.tar.xz",
+      "recipe": "package/x11r7/xapp_xset/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xsetroot": {
+      "version": "1.1.4",
+      "source": "sources/xsetroot-1.1.4.tar.xz",
+      "sha256": "1315a3f7e9abe06357363b93461e272601f67225ce0bc075c430cce35073362b",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xsetroot-1.1.4.tar.xz",
+      "recipe": "package/x11r7/xapp_xsetroot/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xsm": {
+      "version": "1.0.6",
+      "source": "sources/xsm-1.0.6.tar.xz",
+      "sha256": "b74cc774c6060c37592f68a90dbd31b0f2a62fb14e562769434f79be284a63ce",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xsm-1.0.6.tar.xz",
+      "recipe": "package/x11r7/xapp_xsm/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xstdcmap": {
+      "version": "1.0.6",
+      "source": "sources/xstdcmap-1.0.6.tar.xz",
+      "sha256": "062a15722769799524eee542fc82ae778f5ac180b618295d913f34962b134ffe",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xstdcmap-1.0.6.tar.xz",
+      "recipe": "package/x11r7/xapp_xstdcmap/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xterm": {
+      "version": "412",
+      "source": "sources/xterm-412.tgz",
+      "sha256": "b48bc780c1cbc14f6d89269f7e593712af6095876960d650be28b55e5dad65a6",
+      "upstream": "https://invisible-island.net/archives/xterm/current/xterm-412.tgz",
+      "recipe": "package/x11r7/xapp_xterm/recipe.json",
+      "state": "cross-built; emulator smoke checks passed; included in r41 USB image",
+      "runtime_qualified": true,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    "x11r7/xapp_xvinfo": {
+      "version": "1.1.6",
+      "source": "sources/xvinfo-1.1.6.tar.xz",
+      "sha256": "a436945e6a4ab70590358eec2b85d26970f7de480d27e8a25af8fe8421e88ae2",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xvinfo-1.1.6.tar.xz",
+      "recipe": "package/x11r7/xapp_xvinfo/recipe.json",
+      "state": "cross-built; emulator smoke checks passed; included in r41 USB image",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    "x11r7/xapp_xwd": {
+      "version": "1.0.10",
+      "source": "sources/xwd-1.0.10.tar.xz",
+      "sha256": "4909eacc26c4cd5a9afcd1468aec26e7c646544639031bdad4f71173aa82f3c3",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xwd-1.0.10.tar.xz",
+      "recipe": "package/x11r7/xapp_xwd/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xwininfo": {
+      "version": "1.1.7",
+      "source": "sources/xwininfo-1.1.7.tar.xz",
+      "sha256": "bee14d594cc86cc59aae1015c1b452a71bf60c304131e2716ca1cf0df733b4ac",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xwininfo-1.1.7.tar.xz",
+      "recipe": "package/x11r7/xapp_xwininfo/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xapp_xwud": {
+      "version": "1.0.8",
+      "source": "sources/xwud-1.0.8.tar.xz",
+      "sha256": "2e282648c34018fd870052b8d814ea4d35ad9fdb9bcfc8bdc5a06822c0f86e99",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/app/xwud-1.0.8.tar.xz",
+      "recipe": "package/x11r7/xapp_xwud/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xdriver_xf86-input-evdev": {
+      "version": "2.10.6",
+      "sources": [
+        "sources/xf86-input-evdev-2.10.6.tar.bz2",
+        "sources/xf86-input-evdev-2.10.6.tar.bz2"
+      ],
+      "recipe": "package/x11r7/xdriver_xf86-input-evdev/recipe.json",
+      "state": "baseline recipe; see configs/packages.json for selection",
+      "runtime_qualified": false
+    },
+    "x11r7/xdriver_xf86-input-mouse": {
+      "version": "1.9.5",
+      "sources": [
+        "sources/xf86-input-mouse-1.9.5.tar.xz",
+        "sources/xf86-input-mouse-1.9.5.tar.xz"
+      ],
+      "recipe": "package/x11r7/xdriver_xf86-input-mouse/recipe.json",
+      "state": "baseline recipe; see configs/packages.json for selection",
+      "runtime_qualified": false
+    },
+    "x11r7/xdriver_xf86-video-fbdev": {
+      "version": "0.5.0",
+      "sources": [
+        "sources/xf86-video-fbdev-0.5.0.tar.bz2"
+      ],
+      "recipe": "package/x11r7/xdriver_xf86-video-fbdev/recipe.json",
+      "state": "baseline recipe; see configs/packages.json for selection",
+      "runtime_qualified": false
+    },
+    "x11r7/xfont_font-alias": {
+      "version": "1.0.5",
+      "sources": [
+        "sources/font-alias-1.0.5.tar.xz"
+      ],
+      "recipe": "package/x11r7/xfont_font-alias/recipe.json",
+      "state": "baseline recipe; see configs/packages.json for selection",
+      "runtime_qualified": false
+    },
+    "x11r7/xfont_font-cursor-misc": {
+      "version": "1.0.4",
+      "sources": [
+        "sources/font-cursor-misc-1.0.4.tar.xz"
+      ],
+      "recipe": "package/x11r7/xfont_font-cursor-misc/recipe.json",
+      "state": "baseline recipe; see configs/packages.json for selection",
+      "runtime_qualified": false
+    },
+    "x11r7/xfont_font-misc-misc": {
+      "version": "1.1.3",
+      "sources": [
+        "sources/font-misc-misc-1.1.3.tar.xz"
+      ],
+      "recipe": "package/x11r7/xfont_font-misc-misc/recipe.json",
+      "state": "baseline recipe; see configs/packages.json for selection",
+      "runtime_qualified": false
+    },
+    "x11r7/xlib_libXScrnSaver": {
+      "version": "1.2.5",
+      "source": "sources/libXScrnSaver-1.2.5.tar.xz",
+      "sha256": "5057365f847253e0e275871441e10ff7846c8322a5d88e1e187d326de1cd8d00",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/lib/libXScrnSaver-1.2.5.tar.xz",
+      "recipe": "package/x11r7/xlib_libXScrnSaver/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xlib_libXmu": {
+      "version": "1.3.1",
+      "source": "sources/libXmu-1.3.1.tar.xz",
+      "sha256": "81a99e94c4501e81c427cbaa4a11748b584933e94b7a156830c3621256857bc4",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/lib/libXmu-1.3.1.tar.xz",
+      "recipe": "package/x11r7/xlib_libXmu/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "x11r7/xlib_libXv": {
+      "version": "1.0.13",
+      "source": "sources/libXv-1.0.13.tar.xz",
+      "sha256": "7d34910958e1c1f8d193d828fea1b7da192297280a35437af0692f003ba03755",
+      "upstream": "https://xorg.freedesktop.org/archive/individual/lib/libXv-1.0.13.tar.xz",
+      "recipe": "package/x11r7/xlib_libXv/recipe.json",
+      "state": "cross-built; emulator smoke checks passed; included in r41 USB image",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    "x11r7/xlib_libpng": {
+      "version": "1.6.59",
+      "source": "sources/libpng-1.6.59.tar.xz",
+      "sha256": "d80dd2a38a37f803cb9b6ac7b14bd6e74ddc3b654780a8380bdf93523fdb4389",
+      "upstream": "https://download.sourceforge.net/libpng/libpng-1.6.59.tar.xz",
+      "recipe": "package/x11r7/xlib_libpng/recipe.json",
+      "state": "cross-built; emulator smoke checks passed; included in r41 USB image",
+      "runtime_qualified": true,
+      "runtime_qualification": {
+        "scope": "emulator application smoke checks; not exhaustive feature qualification",
+        "record": "docs/desktop-applications-r41-validation.json"
+      }
+    },
+    "x11r7/xserver_xorg-server": {
+      "version": "21.1.24",
+      "sources": [
+        "sources/xorg-server-21.1.24.tar.xz",
+        "sources/xorg-server-21.1.24.tar.xz"
+      ],
+      "recipe": "package/x11r7/xserver_xorg-server/recipe.json",
+      "state": "baseline recipe; see configs/packages.json for selection",
+      "runtime_qualified": false
+    },
+    "x11r7/xutil_groff": {
+      "version": "1.24.2",
+      "source": "sources/groff-1.24.2.tar.gz",
+      "sha256": "f9c1efd5bebbe37fc6e1063db7473ce8df1e3e0be4ff0f43ce04fce57e9c5dd9",
+      "upstream": "https://ftp.gnu.org/gnu/groff/groff-1.24.2.tar.gz",
+      "recipe": "package/x11r7/xutil_groff/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py"
+    },
+    "xterm": {
+      "version": "389",
+      "sources": [
+        "sources/xterm-389.tgz"
+      ],
+      "recipe": "package/xterm/recipe.json",
+      "state": "baseline recipe; see configs/packages.json for selection",
+      "runtime_qualified": false
+    },
+    "xz": {
+      "version": "5.8.4",
+      "source": "sources/xz-5.8.4.tar.bz2",
+      "sha256": "3340ae48f88665abc78d71dc43446fb3f7e70b48fd59844ac0e14958cef6e00b",
+      "upstream": "https://github.com/tukaani-project/xz/releases/download/v5.8.4/xz-5.8.4.tar.bz2",
+      "recipe": "package/xz/recipe.json",
+      "state": "built",
+      "runtime_qualified": false
+    },
+    "zip": {
+      "version": "3.0",
+      "sources": [],
+      "recipe": "package/zip/recipe.json",
+      "state": "selected pinned Buildroot recipe; build/runtime qualification pending",
+      "runtime_qualified": false
+    },
+    "zstd": {
+      "version": "1.5.7",
+      "sources": [
+        "sources/zstd-1.5.7.tar.gz"
+      ],
+      "recipe": "package/zstd/recipe.json",
+      "state": "built",
+      "runtime_qualified": false,
+      "build_evidence": "build/network-work/latest-payload-finalization.json"
+    }
+  },
+  "xorg_apps_lock": "xorg-apps-sources.json",
+  "latest_tools_build": {
+    "selected_current_packages": 99,
+    "direct_make_targets": 103,
+    "target_ELF_files": 812,
+    "SDK_ELF_files": 871,
+    "evidence": "build/network-work/latest-payload-finalization.json",
+    "physical_hardware_qualification": false,
+    "runtime_qualification": "Functional checks and composed-image qualification are reported separately; built state alone does not assert every utility or hardware interface was exercised."
+  }
+}

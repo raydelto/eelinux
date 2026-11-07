@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-09",
+  "result": "passed",
+  "scope": "Matched PCSX2 native GS-only repaint samples; four repetitions per shape",
+  "guest_main_RAM_MiB": 32,
+  "CPU_pixel_renderer": false,
+  "physical_hardware_measured": false,
+  "old_kernel_sha256": "335a6b845be74b9c8457a9a5e46be86e388b785098195b5b78c3f1e98a8ebcd9",
+  "new_kernel_sha256": "18468baf86014a930d8fa5323906659a24f3892cd2273981f68e9be02032fa30",
+  "client_source_sha256": "5d9bbe843aff3b1eec16090193cff36128ed8edcf4811fdc3ac65b244ca30b36",
+  "measurements": {
+    "rectangles": {
+      "before_milliseconds": 10.226,
+      "after_milliseconds": 2.116,
+      "speedup": 4.833
+    },
+    "arcs": {
+      "before_milliseconds": 15.027,
+      "after_milliseconds": 4.782,
+      "speedup": 3.142
+    },
+    "polygons": {
+      "before_milliseconds": 24.347,
+      "after_milliseconds": 12.963,
+      "speedup": 1.878
+    }
+  },
+  "baseline_evidence": {
+    "result": "passed",
+    "session": "pcsx2-applications-baseline3",
+    "physical_hardware": false,
+    "GPU_only_pixels": true,
+    "mapped": [
+      "ps2-clock",
+      "ps2-terminal",
+      "ps2-calc",
+      "ps2-eyes"
+    ],
+    "drawing_milliseconds": {
+      "rectangles": 10.226,
+      "arcs": 15.027,
+      "polygons": 24.347
+    },
+    "logs": {
+      "client.log": "700eec421fffae6de9cbe98ee3e25b5607e385f612a7e337678302f5ffc85efc",
+      "session.log": "1318529ede123fbb8f47a7089c8942ba4e28350f4f4c71ccc732a35b76d99c14",
+      "Xorg.log": "7cbd0deeeea5aecef15b9b86461164b39c216254c611320ef9bf3d7bb9242e00"
+    }
+  },
+  "optimized_evidence": {
+    "result": "passed",
+    "session": "pcsx2-applications-batch2",
+    "physical_hardware": false,
+    "GPU_only_pixels": true,
+    "mapped": [
+      "ps2-clock",
+      "ps2-terminal",
+      "ps2-calc",
+      "ps2-eyes"
+    ],
+    "drawing_milliseconds": {
+      "rectangles": 2.116,
+      "arcs": 4.782,
+      "polygons": 12.963
+    },
+    "logs": {
+      "client.log": "c0c248d3d1a79638071308971710804711af8d9360700ca5482f85f553866597",
+      "session.log": "b61cae501cc18356b76ff24a589c91fc13aa324acc16d887b2a9353e26996799",
+      "Xorg.log": "09cb8162c957ea79f03f48d565d14a47acff83a669f951c453c15a1dbd32b6fa"
+    }
+  },
+  "qualification_clients_installed_in_production": false,
+  "mapped_programs": [
+    "xclock",
+    "xterm",
+    "xcalc",
+    "xeyes"
+  ],
+  "runtime_qualification_of_all_61_packages": false,
+  "current_bitmap_responsiveness_fix": {
+    "revision": "r41",
+    "record": "build/graphics-hardware-2d-validation-20261018-r41/responsiveness.json",
+    "physical_USB_mouse_latency_measured": false
+  }
+}

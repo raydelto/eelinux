@@ -1,0 +1,2 @@
+# Use ps2-keyboard to select a persistent console and Xorg layout.
+LAYOUT=us

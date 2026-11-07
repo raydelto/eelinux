@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "acl",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.acl",
+  "symbol": "BR2_PACKAGE_ACL",
+  "version": "2.4.0",
+  "recipe": "package/acl/acl.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "e661131456d2708a01c614a0f400e11d7d1bfaeb6f3e74b75bb980b72f0161a3",
+      "filename": "acl-2.4.0.tar.xz"
+    }
+  ],
+  "release_url": "https://download.savannah.nongnu.org/releases/acl/"
+}

@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "source_repository": "https://github.com/PCSX2/pcsx2",
+  "source_revision": "bc8151d2a46d4aba039ea5580afbfc7bfcf6d730",
+  "mmu_manifest": "emulator/pcsx2-linux-build.json",
+  "mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85",
+  "dependencies": {
+    "repository": "https://github.com/PCSX2/pcsx2-windows-dependencies",
+    "revision": "6a4efb8ffbdd79c89c1bd4cc0fde1718d9fc3a18",
+    "asset_id": 619873001,
+    "url": "https://api.github.com/repos/PCSX2/pcsx2-windows-dependencies/releases/assets/619873001",
+    "sha256": "a3133c7841e8fbdab6f4d1d5ad8efec31fb1ecda95ffed39f4d1f36bb7eb0007",
+    "bytes": 172750623,
+    "qt_version": "6.12.0",
+    "kddockwidgets_version": "2.4.1"
+  },
+  "compiler": "clang-cl 20.1.8 with Visual Studio MSVC/Windows SDK",
+  "cmake_options": [
+    "-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF",
+    "-DLTO_PCSX2_CORE=OFF",
+    "-DENABLE_TESTS=OFF",
+    "-DUSE_VULKAN=OFF",
+    "-DUSE_OPENGL=ON",
+    "-DDISABLE_ADVANCE_SIMD=ON",
+    "-DCMAKE_DISABLE_PRECOMPILE_HEADERS=OFF"
+  ],
+  "limitations": [
+    "EE interpreter mode and EnableBIOSHLE=false are required for Linux.",
+    "This runtime carries the same reviewed MMU source patch as the Linux build.",
+    "Windows uses a separately pinned official dependency bundle with Qt6.12.0.",
+    "Hardware Ethernet acceptance and full emulator/game/MMU qualification remain separate.",
+    "Windows punctuation uses physical scan codes; Linux Qt host keyboard translation is not changed."
+  ],
+  "windows_portability_patch": "emulator/patches/pcsx2-2.6.3-windows-compat.patch",
+  "windows_portability_patch_sha256": "2748a825ca637e3d73ee3575ef4a37faa653d640587da47b2bc0947d34571a66",
+  "windows_portability_source_files": [
+    "common/RedtapeWilCom.h",
+    "pcsx2/GS/Renderers/DX11/D3D.cpp",
+    "pcsx2-qt/QtKeyCodes.cpp",
+    "pcsx2/DEV9/smap.cpp",
+    "pcsx2/DEV9/DEV9.cpp",
+    "pcsx2/Memory.cpp",
+    "pcsx2/DEV9/PacketReader/IP/UDP/DHCP/DHCP_Packet.cpp",
+    "pcsx2/DEV9/PacketReader/IP/UDP/DHCP/DHCP_Options.h",
+    "pcsx2/DEV9/InternalServers/DHCP_Server.cpp",
+    "pcsx2/GS/GS.h",
+    "pcsx2/GS/GSState.cpp",
+    "pcsx2/USB/usb-msd/usb-msd.cpp"
+  ],
+  "windows_checkout_line_endings": "CRLF, Git core.autocrlf=true"
+}

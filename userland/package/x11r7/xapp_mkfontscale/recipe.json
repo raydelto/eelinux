@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_mkfontscale",
+  "kind": "application",
+  "program": "mkfontscale",
+  "version": "1.2.4",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/mkfontscale-1.2.4.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/mkfontscale-1.2.4.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "a01492a17a9b6c0ee3f92ee578850e305315b9f298da5f006a1cd4b51db01a5e",
+      "filename": "mkfontscale-1.2.4.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "8f9396a3242a7940c626caaf7b4aa84a819e005d11d612ca979179e2f5ff19f745c053a1510fc2205b60df6c5fb371153f1e353ea75df29da66279e134874174",
+      "filename": "mkfontscale-1.2.4.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

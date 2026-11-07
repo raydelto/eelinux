@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "name": "sed",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "4.10",
+    "url": "https://ftp.gnu.org/gnu/sed/sed-4.10.tar.xz",
+    "gnu": true,
+    "filename": "sed-4.10.tar.xz",
+    "sha256": "b8e72182b2ec96a3574e2998c47b7aaa64cc20ce000d8e9ac313cc07cecf28c7",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Wed 22 Apr 2026 02:45:57 AM WEST\ngpgv:                using RSA key 155D3FC500C834486D1EEA677FD9FCCB000BEEEE\ngpgv: Good signature from \"Jim Meyering <jim@meyering.net>\"\ngpgv:                 aka \"Jim Meyering <meyering@redhat.com>\"\ngpgv:                 aka \"Jim Meyering <meyering@gnu.org>\"\n"
+  },
+  "source_archive": "../../sources/sed-4.10.tar.xz",
+  "configure_options": [],
+  "configure_environment": {},
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false
+}

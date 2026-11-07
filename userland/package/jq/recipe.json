@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "jq",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.jq",
+  "symbol": "BR2_PACKAGE_JQ",
+  "version": "1.8.2",
+  "recipe": "package/jq/jq.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "71b8d6e8f5fe81f6c6d0d110e3892251f6ce76ed095abd315e26e6e1193af3af",
+      "filename": "jq-1.8.2.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/jqlang/jq/releases/tag/jq-1.8.2"
+}

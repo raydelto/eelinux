@@ -1,0 +1,149 @@
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_polygon.c
+@@ -0,0 +1,122 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_polygon.h"
++#include "ps2_gs_logic.h"
++#include "ps2_gs_render.h"
++#include <errno.h>
++#include <stdlib.h>
++#include <string.h>
++struct crossing { int32_t x,winding; };
++_Static_assert(sizeof(struct crossing)==8,"polygon crossing allocation");
++static void sift(struct crossing *events,unsigned root,unsigned end)
++{
++    while(2*root+1<end){
++        unsigned child=2*root+1;
++        if(child+1<end && events[child].x<events[child+1].x)++child;
++        if(events[root].x>=events[child].x)break;
++        struct crossing t=events[root];events[root]=events[child];events[child]=t;root=child;
++    }
++}
++static void sort(struct crossing *events,unsigned count)
++{
++    /* In-place heap sort keeps libc sorting scratch out of the RAM bound. */
++    for(unsigned i=count/2;i>0;--i)sift(events,i-1,count);
++    for(unsigned end=count;end>1;--end){
++        struct crossing t=events[0];events[0]=events[end-1];events[end-1]=t;sift(events,0,end-1);
++    }
++}
++static int32_t max32(int32_t a,int32_t b){return a>b?a:b;}
++static int32_t min32(int32_t a,int32_t b){return a<b?a:b;}
++int ps2_pipe_fill_polygon(struct pipe_context *ctx,uint32_t destination,unsigned bpp,
++    const struct ps2_pipe_polygon_point *input,unsigned count,
++    const struct ps2_pipe_solid_box *clips,unsigned clip_count,unsigned winding,
++    uint32_t colour,uint32_t mask,unsigned alu,unsigned *runs_emitted)
++{
++    if(runs_emitted)*runs_emitted=0;
++    if(!ctx || (bpp!=16 && bpp!=32) || count>PS2_PIPE_MAX_POLYGON_POINTS ||
++       clip_count>PS2_PIPE_MAX_POLYGON_CLIPS || (count && !input) ||
++       (clip_count && !clips) || winding>1 || alu>15 ||
++       (count && (uintptr_t)input>UINTPTR_MAX-(count*sizeof(*input)-1)) ||
++       (clip_count && (uintptr_t)clips>UINTPTR_MAX-(clip_count*sizeof(*clips)-1))){errno=EINVAL;return -1;}
++    if(ps2_pipe_context_acquire(ctx))return -1;
++    struct ps2_render_client *render=ps2_pipe_context_render(ctx);
++    const struct ps2_surface *d=render?ps2_surface_lookup(render->gs,destination):NULL;
++    struct ps2_pipe_polygon_point *points=NULL;
++    struct crossing *events=NULL;
++    struct ps2_pipe_solid_run *runs=NULL;
++    unsigned bits=bpp==16?0x7fff:0xffffff,run_count=0;
++    int32_t top=0,bottom=0;
++    int result=-1,error=EINVAL,full_copy=alu==3 && mask==bits;
++    if(!d || d->bits_per_pixel!=bpp || ((colour|mask)&~bits))goto out;
++    if(!(render->gs->caps.features&(full_copy?PS2GS_HW_FILL:PS2GS_HW_SOLID_LOGIC))){error=ENOTSUP;goto out;}
++    for(unsigned i=0;i<count;++i){
++        if(input[i].x < -PS2_PIPE_POLYGON_COORD_LIMIT || input[i].x>PS2_PIPE_POLYGON_COORD_LIMIT ||
++           input[i].y < -PS2_PIPE_POLYGON_COORD_LIMIT || input[i].y>PS2_PIPE_POLYGON_COORD_LIMIT)goto out;
++        if(!i)top=bottom=input[i].y;
++        else {top=min32(top,input[i].y);bottom=max32(bottom,input[i].y);}
++    }
++    int32_t clip_top=d->height,clip_bottom=0;
++    for(unsigned i=0;i<clip_count;++i){
++        const struct ps2_pipe_solid_box *a=&clips[i];
++        if(a->x1<0 || a->y1<0 || a->x1>=a->x2 || a->y1>=a->y2 ||
++           a->x2>(int32_t)d->width || a->y2>(int32_t)d->height)goto out;
++        for(unsigned j=0;j<i;++j){
++            const struct ps2_pipe_solid_box *b=&clips[j];
++            if(a->x1<b->x2 && b->x1<a->x2 && a->y1<b->y2 && b->y1<a->y2)goto out;
++        }
++        clip_top=min32(clip_top,a->y1);clip_bottom=max32(clip_bottom,a->y2);
++    }
++    top=max32(top,clip_top);bottom=min32(bottom,clip_bottom);
++    if(count<3 || !clip_count || top>=bottom || !mask || alu==5){result=0;goto out;}
++    if((uint64_t)count*(bottom-top)>PS2_PIPE_MAX_POLYGON_EDGE_TESTS){error=E2BIG;goto out;}
++    points=malloc(count*sizeof(*points));events=malloc(count*sizeof(*events));
++    runs=malloc(PS2_PIPE_MAX_SOLID_BOXES*sizeof(*runs));
++    if(!points || !events || !runs){error=ENOMEM;goto out;}
++    memcpy(points,input,count*sizeof(*points));
++    for(int32_t y=top;y<bottom;++y){
++        unsigned n=0;
++        for(unsigned i=0;i<count;++i){
++            struct ps2_pipe_polygon_point a=points[i],b=points[(i+1)%count];
++            int direction=a.y<b.y?1:-1;
++            if(a.y>b.y){struct ps2_pipe_polygon_point t=a;a=b;b=t;}
++            if(a.y==b.y || y<a.y || y>=b.y)continue;
++            int64_t numerator=(int64_t)(y-a.y)*(b.x-a.x),denominator=b.y-a.y;
++            /* Exact ceil of the edge intersection, including negative slopes.
++             * This matches Xorg MI's integer polygon edge convention. */
++            int32_t x=a.x+(numerator>0?(numerator+denominator-1)/denominator:numerator/denominator);
++            events[n++]=(struct crossing){x,direction};
++        }
++        sort(events,n);
++        int inside=0,level=0;int32_t previous=0;
++        for(unsigned i=0;i<n;){
++            int32_t x=events[i].x;
++            if(inside && previous<x)for(unsigned c=0;c<clip_count;++c){
++                const struct ps2_pipe_solid_box *clip=&clips[c];
++                if(y<clip->y1 || y>=clip->y2)continue;
++                int32_t left=max32(previous,clip->x1),right=min32(x,clip->x2);
++                if(left>=right)continue;
++                if(run_count==PS2_PIPE_MAX_SOLID_BOXES){error=E2BIG;goto out;}
++                runs[run_count++]=(struct ps2_pipe_solid_run){.box={left,y,right,y+1},.color=colour};
++            }
++            unsigned hits=0;int delta=0;
++            do {delta+=events[i].winding;++hits;++i;}while(i<n && events[i].x==x);
++            if(winding){level+=delta;inside=level!=0;}else inside^=hits&1;
++            previous=x;
++        }
++    }
++    if(!run_count){result=0;goto out;}
++    if(full_copy){
++        result=ps2_render_flush(render);
++        uint32_t rgba=colour;
++        if(bpp==16)rgba=((colour&31)<<3)|(((colour>>5)&31)<<11)|(((colour>>10)&31)<<19);
++        for(unsigned i=0;!result && i<run_count;++i){
++            const struct ps2_pipe_solid_box *b=&runs[i].box;
++            result=ps2_surface_fill(render->gs,destination,b->x1,b->y1,b->x2-b->x1,b->y2-b->y1,0x80000000|rgba);
++        }
++    }else result=ps2_pipe_solid_runs(ctx,destination,runs,run_count,mask,alu);
++    error=errno;
++    if(!result && runs_emitted)*runs_emitted=run_count;
++out:
++    free(runs);free(events);free(points);ps2_pipe_context_release(ctx);
++    if(result)errno=error;
++    return result;
++}
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_polygon.h
+@@ -0,0 +1,21 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_PIPE_POLYGON_H
++#define PS2_PIPE_POLYGON_H
++#include "ps2_context_link.h"
++#include "ps2_solid_batch.h"
++#define PS2_PIPE_MAX_POLYGON_POINTS 4096U
++#define PS2_PIPE_MAX_POLYGON_CLIPS 256U
++#define PS2_PIPE_MAX_POLYGON_EDGE_TESTS 4194304U
++#define PS2_PIPE_POLYGON_COORD_LIMIT 65535
++struct ps2_pipe_polygon_point { int32_t x,y; };
++/* Points are absolute storage coordinates. Clips must be disjoint, nonempty,
++ * within storage. winding=0 selects even-odd, winding=1 nonzero winding.
++ * Ignore horizontal edges; include top/left and exclude bottom/right edges.
++ * Snapshot/plan all geometry before the original fence. At most 16384 runs;
++ * no destination pixels or colour expansion array. Full RGB GXcopy uses GS
++ * fills (spare bits unspecified); other ALUs/masks preserve spare bits. */
++int ps2_pipe_fill_polygon(struct pipe_context *,uint32_t destination,unsigned bpp,
++    const struct ps2_pipe_polygon_point *,unsigned count,
++    const struct ps2_pipe_solid_box *,unsigned clip_count,unsigned winding,
++    uint32_t colour,uint32_t mask,unsigned alu,unsigned *runs_emitted);
++#endif

@@ -1,0 +1,40 @@
+--- a/linux-user/syscall.c
++++ b/linux-user/syscall.c
+@@ -3021,8 +3021,12 @@
+          protocol == NETLINK_ROUTE ||
+ #endif
+          protocol == NETLINK_KOBJECT_UEVENT ||
++#if defined(NETLINK_NETFILTER) && \
++    (defined(HOST_WORDS_BIGENDIAN) == defined(TARGET_WORDS_BIGENDIAN))
++         protocol == NETLINK_NETFILTER ||
++#endif
+          protocol == NETLINK_AUDIT)) {
+-        return -EPFNOSUPPORT;
++        return -TARGET_EPFNOSUPPORT;
+     }
+ 
+     if (domain == AF_PACKET ||
+@@ -3048,6 +3052,14 @@
+             case NETLINK_KOBJECT_UEVENT:
+                 /* nothing to do: messages are strings */
+                 break;
++#if defined(NETLINK_NETFILTER) && \
++    (defined(HOST_WORDS_BIGENDIAN) == defined(TARGET_WORDS_BIGENDIAN))
++            case NETLINK_NETFILTER:
++                /* Netfilter uses fixed-width wire headers and attributes.
++                 * No opaque attribute translation is needed or attempted
++                 * when host and guest byte order agree. */
++                break;
++#endif
+             case NETLINK_AUDIT:
+                 fd_trans_register(ret, &target_netlink_audit_trans);
+                 break;
+@@ -10891,7 +10903,7 @@
+                 struct target_statx host_stx;
+                 int mask = arg4;
+ 
+-                ret = get_errno(sys_statx(dirfd, p, flags, mask, &host_stx));
++                ret = get_errno(sys_statx(dirfd, path(p), flags, mask, &host_stx));
+                 if (!is_error(ret)) {
+                     if (host_to_target_statx(&host_stx, arg5) != 0) {
+                         unlock_user(p, arg2, 0);

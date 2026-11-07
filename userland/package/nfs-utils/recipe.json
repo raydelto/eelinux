@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "nfs-utils",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.nfs-utils",
+  "symbol": "BR2_PACKAGE_NFS_UTILS",
+  "version": "3.1.1",
+  "recipe": "package/nfs-utils/nfs-utils.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "7dbc05eb8b32828b322872b759a62cb3979cb4118f344dd8616813d1390e84e0",
+      "filename": "nfs-utils-3.1.1.tar.xz"
+    }
+  ],
+  "release_url": "https://www.kernel.org/pub/linux/utils/nfs-utils/3.1.1/"
+}

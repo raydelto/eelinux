@@ -1,0 +1,455 @@
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_gs_surface.c
+@@ -0,0 +1,180 @@
++/* SPDX-License-Identifier: MIT */
++#define _POSIX_C_SOURCE 200809L
++#include "ps2_gs_surface.h"
++#include <errno.h>
++#include <fcntl.h>
++#include <string.h>
++#include <sys/ioctl.h>
++#include <time.h>
++#include <unistd.h>
++
++_Static_assert(sizeof(struct ps2gs_surface_create) == 32, "surface create ABI");
++_Static_assert(sizeof(struct ps2gs_surface_copy) == 48, "surface copy ABI");
++_Static_assert(sizeof(struct ps2gs_surface_upload) == 40, "surface upload ABI");
++
++static int fail(struct ps2_surface_client *gs, int error)
++{
++    if (!gs->error) gs->error = error;
++    errno = gs->error;
++    return -1;
++}
++
++static int pause_retry(struct ps2_surface_client *gs)
++{
++    struct timespec delay = { .tv_nsec = 10000000 };
++    while (nanosleep(&delay, &delay) < 0)
++        if (errno != EINTR) return fail(gs, errno);
++    return 0;
++}
++
++static int request(struct ps2_surface_client *gs, unsigned long op, void *data)
++{
++    if (gs->error) return fail(gs, gs->error);
++    if (gs->fd < 0) return fail(gs, EBADF);
++    for (unsigned retry = 0; retry < 100; ++retry) {
++        if (!ioctl(gs->fd, op, data)) return 0;
++        if (errno != EAGAIN) return fail(gs, errno);
++        if (pause_retry(gs)) return -1;
++    }
++    return fail(gs, EAGAIN);
++}
++
++int ps2_surface_open(struct ps2_surface_client *gs, const char *device)
++{
++    memset(gs, 0, sizeof(*gs)); gs->fd = -1;
++    for (unsigned retry = 0; retry < 100; ++retry) {
++        gs->fd = open(device, O_RDWR | O_CLOEXEC);
++        if (gs->fd >= 0) break;
++        if (errno != EAGAIN) return fail(gs, errno);
++        if (pause_retry(gs)) return -1;
++    }
++    if (gs->fd < 0) return fail(gs, EAGAIN);
++    if (request(gs, PS2GS_GET_CAPS, &gs->caps)) goto error;
++    if (gs->caps.abi != PS2GS_ABI_VERSION || !gs->caps.width || !gs->caps.height ||
++        gs->caps.width > 2048 || gs->caps.height > 2048 ||
++        (gs->caps.bits_per_pixel != 16 && gs->caps.bits_per_pixel != 32) ||
++        !(gs->caps.features & PS2GS_HW_SURFACES)) {
++        fail(gs, ENOTSUP); goto error;
++    }
++    gs->front = (struct ps2_surface) { .width = gs->caps.width,
++        .height = gs->caps.height, .bits_per_pixel = gs->caps.bits_per_pixel };
++    return 0;
++error:
++    close(gs->fd); gs->fd = -1; errno = gs->error; return -1;
++}
++
++void ps2_surface_close(struct ps2_surface_client *gs)
++{
++    if (gs->fd >= 0) close(gs->fd);
++    gs->fd = -1;
++    memset(gs->surfaces, 0, sizeof(gs->surfaces));
++}
++
++const struct ps2_surface *ps2_surface_lookup(const struct ps2_surface_client *gs, uint32_t handle)
++{
++    if (!handle) return &gs->front;
++    for (unsigned i = 0; i < PS2GS_MAX_SURFACES; ++i)
++        if (gs->surfaces[i].handle == handle) return &gs->surfaces[i];
++    return NULL;
++}
++
++int ps2_surface_create(struct ps2_surface_client *gs, unsigned width, unsigned height,
++                       unsigned bpp, uint32_t *handle)
++{
++    if (handle) *handle = 0;
++    if (!handle || !width || !height || width > 2048 || height > 2048 ||
++        (bpp != 16 && bpp != 32)) return fail(gs, EINVAL);
++    unsigned slot;
++    for (slot = 0; slot < PS2GS_MAX_SURFACES && gs->surfaces[slot].handle; ++slot) {}
++    if (slot == PS2GS_MAX_SURFACES) return fail(gs, ENOSPC);
++    struct ps2gs_surface_create c = { .abi = PS2GS_ABI_VERSION,
++        .width = width, .height = height, .bits_per_pixel = bpp };
++    if (request(gs, PS2GS_SURFACE_CREATE, &c)) return -1;
++    unsigned bw = (width + 63) & ~63U, rows = (height + (bpp == 16 ? 63 : 31)) &
++        ~(bpp == 16 ? 63U : 31U);
++    if (!c.handle || ps2_surface_lookup(gs, c.handle) || c.abi != PS2GS_ABI_VERSION ||
++        c.width != width || c.height != height || c.bits_per_pixel != bpp || c.reserved ||
++        c.buffer_width != bw || c.allocated_bytes != bw * rows * (bpp / 8) ||
++        c.allocated_bytes > 4U * 1024 * 1024)
++        return fail(gs, EPROTO);
++    gs->surfaces[slot] = (struct ps2_surface) { .handle = c.handle,
++        .width = width, .height = height, .bits_per_pixel = bpp,
++        .buffer_width = bw, .bytes = c.allocated_bytes };
++    *handle = c.handle;
++    return 0;
++}
++
++int ps2_surface_destroy(struct ps2_surface_client *gs, uint32_t handle)
++{
++    if (!handle || !ps2_surface_lookup(gs, handle)) return fail(gs, EINVAL);
++    struct ps2gs_surface_destroy destroy = { .abi = PS2GS_ABI_VERSION, .handle = handle };
++    if (request(gs, PS2GS_SURFACE_DESTROY, &destroy)) return -1;
++    for (unsigned i = 0; i < PS2GS_MAX_SURFACES; ++i)
++        if (gs->surfaces[i].handle == handle) memset(&gs->surfaces[i], 0, sizeof(gs->surfaces[i]));
++    return 0;
++}
++
++static int rect(const struct ps2_surface *buffer, unsigned x, unsigned y,
++                unsigned width, unsigned height)
++{
++    return buffer && width && height && x < buffer->width && y < buffer->height &&
++        width <= buffer->width - x && height <= buffer->height - y;
++}
++
++int ps2_surface_fill(struct ps2_surface_client *gs, uint32_t handle,
++                     unsigned x, unsigned y, unsigned width, unsigned height, uint32_t rgba)
++{
++    if (!rect(ps2_surface_lookup(gs, handle), x, y, width, height)) return fail(gs, EINVAL);
++    struct ps2gs_surface_fill fill = { .abi = PS2GS_ABI_VERSION, .handle = handle,
++        .x = x, .y = y, .width = width, .height = height, .rgba = rgba };
++    return request(gs, PS2GS_SURFACE_FILL, &fill);
++}
++
++int ps2_surface_copy(struct ps2_surface_client *gs, uint32_t source, uint32_t destination,
++                     unsigned sx, unsigned sy, unsigned dx, unsigned dy,
++                     unsigned width, unsigned height)
++{
++    const struct ps2_surface *s = ps2_surface_lookup(gs, source), *d = ps2_surface_lookup(gs, destination);
++    if (!rect(s, sx, sy, width, height) || !rect(d, dx, dy, width, height)) return fail(gs, EINVAL);
++    if (s->bits_per_pixel != d->bits_per_pixel || width % (s->bits_per_pixel == 16 ? 4 : 2))
++        return fail(gs, ENOTSUP);
++    struct ps2gs_surface_copy copy = { .abi = PS2GS_ABI_VERSION,
++        .source = source, .destination = destination, .sx = sx, .sy = sy,
++        .dx = dx, .dy = dy, .width = width, .height = height };
++    return request(gs, PS2GS_SURFACE_COPY, &copy);
++}
++
++int ps2_surface_upload(struct ps2_surface_client *gs, uint32_t handle,
++                       unsigned x, unsigned y, unsigned width, unsigned height,
++                       const void *pixels, size_t source_bytes, size_t stride)
++{
++    if (gs->error) return fail(gs, gs->error);
++    const struct ps2_surface *buffer = ps2_surface_lookup(gs, handle);
++    if (!pixels || !rect(buffer, x, y, width, height)) return fail(gs, EINVAL);
++    unsigned cpp = buffer->bits_per_pixel / 8;
++    size_t row = (size_t)width * cpp;
++    if (stride < row || (height > 1 && stride > (SIZE_MAX - row) / (height - 1))) return fail(gs, EINVAL);
++    size_t required = (height - 1) * stride + row;
++    if (source_bytes < required || (uintptr_t)pixels > UINTPTR_MAX - (required - 1)) return fail(gs, EINVAL);
++    unsigned char packed[PS2GS_MAX_UPLOAD_BYTES];
++    for (unsigned column = 0; column < width;) {
++        unsigned w = width - column;
++        if (w > PS2GS_MAX_UPLOAD_BYTES / cpp) w = PS2GS_MAX_UPLOAD_BYTES / cpp;
++        size_t packed_row = (size_t)w * cpp;
++        unsigned rows = PS2GS_MAX_UPLOAD_BYTES / packed_row;
++        for (unsigned line = 0; line < height;) {
++            unsigned h = height - line;
++            if (h > rows) h = rows;
++            for (unsigned i = 0; i < h; ++i)
++                memcpy(packed + i * packed_row,
++                    (const unsigned char *)pixels + (line + i) * stride + column * cpp, packed_row);
++            struct ps2gs_surface_upload upload = { .abi = PS2GS_ABI_VERSION,
++                .handle = handle, .x = x + column, .y = y + line,
++                .width = w, .height = h, .bytes = h * packed_row, .pixels = (uintptr_t)packed };
++            if (request(gs, PS2GS_SURFACE_UPLOAD, &upload)) return -1;
++            line += h;
++        }
++        column += w;
++    }
++    return 0;
++}
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_gs_surface.h
+@@ -0,0 +1,33 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_GS_SURFACE_CLIENT_H
++#define PS2_GS_SURFACE_CLIENT_H
++#include <stdint.h>
++#include <stddef.h>
++#include "ps2-gs-surface.h"
++
++struct ps2_surface {
++    uint32_t handle, width, height, bits_per_pixel, buffer_width, bytes;
++};
++/* One drawing thread per session. Xorg and an in-process Mesa context share
++ * this object; a second process cannot open the exclusive device. Metadata
++ * describes GS storage, never a CPU mapping or a user-selected VRAM address. */
++struct ps2_surface_client {
++    int fd, error;
++    struct ps2gs_caps caps;
++    struct ps2_surface front, surfaces[PS2GS_MAX_SURFACES];
++};
++int ps2_surface_open(struct ps2_surface_client *, const char *device);
++void ps2_surface_close(struct ps2_surface_client *);
++const struct ps2_surface *ps2_surface_lookup(const struct ps2_surface_client *, uint32_t handle);
++int ps2_surface_create(struct ps2_surface_client *, unsigned width, unsigned height,
++                       unsigned bpp, uint32_t *handle);
++int ps2_surface_destroy(struct ps2_surface_client *, uint32_t handle);
++int ps2_surface_fill(struct ps2_surface_client *, uint32_t handle,
++                     unsigned x, unsigned y, unsigned width, unsigned height, uint32_t rgba);
++int ps2_surface_copy(struct ps2_surface_client *, uint32_t source, uint32_t destination,
++                     unsigned sx, unsigned sy, unsigned dx, unsigned dy,
++                     unsigned width, unsigned height);
++int ps2_surface_upload(struct ps2_surface_client *, uint32_t handle,
++                       unsigned x, unsigned y, unsigned width, unsigned height,
++                       const void *pixels, size_t source_bytes, size_t stride);
++#endif
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2-gs-surface.h
+@@ -0,0 +1,42 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_SURFACE_H
++#define _UAPI_PS2_GS_SURFACE_H
++#include "ps2-gs.h"
++
++/* /dev/ps2-gs is an exclusive, privileged drawing session. Handles belong to
++ * the open file description (dup shares it); closing frees all its surfaces.
++ * Mode/font/pan changes invalidate the session with ESTALE: close and reopen.
++ * Handle zero names the current front buffer. No VRAM address is accepted.
++ * Use KD_GRAPHICS on the active VT for drawing; restore KD_TEXT after close.
++ * Reset front-buffer pan offsets through fbdev before opening the session.
++ * Transfers/fills/copies are synchronous. Hardware failures poison the session;
++ * earlier drawing must not be replayed. Old /dev/fb0 ABI-1 remains supported
++ * when no session owns the GS. Text console rendering retains context 1.
++ */
++#define PS2GS_HW_SURFACES (1U << 5)
++#define PS2GS_MAX_SURFACES 64
++
++struct ps2gs_surface_create {
++	__u32 abi, width, height, bits_per_pixel;
++	/* Output: opaque nonzero handle, padded width, reserved GS bytes. */
++	__u32 handle, buffer_width, allocated_bytes, reserved;
++};
++struct ps2gs_surface_destroy { __u32 abi, handle, reserved[2]; };
++struct ps2gs_surface_fill {
++	__u32 abi, handle, x, y, width, height, rgba, reserved;
++};
++struct ps2gs_surface_copy {
++	__u32 abi, source, destination, reserved;
++	__u32 sx, sy, dx, dy, width, height, reserved2[2];
++};
++struct ps2gs_surface_upload {
++	__u32 abi, handle, x, y, width, height, bytes, reserved;
++	__aligned_u64 pixels;
++};
++
++#define PS2GS_SURFACE_CREATE  _IOWR('G', 0x73, struct ps2gs_surface_create)
++#define PS2GS_SURFACE_DESTROY _IOW('G', 0x74, struct ps2gs_surface_destroy)
++#define PS2GS_SURFACE_FILL    _IOW('G', 0x75, struct ps2gs_surface_fill)
++#define PS2GS_SURFACE_COPY    _IOW('G', 0x76, struct ps2gs_surface_copy)
++#define PS2GS_SURFACE_UPLOAD  _IOW('G', 0x77, struct ps2gs_surface_upload)
++#endif
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_surface_exa.c
+@@ -0,0 +1,167 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_surface_exa.h"
++#include "ps2_gs_client.h"
++#include "os.h"
++#include <errno.h>
++#include <stdlib.h>
++#include <string.h>
++
++static DevPrivateKeyRec ps2_surface_exa_key;
++struct ps2_exa_pixmap { uint32_t handle; };
++
++static struct ps2_surface_exa *backend(ScreenPtr screen)
++{
++    return dixLookupPrivate(&screen->devPrivates, &ps2_surface_exa_key);
++}
++static const struct ps2_surface *storage(PixmapPtr pixmap)
++{
++    ScreenPtr screen = pixmap->drawable.pScreen;
++    struct ps2_surface_exa *ps2 = backend(screen);
++    if (!ps2) return NULL;
++    uint32_t handle = 0;
++    if (pixmap != screen->GetScreenPixmap(screen)) {
++        struct ps2_exa_pixmap *priv = exaGetPixmapDriverPrivate(pixmap);
++        if (!priv || !priv->handle) return NULL;
++        handle = priv->handle;
++    }
++    const struct ps2_surface *buffer = ps2_surface_lookup(ps2->gs, handle);
++    if (!buffer || pixmap->drawable.width != buffer->width || pixmap->drawable.height != buffer->height ||
++        pixmap->drawable.bitsPerPixel != buffer->bits_per_pixel ||
++        pixmap->drawable.depth != (buffer->bits_per_pixel == 16 ? 15 : 24)) return NULL;
++    return buffer;
++}
++static void result(struct ps2_surface_exa *ps2, int status)
++{
++    if (status) FatalError("PS2 GS surface operation failed: %s; no CPU raster fallback\n", strerror(ps2->gs->error));
++}
++static void *create_pixmap(ScreenPtr screen, int width, int height, int depth,
++                          int usage, int bpp, int *pitch)
++{
++    (void)usage;
++    if (width < 0 || height < 0 || width > 2048 || height > 2048 ||
++        (bpp != 16 && bpp != 32) || depth != (bpp == 16 ? 15 : 24)) return NULL;
++    struct ps2_exa_pixmap *priv = calloc(1, sizeof(*priv));
++    if (!priv) return NULL;
++    *pitch = 0;
++    /* A zero-sized header can later name the front pixmap, with no allocation. */
++    if (!width || !height) return priv;
++    struct ps2_surface_exa *ps2 = backend(screen);
++    if (ps2_surface_create(ps2->gs, width, height, bpp, &priv->handle)) {
++        free(priv); return NULL;
++    }
++    const struct ps2_surface *buffer = ps2_surface_lookup(ps2->gs, priv->handle);
++    *pitch = buffer->buffer_width * (bpp / 8);
++    return priv;
++}
++static void destroy_pixmap(ScreenPtr screen, void *data)
++{
++    struct ps2_exa_pixmap *priv = data;
++    struct ps2_surface_exa *ps2 = backend(screen);
++    if (priv && priv->handle && ps2->gs->fd >= 0 && !ps2->gs->error)
++        ps2_surface_destroy(ps2->gs, priv->handle);
++    free(priv);
++}
++static Bool modify_header(PixmapPtr pixmap, int width, int height, int depth,
++                          int bpp, int pitch, void *pixels)
++{
++    ScreenPtr screen = pixmap->drawable.pScreen;
++    struct ps2_surface_exa *ps2 = backend(screen);
++    struct ps2_exa_pixmap *priv = exaGetPixmapDriverPrivate(pixmap);
++    const struct ps2_surface *buffer = NULL;
++    if (pixmap == screen->GetScreenPixmap(screen))
++        buffer = &ps2->gs->front;
++    else if (priv && priv->handle)
++        buffer = ps2_surface_lookup(ps2->gs, priv->handle);
++    if (!buffer || pixels) return FALSE;
++    if (width <= 0) width = pixmap->drawable.width;
++    if (height <= 0) height = pixmap->drawable.height;
++    if (depth <= 0) depth = pixmap->drawable.depth;
++    if (bpp <= 0) bpp = pixmap->drawable.bitsPerPixel;
++    /* Swizzled GS storage has no CPU pixel pointer. Resizing needs a new
++     * resource, not changing the descriptor of an existing allocation. */
++    if ((unsigned)width != buffer->width || (unsigned)height != buffer->height ||
++        depth != (buffer->bits_per_pixel == 16 ? 15 : 24) || (unsigned)bpp != buffer->bits_per_pixel ||
++        (pitch > 0 && buffer->handle && (unsigned)pitch != buffer->buffer_width * (buffer->bits_per_pixel / 8))) return FALSE;
++    pixmap->drawable.width = width; pixmap->drawable.height = height;
++    pixmap->drawable.depth = depth; pixmap->drawable.bitsPerPixel = bpp;
++    pixmap->devKind = pitch > 0 ? pitch : ((width+63)&~63) * (bpp/8);
++    pixmap->devPrivate.ptr = NULL;
++    return TRUE;
++}
++static Bool is_offscreen(PixmapPtr pixmap) { return storage(pixmap) != NULL; }
++static Bool prepare_solid(PixmapPtr pixmap, int alu, Pixel mask, Pixel color)
++{
++    const struct ps2_surface *buffer = storage(pixmap);
++    if (!buffer || alu != GXcopy ||
++        (mask & ((1UL << pixmap->drawable.depth) - 1)) != ((1UL << pixmap->drawable.depth) - 1)) return FALSE;
++    backend(pixmap->drawable.pScreen)->color = ps2_gs_pixel_color(color, buffer->bits_per_pixel);
++    return TRUE;
++}
++static void solid(PixmapPtr pixmap, int x1, int y1, int x2, int y2)
++{
++    if (x2 <= x1 || y2 <= y1) return;
++    if (x1 < 0 || y1 < 0) FatalError("PS2 GS: unclipped X solid\n");
++    const struct ps2_surface *buffer = storage(pixmap);
++    if (!buffer) FatalError("PS2 GS: X pixmap has no owned storage\n");
++    struct ps2_surface_exa *ps2 = backend(pixmap->drawable.pScreen);
++    result(ps2, ps2_surface_fill(ps2->gs, buffer->handle, x1, y1, x2-x1, y2-y1, ps2->color));
++}
++static Bool prepare_copy(PixmapPtr source, PixmapPtr destination, int xdir, int ydir, int alu, Pixel mask)
++{
++    (void)xdir; (void)ydir;
++    const struct ps2_surface *s = storage(source), *d = storage(destination);
++    if (source->drawable.pScreen != destination->drawable.pScreen || !s || !d ||
++        s->bits_per_pixel != d->bits_per_pixel || alu != GXcopy ||
++        (mask & ((1UL << destination->drawable.depth) - 1)) != ((1UL << destination->drawable.depth) - 1)) return FALSE;
++    backend(destination->drawable.pScreen)->source = s->handle;
++    return TRUE;
++}
++static void copy(PixmapPtr pixmap, int sx, int sy, int dx, int dy, int width, int height)
++{
++    if (width <= 0 || height <= 0) return;
++    if (sx < 0 || sy < 0 || dx < 0 || dy < 0) FatalError("PS2 GS: unclipped X copy\n");
++    const struct ps2_surface *buffer = storage(pixmap);
++    if (!buffer) FatalError("PS2 GS: X pixmap has no owned storage\n");
++    struct ps2_surface_exa *ps2 = backend(pixmap->drawable.pScreen);
++    result(ps2, ps2_surface_copy(ps2->gs, ps2->source, buffer->handle, sx, sy, dx, dy, width, height));
++}
++static Bool upload(PixmapPtr pixmap, int x, int y, int width, int height, char *source, int pitch)
++{
++    const struct ps2_surface *buffer = storage(pixmap);
++    if (!buffer) return FALSE;
++    if (width <= 0 || height <= 0) return TRUE;
++    if (x < 0 || y < 0 || !source || pitch <= 0 || (unsigned)width > buffer->width ||
++        (unsigned)height > buffer->height) FatalError("PS2 GS: invalid X image dimensions\n");
++    size_t row = (size_t)width * (buffer->bits_per_pixel / 8);
++    if ((size_t)pitch < row || (size_t)(height-1) > (SIZE_MAX-row)/(size_t)pitch)
++        FatalError("PS2 GS: invalid X image stride\n");
++    struct ps2_surface_exa *ps2 = backend(pixmap->drawable.pScreen);
++    result(ps2, ps2_surface_upload(ps2->gs, buffer->handle, x, y, width, height,
++        source, (size_t)(height-1)*pitch+row, pitch));
++    return TRUE;
++}
++static Bool prepare_access(PixmapPtr pixmap, int index)
++{
++    (void)pixmap; (void)index;
++    FatalError("PS2 GS: unsupported X drawing operation; CPU rasterization is disabled\n");
++    return FALSE;
++}
++static void done(PixmapPtr pixmap) { (void)pixmap; /* Every surface operation is synchronous. */ }
++static void wait_marker(ScreenPtr screen, int marker) { (void)screen; (void)marker; }
++
++Bool ps2_surface_exa_prepare(ScreenPtr screen, struct ps2_surface_exa *ps2, struct ps2_surface_client *gs)
++{
++    if (!dixRegisterPrivateKey(&ps2_surface_exa_key, PRIVATE_SCREEN, 0)) return FALSE;
++    memset(ps2, 0, sizeof(*ps2)); ps2->gs = gs;
++    ps2->driver.exa_major = EXA_VERSION_MAJOR; ps2->driver.exa_minor = EXA_VERSION_MINOR;
++    ps2->driver.flags = EXA_OFFSCREEN_PIXMAPS | EXA_HANDLES_PIXMAPS;
++    ps2->driver.maxX = 2048; ps2->driver.maxY = 2048; ps2->driver.maxPitchBytes = 8192;
++    ps2->driver.CreatePixmap2 = create_pixmap; ps2->driver.DestroyPixmap = destroy_pixmap;
++    ps2->driver.ModifyPixmapHeader = modify_header; ps2->driver.PixmapIsOffscreen = is_offscreen;
++    ps2->driver.PrepareSolid = prepare_solid; ps2->driver.Solid = solid; ps2->driver.DoneSolid = done;
++    ps2->driver.PrepareCopy = prepare_copy; ps2->driver.Copy = copy; ps2->driver.DoneCopy = done;
++    ps2->driver.UploadToScreen = upload; ps2->driver.PrepareAccess = prepare_access;
++    ps2->driver.WaitMarker = wait_marker;
++    dixSetPrivate(&screen->devPrivates, &ps2_surface_exa_key, ps2);
++    return TRUE;
++}
+--- /dev/null
++++ b/hw/xfree86/drivers/ps2/ps2_surface_exa.h
+@@ -0,0 +1,18 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_SURFACE_EXA_H
++#define PS2_SURFACE_EXA_H
++#include "xorg-server.h"
++#include "scrnintstr.h"
++#include "exa.h"
++#include "ps2_gs_surface.h"
++
++struct ps2_surface_exa {
++    struct ps2_surface_client *gs;
++    ExaDriverRec driver;
++    uint32_t color, source;
++};
++/* EXA storage/drawing callbacks for an owned GS session. Screen setup, front
++ * pixmap binding, cursor, glyph/composite and VT lifecycle are still DDX work.
++ * These callbacks are compiled/tested, not installed as ps2_drv.so. */
++Bool ps2_surface_exa_prepare(ScreenPtr, struct ps2_surface_exa *, struct ps2_surface_client *);
++#endif

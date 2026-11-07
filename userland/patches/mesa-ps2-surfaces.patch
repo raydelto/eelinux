@@ -1,0 +1,358 @@
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_gs_surface.c
+@@ -0,0 +1,180 @@
++/* SPDX-License-Identifier: MIT */
++#define _POSIX_C_SOURCE 200809L
++#include "ps2_gs_surface.h"
++#include <errno.h>
++#include <fcntl.h>
++#include <string.h>
++#include <sys/ioctl.h>
++#include <time.h>
++#include <unistd.h>
++
++_Static_assert(sizeof(struct ps2gs_surface_create) == 32, "surface create ABI");
++_Static_assert(sizeof(struct ps2gs_surface_copy) == 48, "surface copy ABI");
++_Static_assert(sizeof(struct ps2gs_surface_upload) == 40, "surface upload ABI");
++
++static int fail(struct ps2_surface_client *gs, int error)
++{
++    if (!gs->error) gs->error = error;
++    errno = gs->error;
++    return -1;
++}
++
++static int pause_retry(struct ps2_surface_client *gs)
++{
++    struct timespec delay = { .tv_nsec = 10000000 };
++    while (nanosleep(&delay, &delay) < 0)
++        if (errno != EINTR) return fail(gs, errno);
++    return 0;
++}
++
++static int request(struct ps2_surface_client *gs, unsigned long op, void *data)
++{
++    if (gs->error) return fail(gs, gs->error);
++    if (gs->fd < 0) return fail(gs, EBADF);
++    for (unsigned retry = 0; retry < 100; ++retry) {
++        if (!ioctl(gs->fd, op, data)) return 0;
++        if (errno != EAGAIN) return fail(gs, errno);
++        if (pause_retry(gs)) return -1;
++    }
++    return fail(gs, EAGAIN);
++}
++
++int ps2_surface_open(struct ps2_surface_client *gs, const char *device)
++{
++    memset(gs, 0, sizeof(*gs)); gs->fd = -1;
++    for (unsigned retry = 0; retry < 100; ++retry) {
++        gs->fd = open(device, O_RDWR | O_CLOEXEC);
++        if (gs->fd >= 0) break;
++        if (errno != EAGAIN) return fail(gs, errno);
++        if (pause_retry(gs)) return -1;
++    }
++    if (gs->fd < 0) return fail(gs, EAGAIN);
++    if (request(gs, PS2GS_GET_CAPS, &gs->caps)) goto error;
++    if (gs->caps.abi != PS2GS_ABI_VERSION || !gs->caps.width || !gs->caps.height ||
++        gs->caps.width > 2048 || gs->caps.height > 2048 ||
++        (gs->caps.bits_per_pixel != 16 && gs->caps.bits_per_pixel != 32) ||
++        !(gs->caps.features & PS2GS_HW_SURFACES)) {
++        fail(gs, ENOTSUP); goto error;
++    }
++    gs->front = (struct ps2_surface) { .width = gs->caps.width,
++        .height = gs->caps.height, .bits_per_pixel = gs->caps.bits_per_pixel };
++    return 0;
++error:
++    close(gs->fd); gs->fd = -1; errno = gs->error; return -1;
++}
++
++void ps2_surface_close(struct ps2_surface_client *gs)
++{
++    if (gs->fd >= 0) close(gs->fd);
++    gs->fd = -1;
++    memset(gs->surfaces, 0, sizeof(gs->surfaces));
++}
++
++const struct ps2_surface *ps2_surface_lookup(const struct ps2_surface_client *gs, uint32_t handle)
++{
++    if (!handle) return &gs->front;
++    for (unsigned i = 0; i < PS2GS_MAX_SURFACES; ++i)
++        if (gs->surfaces[i].handle == handle) return &gs->surfaces[i];
++    return NULL;
++}
++
++int ps2_surface_create(struct ps2_surface_client *gs, unsigned width, unsigned height,
++                       unsigned bpp, uint32_t *handle)
++{
++    if (handle) *handle = 0;
++    if (!handle || !width || !height || width > 2048 || height > 2048 ||
++        (bpp != 16 && bpp != 32)) return fail(gs, EINVAL);
++    unsigned slot;
++    for (slot = 0; slot < PS2GS_MAX_SURFACES && gs->surfaces[slot].handle; ++slot) {}
++    if (slot == PS2GS_MAX_SURFACES) return fail(gs, ENOSPC);
++    struct ps2gs_surface_create c = { .abi = PS2GS_ABI_VERSION,
++        .width = width, .height = height, .bits_per_pixel = bpp };
++    if (request(gs, PS2GS_SURFACE_CREATE, &c)) return -1;
++    unsigned bw = (width + 63) & ~63U, rows = (height + (bpp == 16 ? 63 : 31)) &
++        ~(bpp == 16 ? 63U : 31U);
++    if (!c.handle || ps2_surface_lookup(gs, c.handle) || c.abi != PS2GS_ABI_VERSION ||
++        c.width != width || c.height != height || c.bits_per_pixel != bpp || c.reserved ||
++        c.buffer_width != bw || c.allocated_bytes != bw * rows * (bpp / 8) ||
++        c.allocated_bytes > 4U * 1024 * 1024)
++        return fail(gs, EPROTO);
++    gs->surfaces[slot] = (struct ps2_surface) { .handle = c.handle,
++        .width = width, .height = height, .bits_per_pixel = bpp,
++        .buffer_width = bw, .bytes = c.allocated_bytes };
++    *handle = c.handle;
++    return 0;
++}
++
++int ps2_surface_destroy(struct ps2_surface_client *gs, uint32_t handle)
++{
++    if (!handle || !ps2_surface_lookup(gs, handle)) return fail(gs, EINVAL);
++    struct ps2gs_surface_destroy destroy = { .abi = PS2GS_ABI_VERSION, .handle = handle };
++    if (request(gs, PS2GS_SURFACE_DESTROY, &destroy)) return -1;
++    for (unsigned i = 0; i < PS2GS_MAX_SURFACES; ++i)
++        if (gs->surfaces[i].handle == handle) memset(&gs->surfaces[i], 0, sizeof(gs->surfaces[i]));
++    return 0;
++}
++
++static int rect(const struct ps2_surface *buffer, unsigned x, unsigned y,
++                unsigned width, unsigned height)
++{
++    return buffer && width && height && x < buffer->width && y < buffer->height &&
++        width <= buffer->width - x && height <= buffer->height - y;
++}
++
++int ps2_surface_fill(struct ps2_surface_client *gs, uint32_t handle,
++                     unsigned x, unsigned y, unsigned width, unsigned height, uint32_t rgba)
++{
++    if (!rect(ps2_surface_lookup(gs, handle), x, y, width, height)) return fail(gs, EINVAL);
++    struct ps2gs_surface_fill fill = { .abi = PS2GS_ABI_VERSION, .handle = handle,
++        .x = x, .y = y, .width = width, .height = height, .rgba = rgba };
++    return request(gs, PS2GS_SURFACE_FILL, &fill);
++}
++
++int ps2_surface_copy(struct ps2_surface_client *gs, uint32_t source, uint32_t destination,
++                     unsigned sx, unsigned sy, unsigned dx, unsigned dy,
++                     unsigned width, unsigned height)
++{
++    const struct ps2_surface *s = ps2_surface_lookup(gs, source), *d = ps2_surface_lookup(gs, destination);
++    if (!rect(s, sx, sy, width, height) || !rect(d, dx, dy, width, height)) return fail(gs, EINVAL);
++    if (s->bits_per_pixel != d->bits_per_pixel || width % (s->bits_per_pixel == 16 ? 4 : 2))
++        return fail(gs, ENOTSUP);
++    struct ps2gs_surface_copy copy = { .abi = PS2GS_ABI_VERSION,
++        .source = source, .destination = destination, .sx = sx, .sy = sy,
++        .dx = dx, .dy = dy, .width = width, .height = height };
++    return request(gs, PS2GS_SURFACE_COPY, &copy);
++}
++
++int ps2_surface_upload(struct ps2_surface_client *gs, uint32_t handle,
++                       unsigned x, unsigned y, unsigned width, unsigned height,
++                       const void *pixels, size_t source_bytes, size_t stride)
++{
++    if (gs->error) return fail(gs, gs->error);
++    const struct ps2_surface *buffer = ps2_surface_lookup(gs, handle);
++    if (!pixels || !rect(buffer, x, y, width, height)) return fail(gs, EINVAL);
++    unsigned cpp = buffer->bits_per_pixel / 8;
++    size_t row = (size_t)width * cpp;
++    if (stride < row || (height > 1 && stride > (SIZE_MAX - row) / (height - 1))) return fail(gs, EINVAL);
++    size_t required = (height - 1) * stride + row;
++    if (source_bytes < required || (uintptr_t)pixels > UINTPTR_MAX - (required - 1)) return fail(gs, EINVAL);
++    unsigned char packed[PS2GS_MAX_UPLOAD_BYTES];
++    for (unsigned column = 0; column < width;) {
++        unsigned w = width - column;
++        if (w > PS2GS_MAX_UPLOAD_BYTES / cpp) w = PS2GS_MAX_UPLOAD_BYTES / cpp;
++        size_t packed_row = (size_t)w * cpp;
++        unsigned rows = PS2GS_MAX_UPLOAD_BYTES / packed_row;
++        for (unsigned line = 0; line < height;) {
++            unsigned h = height - line;
++            if (h > rows) h = rows;
++            for (unsigned i = 0; i < h; ++i)
++                memcpy(packed + i * packed_row,
++                    (const unsigned char *)pixels + (line + i) * stride + column * cpp, packed_row);
++            struct ps2gs_surface_upload upload = { .abi = PS2GS_ABI_VERSION,
++                .handle = handle, .x = x + column, .y = y + line,
++                .width = w, .height = h, .bytes = h * packed_row, .pixels = (uintptr_t)packed };
++            if (request(gs, PS2GS_SURFACE_UPLOAD, &upload)) return -1;
++            line += h;
++        }
++        column += w;
++    }
++    return 0;
++}
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_gs_surface.h
+@@ -0,0 +1,33 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_GS_SURFACE_CLIENT_H
++#define PS2_GS_SURFACE_CLIENT_H
++#include <stdint.h>
++#include <stddef.h>
++#include "ps2-gs-surface.h"
++
++struct ps2_surface {
++    uint32_t handle, width, height, bits_per_pixel, buffer_width, bytes;
++};
++/* One drawing thread per session. Xorg and an in-process Mesa context share
++ * this object; a second process cannot open the exclusive device. Metadata
++ * describes GS storage, never a CPU mapping or a user-selected VRAM address. */
++struct ps2_surface_client {
++    int fd, error;
++    struct ps2gs_caps caps;
++    struct ps2_surface front, surfaces[PS2GS_MAX_SURFACES];
++};
++int ps2_surface_open(struct ps2_surface_client *, const char *device);
++void ps2_surface_close(struct ps2_surface_client *);
++const struct ps2_surface *ps2_surface_lookup(const struct ps2_surface_client *, uint32_t handle);
++int ps2_surface_create(struct ps2_surface_client *, unsigned width, unsigned height,
++                       unsigned bpp, uint32_t *handle);
++int ps2_surface_destroy(struct ps2_surface_client *, uint32_t handle);
++int ps2_surface_fill(struct ps2_surface_client *, uint32_t handle,
++                     unsigned x, unsigned y, unsigned width, unsigned height, uint32_t rgba);
++int ps2_surface_copy(struct ps2_surface_client *, uint32_t source, uint32_t destination,
++                     unsigned sx, unsigned sy, unsigned dx, unsigned dy,
++                     unsigned width, unsigned height);
++int ps2_surface_upload(struct ps2_surface_client *, uint32_t handle,
++                       unsigned x, unsigned y, unsigned width, unsigned height,
++                       const void *pixels, size_t source_bytes, size_t stride);
++#endif
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2-gs-surface.h
+@@ -0,0 +1,42 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_SURFACE_H
++#define _UAPI_PS2_GS_SURFACE_H
++#include "ps2-gs.h"
++
++/* /dev/ps2-gs is an exclusive, privileged drawing session. Handles belong to
++ * the open file description (dup shares it); closing frees all its surfaces.
++ * Mode/font/pan changes invalidate the session with ESTALE: close and reopen.
++ * Handle zero names the current front buffer. No VRAM address is accepted.
++ * Use KD_GRAPHICS on the active VT for drawing; restore KD_TEXT after close.
++ * Reset front-buffer pan offsets through fbdev before opening the session.
++ * Transfers/fills/copies are synchronous. Hardware failures poison the session;
++ * earlier drawing must not be replayed. Old /dev/fb0 ABI-1 remains supported
++ * when no session owns the GS. Text console rendering retains context 1.
++ */
++#define PS2GS_HW_SURFACES (1U << 5)
++#define PS2GS_MAX_SURFACES 64
++
++struct ps2gs_surface_create {
++	__u32 abi, width, height, bits_per_pixel;
++	/* Output: opaque nonzero handle, padded width, reserved GS bytes. */
++	__u32 handle, buffer_width, allocated_bytes, reserved;
++};
++struct ps2gs_surface_destroy { __u32 abi, handle, reserved[2]; };
++struct ps2gs_surface_fill {
++	__u32 abi, handle, x, y, width, height, rgba, reserved;
++};
++struct ps2gs_surface_copy {
++	__u32 abi, source, destination, reserved;
++	__u32 sx, sy, dx, dy, width, height, reserved2[2];
++};
++struct ps2gs_surface_upload {
++	__u32 abi, handle, x, y, width, height, bytes, reserved;
++	__aligned_u64 pixels;
++};
++
++#define PS2GS_SURFACE_CREATE  _IOWR('G', 0x73, struct ps2gs_surface_create)
++#define PS2GS_SURFACE_DESTROY _IOW('G', 0x74, struct ps2gs_surface_destroy)
++#define PS2GS_SURFACE_FILL    _IOW('G', 0x75, struct ps2gs_surface_fill)
++#define PS2GS_SURFACE_COPY    _IOW('G', 0x76, struct ps2gs_surface_copy)
++#define PS2GS_SURFACE_UPLOAD  _IOW('G', 0x77, struct ps2gs_surface_upload)
++#endif
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_resource.c
+@@ -0,0 +1,66 @@
++/* SPDX-License-Identifier: MIT */
++#include "ps2_resource.h"
++#include "util/u_inlines.h"
++#include <errno.h>
++#include <stdlib.h>
++
++struct pipe_resource *ps2_resource_create(struct pipe_screen *screen, struct ps2_surface_client *gs,
++                                          const struct pipe_resource *template)
++{
++    if (!template || !gs || template->target != PIPE_TEXTURE_2D ||
++        !template->width0 || !template->height0 || template->width0 > 2048 || template->height0 > 2048 ||
++        template->depth0 != 1 || template->array_size != 1 || template->last_level ||
++        template->nr_samples > 1 || template->nr_storage_samples > 1 ||
++        template->nr_sparse_levels || template->flags || template->next ||
++        (template->bind & ~(PIPE_BIND_RENDER_TARGET | PIPE_BIND_SAMPLER_VIEW)) ||
++        (template->format != PIPE_FORMAT_R8G8B8X8_UNORM && template->format != PIPE_FORMAT_R5G5B5X1_UNORM)) {
++        errno = ENOTSUP; return NULL;
++    }
++    struct ps2_resource *resource = calloc(1, sizeof(*resource));
++    if (!resource) return NULL;
++    unsigned bpp = template->format == PIPE_FORMAT_R8G8B8X8_UNORM ? 32 : 16;
++    if (ps2_surface_create(gs, template->width0, template->height0, bpp, &resource->handle)) {
++        free(resource); return NULL;
++    }
++    resource->base = *template;
++    pipe_reference_init(&resource->base.reference, 1);
++    resource->base.screen = screen;
++    resource->owner = gs;
++    return &resource->base;
++}
++
++void ps2_resource_destroy(struct pipe_resource *base)
++{
++    if (!base) return;
++    struct ps2_resource *resource = (struct ps2_resource *)base;
++    if (resource->owner->fd >= 0 && !resource->owner->error)
++        ps2_surface_destroy(resource->owner, resource->handle);
++    /* A failed session retains kernel storage until close; never replay draws
++     * or implicitly create a replacement CPU resource during destruction. */
++    free(resource);
++}
++
++static int box_valid(const struct pipe_box *box)
++{
++    return box && box->x >= 0 && box->y >= 0 && !box->z &&
++        box->width > 0 && box->height > 0 && box->depth == 1;
++}
++
++int ps2_resource_upload(struct pipe_resource *base, unsigned level, const struct pipe_box *box,
++                         const void *pixels, size_t bytes, size_t stride)
++{
++    if (!base || level || !box_valid(box)) { errno = ENOTSUP; return -1; }
++    struct ps2_resource *resource = (struct ps2_resource *)base;
++    return ps2_surface_upload(resource->owner, resource->handle, box->x, box->y,
++                              box->width, box->height, pixels, bytes, stride);
++}
++
++int ps2_resource_copy(struct pipe_resource *destination, unsigned dx, unsigned dy,
++                       struct pipe_resource *source, const struct pipe_box *box)
++{
++    if (!source || !destination || !box_valid(box)) { errno = ENOTSUP; return -1; }
++    struct ps2_resource *s = (struct ps2_resource *)source, *d = (struct ps2_resource *)destination;
++    if (s->owner != d->owner) { errno = EXDEV; return -1; }
++    return ps2_surface_copy(s->owner, s->handle, d->handle, box->x, box->y,
++                            dx, dy, box->width, box->height);
++}
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2_resource.h
+@@ -0,0 +1,22 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef PS2_PIPE_RESOURCE_H
++#define PS2_PIPE_RESOURCE_H
++#include "pipe/p_state.h"
++#include "ps2_gs_surface.h"
++
++struct ps2_resource {
++    struct pipe_resource base;
++    struct ps2_surface_client *owner;
++    uint32_t handle;
++};
++/* Native level-zero color storage only. No sampler or OpenGL capabilities are
++ * advertised by this component. The eventual pipe_screen owns the shared GS
++ * session and must destroy resources before closing it. No CPU pixel mapping. */
++struct pipe_resource *ps2_resource_create(struct pipe_screen *, struct ps2_surface_client *,
++                                          const struct pipe_resource *template);
++void ps2_resource_destroy(struct pipe_resource *);
++int ps2_resource_upload(struct pipe_resource *, unsigned level, const struct pipe_box *,
++                         const void *pixels, size_t bytes, size_t stride);
++int ps2_resource_copy(struct pipe_resource *destination, unsigned dx, unsigned dy,
++                       struct pipe_resource *source, const struct pipe_box *);
++#endif

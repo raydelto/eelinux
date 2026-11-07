@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xauth",
+  "kind": "application",
+  "program": "xauth",
+  "version": "1.1.5",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xauth-1.1.5.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xauth-1.1.5.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "a4000e2f441facebf569026bedecc23ba262cc6927be52070abe0002625cfbe0",
+      "filename": "xauth-1.1.5.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "df94b59de49ced2490351b7ab42d56d3ef92077891b8ba7a73c53b6babb1facd250d934b82f36ee1ddc355dffefb8f52914d30893c9d578711264f82e9bf3cb9",
+      "filename": "xauth-1.1.5.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

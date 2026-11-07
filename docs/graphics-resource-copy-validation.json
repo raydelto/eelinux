@@ -1,0 +1,120 @@
+{
+  "schema": 1,
+  "date": "2026-10-04",
+  "recorded_at": "2026-10-04T15:58:31.442640+00:00",
+  "scope": "actual pipe_context.resource_copy_region integration with the native GS region adapter; shared Xorg regressions",
+  "references": [
+    "https://docs.mesa3d.org/gallium/context.html",
+    "https://psi-rockin.github.io/ps2tek/"
+  ],
+  "compiled_components": {
+    "sha256": "f2c15f2fc59d467e49f64e6c8b7bf421cb1ea8e542d12c492cd857fa15e5eff8"
+  },
+  "native_test_log": {
+    "sha256": "f9d4d52a77c87e753a87fe6fcac5a0d82657cf24a24e306a8969cb556f0cd49e"
+  },
+  "host_checks": {
+    "schema": 1,
+    "result": "passed",
+    "cases": 46,
+    "new_cases": 7,
+    "regression_cases": 39,
+    "new_callback_log": {
+      "sha256": "62a918c6e69c20e8fdfc9cfdddd13d0102adea3bc7b7ca44ba83c1836923ae09"
+    },
+    "regression_log": {
+      "sha256": "7922f53b55af4c47cc10f35f453013a880c61db0c97dcae3934b6319f0f85989"
+    },
+    "regression_groups": [
+      "test_ps2_pipe",
+      "test_ps2_context_probe",
+      "test_ps2_copy",
+      "test_ps2_copy_probe",
+      "test_ps2_solid",
+      "test_ps2_gc"
+    ],
+    "sanitizers": [
+      "ASan",
+      "UBSan"
+    ],
+    "production_source_sha256": "03efe578461a6fbba36d5eb653e47a861104d14ea72e6c44af73adbbd0fc86e3",
+    "GPU_pixels_tested": false
+  },
+  "patches": {
+    "sha256": "3bc158a04ab4b288c26357f788acda8aa00163c796833beb464ddea712ef5858"
+  },
+  "archives": {
+    "Mesa": {
+      "sha256": "9943b1fd265938ec242c9e6d64fd664c57a92892f0a2f46d0d6c1af823db1b94"
+    },
+    "Xorg": {
+      "sha256": "e2f2d8e14ab29038d7485307e0fff2abb8ab0573fffa80862f5bd996973e78ac"
+    }
+  },
+  "rebuilt_CopyArea_probe": {
+    "sha256": "e893e0fa534a31114b889fa49ce1f5624db4bd7b74fbf257544be6153fac7a6a"
+  },
+  "rebuilt_probe_tests_Gallium_copy_callback": false,
+  "R5900_Linux_user_checks": {
+    "cases": 46,
+    "new_cases": 7,
+    "regression_cases": 39,
+    "result": "passed",
+    "library_NDEBUG": true,
+    "test_assertions_enabled": true,
+    "actual_GNU_atomics": true,
+    "GPU_pixels_tested": false
+  },
+  "formats": [
+    "PIPE_FORMAT_R8G8B8X8_UNORM",
+    "PIPE_FORMAT_R5G5B5X1_UNORM"
+  ],
+  "geometry": "same-format 2D color resources; level/layer zero; box depth one; positive bounded extents",
+  "tests": {
+    "widths_checked_per_color_format": 137,
+    "tiny_RGB555_source": [
+      3,
+      40
+    ],
+    "box_preflight_variants": 18,
+    "ownership_and_format_variants": 7,
+    "same_resource_translation_directions": 8,
+    "same_resource_identity_no_submission": true,
+    "pixel_reference": "independent source snapshots and wrapped GS copy/sampling positions",
+    "resource_surface_sampler_references_preserved": true,
+    "color_depth_bindings_preserved": true,
+    "queued_Mesa_draw_precedes_valid_Xorg_and_Mesa_copies": true,
+    "invalid_request_and_capacity_failure_precede_queue_flush": true,
+    "device_failure_no_replay": true
+  },
+  "Gallium_resource_copy_region_uses_new_adapter": true,
+  "software_pixel_renderer": false,
+  "GPU_pixel_readback": false,
+  "new_kernel_ABI": false,
+  "native_batch_source_unchanged_from_CopyArea_stage": true,
+  "preceding_CopyArea_source_snapshot": {
+    "sha256": "96c8b67771be1a10278794357269f4b34300aff5b85d3d05b853dc024dbe93a8"
+  },
+  "preceding_CopyArea_image": {
+    "sha256": "d1e48f620013bc7a524fb34d8d546b09fc861f5797de7c05c9a084b219f97dac"
+  },
+  "preceding_CopyArea_PCSX2_qualification": "preserved; applies to its original binary",
+  "earlier_hardware_report": "docs/graphics-hardware-validation.json",
+  "new_callback_PCSX2_verified": false,
+  "new_callback_physical_hardware_verified": false,
+  "new_USB_image_packaged": false,
+  "physical_devices_written": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL_GLX": false,
+  "shader_caps": 0,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "remaining": [
+    "new callback runtime pixel qualification",
+    "full Xorg DDX screen/VT/input/cursor/presentation",
+    "further copy ALUs and masks; line/tile/alpha rendering states",
+    "Mesa shader and vertex/state pipeline, draw_vbo and GLX",
+    "startx/TWM and existing OpenGL application validation",
+    "real idle/peak RAM measurements within 32 MiB"
+  ],
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

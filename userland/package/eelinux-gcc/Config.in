@@ -1,0 +1,18 @@
+config BR2_PACKAGE_EELINUX_GCC
+	bool "native GNU GCC for EELINUX"
+	depends on BR2_mips_r5900
+	depends on BR2_TOOLCHAIN_USES_GLIBC
+	depends on BR2_INSTALL_LIBSTDCPP
+	depends on BR2_TOOLCHAIN_EXTERNAL_GCC_16
+	depends on BR2_USE_WCHAR
+	depends on !BR2_PACKAGE_BINUTILS_TARGET
+	select BR2_PACKAGE_GMP
+	select BR2_PACKAGE_MPFR
+	select BR2_PACKAGE_MPC
+	select BR2_PACKAGE_ZLIB
+	select BR2_PACKAGE_EELINUX_BINUTILS
+	help
+	  Cross-build native GCC 16.2.0 (C and C++) to run on the R5900.
+	  This requires matching GCC 16.2.0 toolchain development files,
+	  restored by scripts/userland.py in the full profile.
+	  Compilation on the 32 MiB console needs disk storage and swap.

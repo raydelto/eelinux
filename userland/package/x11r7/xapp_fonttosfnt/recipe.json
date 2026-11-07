@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_fonttosfnt",
+  "kind": "application",
+  "program": "fonttosfnt",
+  "version": "1.2.5",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/fonttosfnt-1.2.5.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/fonttosfnt-1.2.5.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "2e251e66e8753c08aa280b26fd4a10d0d88e7d9bba5c8aac3d3fb36705e5918e",
+      "filename": "fonttosfnt-1.2.5.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "3be2a625234175dfc8a637b13f2d273afc82126ccd624a38afcc7ef3e13814dac0e55c8ae0a0a713725cf52078f8b45f3e86d7b357b1a19a55def55f969d0640",
+      "filename": "fonttosfnt-1.2.5.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": true,
+  "runtime_qualification": {
+    "scope": "emulator application smoke checks; not exhaustive feature qualification",
+    "record": "docs/desktop-applications-r41-validation.json"
+  }
+}

@@ -1,0 +1,203 @@
+{
+  "schema": 1,
+  "updated": "2026-10-05",
+  "milestone": "native GS save-under monochrome pointer cursor",
+  "implementation": [
+    "mesa/ps2/ps2_cursor.c",
+    "mesa/ps2/ps2_cursor.h",
+    "desktop/xorg/ps2_cursor_screen.c",
+    "desktop/xorg/ps2_cursor_screen.h",
+    "graphics/ps2_gs_surface.c",
+    "graphics/ps2_gs_surface.h",
+    "graphics/ps2_gs_logic.c",
+    "graphics/ps2_gs_render.c",
+    "graphics/ps2_gs_texture.c"
+  ],
+  "build": {
+    "sha256": "3f8531d59b02a2766ae44122841da59ae5f4a72929420ad5b84ab8f4cb24d87e"
+  },
+  "host": {
+    "sha256": "4a1af6a0cce4449cc12b9f9eff68ab9c82ad120d6c30666bdd3d83fdd5f91bd2"
+  },
+  "build_log": {
+    "sha256": "515aac0d2db92663dca5a5d64312ebf9ef7307bd25cb612545cd23db08a8f33b"
+  },
+  "archives": {
+    "libps2-gallium-cursor.a": "0d9ed27b455b39424f2eab259a69cdbb9e74e0420698304564899b5a0aca348c",
+    "libps2-xorg-cursor.a": "41a935e621b0a0812fc3b0642ca7bc4dbebbc87f87cd6f53aaa62633fc2a89bd"
+  },
+  "patches": [
+    {
+      "patch": "userland/patches/xorg-ps2-native-cursor.patch",
+      "sha256": "94f445ccca5c70855c2771d694e4944456793cdc0248ba63e886534cb66d642b",
+      "after": "xorg-ps2-thin-dashes.patch",
+      "prerequisite_patches": [
+        "xorg-ps2-raster.patch",
+        "xorg-ps2-surfaces.patch",
+        "xorg-ps2-rendering.patch",
+        "xorg-ps2-textures.patch",
+        "xorg-ps2-contexts.patch",
+        "xorg-ps2-glyphs.patch",
+        "xorg-ps2-gc.patch",
+        "xorg-ps2-logic.patch",
+        "xorg-ps2-solid-gc.patch",
+        "xorg-ps2-copy.patch",
+        "xorg-ps2-exa-copy.patch",
+        "xorg-ps2-blit.patch",
+        "xorg-ps2-copy-window.patch",
+        "xorg-ps2-paint-window.patch",
+        "xorg-ps2-tiled-paint.patch",
+        "xorg-ps2-tiled-gc.patch",
+        "xorg-ps2-stippled-gc.patch",
+        "xorg-ps2-monochrome.patch",
+        "xorg-ps2-transparent-stipple.patch",
+        "xorg-ps2-opaque-stipple-logic.patch",
+        "xorg-ps2-thin-lines.patch",
+        "xorg-ps2-thin-dashes.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    },
+    {
+      "patch": "userland/patches/mesa-ps2-native-cursor.patch",
+      "sha256": "d5fcd9ba2bbb3ac017748de2bc8bee8eca6bfc8ba29296a2ec861d5d0f249096",
+      "after": "mesa-ps2-thin-dashes.patch",
+      "prerequisite_patches": [
+        "mesa-ps2-raster.patch",
+        "mesa-ps2-surfaces.patch",
+        "mesa-ps2-rendering.patch",
+        "mesa-ps2-textures.patch",
+        "mesa-ps2-contexts.patch",
+        "mesa-ps2-logic.patch",
+        "mesa-ps2-solid-batch.patch",
+        "mesa-ps2-copy-batch.patch",
+        "mesa-ps2-resource-copy.patch",
+        "mesa-ps2-blit.patch",
+        "mesa-ps2-tile.patch",
+        "mesa-ps2-stipple.patch",
+        "mesa-ps2-transparent-stipple.patch",
+        "mesa-ps2-opaque-stipple-logic.patch",
+        "mesa-ps2-thin-lines.patch",
+        "mesa-ps2-thin-dashes.patch"
+      ],
+      "clean_series_apply": "passed",
+      "source_equality": "passed",
+      "source_release_check": "passed",
+      "source_release_component_compile": "passed",
+      "project_component_include_paths_used": false,
+      "COMPOSITE_enabled_and_disabled_compile": "passed",
+      "enabled_complete_driver": false
+    }
+  ],
+  "host_sanitizer_cases": 174,
+  "R5900_cases": 174,
+  "new_cases_per_environment": 16,
+  "regression_cases_per_environment": 158,
+  "cursor_cleanup_host_revalidation": {
+    "cases": 16,
+    "result": "passed",
+    "reason": "failed cursor restoration must still unwind pointer/GC/context callbacks",
+    "log": {
+      "sha256": "5250da05f6e144e582261c03d47b77f96ed96c1dfba5b260950c301ae7102362"
+    },
+    "component_build_sha256": "3f8531d59b02a2766ae44122841da59ae5f4a72929420ad5b84ab8f4cb24d87e",
+    "inputs": {
+      "desktop/xorg/ps2_cursor_screen.c": "578c0824a35585e4f046e6e660ff994804c619ab059cb06ebb9234a820575435",
+      "tests/graphics/ps2-cursor.c": "aaf457faaae0da384c398867038a148482a4f523ca038c6bd7999e0ac65bf413",
+      "tests/test_ps2_cursor.py": "66f54cf718fc5f92f6d75537cabb576c487122c2e45dfc78103c29eb36332a41"
+    },
+    "original_cursor_group_superseded": true,
+    "regression_source_changes_since_initial_groups": false
+  },
+  "additional_repeated_host_executions": 16,
+  "native_path": "CPU monochrome mask/source geometry -> native GS capture -> GS Boolean coloured runs -> native GS restore",
+  "CPU_colour_destination_renderer": false,
+  "GPU_pixel_readback": false,
+  "RGBX_CT32_and_RGB555_CT16_modeled": true,
+  "both_bitmap_bit_orders": true,
+  "edge_clipping_and_hotspots": true,
+  "image_and_colours_snapshotted_before_fence": true,
+  "front_reads_and_writes_hide_cursor_before_submission": true,
+  "front_copy_excludes_cursor_pixels": true,
+  "queue_submitted_once_without_recursive_flush": true,
+  "context_lease_until_cursor_cleanup": true,
+  "failed_restore_still_unwinds_lower_CloseScreen": true,
+  "suspend_resume_and_hide_clear": true,
+  "one_submission_thread": true,
+  "one_pointer_device": true,
+  "limits": {
+    "max_width": 64,
+    "max_height": 64,
+    "max_coloured_runs": 4096,
+    "run_plan_bytes": 81920,
+    "persistent_R5900_cursor_object_bytes": 83044,
+    "sizeof_measurement": {
+      "sha256": "1453cf2c002cc03b74eebc935881d56f3c4c13291052d17bca3d068244ed9b3c"
+    },
+    "allocator_overhead_included": false,
+    "owned_source_and_mask_bytes": 1024,
+    "CT32_GS_saved_background_bytes": 16384,
+    "CT16_GS_saved_background_bytes": 8192,
+    "compiled_R5900_cursor_create_stack_bytes": 56,
+    "compiled_R5900_cursor_set_stack_bytes": 1128,
+    "compiled_R5900_cursor_plan_stack_bytes": 64,
+    "full_desktop_peak_RAM_measured": false
+  },
+  "Xorg_sprite_callbacks_and_records_compiled_and_executed": true,
+  "miPointer_framework_stubbed": true,
+  "Damage_framework_stubbed": true,
+  "actual_Damage_subsystem_executed": false,
+  "actual_full_X_server_executed": false,
+  "pointer_input_driver_executed": false,
+  "VT_hook_integrated_in_real_DDX": false,
+  "ARGB_cursors_supported": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL_GLX": false,
+  "shader_caps": 0,
+  "kernel_ABI_changed": false,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "prior_qualified_dashed_line_evidence": {
+    "path": "docs/graphics-thin-dashes-validation.json",
+    "sha256": "30efa3bfa4f65ceff751b773f41995bae470c629dbc45f3aa73ca17d26451cbf"
+  },
+  "legacy_probe_compatibility": {
+    "path": "docs/graphics-native-cursor-legacy-probe-validation.json",
+    "sha256": "4a428d28b9269424bc53670d795bbdd1cf589fabd55d7b12d180b88403b1c5a0"
+  },
+  "additional_host_legacy_probe_cases": 45,
+  "qualified_earlier_component_snapshots_unchanged": true,
+  "new_USB_image_packaged": true,
+  "new_PCSX2_pixels_verified": true,
+  "new_physical_PS2_pixels_verified": false,
+  "limitations": [
+    "monochrome 64x64 maximum; ARGB cursors and multiple pointer devices unsupported",
+    "full DDX input/VT/presentation and actual MI pointer/Damage lifecycle remain unqualified",
+    "complete Mesa shaders/vertex/draw_vbo/GLX, TWM and measured desktop RAM remain unfinished"
+  ],
+  "runtime_validation": {
+    "path": "docs/graphics-native-cursor-runtime-validation.json",
+    "sha256": "61fb4099e41d986e71145f5f27cd3e328cf938b030cc602b64c53e1dc92b4831"
+  },
+  "probe_build": {
+    "sha256": "0d7601a6d1e98811f9e8398e2b0823a8d80cc1421d1f1ce60e1b306a361655cf"
+  },
+  "probe_host_checks": {
+    "schema": 1,
+    "result": "passed",
+    "cases": 6,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "log_sha256": "80f549ba9e7d9e29caed11e54d52c24cf90a1eee308799c2bc323d2c320abb54",
+    "probe_source_sha256": "ec24f1ba5161cd1800b331f97b4091f3897cbfb1aafecb6f8ae906bbd4faf1e6",
+    "pixel_qualification": false
+  },
+  "PCSX2_command_fence_exit": 0,
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

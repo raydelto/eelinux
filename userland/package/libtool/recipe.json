@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "name": "libtool",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "2.6.2",
+    "url": "https://ftp.gnu.org/gnu/libtool/libtool-2.6.2.tar.xz",
+    "gnu": true,
+    "filename": "libtool-2.6.2.tar.xz",
+    "sha256": "2ef1067c16c97db930fd740cc9bc3d3ba9a583804ae5ac42cc3e8719e49e191e",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Thu 16 Jul 2026 05:40:26 PM WEST\ngpgv:                using RSA key FA26CA784BE188927F22B99F6570EA01146F7354\ngpgv: Good signature from \"Ileana Dumitrescu <ileanadumi95@protonmail.com>\"\ngpgv:                 aka \"Ileana Dumitrescu <ileanadumitrescu95@gmail.com>\"\n"
+  },
+  "source_archive": "../../sources/libtool-2.6.2.tar.xz",
+  "configure_options": [
+    "--enable-ltdl-install"
+  ],
+  "configure_environment": {},
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false
+}

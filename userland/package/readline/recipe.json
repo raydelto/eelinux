@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "name": "readline",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "8.3",
+    "url": "https://ftp.gnu.org/gnu/readline/readline-8.3.tar.gz",
+    "gnu": true,
+    "filename": "readline-8.3.tar.gz",
+    "sha256": "fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Wed 02 Jul 2025 02:17:41 PM WEST\ngpgv:                using DSA key 7C0135FB088AAF6C66C650B9BB5869F064EA74AB\ngpgv: Good signature from \"Chet Ramey <chet@cwru.edu>\"\n",
+    "upstream_patchlevel": 6,
+    "patches_checked": "2026-11-06"
+  },
+  "source_archive": "../../sources/readline-8.3.tar.gz",
+  "configure_options": [
+    "--with-curses",
+    "--with-shared-termcap-library"
+  ],
+  "configure_environment": {
+    "bash_cv_termcap_lib": "libncursesw"
+  },
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false,
+  "patches": [
+    {
+      "path": "userland/package/readline/upstream-patches/readline83-001",
+      "sha256": "21f0a03106dbe697337cd25c70eb0edbaa2bdb6d595b45f83285cdd35bac84de",
+      "strip": 0,
+      "upstream": "https://ftp.gnu.org/gnu/readline/readline-8.3-patches/readline83-001"
+    },
+    {
+      "path": "userland/package/readline/upstream-patches/readline83-002",
+      "sha256": "e27364396ba9f6debf7cbaaf1a669e2b2854241ae07f7eca74ca8a8ba0c97472",
+      "strip": 0,
+      "upstream": "https://ftp.gnu.org/gnu/readline/readline-8.3-patches/readline83-002"
+    },
+    {
+      "path": "userland/package/readline/upstream-patches/readline83-003",
+      "sha256": "72dee13601ce38f6746eb15239999a7c56f8e1ff5eb1ec8153a1f213e4acdb29",
+      "strip": 0,
+      "upstream": "https://ftp.gnu.org/gnu/readline/readline-8.3-patches/readline83-003"
+    },
+    {
+      "path": "userland/package/readline/upstream-patches/readline83-004",
+      "sha256": "1f189c4566aa35950964647b9ec3be1a821e42b86048129c63eb7f9d4d2f5a74",
+      "strip": 0,
+      "upstream": "https://ftp.gnu.org/gnu/readline/readline-8.3-patches/readline83-004"
+    },
+    {
+      "path": "userland/package/readline/upstream-patches/readline83-005",
+      "sha256": "5481adbe161c9f6ba972c74db9e18c7aa351d3df3035cc4a673a1aa06247d1c6",
+      "strip": 0,
+      "upstream": "https://ftp.gnu.org/gnu/readline/readline-8.3-patches/readline83-005"
+    },
+    {
+      "path": "userland/package/readline/upstream-patches/readline83-006",
+      "sha256": "4ebd261a608287796e171af0ea9af5a1e3122e46672accda2484b6698c47c1a4",
+      "strip": 0,
+      "upstream": "https://ftp.gnu.org/gnu/readline/readline-8.3-patches/readline83-006"
+    }
+  ]
+}

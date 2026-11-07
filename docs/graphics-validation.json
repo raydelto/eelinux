@@ -1,0 +1,185 @@
+{
+  "schema": 1,
+  "date": "2026-10-03",
+  "scope": "native GS command prototype and progressive console; not accelerated Xorg/Mesa",
+  "default_mode": "720x576 progressive at 50 Hz",
+  "source_reference": "https://psi-rockin.github.io/ps2tek/",
+  "depth_pairing_reference": "https://github.com/ps2dev/gsKit/blob/master/ee/gs/src/gsInit.c",
+  "patch_application": {
+    "baseline": "/home/machaddr/.cache/eelinux/sources/linux-7.2.8-usb-ps2-smap",
+    "built_source": "/home/machaddr/.cache/eelinux/sources/linux-7.2.8-ps2-gs",
+    "patches": [
+      {
+        "patch": "ps2-gs-framebuffer.patch",
+        "sha256": "cf6e5fd55269e527f633055733eec670fab30c47f21fb6bb0c71d74d88efa0e9",
+        "fresh_baseline_apply": "passed"
+      },
+      {
+        "patch": "ps2-gs-commands.patch",
+        "sha256": "d3c3d6f3bf03232cc85ecf185f59d2897c1748b90eb325e41fd4edf3454c9946",
+        "fresh_baseline_apply": "passed"
+      }
+    ],
+    "generated_source_matches_build": true
+  },
+  "host_tests": [
+    {
+      "suite": "test_ps2_gs.py",
+      "tests": 1,
+      "result": "passed",
+      "capture_kind": "transcription of successful tool output; not a new run",
+      "test_source_sha256": "8b33c1e66d66c7c66e5b810d33fe59a602d8d86b1a56d9c7d5d389377018eeec",
+      "sha256": "6b2142efd5abd06b3ccf5d694217c7948520322da2d0df80c236e2cf8584c939"
+    },
+    {
+      "suite": "test_runtime.py",
+      "tests": 20,
+      "result": "passed",
+      "capture_kind": "transcription of successful tool output; not a new run",
+      "test_source_sha256": "b96efdb6403ad16f69a45fae8b702dba7fc4da0452e9f97df3e080be88f4e121",
+      "sha256": "f5ffc2efc41e0850b85d35247f0250e1f783a1d8e0c7530e1c829df235f765b3"
+    },
+    {
+      "suite": "test_hardware_usb.py",
+      "tests": 8,
+      "result": "passed",
+      "capture_kind": "transcription of successful tool output; not a new run",
+      "test_source_sha256": "1220325e0af8427394e826e63ca55c45ebce8048197410d0c038deda8dabf99e",
+      "sha256": "d6b7099d872852c124fe0c90df634a4b71e5780d68a6daa63359cf6b3302c07d"
+    },
+    {
+      "suite": "test_emulator_hardware_disk.py",
+      "tests": 9,
+      "result": "passed",
+      "capture_kind": "transcription of successful tool output; not a new run",
+      "test_source_sha256": "174dcba2f814c61d80fc39e533e5aec8045801bf7a110da9c2e1ceaeb364e83a",
+      "sha256": "2e12aab67f0b1adcb31f40207eac0f0fcee99a15684b7be5a994899e80595fd4"
+    },
+    {
+      "suite": "test_video.py",
+      "tests": 6,
+      "result": "passed",
+      "capture_kind": "transcription of successful tool output; not a new run",
+      "test_source_sha256": "677e7bd6ce4736382b6c5680294c0667c944bfd406c7b20f8d62039fc82355dd",
+      "sha256": "d485616b6d29de1a2dc92a9aef8933e82f42ac492c284fd1538ff392fd8dd987"
+    },
+    {
+      "suite": "test_boot_build.py",
+      "tests": 8,
+      "result": "passed",
+      "capture_kind": "transcription of successful tool output; not a new run",
+      "test_source_sha256": "1dd8c998660cce82e37d808b6f9d75d0bd0ecb01fdcaa08d8b9b225a0947cf5f",
+      "sha256": "914433093af26eecb4138b2e650d0e5cf6a243f21ba01de743986b822944099d"
+    }
+  ],
+  "host_test_count": 52,
+  "kernel_cross_build": "passed; W=1 log retained; existing kernel-doc warnings remain",
+  "layout": {
+    "ram_bytes": 33554432,
+    "kernel_physical_ranges": [
+      [
+        65536,
+        5721856
+      ]
+    ],
+    "compressed_physical_ranges": [
+      [
+        8388608,
+        16445440
+      ]
+    ],
+    "decompressor_overlap_check": "passed"
+  },
+  "emulator_runs": [
+    {
+      "session": "pcsx2-gs-depth-layout",
+      "kernel_sha256": "82553a92062b5a25970d7113c805ffce1e3e8ee2593f024258193975c5f914c1",
+      "guest_command_fence": "passed",
+      "pixel_readback": false,
+      "observed_probe": "ps2-gs: ABI=1 576x460 32bpp features=f depth=589824 bytes",
+      "log_sha256": "8d59f470c3124830316b421d2b994d131e74220ef355bc23f7c5582cdaca6f99",
+      "process_timed_out": true,
+      "process_exit_is_not_boot_evidence": true,
+      "interactive_login_tested": false
+    },
+    {
+      "session": "pcsx2-gs-576p",
+      "kernel_sha256": "0cefc57d59875da3a7f7b418168e36f4ff4e8e7773eb62dcd395c03d9ea996e1",
+      "guest_command_fence": "passed",
+      "pixel_readback": false,
+      "observed_probe": "ps2-gs: ABI=1 720x576 32bpp features=f depth=884736 bytes",
+      "log_sha256": "2e5d63a2dfda7a40c13d2141dbb9ea4a6482928514c887d968a7e0f7dc3fe878",
+      "process_timed_out": true,
+      "process_exit_is_not_boot_evidence": true,
+      "interactive_login_tested": false
+    }
+  ],
+  "artifacts": {
+    "EELINUX.ELF": {
+      "bytes": 2871800,
+      "sha256": "0cefc57d59875da3a7f7b418168e36f4ff4e8e7773eb62dcd395c03d9ea996e1"
+    },
+    "kernel.config": {
+      "bytes": 51243,
+      "sha256": "5df39cd17ee581e0f6ce799a9ae62c0a180c38fd88cc309116d6b9e968479981"
+    },
+    "kernel-report.json": {
+      "bytes": 2291,
+      "sha256": "7414f6892649b84619fd6c515123ca5a79a5e0bf3c3f763a506e65f89ed36aae"
+    },
+    "kernel-build.log": {
+      "bytes": 1796,
+      "sha256": "5e72106b77d1255c8a5504894873ed1ca1dbc3d2487f32d8ecb637077d67f048"
+    },
+    "rootfs/rootfs.ext4": {
+      "bytes": 67108864,
+      "sha256": "50ded48cbd669aa4afd40ebe0d6388de411ea7f9cf07117a7241321f1f4f8d22"
+    },
+    "rootfs/rootfs.tar": {
+      "bytes": 43857920,
+      "sha256": "d8932b369d1660582f752ee0b04437f6241d98b88966710000f71c3eb18e7442"
+    },
+    "ps2-gs-test-usb.img": {
+      "bytes": 135266304,
+      "sha256": "1940d6b7f989e9d4241eedc77f4d3745eb4d2125687d942238ac9b9c2319cf93"
+    },
+    "ps2-gs-test-usb.img.json": {
+      "bytes": 3327,
+      "sha256": "1f42c1203a3169bcd4e9cec953f1ebf058c3185bb0620f6df705a838977cf6c2"
+    }
+  },
+  "preserved_console_artifacts": {
+    "EELINUX.ELF": "14851357211089de33168445709c66774587dd76ad51f8e5019db06dc595e246",
+    "eeLinux-pal-usb.img": "85b6c87b0f43ecfa10d9bae2f73658b3f3bba8d1a911d6b89103c5ae98dc7e85",
+    "rootfs-final/rootfs.ext4": "7616cca89d9d39566d94fa7eaf8a28b848e6c4ff6592ec72991ba97a14807eb8"
+  },
+  "physical_evidence": "docs/hardware-gs-validation.json",
+  "display_evidence": "docs/hardware-display-validation.json",
+  "corrected_candidate_physical_tested": false,
+  "Xorg_accelerated_DDX_implemented": false,
+  "Mesa_PS2_driver_implemented": false,
+  "software_renderer_installed": false,
+  "remaining": [
+    "Physical continuous-triangle/depth/576p boot retest",
+    "Native Xorg hardware drawing driver",
+    "Mesa/GLX PS2 backend and actual OpenGL tests",
+    "Texture/surface/VT ownership, further modes and hardware RAM measurements"
+  ],
+  "physical_hardware_followup": {
+    "date": "2026-10-04",
+    "evidence": "docs/graphics-hardware-validation.json",
+    "evidence_sha256": "ef10249c0b5c23f171d1bc7390788c271086b4caaeff929984f5f6c0fe42e1f3",
+    "diagnostics": [
+      "ps2-gs-test"
+    ],
+    "diagnostic_scenes_tested_on_physical_hardware": true,
+    "result": "passed according to the user on real PlayStation 2 hardware",
+    "evidence_kind": "explicit user verification report; device logs not captured",
+    "earlier_fields_preserved": true,
+    "scope": "normal diagnostic scenes on the user's PS2; not all host/mock cases or a complete desktop",
+    "artifact_hash_read_back_on_console": false,
+    "GPU_pixel_readback": false,
+    "complete_Xorg_TWM_or_OpenGL_session_tested": false
+  },
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

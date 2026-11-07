@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "name": "grep",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "3.12",
+    "url": "https://ftp.gnu.org/gnu/grep/grep-3.12.tar.xz",
+    "gnu": true,
+    "filename": "grep-3.12.tar.xz",
+    "sha256": "2649b27c0e90e632eadcd757be06c6e9a4f48d941de51e7c0f83ff76408a07b9",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Thu 10 Apr 2025 05:05:57 PM WEST\ngpgv:                using RSA key 155D3FC500C834486D1EEA677FD9FCCB000BEEEE\ngpgv: Good signature from \"Jim Meyering <jim@meyering.net>\"\ngpgv:                 aka \"Jim Meyering <meyering@redhat.com>\"\ngpgv:                 aka \"Jim Meyering <meyering@gnu.org>\"\n"
+  },
+  "source_archive": "../../sources/grep-3.12.tar.xz",
+  "configure_options": [],
+  "configure_environment": {},
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false
+}

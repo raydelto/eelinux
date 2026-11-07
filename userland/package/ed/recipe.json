@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "name": "ed",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "1.22.6",
+    "url": "https://ftp.gnu.org/gnu/ed/ed-1.22.6.tar.lz",
+    "gnu": true,
+    "filename": "ed-1.22.6.tar.lz",
+    "sha256": "3f33b22135219c39c3c695f7b7171c2567d3e2a17c798c0a90607320cbb268f2",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Thu 20 Aug 2026 04:50:42 PM WEST\ngpgv:                using RSA key 25B62C9821501AA0\ngpgv: Good signature from \"Antonio Diaz Diaz <antonio@gnu.org>\"\n"
+  },
+  "source_archive": "../../sources/ed-1.22.6.tar.lz",
+  "configure_options": [],
+  "configure_environment": {},
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "ed",
+  "build_dependency_only": false
+}

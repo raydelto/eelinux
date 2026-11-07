@@ -1,0 +1,12 @@
+{
+  "project": "cgit",
+  "release": "v1.3.1",
+  "repository": "https://git.zx2c4.com/cgit",
+  "tag_object": "46b5e207765526cc220d4008f0303948482bf82d",
+  "commit": "044821677c774cd24f25f1818ea51d09cc64b006",
+  "git_submodule_repository": "https://git.kernel.org/pub/scm/git/git.git",
+  "git_submodule_commit": "94f057755b7941b321fd11fec1b2e3ca5313a4e0",
+  "git_submodule_revision": "The gitlink at path git in the pinned cgit commit; build.sh verifies the checked-out revision against it.",
+  "verified_on": "2026-11-07",
+  "verification": "The full release commit and annotated-tag object were read from the official HTTPS Git remote. This records content identity; it is not a claim of independent signature verification."
+}

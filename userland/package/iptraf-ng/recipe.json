@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "iptraf-ng",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.iptraf-ng",
+  "symbol": "BR2_PACKAGE_IPTRAF_NG",
+  "version": "1.2.2",
+  "recipe": "package/iptraf-ng/iptraf-ng.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "75fd653745ea0705995c25e6c07b34252ecc2563c6a91b007a3a8c26f29cc252",
+      "filename": "iptraf-ng-1.2.2.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/iptraf-ng/iptraf-ng/releases/tag/v1.2.2"
+}

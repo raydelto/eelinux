@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "atftp",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.atftp",
+  "symbol": "BR2_PACKAGE_ATFTP",
+  "version": "0.8.1",
+  "recipe": "package/atftp/atftp.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "96cbdbd2f16615c89c9db36be9b306de176d9a1c03dcb8cb777625bfe068bc2b",
+      "filename": "atftp-0.8.1.tar.gz"
+    }
+  ],
+  "release_url": "https://sourceforge.net/projects/atftp/files/"
+}

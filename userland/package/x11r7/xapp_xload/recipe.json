@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xload",
+  "kind": "application",
+  "program": "xload",
+  "version": "1.2.2",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xload-1.2.2.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xload-1.2.2.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "112a75e481783b52a20d37367f57983d60919f78059f0e107458dde236804131",
+      "filename": "xload-1.2.2.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "98d853543da8a1b86fc474a6748425861bac01c4888087d052c3f00baca6aade2d4ecfa3ee96feb32ed4fbaa4f89816888fe03a022b8fa19c71f147a0a9a4a48",
+      "filename": "xload-1.2.2.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

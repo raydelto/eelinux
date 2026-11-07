@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "date": "2026-10-03",
+  "recorded_at": "2026-10-03T20:08:33.358029+00:00",
+  "scope": "planar geometry correction in the native texture diagnostic; not a complete Mesa/GLX or Xorg driver",
+  "cause": {
+    "old_top_width": 120,
+    "bottom_width": 184,
+    "old_top_width_ratio": 0.6521739130434783,
+    "top_reciprocal_W": 0.5,
+    "bottom_reciprocal_W": 1,
+    "problem": "Diagnostic geometry and reciprocal depth disagree, causing a horizontal texture-scale kink between triangles",
+    "corrected_top_width": 92,
+    "driver_source_or_kernel_change": false
+  },
+  "previous_scene_evidence": {
+    "path": "docs/graphics-texture-validation.json",
+    "sha256": "1a687379e3aecf71a619d3d1a1794e8c47be48d36890e2c1ea97adc217c2b55d"
+  },
+  "probe_source": {
+    "sha256": "539c196e9711d04ddef30cba44846e110ebf6fd78e8827f4fc1ce51d83042e56"
+  },
+  "probe_fixture": {
+    "path": "tests/graphics/ps2-texture-probe.c",
+    "sha256": "41e2ef7514de18589637d777f15dd08548cf14138afa2a95580e8b00f719e240"
+  },
+  "compiled_components": {
+    "sha256": "5e9684f2853a45bcf8a5b9230c4c47772839b6ed3508e55680fb86cbed3dbd34"
+  },
+  "native_test_log": {
+    "sha256": "1801fce8b262c11b6d60643ad7dd5b886079fafc825d5a09be31dae7a8ed78d9"
+  },
+  "image": {
+    "sha256": "b3eb9e8421b76090f2585d2421a97cacc235076c09af706aa3fb47bc69b44a57"
+  },
+  "image_assembly": {
+    "sha256": "0e3279beb86be29a4d8d2dd7929195979ced03b9f2c991020fe9a4d711c0562b"
+  },
+  "probe": {
+    "sha256": "80d78490067ae43fd5a247e1d0d7fbeae4cdd787622a2f8d05b3713b959c15ff"
+  },
+  "kernel": {
+    "sha256": "27dd812c8ec9d1eccc4532fe04f928fb33ff7cdbf8b46e5623f304983c5eddc7"
+  },
+  "unchanged_kernel_sha256": "31308ea5c311d0f4e0a495e6006046c137e2ae4a1aa06001651c188e274b3eb7",
+  "rendering_component_source_hashes_unchanged": true,
+  "host_checks": {
+    "cases": 3,
+    "result": "passed",
+    "sanitizers": [
+      "ASan",
+      "UBSan"
+    ],
+    "evidence_kind": "transcription of successful tool output",
+    "projection_regression": "Failed with old geometry in success/interrupt cases; passed after correcting geometry",
+    "reference": "Independent barycentric STQ versus planar projection at nine interior points per triangle; both triangles",
+    "hardware_failure_no_replay_and_signal_cleanup": "passed"
+  },
+  "R5900_Linux_user_checks": {
+    "cases": 11,
+    "result": "passed",
+    "scope": "real Mesa sampler/reference/stage and Xorg callbacks; wrapped GPU syscalls and reduced kernel scaffold",
+    "planar_reference": {
+      "triangles": 2,
+      "interior_points_per_triangle": 9,
+      "result": "passed"
+    },
+    "GPU_pixels_tested": false
+  },
+  "PCSX2_run": {
+    "session": {
+      "sha256": "92ab65521dae8c063179ea8d4c056ea9d7b6b7ab757f3def967d8b5520733935"
+    },
+    "runtime": {
+      "requested_program": "C:\\Program Files\\PCSX2\\pcsx2-qt.exe",
+      "executable_sha256": "4d2a4d9c0db3cb2e9760e2d34bcd29150b53d56a1a87ae8e6fb4556796b40f58",
+      "runtime_manifest_sha256": "b7bf008375c55020bfb3287e0a100d1ff001323706bc2e18b3bf2d0e183ed478",
+      "mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85"
+    },
+    "log_snapshot": {
+      "sha256": "cacde1686cd9424d00b921bcdbaf936e17ec5447d3504a7ed5c27d26f63afe98"
+    },
+    "milestones": [
+      "EXT4-fs (sda2): mounted filesystem",
+      "ps2-gs: Mesa texture sampling 720x576 features=ff",
+      "ps2-gs: texture sampling/fence PASSED",
+      "ps2-gs: Mesa texture probe exit=0",
+      "ps2-smap ps2-smap eth0: Link is Up"
+    ],
+    "texture_probe_exit": 0,
+    "kernel_panic_or_user_segfault_in_log": false,
+    "visual_observation": {
+      "source": "user report and attached PCSX2 screenshot in this conversation",
+      "user_report": "It is way better now",
+      "user_confirmed_continuous_grid": true,
+      "continuous_grid_report": "Yes, the grid is continuous",
+      "assistant_screenshot_assessment": "Original RGBW/checker rectangle left; BGRW trapezoid right with continuous straight checker lines",
+      "user_confirmed_text_return_for_this_revision": false,
+      "pixel_readback_or_format_sweep": false
+    }
+  },
+  "physical_sampled_pixels_tested": false,
+  "physical_devices_written": false,
+  "software_pixel_renderer": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL": false,
+  "physical_hardware_followup": {
+    "date": "2026-10-04",
+    "evidence": "docs/graphics-hardware-validation.json",
+    "evidence_sha256": "ef10249c0b5c23f171d1bc7390788c271086b4caaeff929984f5f6c0fe42e1f3",
+    "diagnostics": [
+      "ps2-gs-texture-test"
+    ],
+    "diagnostic_scenes_tested_on_physical_hardware": true,
+    "result": "passed according to the user on real PlayStation 2 hardware",
+    "evidence_kind": "explicit user verification report; device logs not captured",
+    "earlier_fields_preserved": true,
+    "scope": "normal diagnostic scenes on the user's PS2; not all host/mock cases or a complete desktop",
+    "artifact_hash_read_back_on_console": false,
+    "GPU_pixel_readback": false,
+    "complete_Xorg_TWM_or_OpenGL_session_tested": false
+  },
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

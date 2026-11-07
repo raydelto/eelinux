@@ -1,0 +1,98 @@
+{
+  "date": "2026-10-02",
+  "kernel_sha256": "d4f30e03f2e8201691014fa4a45c7279f5f2007d9e5015c2a3d81a5d3128b3fa",
+  "USB_sha256": "92140dc78754a83ef1525106517fed5bc4542711a6fa031ef7affd165fc9a0eb",
+  "rootfs_sha256": "03c70068191c18575e002e5dd72a4591ecf00e2dc2f35600229e428a98a39cf6",
+  "build_id": "relay-v8 PAL ext4 GNU glibc-2.44 cache",
+  "tool_sha256": "e72e1f379aa98ce0499ee0c0ffd9f594bc3a2266dbbd65acb7b087e6a8f56bda",
+  "tool_bytes": 14924,
+  "source_sha256": {
+    "video/ps2-video.c": "163486145e2cbb17f25aa672a319326e822de4e393cf6f40629e345893a7c611",
+    "video/edid.h": "5354f5210837a2cb1eec76b37eea7f6afd33ff22f7b919ad7df0f393c041b275",
+    "configs/video-modes.json": "cba23482050f8ca228e3403294110fda01c738a3b2a1a2d063d698a7ca666180",
+    "kernel/patches/ps2-video-memory.patch": "5d45306cca45cdb89a6f2b7da36eec247f73a78fdb6f499e0b7c0305fd065196"
+  },
+  "host_checks": {
+    "date": "2026-10-02",
+    "command": "make check",
+    "exit_code": 0,
+    "suite_counts": [
+      206,
+      31
+    ],
+    "total_tests": 237,
+    "imported_files": 437
+  },
+  "host_execution": "ASan/UBSan: EDID, actual check functions, preview timeout/signals",
+  "actual_guest_mode_checks": [
+    {
+      "mode": "800x600",
+      "sysfs": "V:800x600p-60",
+      "bits_per_pixel": 32,
+      "restored_PAL_and_depth": true
+    },
+    {
+      "mode": "1024x768",
+      "sysfs": "V:1024x768p-60",
+      "bits_per_pixel": 32,
+      "restored_PAL_and_depth": true
+    },
+    {
+      "mode": "1280x1024",
+      "sysfs": "V:1280x1024p-60",
+      "bits_per_pixel": 16,
+      "restored_PAL_and_depth": true
+    },
+    {
+      "mode": "480p",
+      "sysfs": "S:720x480p-60",
+      "bits_per_pixel": 32,
+      "restored_PAL_and_depth": true
+    },
+    {
+      "mode": "576p",
+      "sysfs": "S:720x576p-50",
+      "bits_per_pixel": 32,
+      "restored_PAL_and_depth": true
+    },
+    {
+      "mode": "720p",
+      "sysfs": "S:1280x720p-50",
+      "bits_per_pixel": 32,
+      "restored_PAL_and_depth": true
+    },
+    {
+      "mode": "720p60",
+      "sysfs": "S:1280x720p-60",
+      "bits_per_pixel": 32,
+      "restored_PAL_and_depth": true
+    },
+    {
+      "mode": "1080i",
+      "sysfs": "S:1920x1080i-50",
+      "bits_per_pixel": 16,
+      "restored_PAL_and_depth": true
+    },
+    {
+      "mode": "1080i60",
+      "sysfs": "S:1920x1080i-60",
+      "bits_per_pixel": 16,
+      "restored_PAL_and_depth": true
+    }
+  ],
+  "guest_log_sha256": "7c3ed7d60884e47ab5abea2fab87f614fb67948444344e54a3930b72de9fad6c",
+  "guest_auto_without_EDID_retains_PAL": true,
+  "valid_EDID_selection_tested": "host C CLI; actual PS2 framebuffer currently has no EDID provider",
+  "GS_memory_bytes": 4194304,
+  "reserved_font_and_palette_bytes": 33024,
+  "experimental_1080p": "explicit timed preview only; not tested on physical hardware or guest in this run",
+  "physical_modes_tested": false,
+  "Xorg_tested": false,
+  "normal_console_session_updated": true,
+  "limits": [
+    "Analog output cannot discover monitor capabilities without an EDID provider",
+    "Sysfs/guest checks do not prove physical converter timing acceptance or rendered colours",
+    "No GS mmap/Xorg backend is implemented by this change"
+  ],
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

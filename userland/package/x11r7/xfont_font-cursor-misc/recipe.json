@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "name": "x11r7/xfont_font-cursor-misc",
+  "engine": "Buildroot 2025.02.18 external tree",
+  "manifest_entry": "configs/packages.json:packages.x11r7/xfont_font-cursor-misc",
+  "symbol": "BR2_PACKAGE_XFONT_FONT_CURSOR_MISC",
+  "version": "1.0.4",
+  "recipe": "package/x11r7/xfont_font-cursor-misc/xfont_font-cursor-misc.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "25d9c9595013cb8ca08420509993a6434c917e53ca1fec3f63acd45a19d4f982",
+      "filename": "font-cursor-misc-1.0.4.tar.xz"
+    }
+  ]
+}

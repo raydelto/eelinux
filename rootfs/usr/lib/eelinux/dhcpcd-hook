@@ -1,0 +1,26 @@
+#!/bin/bash
+# dhcpcd configures addresses and routes; this hook maintains DNS atomically.
+set -eu
+source "${EELINUX_NETWORK_LIB:-/usr/lib/eelinux/network-common.sh}"
+RESOLVER=${EELINUX_RESOLVER:-/run/resolv.conf}
+valid_device "${interface:-}" || { network_error 'invalid DHCP interface'; exit 1; }
+case ${reason:-} in
+    BOUND|RENEW|REBIND|REBOOT|STATIC|INFORM)
+        servers=()
+        read -r -a servers <<< "${new_domain_name_servers:-}" || true
+        for value in "${servers[@]}"; do
+            valid_ipv4 "$value" || { network_error 'invalid DHCP DNS server'; exit 1; }
+        done
+        domains=()
+        read -r -a domains <<< "${new_domain_search:-${new_domain_name:-}}" || true
+        RESOLVER_SEARCH=
+        for value in "${domains[@]}"; do
+            valid_domain "$value" || { network_error 'invalid DHCP search domain'; exit 1; }
+            RESOLVER_SEARCH+=${RESOLVER_SEARCH:+ }$value
+        done
+        write_resolver "$RESOLVER" "${servers[@]}"
+        ;;
+    EXPIRE|FAIL|NAK|RELEASE|STOP|NOCARRIER) RESOLVER_SEARCH= write_resolver "$RESOLVER" ;;
+    PREINIT|CARRIER|TEST|DUMP) ;;
+    *) network_error 'unknown dhcpcd event'; exit 2 ;;
+esac

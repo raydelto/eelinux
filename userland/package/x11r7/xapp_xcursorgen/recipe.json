@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xcursorgen",
+  "kind": "application",
+  "program": "xcursorgen",
+  "version": "1.0.9",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xcursorgen-1.0.9.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xcursorgen-1.0.9.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "0cc9e156ac84ca16ea902710af35e0faffa51d13797071e3b4b6cc7cbd493bbc",
+      "filename": "xcursorgen-1.0.9.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "d40b96d6f60ee3815ef8ed6217028b39b127f200415661e39cf23af89662aafc6783f9e311f8021fe1a5ccfbc47610909796e569991e6680b8c2133401af476e",
+      "filename": "xcursorgen-1.0.9.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": true,
+  "runtime_qualification": {
+    "scope": "emulator application smoke checks; not exhaustive feature qualification",
+    "record": "docs/desktop-applications-r41-validation.json"
+  }
+}

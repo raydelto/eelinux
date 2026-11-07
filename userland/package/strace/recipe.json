@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "strace",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.strace",
+  "symbol": "BR2_PACKAGE_STRACE",
+  "version": "7.3",
+  "recipe": "package/strace/strace.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "529634c40910895a9a1f3c5c1e65da2ca9ed72fb158dfc4bcc89efdf05e39b72",
+      "filename": "strace-7.3.tar.xz"
+    }
+  ],
+  "release_url": "https://github.com/strace/strace/releases/tag/v7.3"
+}

@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xclipboard",
+  "kind": "application",
+  "program": "xclipboard",
+  "version": "1.1.6",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xclipboard-1.1.6.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xclipboard-1.1.6.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "d7c7a74ed0a4c8983b7dd47301a91c3da48e1027e9338705cad5be8d15c0d1f1",
+      "filename": "xclipboard-1.1.6.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "c7d14f9997e7ab7741f5694fe04d413ef92d479160533ac46dc9ebb25d727d649b9a624ab82f8fadef072645c967a80bc2b7305f0a50a2a3b4cb927525f64aeb",
+      "filename": "xclipboard-1.1.6.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

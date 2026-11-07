@@ -1,0 +1,168 @@
+--- a/src/gallium/drivers/ps2/ps2_tile.c
++++ b/src/gallium/drivers/ps2/ps2_tile.c
+@@ -1,7 +1,9 @@
+ /* SPDX-License-Identifier: MIT */
+ #include "ps2_pipe.h"
+ #include "ps2_tile.h"
++#include "ps2_gs_logic.h"
+ #include <errno.h>
++#include <stdlib.h>
+ #include <string.h>
+ 
+ static uint32_t bits(float value) { uint32_t result; memcpy(&result, &value, 4); return result; }
+@@ -45,8 +47,29 @@
+     }
+     return 0;
+ }
+-int ps2_pipe_tile_rectangles(struct pipe_context *context, uint32_t source, uint32_t destination,
+-    const struct ps2_pipe_solid_box *boxes, unsigned count, int32_t origin_x, int32_t origin_y)
++static int mono_seed(struct ps2_surface_client *gs, uint32_t target,
++    const struct ps2_pipe_mono_pattern *mono, uint32_t foreground, uint32_t background, uint32_t mask)
++{
++    if(ps2_surface_solid_logic(gs,target,0,0,mono->width,mono->height,background,mask,3)) return -1;
++    if(foreground==background) return 0;
++    for(unsigned y=0;y<mono->height;++y) {
++        const unsigned char *row=mono->bits+y*mono->stride;
++        unsigned x=0;
++        while(x<mono->width) {
++            unsigned left=x;
++            int value=!!(row[x/8] & (mono->msb_first ? 0x80U>>(x%8) : 1U<<(x%8)));
++            do {
++                ++x;
++            } while(x<mono->width && value==!!(row[x/8] &
++                (mono->msb_first ? 0x80U>>(x%8) : 1U<<(x%8))));
++            if(value && ps2_surface_solid_logic(gs,target,left,y,x-left,1,foreground,mask,3)) return -1;
++        }
++    }
++    return 0;
++}
++static int tiles(struct pipe_context *context, uint32_t source, uint32_t destination,
++    const struct ps2_pipe_solid_box *boxes, unsigned count, int32_t origin_x, int32_t origin_y,
++    const struct ps2_pipe_mono_pattern *mono, uint32_t foreground, uint32_t background)
+ {
+     if(count>PS2_PIPE_MAX_TILE_BOXES || (count && !boxes)) { errno=EINVAL; return -1; }
+     if(ps2_pipe_context_acquire(context)) return -1;
+@@ -54,15 +77,29 @@
+     struct ps2_surface_client *gs=render->gs;
+     const struct ps2_surface *s=ps2_surface_lookup(gs,source),*d=ps2_surface_lookup(gs,destination);
+     int status=-1,error=EINVAL;
+-    uint32_t scratch=0;
+-    if(!source || source==destination || !s || !d || s->bits_per_pixel!=d->bits_per_pixel ||
+-        (s->bits_per_pixel!=16 && s->bits_per_pixel!=32) || !s->width || !s->height ||
+-        s->width>1024 || s->height>1024 || d->width>2048 || d->height>2048) goto out;
++    uint32_t scratch=0, pattern=0;
++    unsigned char *snapshot=NULL;
++    if(!d || (d->bits_per_pixel!=16 && d->bits_per_pixel!=32) ||
++        d->width>2048 || d->height>2048) goto out;
++    if(!mono && (!source || source==destination || !s || s->bits_per_pixel!=d->bits_per_pixel ||
++        !s->width || !s->height || s->width>1024 || s->height>1024)) goto out;
+     if(!(gs->caps.features&PS2GS_HW_TEXTURE)) { error=ENOTSUP; goto out; }
+-    unsigned tw=s->width,th=s->height,width=tw,height=th,base=tw;
++    uint32_t mask=d->bits_per_pixel==16 ? 0x7fff : 0xffffff;
++    if(mono) {
++        if(!mono->width || !mono->height || mono->width>256 || mono->height>256 ||
++            !mono->bits || (mono->msb_first!=0 && mono->msb_first!=1) ||
++            ((foreground|background)&~mask)) goto out;
++        size_t row=(mono->width+7)/8;
++        if(mono->stride<row || mono->height-1>(SIZE_MAX-row)/mono->stride) goto out;
++        size_t bytes=(mono->height-1)*mono->stride+row;
++        if(mono->bytes<bytes || (uintptr_t)mono->bits>UINTPTR_MAX-(bytes-1)) goto out;
++        if(!(gs->caps.features&PS2GS_HW_SOLID_LOGIC)) { error=ENOTSUP; goto out; }
++    }
++    unsigned tw=mono ? mono->width : s->width,th=mono ? mono->height : s->height;
++    unsigned width=tw,height=th,base=tw;
+     /* The seed's repeated width must satisfy GS local-transfer alignment.
+      * At most four native texture rectangles seed it, even for a 1x1 tile. */
+-    unsigned unit=s->bits_per_pixel==16 ? 4 : 2;
++    unsigned unit=d->bits_per_pixel==16 ? 4 : 2;
+     while(base%unit) base+=tw;
+     if(base<=64 && th<=32 && (gs->caps.features&PS2GS_HW_COPY)) {
+         width=64/base*base; height=32/th*th;
+@@ -79,10 +116,21 @@
+         if(pixels>PS2_PIPE_MAX_TILE_PIXELS || pieces>PS2_PIPE_MAX_TILE_PIECES) { error=E2BIG; goto out; }
+     }
+     if(!count) { status=0; goto out; }
+-    if((width!=tw || height!=th) && ps2_surface_create(gs,width,height,s->bits_per_pixel,&scratch)) {
+-        error=errno; goto out;
++    struct ps2_pipe_mono_pattern saved={0};
++    if(mono) {
++        size_t row=(tw+7)/8;
++        snapshot=malloc(row*th);
++        if(!snapshot) { error=errno; goto out; }
++        for(unsigned y=0;y<th;++y) memcpy(snapshot+y*row,mono->bits+y*mono->stride,row);
++        saved=*mono; saved.bits=snapshot; saved.stride=row; saved.bytes=row*th;
++        if(ps2_surface_create(gs,tw,th,d->bits_per_pixel,&pattern)) { error=errno; goto cleanup; }
++        source=pattern;
++    }
++    if((width!=tw || height!=th) && ps2_surface_create(gs,width,height,d->bits_per_pixel,&scratch)) {
++        error=errno; goto cleanup;
+     }
+     status=ps2_render_flush(render);
++    if(!status && mono) status=mono_seed(gs,source,&saved,foreground,background,mask);
+     if(!status && scratch) status=expand(gs,source,scratch,tw,th,width,height,base);
+     struct ps2_render_client temporary={.gs=gs,.target=destination};
+     struct ps2gs_texture_triangle triangles[64];
+@@ -103,13 +151,31 @@
+     }
+     if(!status && used) status=ps2_texture_triangles(&temporary,scratch?scratch:source,triangles,used);
+     error=errno;
++cleanup:
+     if(scratch && !gs->error) {
+         int cleanup=ps2_surface_destroy(gs,scratch);
+         if(!status && cleanup) { status=-1; error=errno; }
+     }
++    if(pattern && !gs->error) {
++        int cleanup=ps2_surface_destroy(gs,pattern);
++        if(!status && cleanup) { status=-1; error=errno; }
++    }
+     /* A sticky device failure leaves scratch to exclusive-file teardown. */
+ out:
++    free(snapshot);
+     ps2_pipe_context_release(context);
+     if(status) errno=error;
+     return status;
+ }
++int ps2_pipe_tile_rectangles(struct pipe_context *context, uint32_t source, uint32_t destination,
++    const struct ps2_pipe_solid_box *boxes, unsigned count, int32_t origin_x, int32_t origin_y)
++{
++    return tiles(context,source,destination,boxes,count,origin_x,origin_y,NULL,0,0);
++}
++int ps2_pipe_opaque_stipple_rectangles(struct pipe_context *context, uint32_t destination,
++    const struct ps2_pipe_mono_pattern *mono, const struct ps2_pipe_solid_box *boxes, unsigned count,
++    int32_t origin_x, int32_t origin_y, uint32_t foreground, uint32_t background)
++{
++    if(!mono) { errno=EINVAL; return -1; }
++    return tiles(context,0,destination,boxes,count,origin_x,origin_y,mono,foreground,background);
++}
+--- a/src/gallium/drivers/ps2/ps2_tile.h
++++ b/src/gallium/drivers/ps2/ps2_tile.h
+@@ -2,6 +2,8 @@
+ #ifndef PS2_PIPE_TILE_H
+ #define PS2_PIPE_TILE_H
+ #include "ps2_solid_batch.h"
++#include <stddef.h>
++#include <stdint.h>
+ #define PS2_PIPE_MAX_TILE_BOXES 256U
+ #define PS2_PIPE_MAX_TILE_PIECES 65536U
+ #define PS2_PIPE_MAX_TILE_PIXELS 1048576U
+@@ -13,4 +15,20 @@
+  */
+ int ps2_pipe_tile_rectangles(struct pipe_context *, uint32_t source, uint32_t destination,
+     const struct ps2_pipe_solid_box *, unsigned count, int32_t origin_x, int32_t origin_y);
++struct ps2_pipe_mono_pattern {
++    const unsigned char *bits;
++    size_t bytes, stride;
++    unsigned width, height;
++    int msb_first;
++};
++/* Read an existing monochrome source bitmap (<=256x256), snapshot at most
++ * 8192 source bytes, and construct a temporary color pattern using GS fills.
++ * Repeat it through the native tile path; GXcopy/full RGB masks only.
++ * All boxes and source metadata, heap/GS reservations precede queue flush.
++ * No CPU color-pixel expansion or destination rasterization. Temporary GS
++ * resources are released on success or reclaimed on failed-session closure.
++ */
++int ps2_pipe_opaque_stipple_rectangles(struct pipe_context *, uint32_t destination,
++    const struct ps2_pipe_mono_pattern *, const struct ps2_pipe_solid_box *, unsigned count,
++    int32_t origin_x, int32_t origin_y, uint32_t foreground, uint32_t background);
+ #endif

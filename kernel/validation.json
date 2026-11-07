@@ -1,0 +1,240 @@
+{
+  "schema": 1,
+  "verified_on": "2026-10-02",
+  "status": "partial implementation with real cross-build evidence; physical hardware acceptance pending",
+  "source_pins": {
+    "baseline": "77174dd4c8958a91aa5b76fb064a60eb68119e70",
+    "modern_version": "7.2.8",
+    "modern_archive_sha256": "12e8d5a973d1ad7c5a5c69882e4022b131ed715db7003fdcd760ddf8c3e51941",
+    "iopmod": "12cdf14b78ed5e648ffe1d52e6754f00b3b69001"
+  },
+  "kernel_compiler": {
+    "prefix": "mipsel-linux-gnu-",
+    "version": "gcc (Debian 14.2.0-13) 14.2.0",
+    "target_flags": "-march=r5900; ELF32 little-endian o32 kernel configuration",
+    "purpose": "freestanding compile audit; GNU Linux userland toolchain is built separately"
+  },
+  "patch_sha256": {
+    "driver-correctness.patch": "f06d627b3a2e7ce64a9ec76b3204c6deae5045db9e2a072059ad40f3943e118f",
+    "7.2.8-api.patch": "938d14893ed72828e47398321a12094f92055e8245761e67ab8ba885103ef5e6"
+  },
+  "checks": {
+    "baseline_required_config_with_tty_vt_serial_and_hid": "passed",
+    "baseline_vmlinux_and_all_modules": "passed",
+    "baseline_build_log": "kernel/logs/baseline-vmlinux-modules.log",
+    "modern_required_config_with_tty_vt_serial_and_hid": "passed (compile probe only; release gate remains closed)",
+    "modern_driver_objects": "passed",
+    "modern_driver_build_log": "kernel/logs/7.2.8-driver-objects.log",
+    "modern_ps2_platform_c_and_cache_assembly": "passed",
+    "modern_core_assembly_probes": [
+      "head.S",
+      "entry.S",
+      "genex.S",
+      "r4k_switch.S",
+      "scall32-o32.S"
+    ],
+    "modern_full_vmlinux": "passed (audit config with placeholder initramfs)",
+    "modern_full_build_log": "kernel/logs/7.2.8-vmlinux.log",
+    "first_remaining_compile_blocker": null,
+    "modern_rejected_files_retained": 64,
+    "modern_source_gate_passed": false,
+    "iop_firmware_all_six_modules": "passed",
+    "builder_safety_tests": {
+      "command": "python -m unittest discover -s kernel -p test_integration.py",
+      "passed": 25
+    },
+    "modern_full_modules": "passed",
+    "modern_compressed_elf_link": "passed (audit artifact; PS2 bootstrap port incomplete)",
+    "modern_compressed_elf_log": "kernel/logs/7.2.8-vmlinuz.log",
+    "modern_r5900_cache_object_debian": "passed",
+    "modern_r5900_cache_object_project_toolchain": "passed",
+    "modern_cache_assembly_review": "kernel/cache-review.json",
+    "modern_adapter_patch_reproduced_byte_for_byte": true,
+    "built_iop_manifest_and_all_six_irx_headers_hashes": "passed",
+    "modern_actual_elf_load_ranges_and_decompressor_overlap": "passed",
+    "modern_r5900_decompressor_status_instructions": "passed; separate clean console audit",
+    "modern_console_audit_evidence": "emulator/pcsx2-console-validation.json",
+    "modern_iop_irq_sleeping_rpc_resource_callbacks": "cross-compiled; compiled callback failure-path tests passed; runtime loading pending",
+    "modern_actual_initramfs_inc_data_budget": "passed: 1,454,080 unpacked bytes; gzip payload validated",
+    "modern_r5900_tls_address_exception_handler": "restored from pinned vendor branch; compiled call and five focused tests passed",
+    "final_host_tests_after_tls_port": {
+      "root": 82,
+      "kernel": 25,
+      "total": 107,
+      "imported_source_hashes": 435
+    },
+    "modern_ohci_irq_spurious_relay_mie_restore": "Three focused tests passed, including native execution of the actual transformed wrapper: running/previously-enabled IRQ_NONE restores MIE; intentionally masked, halted/suspended and handled paths retain their decisions"
+  },
+  "completed_boot_elf": false,
+  "modern_linked_kernel": true,
+  "static_early_root_program_cross_built_and_elf_validated": true,
+  "full_boot_initramfs_with_static_init_modules_and_firmware_verified": false,
+  "hardware_validated": false,
+  "native_smap_implemented": false,
+  "xorg_gs_backend_complete": false,
+  "notes": [
+    "Baseline vmlinux is an uncompressed audit kernel with a placeholder initramfs; it is not a distribution boot image",
+    "RESET_MMR restores exact upstream o32 behavior: clear upper 64 register bits before userspace return; full 128-bit multimedia register context preservation remains pending",
+    "GS DRM is disabled; ps2fb has no userspace mmap",
+    "GIF DMA package pages are retained on teardown timeout instead of being freed while hardware owns them",
+    "Compiler warnings for missing private prototypes and upstream ATA firmware format/signedness remain; build success is not hardware validation",
+    "The selected modern configuration now links vmlinux, all 43 modules and compressed vmlinuz; placeholder early init and unreviewed bootstrap/exception/TLB errata prevent release or boot claims",
+    "The follow-up console audit enables EE EIE in compressed entry and builds ps2fb in; PCSX2 displays readable Linux text, but empty initramfs blocks USB root discovery"
+  ],
+  "baseline_vmlinux_bytes": 4178884,
+  "baseline_vmlinux_sha256": "cd81c833718853b7485f6b88f68a7359ab9ec2f6fafcf2ffd6307f9f9bd187b2",
+  "baseline_module_count": 42,
+  "firmware": {
+    "source": {
+      "kind": "git",
+      "repository": "https://github.com/frno7/iopmod.git",
+      "revision": "12cdf14b78ed5e648ffe1d52e6754f00b3b69001",
+      "modules": [
+        "irq",
+        "irqrelay",
+        "ata",
+        "dev9",
+        "gamepad",
+        "printk"
+      ],
+      "status": "six modules cross-built successfully; physical hardware validation pending"
+    },
+    "compiler": "/home/machaddr/.local/eelinux-ps2dev/ps2dev/iop/bin/mipsel-none-elf-",
+    "compiler_version": "official PS2DEV GCC 15.2.0 / binutils 2.45.1",
+    "adaptations": "target-only freestanding headers and generated elf32-littlemips linker output format; upstream firmware logic retained",
+    "firmware_sha256": {
+      "irq.irx": "9f36af2933493764fe054bbf26831d2cdfd35ac19dab7669605004c45b751685",
+      "irqrelay.irx": "2c838071a8ece21c167a576e9c112854e1ffe6c410293288d14e8ef617347e48",
+      "ata.irx": "572df70f266888498440cc838d2f8fd11315a71b225c63afccab8ee5302e8db4",
+      "dev9.irx": "660eb68671b239164cd8759015affabc2ab3646b045b98d8fbcafe5f18f22d4f",
+      "gamepad.irx": "f88d003d66bf1255c58b254b5c1ae28312c2357606e83f818447ed070c9d1190",
+      "printk.irx": "984824081f5c41975182569f90650e4ac7e3154d60a3aa159fecedfb48e651e0"
+    }
+  },
+  "modern_objects": [
+    "drivers/ps2/gamepad.o",
+    "drivers/ps2/gif.o",
+    "drivers/ps2/gs-irq.o",
+    "drivers/ps2/gs-registers.o",
+    "drivers/ps2/gs-sysfs.o",
+    "drivers/ps2/gs.o",
+    "drivers/ps2/iop-dev9.o",
+    "drivers/ps2/iop-heap.o",
+    "drivers/ps2/iop-irq.o",
+    "drivers/ps2/iop-memory.o",
+    "drivers/ps2/iop-module-patch.o",
+    "drivers/ps2/iop-module-request.o",
+    "drivers/ps2/iop-module-sysfs.o",
+    "drivers/ps2/iop-module.o",
+    "drivers/ps2/iop-registers.o",
+    "drivers/ps2/sif.o",
+    "drivers/ata/pata_ps2.o",
+    "drivers/rtc/rtc-ps2.o",
+    "drivers/tty/serial/ps2_uart.o",
+    "drivers/usb/host/ohci-ps2.o",
+    "drivers/video/fbdev/ps2fb.o"
+  ],
+  "modern_module_count": 43,
+  "modern_artifacts": {
+    "vmlinux": {
+      "path": "/home/machaddr/.cache/eelinux/kernel-audit-7.2.8/vmlinux",
+      "bytes": 5547776,
+      "sha256": "6ac55059db8f7289862ea108aedb5ed7fa68dfccef28035b1caed0ea25b23183",
+      "release_ready": false
+    },
+    "vmlinuz": {
+      "path": "/home/machaddr/.cache/eelinux/kernel-audit-7.2.8/vmlinuz",
+      "bytes": 1915656,
+      "sha256": "cf384bf2005b4ddd875803ccd0c80ff7cccd5f8577141ef40b2d7b7a35b095a6",
+      "release_ready": false
+    }
+  },
+  "remaining_architecture_review": [
+    {
+      "path": "arch/mips/boot/compressed/head.S.rej",
+      "work": "CP0 Status normalization restored and exercised in PCSX2; review short-loop BSS clear workaround and cache-flush handoff; imported compressed/cache.S is not yet linked or invoked"
+    },
+    {
+      "path": "arch/mips/mm/tlbex.c.rej",
+      "work": "Review FLX05 refill-vector two-NOP prefix, 32-instruction bound, and TLBR immediate sync.p/four-NOP hazards against modern handler generation"
+    },
+    {
+      "path": "arch/mips/include/asm/mipsregs.h.rej",
+      "work": "Review TLBR page alignment, sync.p and NOP errata sequencing"
+    },
+    {
+      "path": "arch/mips/kernel/traps.c.rej",
+      "work": "Review R5900 exception vector prefixes and cache-instruction tail padding"
+    },
+    {
+      "path": "arch/mips/mm/cex-gen.S.rej",
+      "work": "Preserve R5900 sync.p around CP0 CONFIG writes in cache-error initialization"
+    },
+    {
+      "path": "arch/mips/include/asm/stackframe.h",
+      "work": "Full 128-bit multimedia register context remains incomplete; current reviewed RESET_MMR preserves the fork o32 limitation"
+    }
+  ],
+  "project_cache_compiler": {
+    "prefix": "/home/machaddr/.local/eelinux-linux/bin/mipsr5900el-unknown-linux-gnu-",
+    "version": "GCC 14.4.0 / GNU binutils 2.44",
+    "log": "kernel/logs/7.2.8-cache-project-toolchain.log"
+  },
+  "modern_boot_layout_audit": {
+    "ram_bytes": 33554432,
+    "kernel_physical_ranges": [
+      [
+        65536,
+        4144896
+      ]
+    ],
+    "compressed_physical_ranges": [
+      [
+        8388608,
+        15489296
+      ]
+    ],
+    "decompressor_overlap_check": "passed"
+  },
+  "console_audit": {
+    "evidence": "emulator/pcsx2-console-validation.json",
+    "linux_boot_pass": null,
+    "gs_text_console_observed_in_pcsx2": true,
+    "last_stage": "Waiting for root device /dev/sda1",
+    "production_source_gate_passed": false,
+    "historical_modern_artifacts_adapter_patch_sha256": "26405f00c6c0b23b020c521d3ef925ea55fb80da3fa37c0b41fd7464bd08d007"
+  },
+  "root_audit": {
+    "artifact": "build/verification/kernel-root-fixed-7.2.8.elf",
+    "sha256": "271aa0ca84ce86b25157e2b804063709d2855693202c47e10bac18e00671f141",
+    "real_early_init_and_modules_embedded": true,
+    "early_linux_modules": 16,
+    "iop_firmware_files": 6,
+    "unpacked_archive_bytes": 1454080,
+    "production_source_gate_passed": false,
+    "linux_boot_pass": null,
+    "last_observed_stage": "Run /init as init process; stock PCSX2 repeats matching-invalid TLB faults"
+  },
+  "root_tls_audit": {
+    "artifact": "build/verification/kernel-root-tls-7.2.8.elf",
+    "sha256": "65686b560a38b1c9398eb95af4d9c3e0895325b0dfaae1eae349ff61e836b223",
+    "early_linux_modules": 16,
+    "iop_firmware_files": 6,
+    "unpacked_archive_bytes": 1454080,
+    "evidence": "emulator/pcsx2-root-validation.json",
+    "production_source_gate_passed": false,
+    "linux_boot_pass": null,
+    "last_observed_stage": "glibc futex fatal and init SIGTRAP after thread-pointer exception is handled"
+  },
+  "modern_ohci_irq_adapter": {
+    "path": "scripts/kernel_ohci_irq_port.py",
+    "sha256": "9b246f0f7d9f1d0c585d2b356a0af71f3b34816fa256fa7d42aa0bcfaccb6633",
+    "source_ohci_sha256": "f4f39e4ca58c4d0c1a3bf148fe0915bebe621d67ab6c1239f4ddf047af390bce",
+    "integration_evidence": "build/verification/ohci-irq-integration.json",
+    "old_full_api_reproduced_byte_exact": true,
+    "prior_full_api_patch_paths_retained": 44,
+    "other_copied_inputs_unchanged": 127,
+    "real_hardware_tested": false,
+    "production_source_gate_passed": false
+  }
+}

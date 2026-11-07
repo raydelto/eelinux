@@ -1,0 +1,246 @@
+Subject: [PATCH] keep button menus open for click selection
+
+Handle the opening release separately, follow unpressed pointer motion,
+and release grabs on selection, outside click or Escape. Preserve the
+existing direct window operations and deferred window commands.
+
+--- a/src/menus.h
++++ b/src/menus.h
+@@ -131,6 +131,7 @@
+ extern int RootFunction;
+ extern MenuRoot *ActiveMenu;
+ extern MenuItem *ActiveItem;
++extern Bool ClickToSelectMenu;
+ extern int MoveFunction;
+ extern int WindowMoved;
+ extern int ConstMove;
+--- a/src/events.c
++++ b/src/events.c
+@@ -1504,6 +1504,25 @@
+     }
+ }
+ 
++/* Share complete grab/icon-manager cleanup with menu cancellation. */
++void
++ReleaseButtonGrabs(void)
++{
++    XUngrabPointer(dpy, CurrentTime);
++    XUngrabServer(dpy);
++    XFlush(dpy);
++    EventHandler[EnterNotify] = HandleEnterNotify;
++    EventHandler[LeaveNotify] = HandleLeaveNotify;
++    ButtonPressed = -1;
++    if (DownIconManager) {
++        DownIconManager->down = FALSE;
++        if (Scr->Highlight)
++            DrawIconManagerBorder(DownIconManager);
++        DownIconManager = NULL;
++    }
++    Cancel = FALSE;
++}
++
+ /**
+  * ButtonRelease event handler
+  */
+@@ -1660,19 +1679,7 @@
+     if (RootFunction == 0 &&
+         (Event.xbutton.state & mask) == 0 &&
+         DragWindow == None && ResizeWindow == None) {
+-        XUngrabPointer(dpy, CurrentTime);
+-        XUngrabServer(dpy);
+-        XFlush(dpy);
+-        EventHandler[EnterNotify] = HandleEnterNotify;
+-        EventHandler[LeaveNotify] = HandleLeaveNotify;
+-        ButtonPressed = -1;
+-        if (DownIconManager) {
+-            DownIconManager->down = FALSE;
+-            if (Scr->Highlight)
+-                DrawIconManagerBorder(DownIconManager);
+-            DownIconManager = NULL;
+-        }
+-        Cancel = FALSE;
++        ReleaseButtonGrabs();
+     }
+ }
+ 
+@@ -1700,10 +1707,17 @@
+     else {
+         center = True;
+     }
++    /* Left/right menu bindings stay open until a subsequent click. */
++    ClickToSelectMenu = Event.xbutton.button == Button1 ||
++                        Event.xbutton.button == Button3;
+     if (PopUpMenu(menu, x, y, center)) {
++        if (ClickToSelectMenu)
++            XGrabKeyboard(dpy, Scr->Root, False, GrabModeAsync,
++                          GrabModeAsync, CurrentTime);
+         UpdateMenu();
+     }
+     else {
++        ClickToSelectMenu = False;
+         Bell(XkbBI_MinorError, 0, w);
+     }
+ }
+--- a/src/events.h
++++ b/src/events.h
+@@ -92,6 +92,7 @@
+ extern void HandleUnmapNotify(void);
+ extern void HandleMotionNotify(void);
+ extern void HandleButtonRelease(void);
++extern void ReleaseButtonGrabs(void);
+ extern void HandleButtonPress(void);
+ extern void HandleEnterNotify(void);
+ extern void HandleLeaveNotify(void);
+--- a/src/menus.c
++++ b/src/menus.c
+@@ -63,6 +63,7 @@
+ 
+ #include <stdio.h>
+ #include <X11/Xos.h>
++#include <X11/keysym.h>
+ #include "twm.h"
+ #include "gc.h"
+ #include "menus.h"
+@@ -83,6 +84,7 @@
+ int RootFunction = 0;
+ MenuRoot *ActiveMenu = NULL;            /**< the active menu */
+ MenuItem *ActiveItem = NULL;            /**< the active menu item */
++Bool ClickToSelectMenu = False;
+ int MoveFunction;                       /**< either F_MOVE or F_FORCEMOVE */
+ int WindowMoved = FALSE;
+ int menuFromFrameOrWindowOrTitlebar = FALSE;
+@@ -470,6 +472,9 @@
+     unsigned udummy = 0;
+     Window wdummy = None;
+ 
++    Bool opening_release = ClickToSelectMenu;
++    Bool click_pressed = False;
++
+     fromMenu = TRUE;
+ 
+     while (TRUE) {
+@@ -479,9 +484,10 @@
+                        ButtonPressMask | ButtonReleaseMask |
+                        EnterWindowMask | ExposureMask |
+                        VisibilityChangeMask | LeaveWindowMask |
+-                       ButtonMotionMask, &Event);
+-        }
+-        if (Event.type == MotionNotify) {
++                       (ClickToSelectMenu ? PointerMotionMask | KeyPressMask :
++                                            ButtonMotionMask), &Event);
++        }
++        if (Event.type == MotionNotify && !ClickToSelectMenu) {
+             /* discard any extra motion events before a release */
+             while (XCheckMaskEvent(dpy,
+                                    ButtonMotionMask | ButtonReleaseMask,
+@@ -490,10 +496,76 @@
+                     break;
+         }
+ 
++        if (ClickToSelectMenu) {
++            if (Event.type == KeyPress) {
++                if (XLookupKeysym(&Event.xkey, 0) == XK_Escape) {
++                    PopDownMenu();
++                    ReleaseButtonGrabs();
++                    Context = C_NO_CONTEXT;
++                    menuFromFrameOrWindowOrTitlebar = FALSE;
++                    fromMenu = FALSE;
++                    return;
++                }
++                continue;
++            }
++            if (Event.type == ButtonPress) {
++                click_pressed = True;
++                ButtonPressed = (int) Event.xbutton.button;
++                continue;
++            }
++            if (Event.type == ButtonRelease) {
++                if (opening_release) {
++                    opening_release = False;
++                    ButtonPressed = -1;
++                    XUngrabServer(dpy);
++                    continue;
++                }
++                if (!click_pressed)
++                    continue;
++                click_pressed = False;
++
++                /* Use the release coordinates, even without a motion event. */
++                XTranslateCoordinates(dpy, Scr->Root, ActiveMenu->w,
++                                      Event.xbutton.x_root, Event.xbutton.y_root,
++                                      &x, &y, &wdummy);
++                mi = NULL;
++                if (x >= 0 && y >= 0 && x < ActiveMenu->width &&
++                    y < ActiveMenu->height) {
++                    for (i = 0, mi = ActiveMenu->first;
++                         mi && i < y / Scr->EntryHeight; i++, mi = mi->next)
++                        ;
++                }
++                if (ActiveItem && ActiveItem != mi) {
++                    ActiveItem->state = 0;
++                    PaintEntry(ActiveMenu, ActiveItem, False);
++                }
++                ActiveItem = mi;
++                if (mi && mi->func == F_TITLE) {
++                    ButtonPressed = -1;
++                    continue;
++                }
++                if (mi && mi->func == F_MENU) {
++                    mi->state = 0;
++                    PaintEntry(ActiveMenu, mi, False);
++                    ActiveItem = NULL;
++                    if (MenuDepth < MAXMENUDEPTH)
++                        PopUpMenu(mi->sub,
++                                  MenuOrigins[MenuDepth - 1].x + ActiveMenu->width / 2,
++                                  MenuOrigins[MenuDepth - 1].y + mi->item_num * Scr->EntryHeight,
++                                  False);
++                    ButtonPressed = -1;
++                    continue;
++                }
++            }
++        }
++
+         if (!DispatchEvent())
+             continue;
+ 
+         if (Event.type == ButtonRelease || Cancel) {
++            /* A deferred window command owns the next pointer click. */
++            if (ClickToSelectMenu && RootFunction != 0)
++                PopDownMenu();
+             menuFromFrameOrWindowOrTitlebar = FALSE;
+             fromMenu = FALSE;
+             return;
+@@ -994,7 +1066,8 @@
+ 
+     XGrabPointer(dpy, Scr->Root, True,
+                  ButtonPressMask | ButtonReleaseMask |
+-                 ButtonMotionMask | PointerMotionHintMask,
++                 (ClickToSelectMenu ? PointerMotionMask : ButtonMotionMask) |
++                 PointerMotionHintMask,
+                  GrabModeAsync, GrabModeAsync,
+                  Scr->Root, Scr->MenuCursor, CurrentTime);
+ 
+@@ -1069,6 +1142,10 @@
+     ActiveMenu = NULL;
+     ActiveItem = NULL;
+     MenuDepth = 0;
++    if (ClickToSelectMenu) {
++        XUngrabKeyboard(dpy, CurrentTime);
++        ClickToSelectMenu = False;
++    }
+     if (Context == C_WINDOW || Context == C_FRAME || Context == C_TITLE)
+         menuFromFrameOrWindowOrTitlebar = TRUE;
+ }
+--- a/man/twm.man
++++ b/man/twm.man
+@@ -1471,6 +1471,10 @@
+ Functions may be grouped and interactively selected using pop-up
+ (when bound to a pointer button) or pull-down (when associated
+ with a titlebutton) menus.
++In eeLinux, menus opened by a left or right button binding remain
++visible after releasing that button. Move to an entry and click to select it.
++Click outside the menus or press Escape to dismiss the complete menu chain.
++Clicking a submenu entry opens it; hovering over its arrow also opens it.
+ Each menu specification contains the name of the
+ menu as it will be referred to by \fBf.menu\fP, optional default
+ foreground and background colors, the list of item names and the functions

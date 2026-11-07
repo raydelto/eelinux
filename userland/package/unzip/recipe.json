@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "name": "unzip",
+  "engine": "Buildroot 2025.02.18 external tree",
+  "manifest_entry": "configs/packages.json:packages.unzip",
+  "symbol": "BR2_PACKAGE_UNZIP",
+  "version": "6.0",
+  "recipe": "package/unzip/unzip.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "036d96991646d0449ed0aa952e4fbe21b476ce994abc276e49d30e686708bd37",
+      "filename": "unzip_6.0.orig.tar.gz"
+    },
+    {
+      "algorithm": "sha256",
+      "digest": "67bde7c71d52afd61aa936d4415c8d12fd90ca26e9637a3cd67cae9b71298c12",
+      "filename": "unzip_6.0-27.debian.tar.xz"
+    }
+  ]
+}

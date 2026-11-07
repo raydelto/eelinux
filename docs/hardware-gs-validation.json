@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "date": "2026-10-03",
+  "console": "SCPH-90001 (model supplied earlier by the user)",
+  "connection": "PS2-to-HDMI",
+  "evidence_kind": "user photographs and physical probe report",
+  "requested_image_sha256": "c0f0ac383de9597ad327c01dffb3f8c83018009370c178eeb67be1a29bf09708",
+  "requested_kernel_sha256": "ccfcfffe5b6691fd3cb2dcff5199e444222d1bae93a09221fab146e2166e6792",
+  "artifact_hash_read_back_on_console": false,
+  "photographed_probe": {
+    "abi": 1,
+    "width": 576,
+    "height": 460,
+    "bits_per_pixel": 32,
+    "feature_mask": "f",
+    "depth_bytes": 589824,
+    "command_fence_result": "PASSED on two manual runs; startup result also shown",
+    "console_restored": true
+  },
+  "visual_observations": [
+    "Two cyan rectangles on a navy background.",
+    "Cyan and red triangle regions with dark horizontal gaps."
+  ],
+  "physical_submission_and_console_recovery": "user-confirmed",
+  "pixel_correctness": "failed visual qualification: horizontal triangle gaps",
+  "depth_correctness": "not fully established because of the raster defect",
+  "leading_diagnosis": "Original CT32/Z16 pairing differed from gsKit CT32/Z16S. Corrected pairing now passes the photographed primitive scene; original failed observations above remain historical.",
+  "corrected_candidate_physical_tested": true,
+  "corrected_retest": {
+    "evidence_kind": "new user photograph; artifact hash not read back on console",
+    "abi": 1,
+    "width": 720,
+    "height": 576,
+    "bits_per_pixel": 32,
+    "feature_mask": "f",
+    "depth_bytes": 884736,
+    "command_fence_result": "PASSED on three manual runs; startup also shown",
+    "console_restored": true,
+    "visual_result": "two cyan rectangles and one continuous cyan triangle inside a red border; previous horizontal gaps absent",
+    "depth_overlap_result": "cyan remains over the later-submitted, farther red triangle",
+    "qualification_scope": "this primitive scene, format and mode on the user's SCPH-90001; not general OpenGL compliance"
+  },
+  "Mesa_OpenGL_applications_tested": false,
+  "Xorg_accelerated_desktop_tested": false,
+  "current_primitive_scene_qualification": "passed on SCPH-90001 in the corrected retest; other formats/modes and OpenGL compliance not established",
+  "physical_hardware_followup": {
+    "date": "2026-10-04",
+    "evidence": "docs/graphics-hardware-validation.json",
+    "evidence_sha256": "ef10249c0b5c23f171d1bc7390788c271086b4caaeff929984f5f6c0fe42e1f3",
+    "diagnostics": [
+      "ps2-gs-test"
+    ],
+    "diagnostic_scenes_tested_on_physical_hardware": true,
+    "result": "passed according to the user on real PlayStation 2 hardware",
+    "evidence_kind": "explicit user verification report; device logs not captured",
+    "earlier_fields_preserved": true,
+    "scope": "normal diagnostic scenes on the user's PS2; not all host/mock cases or a complete desktop",
+    "artifact_hash_read_back_on_console": false,
+    "GPU_pixel_readback": false,
+    "complete_Xorg_TWM_or_OpenGL_session_tested": false
+  },
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

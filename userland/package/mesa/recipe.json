@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "name": "mesa",
+  "engine": "scripts/native_xorg.py",
+  "source": {
+    "version": "24.0.9",
+    "url": "https://archive.mesa3d.org/mesa-24.0.9.tar.xz",
+    "sha256": "51aa686ca4060e38711a9e8f60c8f1efaa516baf411946ed7f2c265cd582ca4c",
+    "license": "MIT, SGI, Khronos",
+    "license_file": "docs/license.rst",
+    "license_sha256": "a00275a53178e2645fb65be99a785c110513446a5071ff2c698ed260ad917d75",
+    "source": "Pinned official Mesa release; checksum also provided by Buildroot 2025.02.18",
+    "hardware_driver": "No upstream PS2 Gallium/DRI driver; accelerated OpenGL remains implementation work",
+    "rendering_policy": "Hardware rasterization only; do not build or install swrast, softpipe, llvmpipe or OpenGL software fallbacks"
+  },
+  "source_archive": "../../sources/mesa-24.0.9.tar.xz",
+  "scope": "Shared native GS components in the PS2 DDX; no complete OpenGL/GLX driver or software renderer"
+}

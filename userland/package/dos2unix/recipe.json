@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "dos2unix",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.dos2unix",
+  "symbol": "BR2_PACKAGE_DOS2UNIX",
+  "version": "7.5.7",
+  "recipe": "package/dos2unix/dos2unix.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "669ee27120ae71589f638fe3a167d6ea54f8633f5ab1b282551bd7a7c9510dfa",
+      "filename": "dos2unix-7.5.7.tar.gz"
+    }
+  ],
+  "release_url": "https://dos2unix.sourceforge.io/"
+}

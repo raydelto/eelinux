@@ -1,0 +1,60 @@
+Subject: [PATCH] Parse Curses and Forms ABIs before restoring private C++ bool
+
+Whichever project header includes Curses first must also parse Forms before
+removing its bool macro. Keep both library interfaces and include orders safe.
+
+--- a/src/window.h
++++ b/src/window.h
+@@ -23,6 +23,11 @@
+ #include <string>
+ 
+ #include <curses.h>
++#include <form.h>
++// Parse both public ABIs before restoring the private C++ bool keyword.
++#ifdef bool
++#undef bool
++#endif
+ #undef clear
+ #undef erase
+ #undef refresh
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -51,6 +51,11 @@
+ #include <ctype.h>
+ #include <time.h>
+ #include <curses.h>
++#include <form.h>
++// Parse both public ABIs before restoring the private C++ bool keyword.
++#ifdef bool
++#undef bool
++#endif
+ #include <signal.h>
+ #include <string.h>
+ #undef clear
+--- a/src/form_field.h
++++ b/src/form_field.h
+@@ -20,6 +20,10 @@
+ 
+ #include <curses.h>
+ #include <form.h>
++// Parse both public ABIs before restoring the private C++ bool keyword.
++#ifdef bool
++#undef bool
++#endif
+ #undef clear
+ #undef erase
+ #undef refresh
+--- a/src/screen.cpp
++++ b/src/screen.cpp
+@@ -18,6 +18,11 @@
+ #include "screen.h"
+ 
+ #include <curses.h>
++#include <form.h>
++// Parse both public ABIs before restoring the private C++ bool keyword.
++#ifdef bool
++#undef bool
++#endif
+ #undef clear
+ #undef erase
+ #undef refresh

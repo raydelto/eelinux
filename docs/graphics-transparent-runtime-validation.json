@@ -1,0 +1,168 @@
+{
+  "schema": 1,
+  "date": "2026-10-04",
+  "recorded_at": "2026-10-04T20:37:24.110718+00:00",
+  "scope": "transparent stippled GCOps with native GS fills and Boolean operations in a shared Mesa diagnostic; minimal X server bookkeeping",
+  "image": {
+    "sha256": "f075f40d980845c050c9eff1cd64280346d49359c502925ac9bfa6bd24cf0501"
+  },
+  "image_assembly": {
+    "sha256": "e50f3073da0fcdf1b4f2c8d9d39b1ff217a381efe6fec07a81388a57b5ba6a1b"
+  },
+  "image_checks": {
+    "diagnostic_fat_readback_byte_exact": {},
+    "fat32_bpb_and_cluster_count": "passed",
+    "fsck_fat_read_only": "passed",
+    "kernel_fat_readback_byte_exact": true,
+    "readme_fat_readback_byte_exact": true,
+    "root_payload_byte_exact": true,
+    "source_inputs_unchanged": true
+  },
+  "package": {
+    "sha256": "075cf0c4ba8f29f1cef8dc1ad5f550520169bb11ab935b23901ab4aac8f5738e"
+  },
+  "probe": {
+    "sha256": "d6a142ebbbec0f553cde1701a11c4d6a75dd0c6b6aef95401e99a19888eadcbf"
+  },
+  "source": {
+    "path": "desktop/ps2-gs-transparent-test.c",
+    "sha256": "fcf68f01783fc44d2f9a329e6b8a527489aaadb3856883f0bdcd2f7117c5e63b"
+  },
+  "build": {
+    "sha256": "6b506dbb7ebfecb27f2471c68e4272e1e0521a87bb7e9d5dfee46711ec01f4e9"
+  },
+  "native_test_log": {
+    "sha256": "78b9321986d015a547c27f81c2d14fe4c0e1a78454209c71efe2532bb5327ce8"
+  },
+  "host_checks": {
+    "schema": 1,
+    "result": "passed",
+    "cases": 6,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "log_sha256": "5089260b1cda2de5f4bb325702a15d96ee64f8d63f1144e8229d86ccb809e530",
+    "probe_source_sha256": "fcf68f01783fc44d2f9a329e6b8a527489aaadb3856883f0bdcd2f7117c5e63b",
+    "pixel_qualification": false
+  },
+  "host_test_log": {
+    "sha256": "5089260b1cda2de5f4bb325702a15d96ee64f8d63f1144e8229d86ccb809e530"
+  },
+  "lifecycle_cases": [
+    "success",
+    "first-failure",
+    "later-failure",
+    "logic-failure",
+    "present-failure",
+    "interrupt"
+  ],
+  "host_sanitizer_cases": 6,
+  "R5900_Linux_user_cases": 6,
+  "preceding_component_cases_per_environment": 114,
+  "PCSX2_run": {
+    "session": {
+      "sha256": "17916815f0708bb1e4bc83a81ef98e17ceb0712492e9cc7c580fe82d1ea0fde5"
+    },
+    "log_snapshot": {
+      "sha256": "cc5d6d091d4d73a6495e3f03f880c6f91624529559d7d454c64f2286eb6e0faa"
+    },
+    "running_process_at_snapshot": {
+      "sha256": "804aa7a9b6115a13e63db4a6435101188580142344157c899fe7498c4bb10204"
+    },
+    "milestones": [
+      "EXT4-fs (sda2): mounted filesystem",
+      "ps2-gs: starting transparent stipple GC / shared Mesa probe",
+      "ps2-gs: transparent stipple GC / shared Mesa 720x576 features=1ff",
+      "ps2-gs: transparent scene 1/4:",
+      "ps2-gs: transparent scene 2/4:",
+      "ps2-gs: transparent scene 3/4:",
+      "ps2-gs: transparent scene 4/4:",
+      "ps2-gs: transparent stipple GC command/fence PASSED; transparent pixels require visual qualification",
+      "ps2-gs: transparent stipple GC / shared Mesa probe exit=0"
+    ],
+    "runtime": {
+      "requested_program": "C:\\Program Files\\PCSX2\\pcsx2-qt.exe",
+      "executable_sha256": "4d2a4d9c0db3cb2e9760e2d34bcd29150b53d56a1a87ae8e6fb4556796b40f58",
+      "runtime_manifest_sha256": "b7bf008375c55020bfb3287e0a100d1ff001323706bc2e18b3bf2d0e183ed478",
+      "mmu_patch_sha256": "3483e1fad391cbe50fdf4e6dab2d6b63ca1bc024d0d9248ff51457e8cb41df85"
+    },
+    "guest_main_ram_mib": 32,
+    "probe_exit": 0,
+    "probe_exit_guest_seconds": 70.664,
+    "console_restoration_command_passed": true,
+    "process_exit_is_boot_result": false,
+    "session_left_interactive": true,
+    "authenticated_login_tested": false
+  },
+  "expected_scenes": [
+    "matching red/white rectangle and span panels; zero bits retain red",
+    "shifted blue/cyan checker with a red central clip gap",
+    "matching cyan/white partial-mask patterns; XOR twice restores a yellow bar",
+    "matching orange/green front/backing panels with a magenta completion bar"
+  ],
+  "pauses": 4,
+  "manual_command": "ps2-gs-transparent-test",
+  "diagnostic_format": "RGBX/CT32",
+  "RGB555_runtime_pixels_verified": false,
+  "visual_observation": {
+    "platform": "PCSX2",
+    "evidence_kind": "user confirmation and qualitative review of four supplied PCSX2 panels",
+    "reviewed_probe_sha256": "d6a142ebbbec0f553cde1701a11c4d6a75dd0c6b6aef95401e99a19888eadcbf",
+    "all_scene_panels_match_expected": true,
+    "console_return_user_confirmed": true,
+    "console_restoration_command_passed": true,
+    "scope": "qualitative PCSX2 scene acceptance plus user-confirmed console return; no pixel-by-pixel readback",
+    "physical_hardware_verified": false,
+    "GPU_pixel_readback": false,
+    "repository_images_added": false,
+    "provided_scene_panels_match_expected": true,
+    "provided_scenes": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "reviewed_scenes": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "user_confirmation": "Yes, all four scenes and console returned"
+  },
+  "physical_hardware_verified": false,
+  "GPU_pixel_readback": false,
+  "Damage_callbacks_stubbed": true,
+  "actual_Damage_subsystem_executed": false,
+  "software_pixel_renderer": false,
+  "kernel_ABI_changed": false,
+  "native_probe_is_X_server": false,
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL_GLX": false,
+  "shader_caps": 0,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "physical_devices_written": false,
+  "preserved_diagnostic_binaries": {
+    "ps2-gs-test": "1356d7a73a58f09eaa95298092de779cd461615d3f6eb0ac7966cff52a1434cd",
+    "ps2-gs-upload-test": "1ed84bd7c47a1d29b80942bc20a2116f6177c3d4b54a4ddb7aa7175d6f65ef07",
+    "ps2-gs-surface-test": "18674bec98afa5a847649c89bf2231f861e864222faee9bef7fbcff4c3364497",
+    "ps2-gs-render-test": "7616a090815c5759a2f628efcd1e0bac2c88b6e2153b1bc750ea6ca05f33676f",
+    "ps2-gs-texture-test": "fb6dd812b8d73465ec88f93ef3afded6bf09b9b42e8b7b92ed59dd0569b6f102",
+    "ps2-gs-context-test": "cb5e60a9dcf284e64df44846ec11f0b2f16d0f57562ad7909227a34e88b2813b",
+    "ps2-gs-glyph-test": "fdabce9c1f5bbfa6b9cffef0126bd18e834971261b765a48cc51a3f40b38ff34",
+    "ps2-gs-gc-test": "ded18eef24e0f2597ed07bfec72356a667ed9fb90035e6ee600c9649ed3735f9",
+    "ps2-gs-logic-test": "b7d374c1c5c681e8bd03239c3db17ec03d8e504e1e3163276a27df14f8d4158c",
+    "ps2-gs-solid-test": "e7828b6ca61d02b8b2ac1cf065ba3e7b1a5bb8ca7b211e22d9135492108d39d2",
+    "ps2-gs-copy-test": "5c6178bee0a4b483379e107bbfbaed27500b3a1696ae48d1d1687bc3b14c5782",
+    "ps2-gs-blit-test": "700d03530dd03340a8f1fb17a26e73bd3da781b9478767904f99c3f7c8b19af2",
+    "ps2-gs-window-test": "b3f87aff6608ed026154efc436e58c6475d38ba7059dc5f87f3bde39eb335581",
+    "ps2-gs-paint-test": "c7f6945a058e71f8da7217bae2c43f09fa1ebc03408340ed03a075b13ce952ae",
+    "ps2-gs-fill-test": "a1533670f0b27811776220afc55f87f889a4619a2e9b765b2d44b3c8d591b91e",
+    "ps2-gs-stipple-test": "606e40c66bd99f705e55394ac3e87ee5b2c87f0782ef3c20a891ad99ff660815",
+    "ps2-gs-mono-test": "b81c54ce128a4ff7c58aa19e17f15fabdc1f7cfda304f76a4f33abdb86733359"
+  },
+  "earlier_physical_report": "docs/graphics-hardware-validation.json",
+  "earlier_report_qualifies_this_new_test": false,
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

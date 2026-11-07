@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "libnetfilter_conntrack",
+  "symbol": "BR2_PACKAGE_LIBNETFILTER_CONNTRACK",
+  "recipe": "package/libnetfilter_conntrack/libnetfilter_conntrack.mk",
+  "version": "1.1.1",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "769d3eaf57fa4fbdb05dd12873b6cb9a5be7844d8937e222b647381d44284820",
+      "filename": "libnetfilter_conntrack-1.1.1.tar.xz"
+    }
+  ],
+  "release_url": "https://www.netfilter.org/pub/libnetfilter_conntrack/",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.libnetfilter_conntrack"
+}

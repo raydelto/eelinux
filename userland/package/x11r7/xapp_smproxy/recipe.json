@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_smproxy",
+  "kind": "application",
+  "program": "smproxy",
+  "version": "1.0.8",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/smproxy-1.0.8.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/smproxy-1.0.8.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "fee584eae2ec1ce2d178d72d3b484920271ba68a27935769cefbafbc3a2ff6c8",
+      "filename": "smproxy-1.0.8.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "e930a01c3535050d7d580a93c0b2b7898ff8a8d7ab498215f2d035ab902989497d1fbc70f2939d04b609c980e86d0d4ba7829a98fda3261cb4b159432cd2bc8e",
+      "filename": "smproxy-1.0.8.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

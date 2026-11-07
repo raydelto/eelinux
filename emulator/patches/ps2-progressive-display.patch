@@ -1,0 +1,73 @@
+--- a/pcsx2/GS/GS.h
++++ b/pcsx2/GS/GS.h
+@@ -31,7 +31,8 @@
+ 	VESA,
+ 	SDTV_480P,
+ 	HDTV_720P,
+-	HDTV_1080I
++	HDTV_1080I,
++	SDTV_576P
+ };
+ 
+ enum class GSDisplayAlignment
+--- a/pcsx2/GS/GSState.cpp
++++ b/pcsx2/GS/GSState.cpp
+@@ -361,7 +361,8 @@
+ 			else if (!isinterlaced() && PLL_Divider == 22)
+ 				return GSVideoMode::HDTV_720P;
+ 			else if (!isinterlaced() && PLL_Divider == 32)
+-				return GSVideoMode::SDTV_480P; // TODO: 576P will also be reported as 480P, find some way to differeniate.
++				// Vertical active lines distinguish the two 27 MHz SDTV timings.
++				return m_regs->SYNCV.VDP == 576 ? GSVideoMode::SDTV_576P : GSVideoMode::SDTV_480P;
+ 			else
+ 				return GSVideoMode::VESA;
+ 		case 2:
+@@ -387,6 +388,7 @@
+ 		case GSVideoMode::SDTV_480P:
+ 			return (60 / 1.001f);
+ 		case GSVideoMode::PAL:
++		case GSVideoMode::SDTV_576P:
+ 			return 50;
+ 		case GSVideoMode::HDTV_720P:
+ 		case GSVideoMode::HDTV_1080I:
+@@ -5641,31 +5643,34 @@
+ // these values leave a small black line on the right in a bunch of games, but it's not so bad.
+ // The only conclusion I can come to is there is horizontal overscan expected so there would normally
+ // be black borders either side anyway, or both sides slightly covered.
+-static inline constexpr GSVector4i VideoModeOffsets[6] = {
++static inline constexpr GSVector4i VideoModeOffsets[7] = {
+ 	GSVector4i::cxpr(640, 224, 642, 25),
+ 	GSVector4i::cxpr(640, 256, 676, 36),
+ 	GSVector4i::cxpr(640, 480, 276, 34),
+ 	GSVector4i::cxpr(720, 480, 232, 35),
+ 	GSVector4i::cxpr(1280, 720, 302, 24),
+-	GSVector4i::cxpr(1920, 540, 238, 40)
++	GSVector4i::cxpr(1920, 540, 238, 40),
++	GSVector4i::cxpr(720, 576, 264, 43)
+ };
+ 
+-static inline constexpr GSVector4i VideoModeOffsetsOverscan[6] = {
++static inline constexpr GSVector4i VideoModeOffsetsOverscan[7] = {
+ 	GSVector4i::cxpr(711, 240, 498, 17),
+ 	GSVector4i::cxpr(711, 288, 532, 21),
+ 	GSVector4i::cxpr(640, 480, 276, 34),
+ 	GSVector4i::cxpr(720, 480, 232, 35),
+ 	GSVector4i::cxpr(1280, 720, 302, 24),
+-	GSVector4i::cxpr(1920, 540, 238, 40)
++	GSVector4i::cxpr(1920, 540, 238, 40),
++	GSVector4i::cxpr(720, 576, 264, 43)
+ };
+ 
+-static inline constexpr GSVector4i VideoModeDividers[6] = {
++static inline constexpr GSVector4i VideoModeDividers[7] = {
+ 	GSVector4i::cxpr(3, 0, 2559, 239),
+ 	GSVector4i::cxpr(3, 0, 2559, 287),
+ 	GSVector4i::cxpr(1, 0, 1279, 479),
+ 	GSVector4i::cxpr(1, 0, 1439, 479),
+ 	GSVector4i::cxpr(0, 0, 1279, 719),
+-	GSVector4i::cxpr(0, 0, 1919, 1079)
++	GSVector4i::cxpr(0, 0, 1919, 1079),
++	GSVector4i::cxpr(1, 0, 1439, 575)
+ };
+ 
+ bool GSState::GSPCRTCRegs::IsAnalogue()

@@ -1,0 +1,108 @@
+/* SPDX-License-Identifier: MIT */
+#include "ps2_transform.h"
+#include <errno.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+struct clip_vertex { double position[4],color[4]; };
+struct triangle_plan { float position[3][4],color[3][4]; };
+_Static_assert(sizeof(struct triangle_plan)==96,"transformed geometry heap bound");
+static double distance(const struct clip_vertex *v,unsigned plane)
+{
+    if(plane==6)return v->position[3]-1.0/65536.0;
+    return v->position[3]+(plane&1?-v->position[plane/2]:v->position[plane/2]);
+}
+static unsigned clip(const struct clip_vertex *input,unsigned count,
+    struct clip_vertex *output,unsigned plane)
+{
+    unsigned n=0;
+    for(unsigned i=0;i<count;++i){
+        const struct clip_vertex *a=&input[i],*b=&input[(i+1)%count];
+        double da=distance(a,plane),db=distance(b,plane);
+        if(da>=0){if(n==PS2_PIPE_MAX_CLIPPED_VERTICES)return UINT32_MAX;output[n++]=*a;}
+        if((da<0 && db>0) || (da>0 && db<0)){
+            if(n==PS2_PIPE_MAX_CLIPPED_VERTICES)return UINT32_MAX;
+            double t=da/(da-db);
+            for(unsigned j=0;j<4;++j){
+                output[n].position[j]=(1-t)*a->position[j]+t*b->position[j];
+                output[n].color[j]=(1-t)*a->color[j]+t*b->color[j];
+            }
+            ++n;
+        }
+    }
+    return n;
+}
+static double ndc(double value){return value<-1?-1:value>1?1:value;}
+int ps2_pipe_transform_triangles(struct pipe_context *ctx,const struct ps2_transform_vertex *input,
+    unsigned count,const float matrix[16],const struct ps2_transform_viewport *viewport,
+    int depth_test,unsigned *emitted)
+{
+    if(emitted)*emitted=0;
+    if(count>3*PS2_PIPE_MAX_TRANSFORM_TRIANGLES || count%3 || (count && !input) || !matrix || !viewport ||
+       (depth_test!=0 && depth_test!=1) ||
+       (count && (uintptr_t)input>UINTPTR_MAX-(count*sizeof(*input)-1)) ||
+       (uintptr_t)matrix>UINTPTR_MAX-(16*sizeof(*matrix)-1) ||
+       (uintptr_t)viewport>UINTPTR_MAX-(sizeof(*viewport)-1)){errno=EINVAL;return -1;}
+    float m[16];memcpy(m,matrix,sizeof(m));struct ps2_transform_viewport v=*viewport;
+    for(unsigned i=0;i<16;++i)if(!isfinite(m[i])){errno=EINVAL;return -1;}
+    if(!v.width || !v.height || !isfinite(v.min_depth) || !isfinite(v.max_depth) ||
+       v.min_depth<0 || v.max_depth>1 || v.min_depth>v.max_depth){errno=EINVAL;return -1;}
+    if(ps2_pipe_context_acquire(ctx))return -1;
+    struct ps2_render_target *target=ps2_pipe_context_target(ctx);
+    struct triangle_plan *plan=NULL;
+    unsigned used=0,limit=count/3*(PS2_PIPE_MAX_CLIPPED_VERTICES-2);
+    int result=-1,error=EINVAL;
+    if(!target || !target->color || (depth_test && !target->depth) ||
+       (uint64_t)v.x+v.width>target->color->width0 || (uint64_t)v.y+v.height>target->color->height0)goto out;
+    /* Validate the entire client list before transforming or submitting it. */
+    for(unsigned i=0;i<count;++i)for(unsigned j=0;j<4;++j)
+        if(!isfinite(input[i].position[j]) || !isfinite(input[i].color[j]) ||
+           input[i].color[j]<0 || input[i].color[j]>1 || (j==3 && input[i].color[j]!=1))goto out;
+    if(!count){result=0;goto out;}
+    plan=malloc(limit*sizeof(*plan));if(!plan){error=ENOMEM;goto out;}
+    for(unsigned start=0;start<count;start+=3){
+        struct clip_vertex polygon[2][PS2_PIPE_MAX_CLIPPED_VERTICES];
+        for(unsigned i=0;i<3;++i)for(unsigned j=0;j<4;++j){
+            polygon[0][i].position[j]=0;
+            for(unsigned k=0;k<4;++k)polygon[0][i].position[j]+=(double)m[j*4+k]*input[start+i].position[k];
+            polygon[0][i].color[j]=input[start+i].color[j];
+        }
+        unsigned n=3,side=0;
+        for(unsigned plane=0;n && plane<7;++plane){
+            /* A convex n-vertex polygon gains at most one vertex per plane. */
+            n=clip(polygon[side],n,polygon[side^1],plane);side^=1;
+            if(n>PS2_PIPE_MAX_CLIPPED_VERTICES){error=E2BIG;goto out;}
+        }
+        for(unsigned i=1;i+1<n;++i){
+            if(used==limit){error=E2BIG;goto out;}
+            struct triangle_plan *t=plan+used;
+            unsigned index[3]={0,i,i+1};
+            for(unsigned j=0;j<3;++j){
+                const struct clip_vertex *p=&polygon[side][index[j]];
+                double w=p->position[3];if(!isfinite(w) || w<=0)goto out;
+                double x=ndc(p->position[0]/w),y=ndc(p->position[1]/w),z=ndc(p->position[2]/w);
+                t->position[j][0]=v.x+(x+1)*0.5*v.width;
+                t->position[j][1]=v.y+(1-y)*0.5*v.height;
+                t->position[j][2]=v.min_depth+(z+1)*0.5*(v.max_depth-v.min_depth);
+                t->position[j][3]=1/w;
+                for(unsigned k=0;k<4;++k){
+                    if(!isfinite(t->position[j][k]) || !isfinite(p->color[k]))goto out;
+                    t->color[j][k]=p->color[k];
+                }
+            }
+            double area=((double)t->position[1][0]-t->position[0][0])*((double)t->position[2][1]-t->position[0][1])-
+                ((double)t->position[1][1]-t->position[0][1])*((double)t->position[2][0]-t->position[0][0]);
+            if(area)++used;
+        }
+    }
+    /* No input/header is consumed after this point. Shared Xorg may have
+     * changed the live GS target; ps2_pipe_triangle restores the Mesa target. */
+    result=0;
+    for(unsigned i=0;!result && i<used;++i)result=ps2_pipe_triangle(ctx,plan[i].position,plan[i].color,NULL,depth_test);
+    error=errno;
+    if(!result && used)result=ps2_render_flush(target->render);
+    if(result)error=errno;
+    if(!result && emitted)*emitted=used;
+out:
+    free(plan);ps2_pipe_context_release(ctx);if(result)errno=error;return result;
+}

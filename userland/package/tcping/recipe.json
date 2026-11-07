@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "tcping",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.tcping",
+  "symbol": "BR2_PACKAGE_TCPING",
+  "version": "2.1.0",
+  "recipe": "package/tcping/tcping.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "b8aa427420fe00173b5a2c0013d78e52b010350f5438bf5903c1942cba7c39c9",
+      "filename": "tcping-2.1.0.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/mkirchner/tcping/tags"
+}

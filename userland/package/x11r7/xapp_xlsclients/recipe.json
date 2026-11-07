@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xlsclients",
+  "kind": "application",
+  "program": "xlsclients",
+  "version": "1.1.6",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xlsclients-1.1.6.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xlsclients-1.1.6.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "909810a3fdbd01d84747907f2c0cc32ee732e77afc88cb310abb9d155b2a0807",
+      "filename": "xlsclients-1.1.6.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "bc330df0f56aa2c732a6d251494280839eb6a7c085e138e2f1d484e2ae580cdb562e1efb71257fa277f7a69f8a22317ef8419c5755661ed5155ea428a550a513",
+      "filename": "xlsclients-1.1.6.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

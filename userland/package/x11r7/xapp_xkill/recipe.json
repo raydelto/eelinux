@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xkill",
+  "kind": "application",
+  "program": "xkill",
+  "version": "1.0.7",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xkill-1.0.7.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xkill-1.0.7.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "5ff264bc4eebc0459255a92036dc8dc84b6d48caef8509f88a783beaadea750b",
+      "filename": "xkill-1.0.7.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "af5444da74b2af45dabd093e74b4c2e906c4742593067b6fecced6593a27b2b493e868e91672ffc17571851621b4e6716741d2eb91c5459c5bcf9867d4812d9a",
+      "filename": "xkill-1.0.7.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

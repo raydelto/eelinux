@@ -1,0 +1,138 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "date": "2026-10-05",
+  "sanitizers": [
+    "address",
+    "undefined"
+  ],
+  "cases": 69,
+  "groups": [
+    {
+      "suite": "test_ps2_solid_probe.py",
+      "cases": 3,
+      "result": "passed",
+      "log": {
+        "sha256": "85496d9b933148667c4ae6b274643b89d650adbd8598d2792be91fa6fa75caa6"
+      }
+    },
+    {
+      "suite": "test_ps2_copy_probe.py",
+      "cases": 3,
+      "result": "passed",
+      "log": {
+        "sha256": "ef68d895f3f05f6ea6dc1be0f10b201e9e4738e5d544ac6e6c98f10b5e80fa23"
+      }
+    },
+    {
+      "suite": "test_ps2_fill_probe.py",
+      "cases": 5,
+      "result": "passed",
+      "log": {
+        "sha256": "36162bdd95a79845ee201376a731f095868bfc6c67559711674f4fa18f950f39"
+      }
+    },
+    {
+      "suite": "test_ps2_stipple_probe.py",
+      "cases": 5,
+      "result": "passed",
+      "log": {
+        "sha256": "75e4d7979dee0bc4969780bb4b89c3e515485a4a5a21020a6076927a1d279023"
+      }
+    },
+    {
+      "suite": "test_ps2_mono_probe.py",
+      "cases": 5,
+      "result": "passed",
+      "log": {
+        "sha256": "130955839be4e3880e2433073072440815a5c2adcd1d6acae0013f2f64a47b73"
+      }
+    },
+    {
+      "suite": "test_ps2_transparent_probe.py",
+      "cases": 6,
+      "result": "passed",
+      "log": {
+        "sha256": "e3847455a28f4f9ebf446f471509446fdb99cf317498a3e00313c8ccf55dfe55"
+      }
+    },
+    {
+      "suite": "test_ps2_opaque_probe.py",
+      "cases": 6,
+      "result": "passed",
+      "log": {
+        "sha256": "c7a93a1c9a4fb8b79eda525d4a486c655b5611c62c1cd8062026b61bf187b2d7"
+      }
+    },
+    {
+      "suite": "test_ps2_line_probe.py",
+      "cases": 6,
+      "result": "passed",
+      "log": {
+        "sha256": "8f79f8fdae5e3dc55e1b76aa1fd9744a31d9a622e5f5969d4c92feece5e49424"
+      }
+    },
+    {
+      "suite": "test_ps2_dash_probe.py",
+      "cases": 6,
+      "result": "passed",
+      "log": {
+        "sha256": "5cee387c8b69383cd2aa7fde72d94515a9de5cc3a49cb57ab54fade158771c0a"
+      }
+    },
+    {
+      "suite": "test_ps2_cursor_probe.py",
+      "cases": 6,
+      "result": "passed",
+      "log": {
+        "sha256": "e560f2ad4915411855d7ec8c0b572e466172d52eab01595e1572016ea24f55b3"
+      }
+    },
+    {
+      "suite": "test_ps2_image_probe.py",
+      "cases": 6,
+      "result": "passed",
+      "log": {
+        "sha256": "545b442e73129012ef2c4733ad53921d28def16c3aff6a1bf1fb359a2b60940f"
+      }
+    },
+    {
+      "suite": "test_ps2_planar_probe.py",
+      "cases": 6,
+      "result": "passed",
+      "log": {
+        "sha256": "cc418ef0f0348396d622dc7f9d80ea5053051328b937d3e1a0f1b0c580264cbb"
+      }
+    },
+    {
+      "suite": "test_ps2_polygon_probe.py",
+      "cases": 6,
+      "result": "passed",
+      "log": {
+        "sha256": "6f2e24cd653642ecd46bd2bf1b4f343eff8141970baaff63daf9cf044b90f3b9"
+      }
+    }
+  ],
+  "compiled_current_production_sources_match_component_build": true,
+  "component_build_sha256": "dcb37ea06de0ac80777904a42eb7f9d0a4642af9dc5f12195a1cf0b363ed003e",
+  "updated_legacy_fixture_sources": {
+    "tests/graphics/ps2-solid-probe.c": "ae710a59e59e6648634f13694d5ea264c2cb36a4f14f796550dc555b7784d6b1",
+    "tests/graphics/ps2-copy-probe.c": "845e05eb83a790c37ec3722fb2529bb0a6d97c7f35abdb22f2ed854b010e909c",
+    "tests/graphics/ps2-fill-probe.c": "656583ab3d57932cf5817bce3d5d76181e544b619fd08566b24bc73cfa4e352f",
+    "tests/graphics/ps2-stipple-probe.c": "0337b9e963a9e4e5e1ab32adddca0dc524d633374c914c5c6b9eab6bd6eea48a",
+    "tests/graphics/ps2-mono-probe.c": "d8f73a7b50fd812316edfb69c0791c8523cdbc26793c5b5f7aece884ab5fb6f3",
+    "tests/graphics/ps2-transparent-probe.c": "34ca51c7fa03d966a4bdc7728c5782cea6dc6dbacaf6d1d3ea4168dbe5ca23eb",
+    "tests/graphics/ps2-opaque-probe.c": "abf28647e85b5bc5fd17305ac7358badd22673937990ccd785780efa118ccea0",
+    "tests/graphics/ps2-line-probe.c": "f10553450158abc4d8e854fb49759fff6e955d84040ef2d429e6fbf15dba3468",
+    "tests/graphics/ps2-dash-probe.c": "f62b1f6f2b648ff119cc8c545126b4496bc63bf98ee055ed51f3082048e0b49c",
+    "tests/graphics/ps2-cursor-probe.c": "f01d17b09cf6ae6c3f1b86c87d605e63a416500090ee3f1f904511e14763c50b",
+    "tests/graphics/ps2-image-probe.c": "c9ad8ea171553ce8a52109868f361993842a26223dcc3433a52a7889ddb6bcad",
+    "tests/graphics/ps2-planar-probe.c": "851ad9e84af0a234f9a496e6712be7ee1903aee17c9245c002c0b623330396a8",
+    "tests/graphics/ps2-polygon-probe.c": "6b4acc543c238e729da14175c927ff54ec7e184ff0ad5b567ade8fe61b55c285",
+    "tests/graphics/ps2-line-bias-stub.h": "97748429226843eca8a5e28cca99b4c1ca6482f6269c1768b17d2372536ac5ee"
+  },
+  "scope": "earlier standalone diagnostic harnesses with shared native front access guards; all saved binaries/images/evidence unchanged",
+  "physical_pixels_tested": false,
+  "GPU_pixel_readback": false,
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

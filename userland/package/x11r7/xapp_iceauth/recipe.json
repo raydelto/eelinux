@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_iceauth",
+  "kind": "application",
+  "program": "iceauth",
+  "version": "1.0.11",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/iceauth-1.0.11.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/iceauth-1.0.11.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "9d633cf0d4d1d98e3ef02d18660372958b60a67016e8a72cd04093a8d8f8d4e9",
+      "filename": "iceauth-1.0.11.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "7b3dffb2c1209e00bc11301ace3f802f052ae1062fba20011787ac185e2fd3a6c96ede3ddf37d9be3e41fa91f381e42e71fd61a7e63e8e3945351e16af2f57a6",
+      "filename": "iceauth-1.0.11.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xterm",
+  "kind": "application",
+  "program": "xterm",
+  "version": "412",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xterm-412.tgz",
+  "upstream": "https://invisible-island.net/archives/xterm/current/xterm-412.tgz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "b48bc780c1cbc14f6d89269f7e593712af6095876960d650be28b55e5dad65a6",
+      "filename": "xterm-412.tgz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "7a6cb30abd8553a7a1d90208f03498319b5bb51aa5f092a70d2705b8e734d045860c783473c3ea82acecf87bb9a15f6225df85844cda6b12a7a1d4541c81da62",
+      "filename": "xterm-412.tgz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": true,
+  "runtime_qualification": {
+    "scope": "emulator application smoke checks; not exhaustive feature qualification",
+    "record": "docs/desktop-applications-r41-validation.json"
+  }
+}

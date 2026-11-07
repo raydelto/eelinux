@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "cifs-utils",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.cifs-utils",
+  "symbol": "BR2_PACKAGE_CIFS_UTILS",
+  "version": "7.9",
+  "recipe": "package/cifs-utils/cifs-utils.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "9f3750f402520b15c2c8eb52fd485df6ea77e5e66fe5e39ce8ac4386c32c0296",
+      "filename": "cifs-utils-7.9.tar.bz2"
+    }
+  ],
+  "release_url": "https://download.samba.org/pub/linux-cifs/cifs-utils/"
+}

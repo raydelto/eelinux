@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_viewres",
+  "kind": "application",
+  "program": "viewres",
+  "version": "1.0.8",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/viewres-1.0.8.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/viewres-1.0.8.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "4b221c2b103390b166633612b9abf8036cbbe90605dbd8a37cf2a377fa2b6cd2",
+      "filename": "viewres-1.0.8.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "3cd5dc23ab1b3289eb1433cf7373cc4edab84ef39166013056d4ffad90bb4f926e7471f7691a4c6bcb81cf6bfd203478a0ae2fb53300e838b1c5d1cc82ff8da0",
+      "filename": "viewres-1.0.8.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

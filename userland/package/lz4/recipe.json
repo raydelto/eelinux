@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "lz4",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.lz4",
+  "symbol": "BR2_PACKAGE_LZ4",
+  "version": "1.11.0",
+  "recipe": "package/lz4/lz4.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "247e5fa64da5f7b75ee3dd3bed484076396c9ebe8254d9ccf693eb62800c5e26",
+      "filename": "lz4-1.11.0.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/lz4/lz4/releases/latest"
+}

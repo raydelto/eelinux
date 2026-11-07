@@ -1,0 +1,72 @@
+--- a/drivers/video/fbdev/ps2fb.c
++++ b/drivers/video/fbdev/ps2fb.c
+@@ -519,7 +519,14 @@
+ static u32 display_buffer_size(const u32 xres_virtual, const u32 yres_virtual,
+       const u32 bits_per_pixel)
+ {
+-	return (xres_virtual * yres_virtual * bits_per_pixel) / 8;
++	const u32 fbw = DIV_ROUND_UP(xres_virtual, GS_FB_PAGE_WIDTH);
++
++	/* Include the actual GS block/stride padding, not just visible pixels. */
++	if (bits_per_pixel == 16)
++		return gs_psm_ct16_block_count(fbw, yres_virtual) * GS_BLOCK_SIZE;
++	if (bits_per_pixel == 32)
++		return gs_psm_ct32_block_count(fbw, yres_virtual) * GS_BLOCK_SIZE;
++	return GS_MEMORY_SIZE + 1;
+ }
+ 
+ /**
+@@ -1666,6 +1673,9 @@
+            var->xres_virtual = var->xres;
+         if (var->yres_virtual < var->yres)
+            var->yres_virtual = var->yres;
++	/* Bound virtual geometry before GS allocation arithmetic. */
++	if (var->xres_virtual > 2048 || var->yres_virtual > 2048)
++		return -EINVAL;
+ 	var->xoffset = 0;
+ 	var->yoffset = 0;
+ 
+@@ -1712,11 +1722,19 @@
+ 
+ 	spin_lock_irqsave(&par->lock, flags);
+ 	err = ps2fb_check_var(var, info);
++	if (!err && info->tileops) {
++		const u32 blocks = display_buffer_size(var->xres_virtual,
++			var->yres_virtual, var->bits_per_pixel) / GS_BLOCK_SIZE;
++		const u32 tiles = par->cb.tile.block.cols * par->cb.tile.block.rows;
++		/* Initial font geometry is 8x8; later use the installed tile size.
++		 * Check the proposed allocation rather than the old active mode.
++		 */
++		const u32 font_blocks = DIV_ROUND_UP(256, tiles ? tiles : 8);
++
++		if (blocks + PALETTE_BLOCK_COUNT + font_blocks > GS_BLOCK_COUNT)
++			err = -ENOMEM;
++	}
+ 	spin_unlock_irqrestore(&par->lock, flags);
+-
+-	if (!err && info->tileops)
+-		if (info->tileops->fb_get_tilemax(info) < 256)
+-			err = -ENOMEM;
+ 
+ 	return err;
+ }
+@@ -2019,7 +2037,7 @@
+ 					 bc ? vm_to_sp_hdtv(vm, sg) :
+ 					      vm_to_sp_vesa(vm, sg);
+ 
+-	sp.smode1.gcont = gs_gcont_ycrcb;
++	sp.smode1.gcont = bc ? gs_gcont_ycrcb : gs_gcont_rgbyc;
+ 	sp.smode1.sint = 1;
+ 	sp.smode1.prst = 0;
+ 
+--- a/init/main.c
++++ b/init/main.c
+@@ -1475,7 +1475,7 @@
+ static void __init do_basic_setup(void)
+ {
+ #ifdef CONFIG_CPU_R5900
+-	pr_info("ps2: exception and TLB-entry kernel\n");
++	pr_info("ps2: exception guards and video modes kernel\n");
+ #endif
+ 	cpuset_init_smp();
+ 	ksysfs_init();

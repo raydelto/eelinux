@@ -1,0 +1,967 @@
+--- /dev/null
++++ b/src/gallium/drivers/ps2/ps2-gs-map-blit.h
+@@ -0,0 +1,16 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++#ifndef _UAPI_PS2_GS_MAP_BLIT_H
++#define _UAPI_PS2_GS_MAP_BLIT_H
++#include "ps2-gs-map.h"
++#define PS2GS_HW_CHANNEL_MAP_BLIT (1U << 14)
++/* Map one byte from an owned CT32 source rectangle into selected bits of a
++ * distinct owned CT32 destination. The source rectangle fits in one 64x32
++ * GS page. Palette is a third owned 16x16 CT32 surface. Coordinates and all
++ * storage bounds are validated; no addresses/registers are user supplied. */
++struct ps2gs_channel_map_blit {
++	__u32 abi, source, destination, palette;
++	__u32 width, height, plane_mask, source_channel;
++	__u32 sx, sy, dx, dy;
++};
++#define PS2GS_CHANNEL_MAP_BLIT _IOW('G', 0x81, struct ps2gs_channel_map_blit)
++#endif
+--- a/src/gallium/drivers/ps2/ps2_composite.c
++++ b/src/gallium/drivers/ps2/ps2_composite.c
+@@ -192,7 +192,14 @@
+     if (t->x == UINT16_MAX) return over ? 0 :
+         ps2_surface_solid_logic(gs, destination, x, y, width, 1, 0,
+             ps2_surface_lookup(gs,destination)->bits_per_pixel == 16 ? 0x7fff : 0xffffff, 0);
+-    float left = step < 0 ? t->x + 1 : t->x;
++    /* Keep reversed coordinates positive, including the final texel zero.
++     * Edge- and centre-sampling renderers must both select the same texel. */
++    if (step < 0 && width > t->x) {
++        if (t->x && draw_run(gs,source,destination,s,x,y,t->x,t,step,over))return -1;
++        struct texel last=*t;last.x=0;
++        return draw_run(gs,source,destination,s,x+t->x,y,1,&last,0,over);
++    }
++    float left = step < 0 ? t->x + .75f : t->x;
+     float right = step < 0 ? left - width : step > 0 ? left + width : left + 1;
+     unsigned xx[4] = {x, x + width, x + width, x}, yy[4] = {y, y, y + 1, y + 1};
+     float u[4] = {left, right, right, left}, v[4] = {t->y, t->y, t->y + 1, t->y + 1};
+@@ -208,11 +215,30 @@
+     struct ps2_render_client temporary = {.gs = gs, .target = destination};
+     return ps2_texture_triangles(&temporary, source, triangles, 2);
+ }
++static unsigned multiply(unsigned a,unsigned b){return (a*b+127)/255;}
++static void factors(unsigned operation,unsigned source_alpha,unsigned destination_alpha,unsigned *source,unsigned *destination)
++{
++    *source=255;*destination=0;
++    switch(operation){
++    case PS2_COMPOSITE_CLEAR:*source=0;break;
++    case PS2_COMPOSITE_DST:*source=0;*destination=255;break;
++    case PS2_COMPOSITE_OVER:*destination=255-source_alpha;break;
++    case PS2_COMPOSITE_IN_REVERSE:*source=0;*destination=source_alpha;break;
++    case PS2_COMPOSITE_OUT_REVERSE:*source=0;*destination=255-source_alpha;break;
++    case PS2_COMPOSITE_ADD:*destination=255;break;
++    case PS2_COMPOSITE_OVER_REVERSE:*source=255-destination_alpha;*destination=255;break;
++    case PS2_COMPOSITE_IN:*source=destination_alpha;break;
++    case PS2_COMPOSITE_OUT:*source=255-destination_alpha;break;
++    case PS2_COMPOSITE_ATOP:*source=destination_alpha;*destination=255-source_alpha;break;
++    case PS2_COMPOSITE_ATOP_REVERSE:*source=255-destination_alpha;*destination=source_alpha;break;
++    case PS2_COMPOSITE_XOR:*source=255-destination_alpha;*destination=255-source_alpha;break;
++    }
++}
+ static int alpha_run(struct ps2_rop_workspace *w, uint32_t palette,
+     uint32_t source, uint32_t destination, const struct ps2_surface *s,
+     unsigned x, unsigned y, unsigned width, const struct texel *t, int step, unsigned alpha,
+     unsigned source_alpha, unsigned destination_bpp, unsigned operation, unsigned prepared,
+-    unsigned source_swap,unsigned destination_swap)
++    unsigned source_swap,unsigned destination_swap,unsigned destination_argb,unsigned destination_alpha)
+ {
+     struct ps2_surface_client *gs=w->gs;
+     unsigned char table[256];
+@@ -220,40 +246,53 @@
+     if(!prepared && draw_run(gs,source,w->a,s,0,0,width,t,step,0))return -1;
+     uint32_t colour=w->a;
+     if(source_swap){if(swap_rgb(gs,w->a,w->b,palette,width))return -1;colour=w->b;}
++    unsigned effective=multiply(source_alpha,alpha),sf,df;
++    factors(operation,effective,destination_alpha,&sf,&df);
+     /* GS CT16 expands by shifting. Pixman's RGB555 fetch replicates the
+      * high bits into the low three bits before alpha arithmetic. The lookup
+      * incorporates that expansion, then performs exact rounded divide 255. */
+     for(unsigned i=0;i<256;++i){unsigned c=!prepared && s->bits_per_pixel==16?i|(i>>5):i;
+-        table[i]=(operation==PS2_COMPOSITE_IN_REVERSE || operation==PS2_COMPOSITE_OUT_REVERSE)?0:(c*alpha+127)/255;}
++        table[i]=sf?multiply(c,alpha):0;}
+     if(ps2_surface_lut_palette(gs,palette,table) ||
+         ps2_surface_channel_lut(gs,colour,w->c,palette,width,1,0xffffff))return -1;
+-    if(operation!=PS2_COMPOSITE_SRC){
++    if(sf && sf!=255){
++        for(unsigned i=0;i<256;++i)table[i]=multiply(i,sf);
++        if(ps2_surface_lut_palette(gs,palette,table) ||
++            ps2_surface_channel_lut(gs,w->c,w->b,palette,width,1,0xffffff) ||
++            ps2_rop_sample(gs,w->b,w->c,0,0,0,0,width,1,0xffffff,0,128))return -1;
++    }
++    if(df){
+         if(ps2_rop_capture(w,destination,w->destination,x,y,width,1,&offset) ||
+             ps2_rop_sample(gs,w->destination,w->b,offset,0,0,0,width,1,0xffffff,0,128))return -1;
+         uint32_t input=w->b,output=w->a;
+         if(destination_swap){if(swap_rgb(gs,w->b,w->a,palette,width))return -1;input=w->a;output=w->b;}
+-        unsigned effective=(source_alpha*alpha+127)/255;
+-        unsigned inverse=operation==PS2_COMPOSITE_ADD?255:
+-            operation==PS2_COMPOSITE_IN_REVERSE?effective:255-effective;
+         for(unsigned i=0;i<256;++i){unsigned c=destination_bpp==16?i|(i>>5):i;
+-            table[i]=(c*inverse+127)/255;}
++            table[i]=multiply(c,df);}
+         if(ps2_surface_lut_palette(gs,palette,table) ||
+             ps2_surface_channel_lut(gs,input,output,palette,width,1,0xffffff) ||
+             ps2_rop_sample(gs,output,w->c,0,0,0,0,width,1,0xffffff,PS2GS_TRANSFER_ADD_CLAMP,128))return -1;
+     }
+     colour=w->c;
+     if(destination_swap){if(swap_rgb(gs,w->c,w->a,palette,width))return -1;colour=w->a;}
+-    return ps2_rop_sample(gs,colour,destination,0,0,x,y,width,1,
+-        destination_bpp==16?0x7fff:0xffffff,0,128);
++    if(ps2_rop_sample(gs,colour,destination,0,0,x,y,width,1,
++        destination_bpp==16?0x7fff:0xffffff,0,128))return -1;
++    if(destination_argb){
++        unsigned a=multiply(effective,sf)+multiply(destination_alpha,df);if(a>255)a=255;
++        uint32_t mapping[256];for(unsigned i=0;i<256;++i)mapping[i]=i<<24;
++        if(ps2_surface_fill(gs,w->a,0,0,width,1,a) || ps2_surface_map_palette(gs,palette,mapping) ||
++            ps2_surface_channel_map_blit(gs,w->a,destination,palette,0,0,x,y,width,1,0xff000000,0))return -1;
++    }
++    return 0;
+ }
+ int ps2_pipe_composite_rect(struct pipe_context *ctx, uint32_t source, uint32_t destination,
+     const struct ps2_pipe_copy_box *input, const struct ps2_picture_sample *input_sample,
+     const struct ps2_picture_bitmap *input_mask, unsigned over)
+ {
+-    if (!ctx || !input || !input_sample || over > PS2_COMPOSITE_ADD || input_sample->transformed > 1 ||
++    if (!ctx || !input || !input_sample || over > PS2_COMPOSITE_XOR || input_sample->transformed > 1 ||
+         input_sample->repeat > PS2_REPEAT_REFLECT || input_sample->has_alpha>1 ||
+         (input_sample->has_alpha && input_sample->alpha>255) || input_sample->source_swap>1 ||
+-        input_sample->destination_swap>1 || !filter_valid(input_sample)) { errno = EINVAL; return -1; }
++        input_sample->destination_swap>1 || input_sample->source_argb>1 || input_sample->destination_argb>1 ||
++        (input_sample->has_alpha && input_sample->source_argb) || !filter_valid(input_sample)) { errno = EINVAL; return -1; }
+     if (ps2_pipe_context_acquire(ctx)) return -1;
+     struct ps2_render_client *r = ps2_pipe_context_render(ctx);
+     struct ps2_surface_client *gs = r->gs;
+@@ -263,19 +302,22 @@
+     struct ps2_picture_bitmap mask = input_mask ? *input_mask : (struct ps2_picture_bitmap){0};
+     struct texel *plan = NULL;
+     int32_t (*filtered)[3] = NULL;
+-    unsigned char *coverage = NULL;
++    unsigned char *coverage = NULL,*source_alphas=NULL,*destination_alphas=NULL,*source_coverage=NULL;
+     struct ps2_rop_workspace w={0};
+     struct ps2_filter_workspace filter={0};
+     uint32_t snapshot = 0, palette = 0;
+     unsigned source_alpha=sample.has_alpha?sample.alpha:255;
+     unsigned alpha_needed=(over==PS2_COMPOSITE_OVER && source_alpha!=255) ||
+         over==PS2_COMPOSITE_IN_REVERSE || over==PS2_COMPOSITE_OUT_REVERSE || over==PS2_COMPOSITE_ADD ||
+-        filtered_sample(&sample) || sample.source_swap || sample.destination_swap;
++        filtered_sample(&sample) || sample.source_swap || sample.destination_swap ||
++        sample.source_argb || sample.destination_argb || over>PS2_COMPOSITE_ADD;
+     int status = -1, error = EINVAL;
+     if (!s || !d || s->width > 1024 || s->height > 1024 ||
+         box.dx < 0 || box.dy < 0 || box.width < 0 || box.height < 0 ||
+         (int64_t)box.dx + box.width > d->width || (int64_t)box.dy + box.height > d->height) goto out;
+     if(s->bits_per_pixel!=d->bits_per_pixel)alpha_needed=1;
++    if((sample.source_argb && (!source || s->pixel_depth!=32)) ||
++        (sample.destination_argb && (!destination || d->pixel_depth!=32)))goto out;
+     if ((uint64_t)box.width * box.height > PS2_PIPE_MAX_COPY_PIXELS) { error = E2BIG; goto out; }
+     size_t mask_row=mask.bits_per_pixel==8?mask.width:(mask.width+7)/8;
+     if (input_mask && (!mask.width || !mask.height || mask.width > 2048 || mask.height > 2048 ||
+@@ -293,6 +335,10 @@
+     if((sample.source_swap || sample.destination_swap) && !(gs->caps.features&PS2GS_HW_CHANNEL_MAP)){
+         error=ENOTSUP;goto out;
+     }
++    if((sample.source_argb || sample.destination_argb) &&
++        (!(gs->caps.features&PS2GS_HW_CHANNEL_MAP_BLIT) || !(gs->caps.features&PS2GS_HW_READBACK))){
++        error=ENOTSUP;goto out;
++    }
+     size_t pixels=(size_t)box.width*box.height;
+     if((sample.convolution && pixels*(uint64_t)(sample.filter_nparams-2)>16777216) ||
+         (input_mask && mask.sample.convolution && pixels*(uint64_t)(mask.sample.filter_nparams-2)>16777216)){
+@@ -302,13 +348,15 @@
+     size_t geometry=filtered_sample(&sample)?(size_t)box.width*sizeof(*filtered):pixels*sizeof(*plan);
+     size_t param_bytes=(sample.convolution?sample.filter_nparams*4:0)+(input_mask && mask.sample.convolution?mask.sample.filter_nparams*4:0);
+     /* Parameter arrays precede the byte coverage tail to retain alignment. */
+-    plan = malloc(geometry + param_bytes + pixels*has_coverage);
++    plan = malloc(geometry + param_bytes + pixels*(has_coverage+sample.source_argb+sample.destination_argb));
+     if (!plan) { error = ENOMEM; goto out; }
+     if(filtered_sample(&sample))filtered=(void*)plan;
+     unsigned char *params=(unsigned char*)plan+geometry;
+     if(sample.convolution){memcpy(params,sample.filter_params,sample.filter_nparams*4);sample.filter_params=(void*)params;params+=sample.filter_nparams*4;}
+     if(input_mask && mask.sample.convolution){memcpy(params,mask.sample.filter_params,mask.sample.filter_nparams*4);mask.sample.filter_params=(void*)params;params+=mask.sample.filter_nparams*4;}
+-    if(has_coverage)coverage=params;
++    if(has_coverage){coverage=params;params+=pixels;}
++    if(sample.source_argb){source_alphas=params;params+=pixels;}
++    if(sample.destination_argb)destination_alphas=params;
+     for (int y = 0; y < box.height; ++y) for (int x = 0; x < box.width; ++x) {
+         struct texel *t = filtered_sample(&sample)?NULL:plan + y * box.width + x;
+         if (filtered_sample(&sample)?mask_fixed(&sample,(int64_t)box.sx+x,(int64_t)box.sy+y,filtered[x]):
+@@ -321,6 +369,7 @@
+             if((!t || t->x!=UINT16_MAX) && a && a!=255)alpha_needed=1;
+         }
+     }
++    if(sample.source_argb && !(source_coverage=malloc((size_t)s->width*s->height))){error=ENOMEM;goto out;}
+     if(alpha_needed){
+         if(!(gs->caps.features&PS2GS_HW_CHANNEL_LUT)){error=ENOTSUP;goto out;}
+         if(ps2_rop_reserve(&w,gs,d->bits_per_pixel) ||
+@@ -332,6 +381,17 @@
+     if ((!source || source == destination) &&
+         ps2_surface_create(gs, s->width, s->height, s->bits_per_pixel, &snapshot)) { error = errno; goto out; }
+     status = ps2_render_flush(r);
++    if(!status && sample.source_argb){
++        status=ps2_surface_alpha_read(gs,source,0,0,s->width,s->height,source_coverage,(size_t)s->width*s->height);
++        struct ps2_picture_bitmap alpha={.bits=source_coverage,.bytes=(size_t)s->width*s->height,.stride=s->width,
++            .width=s->width,.height=s->height,.bits_per_pixel=8,.sample=sample};
++        for(int y=0;!status && y<box.height;++y)for(int x=0;x<box.width;++x){unsigned a;
++            if(mask_coverage(&alpha,(int64_t)box.sx+x,(int64_t)box.sy+y,&a)){status=-1;break;}
++            source_alphas[y*box.width+x]=a;
++        }
++    }
++    if(!status && sample.destination_argb)status=ps2_surface_alpha_read(gs,destination,box.dx,box.dy,
++        box.width,box.height,destination_alphas,pixels);
+     if (!status && snapshot) {
+         const struct ps2_pipe_copy_box copy = {0,0,0,0,s->width,s->height};
+         status = ps2_pipe_copy_boxes(ctx, source, snapshot, &copy, 1);
+@@ -357,10 +417,12 @@
+                     }
+                 }
+                 if(!status)status=ps2_filter_convolution_end(&filter,w.a,palette);
+-                if(!status && over==PS2_COMPOSITE_CLEAR)status=ps2_surface_solid_logic(gs,destination,box.dx+x,box.dy+y,1,1,0,
++                if(!status && over==PS2_COMPOSITE_CLEAR && !sample.destination_argb)status=ps2_surface_solid_logic(gs,destination,box.dx+x,box.dy+y,1,1,0,
+                     d->bits_per_pixel==16?0x7fff:0xffffff,0);
+                 else if(!status)status=alpha_run(&w,palette,source,destination,s,box.dx+x,box.dy+y,1,NULL,0,
+-                    alpha,convolution_alpha(accumulated),d->bits_per_pixel,over,1,sample.source_swap,sample.destination_swap);
++                    alpha,source_alphas?source_alphas[y*box.width+x]:convolution_alpha(accumulated),d->bits_per_pixel,over,1,
++                    sample.source_swap,sample.destination_swap,sample.destination_argb,
++                    destination_alphas?destination_alphas[y*box.width+x]:255);
+                 ++x;continue;
+             }
+             struct ps2_filter_tap taps[4];bilinear_taps(filtered[x],&sample,s->width,s->height,taps);
+@@ -371,6 +433,8 @@
+                     step=(int)next[i].x-taps[i].x;break;}}
+             while(width<64 && x+width<(unsigned)box.width && step>=-1 && step<=1){
+                 if(coverage && coverage[y*box.width+x+width]!=alpha)break;
++                if(source_alphas && source_alphas[y*box.width+x+width]!=source_alphas[y*box.width+x])break;
++                if(destination_alphas && destination_alphas[y*box.width+x+width]!=destination_alphas[y*box.width+x])break;
+                 struct ps2_filter_tap next[4];bilinear_taps(filtered[x+width],&sample,s->width,s->height,next);
+                 unsigned i;
+                 for(i=0;i<4;++i)if(next[i].weight!=taps[i].weight || (taps[i].weight &&
+@@ -383,12 +447,14 @@
+             unsigned effective=0;for(unsigned i=0;i<4;++i)
+                 if(taps[i].x!=UINT16_MAX)effective+=source_alpha*taps[i].weight;
+             effective>>=14;
+-            if(over==PS2_COMPOSITE_CLEAR)status=ps2_surface_solid_logic(gs,destination,box.dx+x,box.dy+y,width,1,0,
++            if(source_alphas)effective=source_alphas[y*box.width+x];
++            if(over==PS2_COMPOSITE_CLEAR && !sample.destination_argb)status=ps2_surface_solid_logic(gs,destination,box.dx+x,box.dy+y,width,1,0,
+                 d->bits_per_pixel==16?0x7fff:0xffffff,0);
+             else{
+                 status=ps2_filter_bilinear(&filter,source,w.a,palette,taps,width,step);
+                 if(!status)status=alpha_run(&w,palette,source,destination,s,box.dx+x,box.dy+y,width,NULL,0,
+-                    alpha,effective,d->bits_per_pixel,over,1,sample.source_swap,sample.destination_swap);
++                    alpha,effective,d->bits_per_pixel,over,1,sample.source_swap,sample.destination_swap,
++                    sample.destination_argb,destination_alphas?destination_alphas[y*box.width+x]:255);
+             }
+             x+=width;continue;
+         }
+@@ -402,19 +468,26 @@
+         while (x + width < (unsigned)box.width) {
+             const struct texel *next = t + width;
+             if(coverage && coverage[y*box.width+x+width]!=alpha)break;
++            if(source_alphas && source_alphas[y*box.width+x+width]!=source_alphas[y*box.width+x])break;
++            if(destination_alphas && destination_alphas[y*box.width+x+width]!=destination_alphas[y*box.width+x])break;
+             if(alpha_needed && width==64)break;
+             if (t->x == UINT16_MAX ? next->x != UINT16_MAX :
+                 step == 2 || next->y != t->y || (int)next->x != (int)t->x + step * (int)width) break;
+             ++width;
+         }
+-        if(over==PS2_COMPOSITE_CLEAR || (t->x==UINT16_MAX &&
++        if(sample.source_argb || sample.destination_argb || over>PS2_COMPOSITE_ADD){
++            status=alpha_run(&w,palette,source,destination,s,box.dx+x,box.dy+y,width,t,step,
++                alpha,t->x==UINT16_MAX?0:source_alphas?source_alphas[y*box.width+x]:source_alpha,
++                d->bits_per_pixel,over,0,sample.source_swap,sample.destination_swap,
++                sample.destination_argb,destination_alphas?destination_alphas[y*box.width+x]:255);
++        }else if(over==PS2_COMPOSITE_CLEAR || (t->x==UINT16_MAX &&
+             (over==PS2_COMPOSITE_SRC || over==PS2_COMPOSITE_IN_REVERSE)))
+             status=ps2_surface_solid_logic(gs,destination,box.dx+x,box.dy+y,width,1,0,
+                 d->bits_per_pixel==16?0x7fff:0xffffff,0);
+         else if(t->x==UINT16_MAX)status=0;
+         else if(alpha_needed){
+             status=alpha_run(&w,palette,source,destination,s,box.dx+x,box.dy+y,width,t,step,
+-                alpha,source_alpha,d->bits_per_pixel,over,0,sample.source_swap,sample.destination_swap);
++                alpha,source_alpha,d->bits_per_pixel,over,0,sample.source_swap,sample.destination_swap,0,255);
+         }else status=draw_run(gs,source,destination,s,box.dx+x,box.dy+y,width,t,step,over==PS2_COMPOSITE_OVER);
+         x += width;
+     }
+@@ -424,7 +497,7 @@
+     if(palette && !gs->error && ps2_surface_destroy(gs,palette) && !status){status=-1;error=errno;}
+     if(w.gs && ps2_rop_release(&w) && !status){status=-1;error=errno;}
+     if (snapshot && !gs->error && ps2_surface_destroy(gs, snapshot) && !status) { status = -1; error = errno; }
+-    free(plan); ps2_pipe_context_release(ctx);
++    free(source_coverage);free(plan); ps2_pipe_context_release(ctx);
+     if (status) errno = error;
+     return status;
+ }
+--- a/src/gallium/drivers/ps2/ps2_composite.h
++++ b/src/gallium/drivers/ps2/ps2_composite.h
+@@ -5,7 +5,9 @@
+ #include <stddef.h>
+ enum ps2_picture_repeat { PS2_REPEAT_NONE, PS2_REPEAT_NORMAL, PS2_REPEAT_PAD, PS2_REPEAT_REFLECT };
+ enum ps2_picture_operation { PS2_COMPOSITE_SRC, PS2_COMPOSITE_OVER, PS2_COMPOSITE_CLEAR,
+-    PS2_COMPOSITE_DST, PS2_COMPOSITE_IN_REVERSE, PS2_COMPOSITE_OUT_REVERSE, PS2_COMPOSITE_ADD };
++    PS2_COMPOSITE_DST, PS2_COMPOSITE_IN_REVERSE, PS2_COMPOSITE_OUT_REVERSE, PS2_COMPOSITE_ADD,
++    PS2_COMPOSITE_OVER_REVERSE,PS2_COMPOSITE_IN,PS2_COMPOSITE_OUT,PS2_COMPOSITE_ATOP,
++    PS2_COMPOSITE_ATOP_REVERSE,PS2_COMPOSITE_XOR };
+ struct ps2_picture_sample {
+     int32_t matrix[3][3]; /* 16.16 source transform, evaluated at pixel centres. */
+     unsigned transformed, repeat;
+@@ -15,6 +17,7 @@
+     const int32_t *filter_params; /* width, height, signed 16.16 coefficients. */
+     unsigned filter_nparams;
+     unsigned source_swap, destination_swap; /* Red/blue order in RGBX/RGB555. */
++    unsigned source_argb,destination_argb; /* Varying high-byte alpha. */
+ };
+ struct ps2_picture_bitmap {
+     const unsigned char *bits;
+--- a/src/gallium/drivers/ps2/ps2_gs_logic.c
++++ b/src/gallium/drivers/ps2/ps2_gs_logic.c
+@@ -1,6 +1,7 @@
+ /* SPDX-License-Identifier: MIT */
+ #define _POSIX_C_SOURCE 200809L
+ #include "ps2_gs_logic.h"
++#include "ps2_gs_lut.h"
+ #include <errno.h>
+ #include <sys/ioctl.h>
+ #include <time.h>
+@@ -9,7 +10,7 @@
+ _Static_assert(sizeof(struct ps2gs_solid_batch) == 40, "solid batch ABI");
+ static int fail(struct ps2_surface_client *gs, int error)
+ { if (!gs->error) gs->error = error; errno = gs->error; return -1; }
+-int ps2_surface_solid_logic(struct ps2_surface_client *gs, uint32_t handle,
++static int rgb_solid_logic(struct ps2_surface_client *gs, uint32_t handle,
+     unsigned x, unsigned y, unsigned width, unsigned height,
+     uint32_t color, uint32_t plane_mask, unsigned alu)
+ {
+@@ -36,6 +37,52 @@
+     }
+     return fail(gs, EAGAIN);
+ }
++static unsigned alpha_logic(unsigned alu,unsigned source,unsigned destination)
++{
++    switch(alu){case 0:return 0;case 1:return source&destination;case 2:return source&~destination;
++    case 3:return source;case 4:return ~source&destination;case 5:return destination;
++    case 6:return source^destination;case 7:return source|destination;case 8:return ~(source|destination);
++    case 9:return ~(source^destination);case 10:return ~destination;case 11:return source|~destination;
++    case 12:return ~source;case 13:return ~source|destination;case 14:return ~(source&destination);default:return 255;}
++}
++int ps2_surface_solid_logic(struct ps2_surface_client *gs,uint32_t handle,
++    unsigned x,unsigned y,unsigned width,unsigned height,uint32_t color,uint32_t mask,unsigned alu)
++{
++    if(!gs){errno=EINVAL;return -1;}
++    if(gs->error)return fail(gs,gs->error);
++    if(gs->fd<0)return fail(gs,EBADF);
++    const struct ps2_surface *b=ps2_surface_lookup(gs,handle);
++    if(!b || !width || !height || x>=b->width || y>=b->height || width>b->width-x || height>b->height-y ||
++        alu>15 || ((color|mask)&~ps2_surface_native_mask(gs,handle)))return fail(gs,EINVAL);
++    if(!(gs->caps.features&PS2GS_HW_SOLID_LOGIC))return fail(gs,ENOTSUP);
++    if(!(mask&0xff000000))return rgb_solid_logic(gs,handle,x,y,width,height,color&0xffffff,mask,alu);
++    if(!mask || alu==5)return 0;
++    if(gs->fd<0)return fail(gs,EBADF);
++    uint32_t scratch=0,palette=0,table[256],identity[256];
++    int result=-1,error=errno;
++    if(ps2_surface_create(gs,64,32,32,&scratch) || ps2_surface_create(gs,16,16,32,&palette))goto out;
++    /* Keep the intermediate alpha value in a colour byte, as in the native
++     * Boolean copy engine. Its final channel map writes the alpha byte. */
++    for(unsigned i=0;i<256;++i){table[i]=alpha_logic(alu,color>>24,i)&255;identity[i]=i<<24;}
++    if((mask&0xffffff) && rgb_solid_logic(gs,handle,x,y,width,height,color&0xffffff,mask&0xffffff,alu))goto out;
++    result=0;
++    for(unsigned yy=0;!result && yy<height;){unsigned h=32-((y+yy)&31);if(h>height-yy)h=height-yy;
++        for(unsigned xx=0;!result && xx<width;){unsigned w=64-((x+xx)&63);if(w>width-xx)w=width-xx;
++            result=ps2_surface_map_palette(gs,palette,table) ||
++                ps2_surface_channel_map_blit(gs,handle,scratch,palette,x+xx,y+yy,0,0,w,h,255,3) ||
++                ps2_surface_map_palette(gs,palette,identity) ||
++                ps2_surface_channel_map_blit(gs,scratch,handle,palette,0,0,x+xx,y+yy,w,h,mask&0xff000000,0)?-1:0;
++            xx+=w;
++        }
++        yy+=h;
++    }
++out:
++    error=errno;
++    if(palette && !gs->error && ps2_surface_destroy(gs,palette) && !result){result=-1;error=errno;}
++    if(scratch && !gs->error && ps2_surface_destroy(gs,scratch) && !result){result=-1;error=errno;}
++    if(result)errno=error;
++    return result;
++}
+ int ps2_surface_solid_batch(struct ps2_surface_client *gs, uint32_t handle,
+     const struct ps2gs_solid_logic *rectangles, unsigned count)
+ {
+@@ -45,7 +92,7 @@
+     const struct ps2_surface *s=ps2_surface_lookup(gs,handle);
+     if (!s || !rectangles || !count || count>PS2GS_MAX_COMMANDS) return fail(gs,EINVAL);
+     if (!(gs->caps.features&PS2GS_HW_SOLID_BATCH)) return fail(gs,ENOTSUP);
+-    unsigned bits=s->bits_per_pixel==16 ? 0x7fff : 0xffffff;
++    unsigned bits=ps2_surface_native_mask(gs,handle);
+     unsigned x=s->width,y=s->height,x2=0,y2=0;
+     for (unsigned i=0;i<count;++i) {
+         const struct ps2gs_solid_logic *b=rectangles+i;
+@@ -58,6 +105,11 @@
+         if(b->y<y)y=b->y;
+         if(b->x+b->width>x2)x2=b->x+b->width;
+         if(b->y+b->height>y2)y2=b->y+b->height;
++    }
++    if(rectangles[0].plane_mask&0xff000000){
++        for(unsigned i=0;i<count;++i){const struct ps2gs_solid_logic *r=rectangles+i;
++            if(ps2_surface_solid_logic(gs,handle,r->x,r->y,r->width,r->height,r->color,r->plane_mask,r->alu))return -1;}
++        return 0;
+     }
+     if (ps2_surface_front_region(gs,handle,x,y,x2-x,y2-y)) return -1;
+     struct ps2gs_solid_batch batch={.abi=PS2GS_ABI_VERSION,.handle=handle,.count=count,
+--- a/src/gallium/drivers/ps2/ps2_gs_lut.c
++++ b/src/gallium/drivers/ps2/ps2_gs_lut.c
+@@ -6,6 +6,7 @@
+ #include <time.h>
+ _Static_assert(sizeof(struct ps2gs_channel_lut) == 32, "channel lookup ABI");
+ _Static_assert(sizeof(struct ps2gs_channel_map) == 32, "channel mapping ABI");
++_Static_assert(sizeof(struct ps2gs_channel_map_blit) == 48, "channel mapping blit ABI");
+ int ps2_surface_map_palette(struct ps2_surface_client *gs, uint32_t palette, const uint32_t table[256])
+ {
+     const struct ps2_surface *p=ps2_surface_lookup(gs,palette);
+@@ -54,6 +55,84 @@
+     }
+     gs->error=errno=EAGAIN;return -1;
+ }
++static int map_blit_valid(struct ps2_surface_client *gs,uint32_t source,uint32_t destination,
++    uint32_t palette,unsigned sx,unsigned sy,unsigned dx,unsigned dy,unsigned width,unsigned height,unsigned channel)
++{
++    if(gs->error){errno=gs->error;return 0;}
++    const struct ps2_surface *s=ps2_surface_lookup(gs,source),*d=ps2_surface_lookup(gs,destination),
++        *p=ps2_surface_lookup(gs,palette);
++    if(!(gs->caps.features&PS2GS_HW_CHANNEL_MAP_BLIT)){errno=ENOTSUP;return 0;}
++    if(!source || !destination || !palette || source==destination || source==palette || destination==palette ||
++        !s || !d || !p || s->bits_per_pixel!=32 || d->bits_per_pixel!=32 || p->bits_per_pixel!=32 ||
++        p->width!=16 || p->height!=16 || !width || !height || channel>3 ||
++        sx>=s->width || sy>=s->height || dx>=d->width || dy>=d->height ||
++        width>s->width-sx || height>s->height-sy || width>d->width-dx || height>d->height-dy){errno=EINVAL;return 0;}
++    return 1;
++}
++int ps2_surface_channel_map_blit(struct ps2_surface_client *gs,uint32_t source,uint32_t destination,
++    uint32_t palette,unsigned sx,unsigned sy,unsigned dx,unsigned dy,
++    unsigned width,unsigned height,uint32_t mask,unsigned channel)
++{
++    if(!map_blit_valid(gs,source,destination,palette,sx,sy,dx,dy,width,height,channel))return -1;
++    if(width>64-(sx&63) || height>32-(sy&31)){errno=EINVAL;return -1;}
++    if(!mask)return 0;
++    struct ps2gs_channel_map_blit r={.abi=PS2GS_ABI_VERSION,.source=source,.destination=destination,.palette=palette,
++        .width=width,.height=height,.plane_mask=mask,.source_channel=channel,.sx=sx,.sy=sy,.dx=dx,.dy=dy};
++    for(unsigned attempt=0;attempt<100;++attempt){
++        if(!ioctl(gs->fd,PS2GS_CHANNEL_MAP_BLIT,&r))return 0;
++        if(errno!=EAGAIN){gs->error=errno;return -1;}
++        struct timespec delay={.tv_nsec=10000000};
++        while(nanosleep(&delay,&delay)<0)if(errno!=EINTR){gs->error=errno;return -1;}
++    }
++    gs->error=errno=EAGAIN;return -1;
++}
++int ps2_surface_channel_map_region(struct ps2_surface_client *gs,uint32_t source,uint32_t destination,
++    uint32_t palette,unsigned sx,unsigned sy,unsigned dx,unsigned dy,
++    unsigned width,unsigned height,uint32_t mask,unsigned channel)
++{
++    if(!map_blit_valid(gs,source,destination,palette,sx,sy,dx,dy,width,height,channel))return -1;
++    if(!mask)return 0;
++    for(unsigned y=0;y<height;){unsigned h=32-((sy+y)&31);if(h>height-y)h=height-y;
++        for(unsigned x=0;x<width;){unsigned w=64-((sx+x)&63);if(w>width-x)w=width-x;
++            if(ps2_surface_channel_map_blit(gs,source,destination,palette,sx+x,sy+y,dx+x,dy+y,w,h,mask,channel))return -1;
++            x+=w;
++        }
++        y+=h;
++    }
++    return 0;
++}
++int ps2_surface_alpha_read(struct ps2_surface_client *gs,uint32_t source,
++    unsigned x,unsigned y,unsigned width,unsigned height,unsigned char *alpha,size_t bytes)
++{
++    const struct ps2_surface *s=ps2_surface_lookup(gs,source);
++    if(!source || !s || s->bits_per_pixel!=32 || !width || !height || x>=s->width || y>=s->height ||
++        width>s->width-x || height>s->height-y || !alpha || bytes<(size_t)width*height ||
++        (uintptr_t)alpha>UINTPTR_MAX-((size_t)width*height-1)){errno=EINVAL;return -1;}
++    if(!(gs->caps.features&PS2GS_HW_CHANNEL_MAP_BLIT) || !(gs->caps.features&PS2GS_HW_READBACK)){
++        errno=ENOTSUP;return -1;}
++    uint32_t scratch=0,palette=0,table[256],packed[2048];int status=-1,error=errno;
++    if(ps2_surface_create(gs,64,32,32,&scratch) || ps2_surface_create(gs,16,16,32,&palette))goto out;
++    for(unsigned i=0;i<256;++i)table[i]=i;
++    if(ps2_surface_map_palette(gs,palette,table))goto out;
++    status=0;
++    for(unsigned yy=0;!status && yy<height;){unsigned h=32-((y+yy)&31);if(h>height-yy)h=height-yy;
++        for(unsigned xx=0;!status && xx<width;){unsigned w=64-((x+xx)&63);if(w>width-xx)w=width-xx;
++            status=ps2_surface_fill(gs,scratch,0,0,64,32,0) ||
++                ps2_surface_channel_map_blit(gs,source,scratch,palette,x+xx,y+yy,0,0,w,h,255,3) ||
++                ps2_surface_download(gs,scratch,0,0,64,32,packed,sizeof(packed))?-1:0;
++            if(!status)for(unsigned row=0;row<h;++row)for(unsigned column=0;column<w;++column)
++                alpha[(yy+row)*width+xx+column]=(unsigned char)packed[row*64+column];
++            xx+=w;
++        }
++        yy+=h;
++    }
++out:
++    error=errno;
++    if(palette && !gs->error && ps2_surface_destroy(gs,palette) && !status){status=-1;error=errno;}
++    if(scratch && !gs->error && ps2_surface_destroy(gs,scratch) && !status){status=-1;error=errno;}
++    if(status)errno=error;
++    return status;
++}
+ int ps2_surface_channel_map(struct ps2_surface_client *gs, uint32_t source,
+     uint32_t destination, uint32_t palette, unsigned width, unsigned height,
+     uint32_t mask, unsigned channel)
+--- a/src/gallium/drivers/ps2/ps2_gs_lut.h
++++ b/src/gallium/drivers/ps2/ps2_gs_lut.h
+@@ -4,6 +4,7 @@
+ #include "ps2_gs_surface.h"
+ #include "ps2-gs-lut.h"
+ #include "ps2-gs-map.h"
++#include "ps2-gs-map-blit.h"
+ /* Palette bytes are constant per operation; source/destination pixels stay
+  * on GS. source and destination are owned 64x32 CT32 scratch surfaces. */
+ int ps2_surface_channel_lut(struct ps2_surface_client *, uint32_t source,
+@@ -13,4 +14,14 @@
+ int ps2_surface_channel_map(struct ps2_surface_client *, uint32_t source,
+     uint32_t destination, uint32_t palette, unsigned width, unsigned height,
+     uint32_t mask, unsigned source_channel);
++int ps2_surface_channel_map_blit(struct ps2_surface_client *, uint32_t source,
++    uint32_t destination,uint32_t palette,unsigned sx,unsigned sy,unsigned dx,unsigned dy,
++    unsigned width,unsigned height,uint32_t mask,unsigned source_channel);
++int ps2_surface_channel_map_region(struct ps2_surface_client *, uint32_t source,
++    uint32_t destination,uint32_t palette,unsigned sx,unsigned sy,unsigned dx,unsigned dy,
++    unsigned width,unsigned height,uint32_t mask,unsigned source_channel);
++/* Extract coverage only: GS clears all scratch bytes and maps the alpha byte
++ * into its low byte before readback. Source colour bytes never reach the CPU. */
++int ps2_surface_alpha_read(struct ps2_surface_client *,uint32_t source,
++    unsigned x,unsigned y,unsigned width,unsigned height,unsigned char *alpha,size_t bytes);
+ #endif
+--- a/src/gallium/drivers/ps2/ps2_gs_surface.c
++++ b/src/gallium/drivers/ps2/ps2_gs_surface.c
+@@ -1,6 +1,7 @@
+ /* SPDX-License-Identifier: MIT */
+ #define _POSIX_C_SOURCE 200809L
+ #include "ps2_gs_surface.h"
++#include "ps2-gs-map-blit.h"
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <string.h>
+@@ -97,6 +98,27 @@
+     for (unsigned i = 0; i < PS2GS_MAX_SURFACES; ++i)
+         if (gs->surfaces[i].handle == handle) return &gs->surfaces[i];
+     return NULL;
++}
++uint32_t ps2_surface_native_mask(const struct ps2_surface_client *gs,uint32_t handle)
++{
++    const struct ps2_surface *s=ps2_surface_lookup(gs,handle);
++    if(!s)return 0;
++    if(s->bits_per_pixel==16)return 0x7fff;
++    return handle && s->pixel_depth==32 && (gs->caps.features&PS2GS_HW_CHANNEL_MAP_BLIT)?UINT32_MAX:0xffffff;
++}
++unsigned ps2_surface_depth(const struct ps2_surface *s)
++{return s->bits_per_pixel==16?15:s->pixel_depth==32?32:24;}
++int ps2_surface_set_depth(struct ps2_surface_client *gs,uint32_t handle,unsigned depth)
++{
++    if(!handle){errno=EINVAL;return -1;}
++    for(unsigned i=0;i<PS2GS_MAX_SURFACES;++i)if(gs->surfaces[i].handle==handle){
++        struct ps2_surface *s=gs->surfaces+i;
++        if(depth!=(s->bits_per_pixel==16?15:24) && (depth!=32 || s->bits_per_pixel!=32)){
++            errno=EINVAL;return -1;}
++        if(depth==32 && !(gs->caps.features&PS2GS_HW_CHANNEL_MAP_BLIT)){errno=ENOTSUP;return -1;}
++        s->pixel_depth=depth;return 0;
++    }
++    errno=ENOENT;return -1;
+ }
+ 
+ int ps2_surface_create(struct ps2_surface_client *gs, unsigned width, unsigned height,
+@@ -120,7 +142,7 @@
+         return fail(gs, EPROTO);
+     gs->surfaces[slot] = (struct ps2_surface) { .handle = c.handle,
+         .width = width, .height = height, .bits_per_pixel = bpp,
+-        .buffer_width = bw, .bytes = c.allocated_bytes };
++        .buffer_width = bw, .bytes = c.allocated_bytes,.pixel_depth=bpp==16?15:24 };
+     *handle = c.handle;
+     return 0;
+ }
+--- a/src/gallium/drivers/ps2/ps2_gs_surface.h
++++ b/src/gallium/drivers/ps2/ps2_gs_surface.h
+@@ -7,7 +7,7 @@
+ #include "ps2-gs-readback.h"
+ 
+ struct ps2_surface {
+-    uint32_t handle, width, height, bits_per_pixel, buffer_width, bytes;
++    uint32_t handle, width, height, bits_per_pixel, buffer_width, bytes, pixel_depth;
+ };
+ /* One drawing thread per session. Xorg and an in-process Mesa context share
+  * this object; a second process cannot open the exclusive device. Metadata
+@@ -29,6 +29,9 @@
+ int ps2_surface_open(struct ps2_surface_client *, const char *device);
+ void ps2_surface_close(struct ps2_surface_client *);
+ const struct ps2_surface *ps2_surface_lookup(const struct ps2_surface_client *, uint32_t handle);
++uint32_t ps2_surface_native_mask(const struct ps2_surface_client *,uint32_t handle);
++unsigned ps2_surface_depth(const struct ps2_surface *);
++int ps2_surface_set_depth(struct ps2_surface_client *,uint32_t handle,unsigned depth);
+ int ps2_surface_create(struct ps2_surface_client *, unsigned width, unsigned height,
+                        unsigned bpp, uint32_t *handle);
+ int ps2_surface_destroy(struct ps2_surface_client *, uint32_t handle);
+--- a/src/gallium/drivers/ps2/ps2_image.c
++++ b/src/gallium/drivers/ps2/ps2_image.c
+@@ -21,7 +21,7 @@
+     unsigned char *pixels=NULL;
+     struct ps2_pipe_solid_run *runs=NULL;
+     int status=-1,error=EINVAL;
+-    unsigned cpp=bpp/8,bits=bpp==16?0x7fff:0xffffff,run_count=0;
++    unsigned cpp=bpp/8,bits=ps2_surface_native_mask(r->gs,destination),run_count=0;
+     uint64_t area=0;
+     if(!d || d->bits_per_pixel!=bpp || (mask&~bits) ||
+        (bytes && (uintptr_t)source>UINTPTR_MAX-(bytes-1)))goto out;
+--- a/src/gallium/drivers/ps2/ps2_logic.c
++++ b/src/gallium/drivers/ps2/ps2_logic.c
+@@ -22,7 +22,7 @@
+     if (!buffer || (unsigned)box->x >= buffer->width || (unsigned)box->y >= buffer->height ||
+         (unsigned)box->width > buffer->width-box->x ||
+         (unsigned)box->height > buffer->height-box->y) { errno = EINVAL; goto out; }
+-    uint32_t bits = buffer->bits_per_pixel == 16 ? 0x7fff : 0xffffff;
++    uint32_t bits = ps2_surface_native_mask(render->gs,handle);
+     if ((color | plane_mask) & ~bits) { errno = EINVAL; goto out; }
+     if (!(render->gs->caps.features & PS2GS_HW_SOLID_LOGIC)) { errno = ENOTSUP; goto out; }
+     if (ps2_render_flush(render)) goto out;
+--- a/src/gallium/drivers/ps2/ps2_planar.c
++++ b/src/gallium/drivers/ps2/ps2_planar.c
+@@ -35,11 +35,11 @@
+     struct ps2_pipe_planar_box *boxes=NULL;
+     struct ps2_pipe_solid_run *runs=NULL;
+     unsigned char *snapshot=NULL;
+-    unsigned bits=bpp==16?0x7fff:0xffffff,run_count=0;
++    unsigned bits=ps2_surface_native_mask(render->gs,destination),run_count=0;
+     uint64_t area=0;
+     int result=-1,error=EINVAL;
+     if(!d || d->bits_per_pixel!=bpp || (mask&~bits) ||
+-       (s.depth!=1 && s.depth!=(bpp==16?15:24)) ||
++       (s.depth!=1 && s.depth!=ps2_surface_depth(d)) ||
+        (s.msb_first!=0 && s.msb_first!=1) || s.width>2079 || s.height>2048 ||
+        s.bytes>PS2_PIPE_MAX_PLANAR_BYTES || (s.bytes && (!s.bits ||
+        (uintptr_t)s.bits>UINTPTR_MAX-(s.bytes-1))))goto out;
+@@ -89,7 +89,7 @@
+              * opaque alpha value. Partial masks/other ALUs preserve spare bits. */
+             if(bpp==16)colour=((colour&31)<<3)|(((colour>>5)&31)<<11)|(((colour>>10)&31)<<19);
+             result=ps2_surface_fill(render->gs,destination,run->box.x1,run->box.y1,
+-                run->box.x2-run->box.x1,run->box.y2-run->box.y1,0x80000000|colour);
++                run->box.x2-run->box.x1,run->box.y2-run->box.y1,d->pixel_depth==32?colour:0x80000000|colour);
+         }
+     }else result=ps2_pipe_solid_runs(ctx,destination,runs,run_count,mask,alu);
+     error=errno;
+--- a/src/gallium/drivers/ps2/ps2_plane.c
++++ b/src/gallium/drivers/ps2/ps2_plane.c
+@@ -3,6 +3,7 @@
+ #include "ps2_pipe.h"
+ #include "ps2_rop.h"
+ #include "ps2_gs_logic.h"
++#include "ps2_gs_lut.h"
+ #include "ps2_solid_batch.h"
+ #include <errno.h>
+ #include <stdlib.h>
+@@ -29,8 +30,8 @@
+     int result = -1, error = EINVAL;
+     uint64_t area = 0;
+     if (!s || !d || !plane || (plane & (plane - 1)) ||
+-        (plane & ~(s->bits_per_pixel == 16 ? 0x7fffU : 0xffffffU))) goto out;
+-    uint32_t bits = d->bits_per_pixel == 16 ? 0x7fffU : 0xffffffU;
++        (plane & ~ps2_surface_native_mask(gs,source))) goto out;
++    uint32_t bits = ps2_surface_native_mask(gs,destination);
+     if (mask & ~bits) goto out;
+     for (unsigned i = 0; i < count; ++i) {
+         const struct ps2_pipe_copy_box *b = input + i;
+@@ -56,6 +57,7 @@
+     if (!boxes || !snapshot || !packed || !runs) { error = ENOMEM; goto out; }
+     memcpy(boxes, input, count * sizeof(*boxes));
+     if (ps2_rop_reserve(&work, gs, s->bits_per_pixel)) { error = errno; goto out; }
++    if((plane&0xff000000) && ps2_surface_create(gs,16,16,32,&work.palette)){error=errno;goto out;}
+     result = ps2_render_flush(render);
+     unsigned cpp = s->bits_per_pixel / 8;
+     /* Capture every clipped source before emitting any destination run. This
+@@ -67,10 +69,18 @@
+                 unsigned w = b->width - x, h = b->height - y;
+                 if (w > 64) w = 64;
+                 if (h > 32) h = 32;
+-                result = ps2_surface_solid_logic(gs, work.destination, 0, 0, 64, 32, 0,
+-                    s->bits_per_pixel == 16 ? 0x7fffU : 0xffffffU, 0);
+-                if (!result) result = ps2_rop_rectangle(&work, source, work.destination,
+-                    b->sx + x, b->sy + y, 0, 0, w, h, plane, 3);
++                if(plane&0xff000000){uint32_t table[256];
++                    for(unsigned entry=0;entry<256;++entry)table[entry]=!!(entry&(plane>>24));
++                    result=ps2_surface_fill(gs,work.destination,0,0,64,32,0) ||
++                        ps2_surface_map_palette(gs,work.palette,table) ||
++                        ps2_surface_channel_map_region(gs,source,work.destination,work.palette,
++                            b->sx+x,b->sy+y,0,0,w,h,1,3)?-1:0;
++                }else{
++                    result = ps2_surface_solid_logic(gs, work.destination, 0, 0, 64, 32, 0,
++                        s->bits_per_pixel == 16 ? 0x7fffU : 0xffffffU, 0);
++                    if (!result) result = ps2_rop_rectangle(&work, source, work.destination,
++                        b->sx + x, b->sy + y, 0, 0, w, h, plane, 3);
++                }
+                 if (!result) result = ps2_surface_download(gs, work.destination, 0, 0, 64, 32,
+                     packed, 64 * 32 * cpp);
+                 if (!result) for (unsigned yy = 0; yy < h; ++yy) for (unsigned xx = 0; xx < w; ++xx) {
+--- a/src/gallium/drivers/ps2/ps2_polygon.c
++++ b/src/gallium/drivers/ps2/ps2_polygon.c
+@@ -44,7 +44,7 @@
+     struct ps2_pipe_polygon_point *points=NULL;
+     struct crossing *events=NULL;
+     struct ps2_pipe_solid_run *runs=NULL;
+-    unsigned bits=bpp==16?0x7fff:0xffffff,run_count=0;
++    unsigned bits=ps2_surface_native_mask(render->gs,destination),run_count=0;
+     int32_t top=0,bottom=0;
+     int result=-1,error=EINVAL,full_copy=alu==3 && mask==bits;
+     if(!d || d->bits_per_pixel!=bpp || ((colour|mask)&~bits))goto out;
+@@ -116,7 +116,8 @@
+         if(bpp==16)rgba=((colour&31)<<3)|(((colour>>5)&31)<<11)|(((colour>>10)&31)<<19);
+         for(unsigned i=0;!result && i<run_count;++i){
+             const struct ps2_pipe_solid_box *b=&runs[i].box;
+-            result=ps2_surface_fill(render->gs,destination,b->x1,b->y1,b->x2-b->x1,b->y2-b->y1,0x80000000|rgba);
++            result=ps2_surface_fill(render->gs,destination,b->x1,b->y1,b->x2-b->x1,b->y2-b->y1,
++                d->pixel_depth==32?rgba:0x80000000|rgba);
+         }
+     }else result=ps2_pipe_solid_runs(ctx,destination,runs,run_count,mask,alu);
+     error=errno;
+--- a/src/gallium/drivers/ps2/ps2_polygon_stipple.c
++++ b/src/gallium/drivers/ps2/ps2_polygon_stipple.c
+@@ -24,7 +24,7 @@
+     if(!input || (bpp!=16 && bpp!=32) || opaque>1 || alu>15){errno=EINVAL;return -1;}
+     /* Copy the header before any allocation, reservation or queue operation. */
+     struct ps2_pipe_mono_pattern mono=*input;
+-    uint32_t bits=bpp==16?0x7fff:0xffffff;
++    uint32_t bits=bpp==16?0x7fff:UINT32_MAX;
+     if(!mono.bits || !mono.width || !mono.height || mono.width>256 || mono.height>256 ||
+        (mono.msb_first!=0 && mono.msb_first!=1) ||
+        ((foreground|mask|(opaque?background:0))&~bits)){errno=EINVAL;return -1;}
+@@ -37,9 +37,12 @@
+     struct ps2_pipe_solid_run *spans=NULL,*runs=NULL;
+     unsigned char *snapshot=NULL;
+     unsigned span_count=0,run_count=0;
+-    int result=-1,error=EINVAL,full_copy=alu==3 && mask==bits;
++    int result=-1,error=EINVAL,full_copy=0;
+     const struct ps2_surface *d=ps2_surface_lookup(render->gs,destination);
+     if(!d || d->bits_per_pixel!=bpp)goto out;
++    bits=ps2_surface_native_mask(render->gs,destination);
++    if((foreground|mask|(opaque?background:0))&~bits)goto out;
++    full_copy=alu==3 && mask==bits;
+     if(mask && alu!=5 && !(render->gs->caps.features&(full_copy?PS2GS_HW_FILL:PS2GS_HW_SOLID_LOGIC))){error=ENOTSUP;goto out;}
+     if(ps2_pipe_polygon_spans(ctx,destination,bpp,points,count,clips,clip_count,winding,&spans,&span_count)){
+         error=errno;goto out;
+@@ -75,7 +78,7 @@
+             const struct ps2_pipe_solid_box *b=&runs[i].box;
+             uint32_t colour=runs[i].color;
+             if(bpp==16)colour=((colour&31)<<3)|(((colour>>5)&31)<<11)|(((colour>>10)&31)<<19);
+-            result=ps2_surface_fill(render->gs,destination,b->x1,b->y1,b->x2-b->x1,1,0x80000000|colour);
++            result=ps2_surface_fill(render->gs,destination,b->x1,b->y1,b->x2-b->x1,1,d->pixel_depth==32?colour:0x80000000|colour);
+         }
+     }else result=ps2_pipe_solid_runs(ctx,destination,runs,run_count,mask,alu);
+     error=errno;
+--- a/src/gallium/drivers/ps2/ps2_polygon_tile.c
++++ b/src/gallium/drivers/ps2/ps2_polygon_tile.c
+@@ -16,7 +16,7 @@
+     if(!status && n){
+         boxes=malloc(n*sizeof(*boxes));if(!boxes){errno=ENOMEM;status=-1;}
+         else{for(unsigned i=0;i<n;++i)boxes[i]=spans[i].box;
+-            status=alu==3 && mask==(bpp==16?0x7fffU:0xffffffU) ?
++            status=ps2_surface_depth(ps2_surface_lookup(ps2_pipe_context_render(ctx)->gs,dest))!=32 && alu==3 && mask==(bpp==16?0x7fffU:0xffffffU) ?
+                 ps2_pipe_tile_geometry(ctx,source,dest,boxes,n,ox,oy) :
+                 ps2_pipe_tile_logic_geometry(ctx,source,dest,boxes,n,ox,oy,mask,alu);}
+     }
+--- a/src/gallium/drivers/ps2/ps2_rop.c
++++ b/src/gallium/drivers/ps2/ps2_rop.c
+@@ -2,6 +2,7 @@
+ #include "ps2_rop.h"
+ #include "ps2_pipe.h"
+ #include "ps2_gs_logic.h"
++#include "ps2_gs_lut.h"
+ #include "ps2_tile.h"
+ #include <errno.h>
+ #include <stdlib.h>
+@@ -34,8 +35,8 @@
+ int ps2_rop_release(struct ps2_rop_workspace *w)
+ {
+     int status=0, error=errno;
+-    uint32_t handles[] = {w->c,w->b,w->a,w->destination,w->source};
+-    for (unsigned i=0; i<5; ++i)
++    uint32_t handles[] = {w->palette,w->alpha_destination,w->alpha_source,w->c,w->b,w->a,w->destination,w->source};
++    for (unsigned i=0; i<sizeof(handles)/sizeof(*handles); ++i)
+         if (handles[i] && !w->gs->error && ps2_surface_destroy(w->gs,handles[i])) {
+             if (!status) error=errno;
+             status=-1;
+@@ -56,6 +57,15 @@
+     }
+     return 0;
+ }
++int ps2_rop_alpha_reserve(struct ps2_rop_workspace *w)
++{
++    if(w->alpha_source && w->alpha_destination && w->palette)return 0;
++    if(!(w->gs->caps.features&PS2GS_HW_CHANNEL_MAP_BLIT)){errno=ENOTSUP;return -1;}
++    if((!w->alpha_source && ps2_surface_create(w->gs,64,32,32,&w->alpha_source)) ||
++        (!w->alpha_destination && ps2_surface_create(w->gs,64,32,32,&w->alpha_destination)) ||
++        (!w->palette && ps2_surface_create(w->gs,16,16,32,&w->palette)))return -1;
++    return 0;
++}
+ static int clear(struct ps2_rop_workspace *w, uint32_t handle, unsigned width, unsigned height)
+ { return ps2_surface_solid_logic(w->gs,handle,0,0,width,height,0,0xffffff,0); }
+ int ps2_rop_capture(struct ps2_rop_workspace *w, uint32_t source, uint32_t snapshot,
+@@ -80,7 +90,7 @@
+     if (sx+aligned>s->width) { *offset=sx+aligned-s->width; sx-=*offset; }
+     return ps2_surface_copy(w->gs,source,snapshot,sx,sy,0,0,aligned,height);
+ }
+-int ps2_rop_rectangle(struct ps2_rop_workspace *w, uint32_t source, uint32_t destination,
++static int rgb_rectangle(struct ps2_rop_workspace *w, uint32_t source, uint32_t destination,
+     unsigned sx, unsigned sy, unsigned dx, unsigned dy, unsigned width, unsigned height,
+     uint32_t mask, unsigned alu)
+ {
+@@ -131,6 +141,29 @@
+     }
+     return 0;
+ }
++int ps2_rop_rectangle(struct ps2_rop_workspace *w,uint32_t source,uint32_t destination,
++    unsigned sx,unsigned sy,unsigned dx,unsigned dy,unsigned width,unsigned height,uint32_t mask,unsigned alu)
++{
++    if(!(mask&0xff000000))return rgb_rectangle(w,source,destination,sx,sy,dx,dy,width,height,mask,alu);
++    const struct ps2_surface *s=ps2_surface_lookup(w->gs,source),*d=ps2_surface_lookup(w->gs,destination);
++    if(!s || !d || s->bits_per_pixel!=32 || d->bits_per_pixel!=32 || !source || !destination ||
++        width>64 || height>32 || alu>15 || (mask&~ps2_surface_native_mask(w->gs,destination))){errno=EINVAL;return -1;}
++    if(!width || !height || alu==5)return 0;
++    if(ps2_rop_alpha_reserve(w))return -1;
++    uint32_t table[256];for(unsigned i=0;i<256;++i)table[i]=i*0x010101U;
++    /* Snapshot both alpha operands before colour or alpha writes. Palette
++     * mapping reads alpha directly on GS, including one-pixel pixmaps. */
++    if(ps2_surface_map_palette(w->gs,w->palette,table) ||
++        ps2_surface_channel_map_region(w->gs,source,w->alpha_source,w->palette,sx,sy,0,0,width,height,0xffffff,3) ||
++        ps2_surface_channel_map_region(w->gs,destination,w->alpha_destination,w->palette,dx,dy,0,0,width,height,0xffffff,3) ||
++        rgb_rectangle(w,source,destination,sx,sy,dx,dy,width,height,mask&0xffffff,alu) ||
++        rgb_rectangle(w,w->alpha_source,w->alpha_destination,0,0,0,0,width,height,
++            (mask>>24)*0x010101U,alu))return -1;
++    for(unsigned i=0;i<256;++i)table[i]=i<<24;
++    return ps2_surface_map_palette(w->gs,w->palette,table) ||
++        ps2_surface_channel_map_region(w->gs,w->alpha_destination,destination,w->palette,0,0,dx,dy,width,height,
++            mask&0xff000000,0)?-1:0;
++}
+ static int before(const struct ps2_pipe_copy_box *a,const struct ps2_pipe_copy_box *b)
+ { return a->dy<b->dy || (a->dy==b->dy && a->dx<b->dx); }
+ int ps2_pipe_rop_copy_boxes(struct pipe_context *ctx,uint32_t source,uint32_t destination,
+@@ -145,7 +178,7 @@
+     struct ps2_rop_workspace w={0};
+     int status=-1,error=EINVAL;
+     if (!s || !d || s->bits_per_pixel!=d->bits_per_pixel ||
+-        (mask&~(d->bits_per_pixel==16?0x7fffU:0xffffffU))) goto out;
++        (mask&~ps2_surface_native_mask(gs,destination))) goto out;
+     int64_t shift_x=count?(int64_t)input[0].dx-input[0].sx:0;
+     int64_t shift_y=count?(int64_t)input[0].dy-input[0].sy:0;
+     uint64_t pixels=0;
+@@ -170,14 +203,16 @@
+         } else if ((int64_t)b->dy+b->height!=band_end || b->dx<(int64_t)boxes[i-1].dx+boxes[i-1].width) goto out;
+     }
+     if (!count || !mask || alu==5) { status=0; goto out; }
+-    if (alu==3 && mask==(d->bits_per_pixel==16?0x7fffU:0xffffffU)) {
++    if (alu==3 && d->pixel_depth!=32 && mask==(d->bits_per_pixel==16?0x7fffU:0xffffffU)) {
+         status=ps2_pipe_copy_boxes(ctx,source,destination,boxes,count); error=errno; goto out;
+     }
+     if ((s->width<(s->bits_per_pixel==16?4U:2U) && (!source || s->height>1024)) ||
+         (d->width<(d->bits_per_pixel==16?4U:2U) && (!destination || d->height>1024))) {
+         error=ENOTSUP; goto out;
+     }
+-    if (ps2_rop_reserve(&w,gs,d->bits_per_pixel)) { error=errno; goto out; }
++    if (ps2_rop_reserve(&w,gs,d->bits_per_pixel) || ((mask&0xff000000) && ps2_rop_alpha_reserve(&w))) {
++        error=errno;ps2_rop_release(&w);goto out;
++    }
+     status=ps2_render_flush(r);
+     unsigned band=count;
+     while (!status && band) {
+@@ -226,7 +261,7 @@
+     struct ps2_pipe_solid_box *boxes=NULL;
+     int status=-1,error=EINVAL;
+     if(!source || source==destination || !s || !d || s->bits_per_pixel!=d->bits_per_pixel ||
+-        s->width>1024 || s->height>1024 || (mask&~(d->bits_per_pixel==16?0x7fffU:0xffffffU)))goto out;
++        s->width>1024 || s->height>1024 || (mask&~ps2_surface_native_mask(gs,destination)))goto out;
+     uint64_t pixels=0,pieces=0;
+     for(unsigned i=0;i<count;++i){const struct ps2_pipe_solid_box *b=input+i;
+         if(b->x1<0 || b->y1<0 || b->x2<=b->x1 || b->y2<=b->y1 ||
+@@ -243,9 +278,11 @@
+     if(!count || !mask || alu==5){status=0;goto out;}
+     boxes=malloc(count*sizeof(*boxes));if(!boxes){error=errno;goto out;}
+     memcpy(boxes,input,count*sizeof(*boxes));
+-    if(alu==3 && mask==(d->bits_per_pixel==16?0x7fffU:0xffffffU)){
++    if(alu==3 && d->pixel_depth!=32 && mask==(d->bits_per_pixel==16?0x7fffU:0xffffffU)){
+         status=ps2_pipe_tile_geometry(ctx,source,destination,boxes,count,ox,oy);error=errno;goto out;}
+-    if(ps2_rop_reserve(&workspace,gs,d->bits_per_pixel)){error=errno;goto out;}
++    if(ps2_rop_reserve(&workspace,gs,d->bits_per_pixel) || ((mask&0xff000000) && ps2_rop_alpha_reserve(&workspace))){
++        error=errno;ps2_rop_release(&workspace);goto out;
++    }
+     status=ps2_render_flush(r);
+     for(unsigned i=0;!status && i<count;++i){const struct ps2_pipe_solid_box *b=boxes+i;
+         for(int y=b->y1;!status && y<b->y2;){
+@@ -271,7 +308,7 @@
+     unsigned char packed[8192];
+     int status=-1,error=EINVAL;
+     if(!s || !pixels || !width || !height || x>=s->width || y>=s->height ||
+-        width>s->width-x || height>s->height-y || (mask&~(s->bits_per_pixel==16?0x7fffU:0xffffffU)))goto out;
++        width>s->width-x || height>s->height-y || (mask&~ps2_surface_native_mask(gs,source)))goto out;
+     unsigned cpp=s->bits_per_pixel/8;size_t row=(size_t)width*cpp;
+     if(stride<row || height-1>(SIZE_MAX-row)/stride || bytes<(height-1)*stride+row ||
+         (uintptr_t)pixels>UINTPTR_MAX-((height-1)*stride+row-1))goto out;
+@@ -279,10 +316,16 @@
+         error=ENOTSUP;goto out;}
+     if(ps2_surface_create(gs,128,32,s->bits_per_pixel,&w.source) ||
+         ps2_surface_create(gs,64,32,s->bits_per_pixel,&w.destination)){error=errno;goto cleanup;}
++    if(mask&0xff000000){
++        if(ps2_surface_set_depth(gs,w.destination,32) ||
++            ps2_surface_create(gs,64,32,32,&w.a) || ps2_surface_create(gs,64,32,32,&w.b) ||
++            ps2_surface_create(gs,64,32,32,&w.c) || ps2_rop_alpha_reserve(&w)){error=errno;goto cleanup;}
++    }
+     status=ps2_render_flush(r);
+     for(unsigned yy=0;!status && yy<height;yy+=32)for(unsigned xx=0;!status && xx<width;xx+=64){
+         unsigned h=height-yy>32?32:height-yy,ww=width-xx>64?64:width-xx;
+-        status=ps2_surface_solid_logic(gs,w.destination,0,0,64,32,0,s->bits_per_pixel==16?0x7fff:0xffffff,0);
++        status=ps2_surface_solid_logic(gs,w.destination,0,0,64,32,0,
++            s->bits_per_pixel==16?0x7fff:mask&0xff000000?UINT32_MAX:0xffffff,0);
+         if(!status && mask)status=ps2_rop_rectangle(&w,source,w.destination,x+xx,y+yy,0,0,ww,h,mask,3);
+         if(!status)status=ps2_surface_download(gs,w.destination,0,0,64,32,packed,64*32*cpp);
+         if(!status)for(unsigned line=0;line<h;++line)
+--- a/src/gallium/drivers/ps2/ps2_rop.h
++++ b/src/gallium/drivers/ps2/ps2_rop.h
+@@ -8,9 +8,11 @@
+ struct ps2_rop_workspace {
+     struct ps2_surface_client *gs;
+     uint32_t source, destination, a, b, c;
++    uint32_t alpha_source,alpha_destination,palette;
+ };
+ int ps2_rop_reserve(struct ps2_rop_workspace *, struct ps2_surface_client *, unsigned bpp);
+ int ps2_rop_release(struct ps2_rop_workspace *);
++int ps2_rop_alpha_reserve(struct ps2_rop_workspace *);
+ int ps2_rop_sample(struct ps2_surface_client *, uint32_t source, uint32_t destination,
+     unsigned sx, unsigned sy, unsigned dx, unsigned dy, unsigned width, unsigned height,
+     uint32_t mask, unsigned mode, unsigned factor);
+--- a/src/gallium/drivers/ps2/ps2_solid_batch.c
++++ b/src/gallium/drivers/ps2/ps2_solid_batch.c
+@@ -43,7 +43,7 @@
+     struct ps2_render_client *render=ps2_pipe_context_render(context);
+     const struct ps2_surface *storage=render ? ps2_surface_lookup(render->gs,handle) : NULL;
+     if(!storage) goto out;
+-    uint32_t bits=storage->bits_per_pixel==16 ? 0x7fff : 0xffffff;
++    uint32_t bits=ps2_surface_native_mask(render->gs,handle);
+     if((color|mask)&~bits) goto out;
+     if(!(render->gs->caps.features & PS2GS_HW_SOLID_LOGIC)) { error=ENOTSUP;goto out; }
+     for(unsigned i=0;i<count;++i) {
+@@ -189,7 +189,7 @@
+     struct ps2_render_client *render=ps2_pipe_context_render(context);
+     const struct ps2_surface *s=render ? ps2_surface_lookup(render->gs,handle) : NULL;
+     if(!s)goto out;
+-    uint32_t bits=s->bits_per_pixel==16 ? 0x7fff : 0xffffff;
++    uint32_t bits=ps2_surface_native_mask(render->gs,handle);
+     if(mask&~bits)goto out;
+     if(!(render->gs->caps.features&PS2GS_HW_SOLID_LOGIC)){error=ENOTSUP;goto out;}
+     for(unsigned i=0;i<count;++i){
+--- a/src/gallium/drivers/ps2/ps2_tile.c
++++ b/src/gallium/drivers/ps2/ps2_tile.c
+@@ -259,7 +259,7 @@
+     if(!d || (d->bits_per_pixel!=16 && d->bits_per_pixel!=32) || d->width>2048 || d->height>2048 ||
+         !mono->bits || !mono->width || !mono->height || mono->width>256 || mono->height>256 ||
+         (mono->msb_first!=0 && mono->msb_first!=1)) goto out;
+-    uint32_t bits=d->bits_per_pixel==16 ? 0x7fff : 0xffffff;
++    uint32_t bits=ps2_surface_native_mask(gs,destination);
+     if((foreground|mask|(opaque ? background : 0))&~bits) goto out;
+     size_t row=(mono->width+7)/8;
+     if(mono->stride<row || mono->height-1>(SIZE_MAX-row)/mono->stride) goto out;
+@@ -274,7 +274,7 @@
+         if(pixels>PS2_PIPE_MAX_TILE_PIXELS) { error=E2BIG;goto out; }
+     }
+     if(!count || !mask || alu==5) { status=0;goto out; }
+-    int fast=alu==3 && mask==bits && (gs->caps.features&PS2GS_HW_OWNED_RENDER);
++    int fast=d->pixel_depth!=32 && alu==3 && mask==bits && (gs->caps.features&PS2GS_HW_OWNED_RENDER);
+     if(!fast && !(gs->caps.features&PS2GS_HW_SOLID_LOGIC)) { error=ENOTSUP;goto out; }
+     snapshot=malloc(row*mono->height);
+     if(!snapshot) { error=errno;goto out; }

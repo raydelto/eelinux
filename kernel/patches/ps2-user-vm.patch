@@ -1,0 +1,151 @@
+--- a/arch/mips/mm/tlbex.c
++++ b/arch/mips/mm/tlbex.c
+@@ -1284,6 +1284,12 @@
+ 	memset(relocs, 0, sizeof(relocs));
+ 	memset(final_handler, 0, sizeof(final_handler));
+ 
++#ifdef CONFIG_CPU_R5900
++	/* Workaround for R5900 exception execution bug (FLX05). */
++	uasm_i_nop(&p);
++	uasm_i_nop(&p);
++#endif
++
+ 	if (IS_ENABLED(CONFIG_64BIT) && (scratch_reg >= 0 || scratchpad_available()) && use_bbit_insns()) {
+ 		htlb_info = build_fast_tlb_refill_handler(&p, &l, &r, GPR_K0, GPR_K1,
+ 							  scratch_reg);
+@@ -1356,6 +1362,10 @@
+ 	 * need three, with the second nop'ed and the third being
+ 	 * unused.
+ 	 */
++	/* The EE refill vector has 32 slots, including all erratum padding. */
++	if (boot_cpu_type() == CPU_R5900 && (p - tlb_handler) > 32)
++		panic("R5900 TLB refill handler space exceeded");
++
+ 	switch (boot_cpu_type()) {
+ 	default:
+ 		if (sizeof(long) == 4) {
+@@ -2150,6 +2160,14 @@
+ 		WARN(cpu_has_tlbex_tlbp_race(), "Unhandled race in RiXi path");
+ 
+ 		uasm_i_tlbr(&p);
++#ifdef CONFIG_CPU_R5900
++		/* TLBR must be followed immediately by ERET or SYNC.P on EE. */
++		uasm_i_syncp(&p);
++		uasm_i_nop(&p);
++		uasm_i_nop(&p);
++		uasm_i_nop(&p);
++		uasm_i_nop(&p);
++#endif
+ 
+ 		if (cpu_has_mips_r2_exec_hazard)
+ 			uasm_i_ehb(&p);
+@@ -2216,6 +2234,14 @@
+ 		WARN(cpu_has_tlbex_tlbp_race(), "Unhandled race in RiXi path");
+ 
+ 		uasm_i_tlbr(&p);
++#ifdef CONFIG_CPU_R5900
++		/* TLBR must be followed immediately by ERET or SYNC.P on EE. */
++		uasm_i_syncp(&p);
++		uasm_i_nop(&p);
++		uasm_i_nop(&p);
++		uasm_i_nop(&p);
++		uasm_i_nop(&p);
++#endif
+ 
+ 		if (cpu_has_mips_r2_exec_hazard)
+ 			uasm_i_ehb(&p);
+--- a/arch/mips/kernel/traps.c
++++ b/arch/mips/kernel/traps.c
+@@ -2071,6 +2071,11 @@
+ 		unsigned long jump_mask = ~((1 << 28) - 1);
+ #endif
+ 		u32 *buf = (u32 *)(ebase + 0x200);
++#ifdef CONFIG_CPU_R5900
++		/* Workaround for R5900 exception execution bug (FLX05). */
++		uasm_i_nop(&buf);
++		uasm_i_nop(&buf);
++#endif
+ 		if ((handler & jump_mask) == ((ebase + 0x200) & jump_mask)) {
+ 			uasm_i_j(&buf, handler & ~jump_mask);
+ 			uasm_i_nop(&buf);
+@@ -2079,6 +2084,14 @@
+ 			uasm_i_jr(&buf, GPR_K0);
+ 			uasm_i_nop(&buf);
+ 		}
++#ifdef CONFIG_CPU_R5900
++		/* Do not expose cache-like words after the exception-vector jump. */
++		uasm_i_nop(&buf);
++		uasm_i_nop(&buf);
++		uasm_i_nop(&buf);
++		uasm_i_nop(&buf);
++		uasm_i_nop(&buf);
++#endif
+ 		local_flush_icache_range(ebase + 0x200, (unsigned long)buf);
+ 	}
+ 	return (void *)old_handler;
+--- a/arch/mips/mm/fault.c
++++ b/arch/mips/mm/fault.c
+@@ -36,6 +36,30 @@
+  * and the problem, and then passes it off to one of the appropriate
+  * routines.
+  */
++#ifdef CONFIG_CPU_R5900
++static void ps2_user_fault_summary(const struct pt_regs *regs,
++		unsigned long write, unsigned long address)
++{
++	/* PID 1 death panics. Keep its user-mode registers below the long logs.
++	 * Do not read suspect user memory while reporting a damaged process.
++	 */
++	pr_emerg("ps2 user fault: task=%s pid=%d %s=%08lx\n",
++		 current->comm, task_pid_nr(current), write ? "write" : "read", address);
++	pr_emerg("ps2 user fault: epc=%08lx ra=%08lx cause=%08lx\n",
++		 regs->cp0_epc, regs->regs[31], regs->cp0_cause);
++	pr_emerg("ps2 user fault: s0=%08lx s1=%08lx s2=%08lx s3=%08lx\n",
++		 regs->regs[16], regs->regs[17], regs->regs[18], regs->regs[19]);
++	pr_emerg("ps2 user fault: s4=%08lx s5=%08lx s6=%08lx s7=%08lx\n",
++		 regs->regs[20], regs->regs[21], regs->regs[22], regs->regs[23]);
++	pr_emerg("ps2 user fault: v0=%08lx v1=%08lx a0=%08lx a1=%08lx\n",
++		 regs->regs[2], regs->regs[3], regs->regs[4], regs->regs[5]);
++	pr_emerg("ps2 user fault: a2=%08lx a3=%08lx t0=%08lx t1=%08lx\n",
++		 regs->regs[6], regs->regs[7], regs->regs[8], regs->regs[9]);
++	pr_emerg("ps2 user fault: sp=%08lx gp=%08lx status=%08lx\n",
++		 regs->regs[29], regs->regs[28], regs->cp0_status);
++}
++#endif
++
+ static void __do_page_fault(struct pt_regs *regs, unsigned long write,
+ 	unsigned long address)
+ {
+@@ -213,6 +237,10 @@
+ 			pr_cont("\n");
+ 		}
+ 		current->thread.trap_nr = (regs->cp0_cause >> 2) & 0x1f;
++#ifdef CONFIG_CPU_R5900
++		if (task_pid_nr(tsk) == 1)
++			ps2_user_fault_summary(regs, write, address);
++#endif
+ 		force_sig_fault(SIGSEGV, si_code, (void __user *)address);
+ 		return;
+ 	}
+@@ -269,6 +297,10 @@
+ #endif
+ 	current->thread.trap_nr = (regs->cp0_cause >> 2) & 0x1f;
+ 	tsk->thread.cp0_badvaddr = address;
++#ifdef CONFIG_CPU_R5900
++	if (task_pid_nr(tsk) == 1)
++		ps2_user_fault_summary(regs, write, address);
++#endif
+ 	force_sig_fault(SIGBUS, BUS_ADRERR, (void __user *)address);
+ 
+ 	return;
+--- a/init/main.c
++++ b/init/main.c
+@@ -1475,7 +1475,7 @@
+ static void __init do_basic_setup(void)
+ {
+ #ifdef CONFIG_CPU_R5900
+-	pr_info("ps2: aligned firmware and SIF startup kernel\n");
++	pr_info("ps2: exception and TLB-entry kernel\n");
+ #endif
+ 	cpuset_init_smp();
+ 	ksysfs_init();

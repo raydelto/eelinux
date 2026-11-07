@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "ipcalc",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.ipcalc",
+  "symbol": "BR2_PACKAGE_IPCALC",
+  "version": "1.2.0",
+  "recipe": "package/ipcalc/ipcalc.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "4b8f43dd61f2ce3c18ca0e2def2adc54ade3be4d4d1ff302f22ad0aede4b226a",
+      "filename": "ipcalc-1.2.0.tar.bz2"
+    }
+  ],
+  "release_url": "https://gitlab.com/ipcalc/ipcalc/-/releases"
+}

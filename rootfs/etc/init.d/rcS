@@ -1,0 +1,42 @@
+#!/bin/bash
+set -u
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export LANG=C LC_ALL=C
+umask 022
+
+fatal() {
+    printf 'eeLinux boot failed: %s\n' "$*" > /dev/console
+    # sulogin honors the root password. No unauthenticated maintenance shell.
+    /sbin/sulogin /dev/console
+    /sbin/reboot -f
+    exit 1
+}
+
+/bin/mountpoint -q /proc || /bin/mount -t proc -o nosuid,nodev,noexec proc /proc || fatal 'cannot mount /proc'
+/bin/mountpoint -q /sys || /bin/mount -t sysfs -o nosuid,nodev,noexec sysfs /sys || fatal 'cannot mount /sys'
+/bin/mountpoint -q /dev || /bin/mount -t devtmpfs -o mode=0755,nosuid devtmpfs /dev || fatal 'kernel requires devtmpfs'
+if [[ -r /.dvd/session ]]; then
+    printf 'eeLinux DVD session: changes are held in RAM until shutdown.\n'
+else
+    /bin/mount -o remount,rw,noatime / || fatal 'cannot mount the disk root writable'
+fi
+/bin/mount -t tmpfs -o mode=0755,nosuid,nodev,size=2M tmpfs /run || fatal 'cannot mount /run'
+/bin/mount -t tmpfs -o mode=1777,nosuid,nodev,size=2M tmpfs /tmp || fatal 'cannot mount /tmp'
+/bin/mkdir -p /dev/pts /dev/shm /run/lock /run/log
+/bin/mount -t devpts -o mode=0620,gid=5,nosuid,noexec devpts /dev/pts || fatal 'cannot mount PTYs'
+/bin/mount -t tmpfs -o mode=1777,nosuid,nodev,noexec,size=1M tmpfs /dev/shm || fatal 'cannot mount /dev/shm'
+/bin/chmod 1777 /tmp /dev/shm
+: > /run/utmp
+: > /run/log/wtmp
+: > /run/log/btmp
+/bin/chown root:utmp /run/utmp /run/log/wtmp /run/log/btmp
+/bin/chmod 0644 /run/utmp /run/log/wtmp
+/bin/chmod 0600 /run/log/btmp
+hostname_value=
+IFS= read -r hostname_value < /etc/hostname || true
+if [[ -n $hostname_value ]]; then /bin/hostname -- "$hostname_value" || true; fi
+if ! /etc/init.d/rc S; then printf 'eeLinux: an optional early service failed\n' >&2; fi
+printf 'eeLinux console startup complete.\n'
+if [[ -x /usr/sbin/startx-ps2 ]]; then
+    printf 'X can be started with startx-ps2 after login.\n'
+fi

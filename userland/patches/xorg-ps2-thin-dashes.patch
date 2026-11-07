@@ -1,0 +1,158 @@
+--- a/hw/xfree86/drivers/ps2/ps2_solid.c
++++ b/hw/xfree86/drivers/ps2/ps2_solid.c
+@@ -21,7 +21,11 @@
+     DrawablePtr drawable;
+     GCPtr gc;
+     rectangle clips[MAX_CLIPS];
+-    rectangle *rects;
++    struct ps2_pipe_solid_run *rects;
++    unsigned char dashes[256];
++    unsigned dash_count;
++    uint64_t dash_phase;
++    uint32_t background,ink;
+     unsigned clips_count, count, capacity;
+     uint32_t handle, color, mask;
+     unsigned width, height, alu;
+@@ -48,7 +52,8 @@
+     if (ps2_pipe_context_acquire(b->context)) fail(p, "context is closed or failed");
+     ps2_pipe_context_release(b->context);
+     if (gc->alu > GXset || (fill && gc->fillStyle != FillSolid) ||
+-        (line && (gc->lineStyle != LineSolid || gc->lineWidth != 0 || gc->capStyle > CapProjecting)))
++        (line && (gc->lineStyle > LineDoubleDash || gc->lineWidth != 0 || gc->capStyle > CapProjecting ||
++                  (gc->lineStyle != LineSolid && gc->fillStyle != FillSolid))))
+         fail(p, "unsupported solid raster state");
+     ScreenPtr s = d->pScreen;
+     PixmapPtr pixmap = d->type == DRAWABLE_PIXMAP ? (PixmapPtr)d :
+@@ -72,6 +77,15 @@
+     p->width = storage->width; p->height = storage->height; p->alu = gc->alu;
+     uint32_t bits = d->depth == 15 ? 0x7fff : 0xffffff;
+     p->color = gc->fgPixel & bits; p->mask = gc->planemask & bits;
++    p->ink=p->color;p->background=gc->bgPixel&bits;
++    if(line && gc->lineStyle!=LineSolid){
++        if(!gc->dash || !gc->numInDashList || gc->numInDashList>256 || (gc->numInDashList&1))
++            fail(p,"invalid or excessive normalized dash list");
++        p->dash_count=gc->numInDashList;p->dash_phase=gc->dashOffset;
++        for(unsigned i=0;i<p->dash_count;++i){
++            p->dashes[i]=gc->dash[i];if(!p->dashes[i])fail(p,"zero dash length");
++        }
++    }
+ #ifdef COMPOSITE
+     if (d->type == DRAWABLE_WINDOW) { p->ox = pixmap->screen_x; p->oy = pixmap->screen_y; }
+ #endif
+@@ -103,18 +117,18 @@
+         if (p->count == MAX_RECTS) fail(p, "clipped rectangle budget exceeded");
+         if (p->count == p->capacity) {
+             unsigned capacity = p->capacity ? p->capacity*2 : 64;
+-            rectangle *rects = realloc(p->rects, capacity*sizeof(*rects));
++            struct ps2_pipe_solid_run *rects = realloc(p->rects, capacity*sizeof(*rects));
+             if (!rects) fail(p, "out of memory planning solid drawing");
+             p->rects = rects; p->capacity = capacity;
+         }
+-        p->rects[p->count++] = (rectangle){ a, b, r, t };
++        p->rects[p->count++] = (struct ps2_pipe_solid_run){.box={a,b,r,t},.color=p->ink};
+     }
+ }
+ static void finish(struct plan *p)
+ {
+     if (!p->count || !p->mask || p->alu == GXnoop) { free(p->rects); return; }
+-    int status = ps2_pipe_solid_rectangles(p->owner->context,p->handle,
+-        p->rects,p->count,p->color,p->mask,p->alu);
++    int status = ps2_pipe_solid_runs(p->owner->context,p->handle,
++        p->rects,p->count,p->mask,p->alu);
+     int error = errno;
+     if (status) fail(p, strerror(error));
+     free(p->rects);
+@@ -126,6 +140,11 @@
+  * This avoids double-XOR at polyline joins and closed rectangle corners. */
+ static int line_run(void *data,const rectangle *r)
+ { append(data,r->x1,r->y1,r->x2,r->y2);return 0; }
++static int dash_run(void *data,const rectangle *r,unsigned background)
++{
++    struct plan *p=data;p->ink=background ? p->background : p->color;
++    append(p,r->x1,r->y1,r->x2,r->y2);return 0;
++}
+ static void segment(struct plan *p,int64_t x1,int64_t y1,int64_t x2,int64_t y2,Bool include_last)
+ {
+     x1+=p->tx;y1+=p->ty;x2+=p->tx;y2+=p->ty;
+@@ -141,6 +160,17 @@
+     int64_t bottom=min64(top+p->drawable->height-1,INT16_MAX)+1;
+     rectangle bounds={max64(left-p->ox,0),max64(top-p->oy,0),
+         min64(right-p->ox,p->width),min64(bottom-p->oy,p->height)};
++    if(p->dash_count){
++        struct ps2_pipe_dash_pattern dash={p->dashes,p->dash_count,p->dash_phase,
++            p->gc->lineStyle==LineDoubleDash};
++        int64_t dx=x2-x1,dy=y2-y1;
++        uint64_t length=max64(dx<0 ? -dx : dx,dy<0 ? -dy : dy)+include_last;
++        p->dash_phase+=length;
++        if(bounds.x1>=bounds.x2 || bounds.y1>=bounds.y2)return;
++        if(ps2_pipe_zero_dash(x1,y1,x2,y2,miGetZeroLineBias(p->drawable->pScreen)&255,
++            include_last,&bounds,&dash,dash_run,p))fail(p,"dash planning failed");
++        return;
++    }
+     if(bounds.x1>=bounds.x2 || bounds.y1>=bounds.y2) return;
+     if(ps2_pipe_zero_line(x1,y1,x2,y2,miGetZeroLineBias(p->drawable->pScreen)&255,
+                          include_last,&bounds,line_run,p)) fail(p,"line planning failed");
+@@ -181,7 +211,10 @@
+ static void segments(DrawablePtr d,GCPtr gc,int n,xSegment *segs)
+ {
+     struct plan p; begin(&p,d,gc,n,segs,FALSE,TRUE);
+-    for(int i=0;i<n;++i) segment(&p,segs[i].x1,segs[i].y1,segs[i].x2,segs[i].y2,gc->capStyle!=CapNotLast);
++    for(int i=0;i<n;++i){
++        p.dash_phase=gc->dashOffset;
++        segment(&p,segs[i].x1,segs[i].y1,segs[i].x2,segs[i].y2,gc->capStyle!=CapNotLast);
++    }
+     finish(&p);
+ }
+ static void lines(DrawablePtr d,GCPtr gc,int mode,int n,DDXPointPtr pts)
+@@ -202,6 +235,7 @@
+ {
+     struct plan p; begin(&p,d,gc,n,rects,FALSE,TRUE);
+     for(int i=0;i<n;++i) {
++        p.dash_phase=gc->dashOffset;
+         int64_t x=rects[i].x,y=rects[i].y;
+         /* Match miPolyRectangle's zero-width path coordinate saturation. */
+         int64_t r=min64(x+rects[i].width,INT16_MAX),b=min64(y+rects[i].height,INT16_MAX);
+--- a/hw/xfree86/drivers/ps2/ps2_solid.h
++++ b/hw/xfree86/drivers/ps2/ps2_solid.h
+@@ -12,8 +12,12 @@
+ /* Install after ps2_gc_screen_prepare, on the same submission thread.
+  * Solid fills/points and zero-width solid lines in all octants use native GS
+  * Boolean drawing. CPU geometry planning preserves Xorg zero-line bias;
+- * line pixels use fgPixel independently of fillStyle. Unsupported states terminate; no CPU pixel fallback.
+- * At most 4096 inputs, 256 clip boxes and 16384 clipped rectangles per request.
++ * solid line pixels use fgPixel independently of fillStyle. Thin on/off and
++ * double-dash lines require FillSolid; normalized positive even dash lists
++ * <=256 entries are snapshotted. Polyline/rectangle phase crosses joins;
++ * independent segments/rectangles restart at dashOffset. Coloured geometry
++ * runs are fully preflighted before fencing; no CPU colour pixel fallback.
++ * At most 4096 inputs, 256 clip boxes and 16384 clipped coloured runs per request.
+  * Cleanup before ps2_gc_screen_cleanup; CloseScreen enforces this ordering.
+  * Other CloseScreen wrappers must unwrap first. State must outlive the screen.
+  */
+--- a/hw/xfree86/drivers/ps2/ps2_solid_batch.h
++++ b/hw/xfree86/drivers/ps2/ps2_solid_batch.h
+@@ -26,4 +26,24 @@
+ int ps2_pipe_zero_line(int32_t x1, int32_t y1, int32_t x2, int32_t y2,
+     unsigned bias, int include_last, const struct ps2_pipe_solid_box *bounds,
+     ps2_pipe_line_emit, void *data);
++/* Preflight ordered per-run foreground/background colours before one fence.
++ * The colour is a native RGBX/RGB555 pixel, with no CPU destination access. */
++struct ps2_pipe_solid_run { struct ps2_pipe_solid_box box; uint32_t color; };
++int ps2_pipe_solid_runs(struct pipe_context *, uint32_t handle,
++    const struct ps2_pipe_solid_run *, unsigned count, uint32_t plane_mask, unsigned alu);
++struct ps2_pipe_dash_pattern {
++    const unsigned char *lengths;
++    unsigned count;
++    uint64_t offset;
++    int double_dash;
++};
++/* Geometry only: positive lengths, at most 256; odd-length lists repeat twice.
++ * Dash phase uses original major-axis pixel distance, including clipped-away
++ * pixels. The callback receives background=1 for odd runs in double-dash mode.
++ * On/off odd runs emit nothing. Snapshot the list locally before callbacks.
++ * Caller controls segment phase/reset and preflights the complete colour plan. */
++typedef int (*ps2_pipe_dash_emit)(void *, const struct ps2_pipe_solid_box *, unsigned background);
++int ps2_pipe_zero_dash(int32_t x1,int32_t y1,int32_t x2,int32_t y2,unsigned bias,
++    int include_last,const struct ps2_pipe_solid_box *,const struct ps2_pipe_dash_pattern *,
++    ps2_pipe_dash_emit,void *data);
+ #endif

@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "name": "nano",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "9.3",
+    "url": "https://ftp.gnu.org/gnu/nano/nano-9.3.tar.xz",
+    "filename": "nano-9.3.tar.xz",
+    "sha256": "a9affc52c9596ee0682bcdd4ceb3c0b235eb221d83d733dfd9b0dff45897cb0d",
+    "checked": "2026-11-06",
+    "verification": "SHA256 calculated from actual primary upstream HTTPS archive"
+  },
+  "source_archive": "../../sources/nano-9.3.tar.xz",
+  "configure_options": [
+    "--disable-tiny",
+    "--enable-color",
+    "--enable-nanorc",
+    "--disable-libmagic"
+  ],
+  "configure_environment": {
+    "ac_cv_prog_NCURSESW_CONFIG": "{sysroot}/usr/bin/ncursesw6-config"
+  },
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false
+}

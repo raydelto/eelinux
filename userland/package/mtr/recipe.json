@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "mtr",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.mtr",
+  "symbol": "BR2_PACKAGE_MTR",
+  "version": "0.96",
+  "recipe": "package/mtr/mtr.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "73e6aef3fb6c8b482acb5b5e2b8fa7794045c4f2420276f035ce76c5beae632d",
+      "filename": "mtr-0.96.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/traviscross/mtr/tags"
+}

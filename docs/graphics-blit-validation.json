@@ -1,0 +1,155 @@
+{
+  "schema": 1,
+  "date": "2026-10-04",
+  "recorded_at": "2026-10-04T16:05:13.985364+00:00",
+  "scope": "actual Gallium blit and shared EXA PictOpSrc composite components; native GS destination drawing",
+  "references": [
+    "https://docs.mesa3d.org/gallium/context.html#blitting",
+    "https://psi-rockin.github.io/ps2tek/"
+  ],
+  "compiled_components": {
+    "sha256": "6fb93e457bcfdd65be671358c5285be71bb4cabdc68e5ea0ba12af8ec89a1760"
+  },
+  "native_test_log": {
+    "sha256": "06389f62831aee45455bb3d413259f2a9811f08c3d6638deff5d49330f47a9e7"
+  },
+  "host_checks": {
+    "schema": 1,
+    "cases": 41,
+    "new_cases": 11,
+    "result": "passed",
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "groups": [
+      {
+        "suite": "test_ps2_blit.py",
+        "cases": 11,
+        "result": "passed"
+      },
+      {
+        "suite": "test_ps2_copy_exa.py",
+        "cases": 8,
+        "result": "passed"
+      },
+      {
+        "suite": "test_ps2_resource_copy.py",
+        "cases": 7,
+        "result": "passed"
+      },
+      {
+        "suite": "test_ps2_copy.py",
+        "cases": 9,
+        "result": "passed"
+      },
+      {
+        "suite": "test_ps2_pipe.py",
+        "cases": 6,
+        "result": "passed"
+      }
+    ],
+    "log": {
+      "sha256": "4a70a5924de983451847edc53774c0700d674dfe73e256dec9f37ca9098dad41"
+    },
+    "production_sources": {
+      "desktop/xorg/ps2_blit_exa.c": "189c1c776ee475a092bf775e2223498c4e62d04909d31dfdbf32cf9070077958",
+      "mesa/ps2/ps2_blit.c": "4744bf522f8a90940691225051e914771d793b346bd0936dc5fb1b6a236f6cb7",
+      "mesa/ps2/ps2_pipe.c": "e03019d00bc6b788b12fae65cca3281f1fea1333fa68170ed97cc72eb3a41c6b"
+    }
+  },
+  "patches": {
+    "sha256": "09789fa9c06339cb373926699b1eb353cf2b5576c3cc75358270b0189b8d3681"
+  },
+  "archives": {
+    "libps2-gallium-blit.a": {
+      "sha256": "982bbdc49af81a2e5b76c38a2236f48ba2ea1579db13e9aa917850fce05aa365"
+    },
+    "libps2-xorg-blit.a": {
+      "sha256": "5b106832de9e880455abbc8ed0a919b395c792f4dc44dba2da9bc6741b6bbc79"
+    }
+  },
+  "checks": {
+    "host_sanitizer_cases": 41,
+    "R5900_Linux_user_cases": 41,
+    "new_blit_cases": 11,
+    "EXA_copy_regressions": 8,
+    "Gallium_copy_regressions": 7,
+    "GC_CopyArea_regressions": 9,
+    "context_regressions": 6,
+    "result": "passed",
+    "production_NDEBUG": true,
+    "test_assertions_enabled": true,
+    "GPU_pixels_tested": false
+  },
+  "Gallium_blit_implemented": true,
+  "EXA_Composite_uses_shared_Mesa_blit_adapter": true,
+  "formats": [
+    "same native RGBX/depth24/CT32",
+    "same native RGB555/depth15/CT16"
+  ],
+  "Gallium_states": [
+    "nearest scaling up/down/anisotropic",
+    "horizontal/vertical/both source flips",
+    "level/layer zero; box depth one",
+    "full RGB channels with optional unused alpha",
+    "alpha-only/empty masks are no-ops",
+    "destination scissor retaining original source mapping",
+    "unscaled copies, including odd widths and self-overlap"
+  ],
+  "Xorg_states": [
+    "opaque PictOpSrc",
+    "native matching picture layouts",
+    "no mask/repeat/transform; nearest",
+    "owned/front/self-copy native storage",
+    "prepared storage validation and context lease"
+  ],
+  "tests": {
+    "pixel_reference": "independent rational source mapping at destination pixel centers and complete destination comparison",
+    "geometry_storage_preflight_variants": 17,
+    "unsupported_state_and_owner_variants": 17,
+    "framebuffer_depth_sampler_bindings_and_references_preserved": true,
+    "empty_and_noop_requests_preserve_pending_queue": true,
+    "closed_context_no_drawing": true,
+    "registration_and_callback_cleanup_failures": true,
+    "device_failure_no_replay": true
+  },
+  "limits": [
+    "no linear filtering, alpha blend, partial RGB masks, depth/stencil, MSAA, format casting or nonzero levels/layers",
+    "scaled/flipped source must be an owned distinct texture of at most 1024x1024",
+    "scaled self-blits and scaled front-buffer sampling are rejected",
+    "Xorg transforms/repeat/masks remain unsupported; scaling/flips currently belong to Gallium",
+    "conditional rendering/query state is not implemented"
+  ],
+  "single_submission_thread": true,
+  "software_pixel_renderer": false,
+  "GPU_pixel_readback": false,
+  "kernel_ABI_changed": false,
+  "new_PCSX2_scene_panels_visually_verified": true,
+  "new_PCSX2_callback_command_pass": true,
+  "new_physical_pixels_verified": false,
+  "new_USB_image_packaged": true,
+  "runtime_diagnostic_evidence": {
+    "path": "docs/graphics-blit-runtime-validation.json",
+    "sha256": "8e4e24912c6d93a46aef6094549072b3ada4dfb21691e65b9d8895dc86196a60"
+  },
+  "physical_devices_written": false,
+  "prior_CopyArea_image": {
+    "sha256": "d1e48f620013bc7a524fb34d8d546b09fc861f5797de7c05c9a084b219f97dac"
+  },
+  "prior_copy_archives_and_source_snapshots_preserved": true,
+  "earlier_physical_report": "docs/graphics-hardware-validation.json",
+  "complete_Xorg_DDX": false,
+  "complete_Mesa_OpenGL_GLX": false,
+  "shader_caps": 0,
+  "full_TWM_OpenGL_RAM_measured": false,
+  "remaining": [
+    "new blit/EXA physical pixel and RGB555 runtime qualification",
+    "full native Xorg DDX screen/VT/input/cursor/presentation",
+    "further raster/alpha/copy states",
+    "Mesa shader/vertex execution and draw_vbo",
+    "GLX and existing OpenGL applications",
+    "first startx/TWM and physical idle/peak RAM measurements"
+  ],
+  "record_scope": "Historical validation summary; generated artifact locations are omitted."
+}

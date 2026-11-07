@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "util-linux",
+  "engine": "Buildroot pinned backend with before-evaluation latest release overlay",
+  "manifest_entry": "configs/packages.json:packages.util-linux",
+  "symbol": "BR2_PACKAGE_UTIL_LINUX",
+  "version": "2.42.4",
+  "recipe": "package/util-linux/util-linux.mk",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "fbd62a100ab7bb8746ba0661255c3c48185b1e9021507c624da01fbc696330ec",
+      "filename": "util-linux-2.42.4.tar.xz"
+    }
+  ],
+  "release_url": "https://www.kernel.org/pub/linux/utils/util-linux/v2.42/"
+}

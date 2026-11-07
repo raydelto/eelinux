@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "x11r7/xapp_xkbutils",
+  "kind": "application",
+  "program": "xkbutils",
+  "version": "1.0.7",
+  "engine": "eeLinux native X.Org application builder; scripts/xorg_apps.py",
+  "source": "sources/xkbutils-1.0.7.tar.xz",
+  "upstream": "https://xorg.freedesktop.org/archive/individual/app/xkbutils-1.0.7.tar.xz",
+  "source_hashes": [
+    {
+      "algorithm": "sha256",
+      "digest": "5f37be0ee31ada114415780c562638a1b4f03b385e56449927bf0d5665787a26",
+      "filename": "xkbutils-1.0.7.tar.xz"
+    },
+    {
+      "algorithm": "sha512",
+      "digest": "cc5767fa089b53cfcf43d559b946be9ec338f6bc8610594e1b0e212373d84cfd1382f4bd67071a9167ad3fcee4171bf5dcd62d714a448591628614118b84dd31",
+      "filename": "xkbutils-1.0.7.tar.xz"
+    }
+  ],
+  "target": "R5900 Linux o32 soft float",
+  "runtime_qualified": false
+}

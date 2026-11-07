@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "name": "m4",
+  "engine": "scripts/native_development.py",
+  "source": {
+    "version": "1.4.21",
+    "url": "https://ftp.gnu.org/gnu/m4/m4-1.4.21.tar.xz",
+    "gnu": true,
+    "filename": "m4-1.4.21.tar.xz",
+    "sha256": "f25c6ab51548a73a75558742fb031e0625d6485fe5f9155949d6486a2408ab66",
+    "checked": "2026-10-05",
+    "publisher_signature_verified": true,
+    "signature_verification": "gpgv: Signature made Fri 06 Feb 2026 08:13:57 PM WET\ngpgv:                using RSA key 71C2CC22B1C4602927D2F3AAA7A16B4A2527436A\ngpgv: Good signature from \"Eric Blake <eblake@redhat.com>\"\ngpgv:                 aka \"Eric Blake (Free Software Programmer) <ebb9@byu.net>\"\ngpgv:                 aka \"[invalid image]\"\n"
+  },
+  "source_archive": "../../sources/m4-1.4.21.tar.xz",
+  "configure_options": [],
+  "configure_environment": {},
+  "source_subdirectory": "",
+  "in_source_build": false,
+  "build_jobs": null,
+  "special_recipe": "autotools",
+  "build_dependency_only": false
+}

@@ -1,0 +1,46 @@
+--- a/arch/mips/kernel/cpu-probe.c
++++ b/arch/mips/kernel/cpu-probe.c
+@@ -212,7 +212,8 @@
+ {
+ 	int vmbits = 31;
+ 
+-	if (cpu_has_64bits) {
++	/* R5900 has 64-bit GPR operations, but only 32-bit CP0 transfers. */
++	if (cpu_has_64bits && !IS_ENABLED(CONFIG_CPU_R5900)) {
+ 		write_c0_entryhi_64(0x3fffffffffffe000ULL);
+ 		back_to_back_c0_hazard();
+ 		vmbits = fls64(read_c0_entryhi_64() & 0x3fffffffffffe000ULL);
+--- a/arch/mips/mm/tlb-r4k.c
++++ b/arch/mips/mm/tlb-r4k.c
+@@ -516,16 +516,18 @@
+ /* The start bit position of VPN2 and Mask in EntryHi/PageMask registers.  */
+ #define VPN2_SHIFT 13
+ 
+-/* Read full EntryHi even with CONFIG_32BIT.  */
++/* R5900 EntryHi is 32-bit even though its integer ISA is 64-bit. */
++/* Read full EntryHi even with CONFIG_32BIT on other CPUs. */
+ static inline unsigned long long read_c0_entryhi_native(void)
+ {
+-	return cpu_has_64bits ? read_c0_entryhi_64() : read_c0_entryhi();
++	return cpu_has_64bits && current_cpu_type() != CPU_R5900 ?
++		read_c0_entryhi_64() : read_c0_entryhi();
+ }
+ 
+ /* Write full EntryHi even with CONFIG_32BIT.  */
+ static inline void write_c0_entryhi_native(unsigned long long v)
+ {
+-	if (cpu_has_64bits)
++	if (cpu_has_64bits && current_cpu_type() != CPU_R5900)
+ 		write_c0_entryhi_64(v);
+ 	else
+ 		write_c0_entryhi(v);
+@@ -591,7 +593,8 @@
+ 	int i;
+ 
+ 	vpn_mask = GENMASK(current_cpu_data.vmbits - 1, VPN2_SHIFT);
+-	vpn_mask |= cpu_has_64bits ? 3ULL << 62 : 1 << 31;
++	vpn_mask |= cpu_has_64bits && current_cpu_type() != CPU_R5900 ?
++		3ULL << 62 : 1ULL << 31;
+ 
+ 	for (i = 0; i < tlbsize; i++) {
+ 		unsigned long long entryhi, vpn, mask, asid;
