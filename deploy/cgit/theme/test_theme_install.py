@@ -35,6 +35,42 @@ class FragmentParser(HTMLParser):
             self.errors.append(tag)
 
 
+class NavigationParser(FragmentParser):
+    """Collect the links users receive in the two responsive navigations."""
+
+    def __init__(self):
+        super().__init__()
+        self.navigations = []
+        self.details = []
+        self.current_navigation = None
+        self.current_link = None
+
+    def handle_starttag(self, tag, attrs):
+        super().handle_starttag(tag, attrs)
+        attrs = dict(attrs)
+        if tag == "details":
+            self.details.append(attrs)
+        elif tag == "nav":
+            self.current_navigation = {"attrs": attrs, "details": list(self.details), "links": []}
+            self.navigations.append(self.current_navigation)
+        elif tag == "a" and self.current_navigation is not None:
+            self.current_link = [attrs.get("href"), attrs.get("aria-current"), ""]
+            self.current_navigation["links"].append(self.current_link)
+
+    def handle_endtag(self, tag):
+        if tag == "a":
+            self.current_link = None
+        elif tag == "nav":
+            self.current_navigation = None
+        elif tag == "details":
+            self.details.pop()
+        super().handle_endtag(tag)
+
+    def handle_data(self, data):
+        if self.current_link is not None:
+            self.current_link[2] += data
+
+
 class IncludeTests(unittest.TestCase):
     def test_header_is_a_closed_sidebar_not_a_wrapper_around_cgit(self):
         # cgit emits header immediately after <body>; footer is emitted inside
@@ -53,8 +89,27 @@ class IncludeTests(unittest.TestCase):
         self.assertIn('href="/git/" aria-current="page"', header)
         self.assertNotIn("JAVASCRIPT FREE", header)
         head = (root / "head.html").read_text(encoding="utf-8")
-        self.assertEqual(head.count("{{THEME_URL}}"), 1)
+        self.assertEqual(head.count("{{THEME_URL}}"), 2)
         self.assertIn("viewport", head)
+
+    def test_closed_native_mobile_menu_keeps_all_desktop_links(self):
+        parser = NavigationParser()
+        parser.feed((Path(__file__).parent / "header.html").read_text(encoding="utf-8"))
+        self.assertEqual(parser.errors, [])
+        self.assertEqual(parser.stack, [])
+        self.assertEqual(len(parser.navigations), 2)
+        desktop = [nav for nav in parser.navigations if not nav["details"]]
+        mobile = [nav for nav in parser.navigations if nav["details"]]
+        self.assertEqual(len(desktop), 1)
+        self.assertEqual(len(mobile), 1)
+        self.assertEqual(desktop[0]["links"], mobile[0]["links"])
+        self.assertTrue(any(link[0] == "/git/" and link[1] == "page"
+                            for link in mobile[0]["links"]))
+        menu = mobile[0]["details"][-1]
+        self.assertIn("ee-mobile-menu", menu.get("class", "").split())
+        self.assertNotIn("open", menu)
+        summaries = [attrs for tag, attrs in parser.tags if tag == "summary"]
+        self.assertEqual(len(summaries), 1)
 
 
 @unittest.skipUnless(os.name == "posix", "The deployment paths and permissions are Linux-specific")
@@ -150,6 +205,46 @@ class ThemeInstallTests(unittest.TestCase):
         self.assertEqual(self.config.stat().st_mtime_ns, config_before)
         self.assertEqual(self.state_path.read_bytes(), state_before)
         self.assertEqual(len(list((self.private / "theme-backups").iterdir())), 1)
+
+    def test_upgrading_a_theme_keeps_the_previous_assets_cache_and_repository(self):
+        # Exercise a real theme transition, rather than just an idempotent rerun.
+        # An older version may still be open in a browser or needed for rollback.
+        previous_inputs = self.root / "previous-theme"
+        previous_inputs.mkdir()
+        for name in (*theme.PUBLIC_FILES, *theme.PRIVATE_FILES):
+            (previous_inputs / name).write_bytes((self.theme_dir / name).read_bytes())
+        stylesheet = previous_inputs / "eelinux-cgit.css"
+        stylesheet.write_bytes(stylesheet.read_bytes() + b"\n/* Previous published theme. */\n")
+        previous = theme.apply_theme(previous_inputs, self.document, self.private,
+                                     self.repo, theme.DEFAULT_URL)
+        state_before = json.loads(self.state_path.read_bytes())
+        original_assets = {Path(name): Path(name).read_bytes()
+                           for name in state_before["files"] if Path(name) != self.config}
+        cache_marker = Path(previous["cache_root"]) / "cached-page"
+        cache_marker.write_bytes(b"previous cached HTML")
+        repo_marker = self.repo / "repository-must-stay-unchanged"
+        repo_marker.write_bytes(b"existing repository")
+        previous_config = self.config.read_bytes()
+
+        current = self.apply()
+
+        self.assertTrue(current["changed"])
+        self.assertNotEqual(current["theme_id"], previous["theme_id"])
+        self.assertNotEqual(current["cache_root"], previous["cache_root"])
+        self.assertEqual(self.nonpresentation(self.config.read_bytes()), self.nonpresentation(previous_config))
+        self.assertEqual(cache_marker.read_bytes(), b"previous cached HTML")
+        self.assertEqual(repo_marker.read_bytes(), b"existing repository")
+        for path, content in original_assets.items():
+            self.assertEqual(path.read_bytes(), content)
+        state_after = json.loads(self.state_path.read_bytes())
+        self.assertTrue(set(state_before["files"]).issubset(state_after["files"]))
+        for name, expected in state_after["files"].items():
+            self.assertEqual(sha256(Path(name).read_bytes()).hexdigest(), expected)
+        backup = Path(current["backup"])
+        copies = {record["path"]: (backup / record["backup"]).read_bytes()
+                  for record in json.loads((backup / "backup.json").read_bytes())["files"]}
+        self.assertEqual(copies[str(self.config)], previous_config)
+        self.assertEqual(json.loads(copies[str(self.state_path)]), state_before)
 
     def test_refuses_unknown_destination_and_does_not_write_anything_else(self):
         _inputs, identity = theme.read_theme(self.theme_dir)

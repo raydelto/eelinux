@@ -11,7 +11,7 @@ import zipfile
 
 HERE = Path(__file__).resolve().parent
 SOURCE_ROOT = HERE.parents[2]
-ASSETS = ("eelinux-cgit.css", "eelinux-logo.svg", "favicon.svg",
+ASSETS = ("eelinux-cgit.css", "eelinux-cgit.js", "eelinux-logo.svg", "favicon.svg",
           "head.html", "header.html", "footer.html")
 BOOTSTRAP = '''"""Validate the uploaded theme package before running its installer."""
 from hashlib import sha256
@@ -25,7 +25,7 @@ import tempfile
 import zipfile
 
 sys.dont_write_bytecode = True
-NAMES = {"__main__.py", "install_theme.py", "eelinux-cgit.css", "eelinux-logo.svg",
+NAMES = {"__main__.py", "install_theme.py", "eelinux-cgit.css", "eelinux-cgit.js", "eelinux-logo.svg",
          "favicon.svg", "head.html", "header.html", "footer.html"}
 try:
     if sys.version_info < (3, 9) or platform.system() != "Linux":

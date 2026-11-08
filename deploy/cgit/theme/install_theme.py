@@ -20,7 +20,7 @@ DEFAULT_DOCUMENT_ROOT = "/home/falaneto/public_html/eelinux"
 DEFAULT_PRIVATE_ROOT = "/home/falaneto/eelinux-cgit"
 DEFAULT_REPOSITORY = "/home/falaneto/repos/eelinux.git"
 DEFAULT_URL = "https://eelinux.falanet.org/git"
-PUBLIC_FILES = ("eelinux-cgit.css", "eelinux-logo.svg", "favicon.svg")
+PUBLIC_FILES = ("eelinux-cgit.css", "eelinux-cgit.js", "eelinux-logo.svg", "favicon.svg")
 PRIVATE_FILES = ("header.html", "footer.html", "head.html")
 MANAGED_KEYS = frozenset(("logo", "favicon", "header", "footer", "head-include",
                           "root-title", "root-desc", "cache-root"))
@@ -113,8 +113,8 @@ def read_theme(theme_dir):
         if not path.is_file():
             raise ValueError(f"Theme input is missing: {path}")
         data[name] = path.read_bytes()
-    if data["head.html"].count(b"{{THEME_URL}}") != 1:
-        raise ValueError("head.html must contain exactly one {{THEME_URL}} placeholder")
+    if data["head.html"].count(b"{{THEME_URL}}") != 2:
+        raise ValueError("head.html must contain two {{THEME_URL}} placeholders for CSS and JavaScript")
     for name, content in data.items():
         if name != "head.html" and b"{{THEME_URL}}" in content:
             raise ValueError(f"Unexpected theme URL placeholder in {name}")

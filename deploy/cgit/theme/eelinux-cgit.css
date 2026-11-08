@@ -312,37 +312,202 @@ div#cgit div.footer a, div#cgit .ee-footer a { color: var(--ee-link); text-decor
 div#cgit .ee-footer { padding-top: 14px; border-top: 1px dotted #9da391; }
 div#cgit .ee-footer p { margin: 0 0 8px; }
 
-@media (max-width: 1050px) {
+/* Comandos, mensagens e URLs cabem na página sem barras horizontais. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+.ee-mobile-menu { display: none; }
+.ee-sidebar, div#cgit, div#cgit div.content { overflow-wrap: anywhere; }
+div#cgit pre, div#cgit code, div#cgit .commit-msg, div#cgit .notes,
+div#cgit table.list td.logmsg {
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+div#cgit pre { tab-size: 4; }
+div#cgit a[rel="vcs-git"], div#cgit .oid { white-space: normal; overflow-wrap: anywhere; }
+div#cgit table.blob pre { white-space: pre; }
+div#cgit table.blob { display: block; max-width: 100%; overflow-x: auto; }
+.ee-mobile-menu > summary:focus-visible { outline: 2px solid var(--ee-blue); outline-offset: 3px; }
+
+@media (min-width: 1025px) and (max-width: 1120px) {
   div#cgit { padding: 24px; }
   div#cgit table#header td.main { font-size: 24px; }
 }
-@media (max-width: 900px) {
-  div#cgit table#header { display: grid; grid-template-columns: 64px minmax(0, 1fr); column-gap: 12px; }
+
+/* Tablets: cabeçalho compacto e todos os controlos disponíveis. */
+@media (max-width: 1024px) {
+  body { display: block; border-left: 0; border-right: 0; }
+  .ee-sidebar {
+    position: relative;
+    padding: 20px clamp(20px, 4vw, 40px);
+    border-right: 0;
+    border-bottom: 1px solid var(--ee-line);
+  }
+  .ee-brand { max-width: calc(100% - 112px); }
+  .ee-tagline { margin: 6px 100px 0 0; }
+  .ee-desktop-nav, .ee-side-note { display: none; }
+  .ee-mobile-menu { display: block; }
+  .ee-mobile-menu > summary {
+    position: absolute;
+    top: 21px;
+    right: clamp(20px, 4vw, 40px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-width: 88px;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #7b8a94;
+    background: var(--ee-paper);
+    color: var(--ee-blue);
+    font: bold 14px/1.4 var(--ee-mono);
+    cursor: pointer;
+    list-style: none;
+  }
+  .ee-mobile-menu > summary::-webkit-details-marker { display: none; }
+  .ee-mobile-menu > summary::marker { content: ""; }
+  .ee-mobile-menu .ee-menu-close { display: none; }
+  .ee-mobile-menu[open] .ee-menu-open { display: none; }
+  .ee-mobile-menu[open] .ee-menu-close { display: inline; }
+  .ee-mobile-menu > nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+    margin-top: 20px;
+    padding-top: 24px;
+    border-top: 1px solid var(--ee-line);
+  }
+  .ee-mobile-menu .ee-nav-group { min-width: 0; margin: 0; }
+  .ee-mobile-menu .ee-nav-group ul { padding: 0; list-style: none; font-size: 15px; line-height: 1.4; }
+  .ee-mobile-menu .ee-nav-group li { padding: 0; }
+  .ee-mobile-menu .ee-nav-group a { display: flex; align-items: center; min-height: 44px; padding: 10px 0; }
+  div#cgit { padding: 24px clamp(20px, 4vw, 40px) 28px; font-size: 15px; }
+  div#cgit div.content { overflow-x: visible; }
+  div#cgit div.content img { max-width: 100%; height: auto; }
+  div#cgit table#header {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    column-gap: 12px;
+  }
   div#cgit table#header tbody, div#cgit table#header tr { display: contents; }
+  div#cgit table#header td { min-width: 0; }
   div#cgit table#header td.logo { grid-column: 1; grid-row: 1 / 4; width: 64px; padding: 0; }
-  div#cgit table#header td.main { grid-column: 2; grid-row: 1; }
-  div#cgit table#header td.sub { grid-column: 2; grid-row: 2; }
-  div#cgit table#header td.form { grid-column: 2; grid-row: 3; padding: 8px 0 0; text-align: left; }
+  div#cgit table#header td.main { grid-column: 2; grid-row: 1; font-size: clamp(22px, 3vw, 28px); }
+  div#cgit table#header td.sub { grid-column: 2; grid-row: 2; padding-left: 0; font-size: 12px; }
+  div#cgit table#header td.form { grid-column: 2; grid-row: 3; padding: 10px 0 0; text-align: left; white-space: normal; }
   div#cgit table#header td.sub.right { grid-column: 2; grid-row: 4; padding: 0; border: 0; }
+  div#cgit table#header td.form form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  div#cgit table.tabs tr { align-items: stretch; gap: 12px; }
+  div#cgit table.tabs td:first-child { flex-basis: 100%; }
+  div#cgit table.tabs td a { min-height: 44px; padding: 12px 10px; font-size: 14px; }
+  div#cgit table.tabs td.form { flex: 1 1 100%; }
+  div#cgit table.tabs td.form form { gap: 8px; }
+  div#cgit input, div#cgit select, div#cgit button,
+  div#cgit table#header td.form input, div#cgit table#header td.form select {
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    padding: 8px 10px;
+    font-size: 16px;
+  }
+  div#cgit input[type="search"] { flex: 1 1 10rem; width: 10rem; }
+  div#cgit div.path { padding: 10px; font-size: 13px; }
+
+  /* As larguras fixas e os nowrap nativos deixam de impor uma página larga. */
+  div#cgit table { width: 100%; max-width: 100%; table-layout: fixed; }
+  div#cgit table th, div#cgit table td {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+  div#cgit table.list { font-size: 14px; }
+  div#cgit table.list td, div#cgit table.list th { padding: 9px 8px; white-space: normal; }
+  div#cgit td.ls-mode, div#cgit td.ls-size { width: auto; white-space: normal; }
+  div#cgit table.list td.commitgraph, div#cgit table.list td.logmsg { white-space: pre-wrap; }
+  div#cgit table.list td.logsubject { white-space: normal; }
+  div#cgit a.button { min-height: 36px; padding: 8px; font-size: 12px; }
+  div#cgit table.blob { display: table; width: 100%; overflow: visible; font-size: 13px; }
+  div#cgit table.blob td.linenumbers { width: 3.5rem; padding: 0 6px; }
+  div#cgit table.blob td.lines { width: auto; padding-left: 8px; }
+  div#cgit table.blob td.hashes { width: 6rem; }
+  div#cgit table.blob pre, div#cgit table.blob code {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+  div#cgit table.blob td.linenumbers { user-select: none; }
+  div#cgit table.blob td.linenumbers a { display: inline-block; max-width: 100%; scroll-margin-top: 16px; }
+  div#cgit table.blame td.lines > div > pre { position: static; padding: 0; }
+  div#cgit table.blame td.lines > div > div { display: none; }
+  div#cgit table.bin-blob td, div#cgit table.bin-blob th {
+    padding: 2px;
+    font-size: 12px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  div#cgit table.diff td, div#cgit table.ssdiff td,
+  div#cgit table.diff td div, div#cgit table.ssdiff td div {
+    min-width: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 13px;
+  }
+  div#cgit table.ssdiff td[class] { min-width: 0; width: auto; }
+  div#cgit table.ssdiff td.lineno { width: 3rem; }
+  div#cgit table.diffstat td { padding: 6px; }
+  div#cgit table.diffstat td.mode { white-space: normal; }
+  div#cgit table.diffstat td.graph { width: 22%; }
+  div#cgit table.diffstat td.graph table { max-width: 100%; }
+  div#cgit table.hgraph { width: 100%; }
+  div#cgit table.commit-info { display: block; font-size: 14px; }
+  div#cgit table.commit-info tbody, div#cgit table.commit-info tr { display: block; }
+  div#cgit table.commit-info th, div#cgit table.commit-info td { display: block; padding: 4px 0; }
+  div#cgit table.commit-info tr { margin-bottom: 12px; }
+  div#cgit table.commit-info th { font-weight: bold; }
+  div#cgit div.commit-msg, div#cgit .notes { font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  div#cgit div.commit-subject { font-size: 22px; overflow-wrap: anywhere; }
+  div#cgit div.cgit-panel form { display: block; margin: 8px 0 0; }
+  div#cgit div.cgit-panel table { width: 100%; }
+  div#cgit ul.pager { display: flex; flex-wrap: wrap; gap: 8px; padding-left: 0; }
+  div#cgit ul.pager li { display: inline-block; padding: 0; }
+  div#cgit ul.pager a { display: inline-block; min-height: 44px; padding: 10px; }
+  div#cgit div.footer, div#cgit .ee-footer { font-size: 12px; }
 }
+
+/* As linhas largas conservam os cabeçalhos como legendas e ligações de ordenação. */
 @media (max-width: 760px) {
-  body { display: block; }
-  .ee-sidebar { padding: 22px 24px 8px; border-right: 0; border-bottom: 1px solid var(--ee-line); }
-  .ee-tagline { margin-bottom: 20px; }
-  .ee-sidebar nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
-  .ee-nav-group { margin-bottom: 18px; }
-  .ee-side-note { margin-top: 0; padding-top: 12px; }
-  .ee-side-note p { display: inline-block; margin-right: 12px; }
-  div#cgit { padding: 24px; }
+  .ee-mobile-menu > nav { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; }
+  div#cgit table.ee-list-labelled, div#cgit table.ee-list-labelled tbody { display: block; }
+  div#cgit table.ee-list-labelled tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 14px; border: 1px solid var(--ee-line); }
+  div#cgit table.ee-list-labelled td { display: block; min-width: 0; padding: 9px 12px; text-align: left; }
+  div#cgit table.ee-list-labelled td::before { display: block; margin-bottom: 3px; color: var(--ee-muted); font: bold 12px/1.4 Georgia, "Times New Roman", serif; content: attr(data-ee-label); }
+  div#cgit table.ee-list-labelled td.ee-list-wide { grid-column: 1 / -1; }
+  div#cgit table.ee-list-labelled tr.ee-list-head { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 8px; border: 0; border-bottom: 1px solid var(--ee-line); background: #eeeee5; }
+  div#cgit table.ee-list-labelled tr.ee-list-head th { display: block; padding: 2px 0; border: 0; background: transparent; }
+  div#cgit table.ee-list-labelled tr.ee-list-head a { display: inline-block; min-height: 36px; padding: 6px 0; }
+  div#cgit table.ee-list-labelled tr.ee-list-space { display: none; }
 }
-@media (max-width: 420px) {
-  .ee-sidebar { padding-left: 18px; padding-right: 18px; }
-  .ee-sidebar nav { gap: 0 16px; }
-  .ee-nav-group ul { font-size: 13px; }
-  div#cgit { padding: 22px 16px; }
+@media (max-width: 480px) {
+  .ee-sidebar { padding: 16px 20px; }
+  .ee-brand { font-size: 30px; }
+  .ee-mobile-menu > summary { top: 16px; right: 20px; }
+  .ee-mobile-menu > nav { gap: 12px 20px; }
+  .ee-nav-group h2 { font-size: 14px; }
+  div#cgit { padding: 20px 16px; }
+  div#cgit table#header { grid-template-columns: 48px minmax(0, 1fr); gap: 8px 10px; }
+  div#cgit table#header td.logo { width: 48px; grid-row: 1; }
+  div#cgit table#header td.logo img { width: 48px; height: 48px; }
   div#cgit table#header td.main { font-size: 22px; }
-  div#cgit table.tabs td a { padding: 6px 7px; }
-  div#cgit div.cgit-panel form { display: block; margin: 6px 0 0; }
+  div#cgit table#header td.sub { grid-column: 1 / -1; grid-row: 2; }
+  div#cgit table#header td.form { grid-column: 1 / -1; grid-row: 3; }
+  div#cgit table.tabs td a { padding: 12px 8px; }
+}
+@media (any-pointer: coarse) {
+  .ee-desktop-nav a { display: block; min-height: 44px; padding: 8px 0; }
 }
 @media print {
   html { background: white; }
