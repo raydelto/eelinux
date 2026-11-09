@@ -4,7 +4,7 @@ This theme carries the eeLinux website's paper background, navy wordmark, sage s
 
 The three HTML fragments are deliberately independent. cgit inserts `header` immediately after `<body>` and inserts `footer` inside `#cgit`, after its content. The sidebar closes completely in `header.html`; no wrapper starts in one include and ends in another. `head.html` supplies the viewport, browser theme colour and the additional stylesheet. The supported options and insertion points are documented in [cgitrc.5](https://git.zx2c4.com/cgit/tree/cgitrc.5.txt) and [ui-shared.c](https://git.zx2c4.com/cgit/tree/ui-shared.c).
 
-On phones and tablets, the project navigation folds into a native Menu disclosure and the repository uses the full page width. Repository tables, paths, hashes, clone URLs, commit text and commands wrap within the available space. Search, branch selection and repository tabs retain their native cgit actions, with larger touch targets.
+On phones and tablets, the project navigation folds into a native Menu disclosure and the repository uses the full page width. Both navigation menus include Forum and Mailing list links alongside Git. Repository tables, paths, hashes, clone URLs, commit text and commands wrap within the available space. Search, branch selection and repository tabs retain their native cgit actions, with larger touch targets.
 
 The deferred `eelinux-cgit.js` helper keeps source line numbers beside their corresponding text when long lines wrap. It works from the HTML already rendered by cgit. The theme does not alter the stored source, raw file responses, patches, snapshots or clone transport. The original cgit script remains loaded for its existing controls.
 
@@ -13,7 +13,7 @@ The deferred `eelinux-cgit.js` helper keeps source line numbers beside their cor
 The uploaded, self-contained updater can be activated directly in the hosting account's shell:
 
 ```sh
-python3 -B "$(find /home/falaneto -type f -name 'eelinux-cgit-theme-8f6720ee09758e9c.pyz' -print -quit)"
+python3 -B "$(find /home/falaneto -type f -name 'eelinux-cgit-theme-b108683b5a8a421a.pyz' -print -quit)"
 ```
 
 FTP transfers the updater but cannot execute it. This command uses the same installer and defaults described below; no Git commit is required. To validate without activating, append `--check-only`. Do not run it concurrently with another deployment.
