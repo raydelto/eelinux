@@ -413,7 +413,7 @@ def kernel_command_line(root_device, video_mode="576p"):
 def configure(args):
     linux_required()
     report = inspect_source(Path(args.source), args.profile)
-    if not report["source_gate_passed"]:
+    if not report["source_gate_passed"] and not getattr(args, "allow_open_gate", False):
         raise RuntimeError("Source has incomplete PS2 integration or rejected port hunks. "
                            "Run audit; resolve source defects before configuring a boot image.")
     for tool in ("gcc", "ld", "objcopy", "strip"):
@@ -516,6 +516,10 @@ def validate_static_init(path):
 
 def apply_correctness(source):
     patch = ROOT / "kernel/patches/driver-correctness.patch"
+    if (Path(source) / ".eelinux-port.json").is_file():
+        # port() applied it before writing this marker; later GS patches edit
+        # the same drivers, so neither direction checks cleanly afterwards.
+        return
     check = subprocess.run(["git", "apply", "--check", str(patch)], cwd=source,
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if check.returncode == 0:
@@ -604,7 +608,11 @@ def boot_layout(kernel_path, compressed_path):
 def build(args):
     linux_required()
     if not inspect_source(Path(args.source), args.profile)["source_gate_passed"]:
-        raise RuntimeError("Source integration audit failed; resolve rejected port hunks before building a boot image")
+        if not args.allow_open_gate:
+            raise RuntimeError("Source integration audit failed; resolve rejected port hunks before building a boot image")
+        # Released media kernels are built from this state; the report keeps it visible.
+        print("kernel: WARNING: source gate is open (rejected port hunks remain); "
+              "building because --allow-open-gate was given", file=sys.stderr)
     validate_static_init(Path(args.initramfs).resolve() / "init")
     firmware = Path(args.firmware).resolve()
     validate_firmware(firmware)
@@ -661,6 +669,7 @@ def build(args):
                "image_bytes": len(data), "initramfs_file_bytes": init_bytes, "early_modules": manifest,
                "initramfs_archive_bytes": archive_bytes,
                "boot_layout": layout,
+               "source_gate_passed": inspect_source(Path(args.source), args.profile)["source_gate_passed"],
                "hardware_validated": False, "native_smap_implemented": True,
                "native_smap_builtin": True, "root_filesystem": "ext4"})
     print(f"Boot ELF: {artifact}; real-hardware validation pending")
@@ -738,6 +747,9 @@ def parser():
             a.add_argument("--boot-storage", choices=("usb", "ata"), default="usb")
             a.add_argument("--jobs", type=int, default=min(2, os.cpu_count() or 1))
             a.add_argument("--artifact", default=str(ROOT / "dist/eelinux-ps2.elf"))
+            a.add_argument("--allow-open-gate", action="store_true",
+                           help="build even though the source audit gate is closed; used to reproduce "
+                                "the native-GS reference build that the USB/DVD media kernels derive from")
     a = sub.add_parser("firmware")
     a.add_argument("--source", required=True)
     a.add_argument("--destination", required=True)

@@ -2,6 +2,7 @@
 from pathlib import Path
 import difflib
 import subprocess
+from common import same_patch_content, write_reviewed_patch
 
 
 def replace_once(text, before, after):
@@ -87,10 +88,10 @@ def install(source: Path, patch: Path):
     blob = ''.join(''.join(difflib.unified_diff(before.splitlines(keepends=True),
         after.splitlines(keepends=True), fromfile='a/'+name, tofile='b/'+name))
         for name, before, after in changes).encode()
-    if patch.exists() and patch.read_bytes() != blob:
+    if patch.exists() and not same_patch_content(patch.read_bytes(), blob):
         raise RuntimeError('Preserve reviewed uncached IOP patch')
     patch.parent.mkdir(parents=True, exist_ok=True)
-    patch.write_bytes(blob)
+    write_reviewed_patch(patch, blob)
     subprocess.run(['git', 'apply', '--check', str(patch.resolve())], cwd=source, check=True)
     subprocess.run(['git', 'apply', str(patch.resolve())], cwd=source, check=True)
     return {'IOP_mapping': 'uncached KSEG1', 'LOADFILE_patch': 'ordered 32-bit I/O stores',

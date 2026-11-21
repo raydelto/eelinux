@@ -1,0 +1,9 @@
+{
+  "platform": "Linux x86_64",
+  "repository": "https://github.com/ps2dev/ps2dev",
+  "asset_id": 422427014,
+  "asset_url": "https://github.com/ps2dev/ps2dev/releases/download/v2.0.0/ps2dev-ubuntu-latest.tar.gz",
+  "sha256": "c8e5dedccf62084d476894e88cd0451b57f1ed288e741eb3c1263010aaffc028",
+  "digest_source": "GitHub release asset API digest for tag v2.0.0 (published 2026-05-17), verified 2026-11-21",
+  "note": "Immutable tagged release. Use when the moving 'latest' asset pinned in ps2dev-binary-lock.json has been replaced upstream (it was, on 2026-11-20). IRX output may differ from builds made with the older pinned SDK."
+}

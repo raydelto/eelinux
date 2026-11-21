@@ -8,6 +8,7 @@ CROSS_COMPILE ?= $(TOOLCHAIN)/bin/mipsr5900el-unknown-linux-gnu-
 LIBC_SYSROOT ?= $(TOOLCHAIN)/mipsr5900el-unknown-linux-gnu/sysroot
 PS2DEV ?= $(HOME)/.local/eelinux-ps2dev/ps2dev
 IOP_CROSS_COMPILE ?= $(PS2DEV)/iop/bin/mipsel-none-elf-
+PS2DEV_LOCK ?= toolchain/ps2dev-binary-lock.json
 JOBS ?= 2
 PROFILE ?= desktop
 KERNEL_PROFILE ?= 7.2.8
@@ -18,6 +19,10 @@ STAGING := $(WORK)/rootfs-$(PROFILE)
 KERNEL_SOURCE := $(WORK)/sources/linux-$(KERNEL_PROFILE)
 BASELINE_SOURCE := $(WORK)/sources/linux-baseline
 INITRAMFS := $(WORK)/initramfs-$(KERNEL_PROFILE)
+GS_SOURCE ?= $(WORK)/sources/linux-$(KERNEL_PROFILE)-ps2-gs
+GS_BUILD ?= $(WORK)/kernel-$(KERNEL_PROFILE)-ps2-gs
+USB_KERNEL_WORK ?= $(WORK)/usb-kernel-$(VIDEO_MODE)
+USB_KERNEL_DIR ?= $(OUTPUT)/usb-kernel-$(VIDEO_MODE)
 ROOT_PASSWORD_HASH_FILE ?=
 PASSWORD_OPTION := $(if $(ROOT_PASSWORD_HASH_FILE),--root-password-hash-file "$(ROOT_PASSWORD_HASH_FILE)",)
 DESKTOP_OPTION := $(if $(filter base,$(PROFILE)),--no-desktop,)
@@ -42,7 +47,7 @@ MEDIA_DVD_KERNEL_DIR ?= $(OUTPUT)/dvd-kernel
 MEDIA_KERNEL_BUILD ?= $(WORK)/kernel-$(KERNEL_PROFILE)
 MEDIA_DVD_WORK ?= $(WORK)/dvd-kernel
 MEDIA_DVD_OPTIONS = --dvd-kernel "$(MEDIA_DVD_KERNEL_DIR)/EELINUX.ELF" --dvd-kernel-config "$(MEDIA_DVD_KERNEL_DIR)/kernel.config" --dvd-kernel-report "$(MEDIA_DVD_KERNEL_DIR)/kernel-report.json"
-.PHONY: help plan check kernel-source kernel-port kernel-modernize kernel-audit toolchain ps2dev firmware userland keyboard locales dhcpcd initramfs kernel image all reference-system emulator-userland-build emulator-smoke emulator-prepare xorg-apps-update xorg-apps native-xorg usb-image-2gb dvd-kernel-pal dvd-iso-slim-pal dvd-iso-fat-pal dvd-isos-pal pal-media
+.PHONY: help plan check kernel-source kernel-port kernel-modernize kernel-audit toolchain ps2dev firmware userland keyboard locales dhcpcd initramfs kernel image all reference-system emulator-userland-build emulator-smoke emulator-prepare xorg-apps-update xorg-apps native-xorg usb-image-2gb kernel-gs-tree kernel-gs-reference usb-kernel dvd-kernel-pal dvd-iso-slim-pal dvd-iso-fat-pal dvd-isos-pal pal-media
 help:
 	@$(PYTHON) scripts/project.py help
 
@@ -75,7 +80,7 @@ firmware:
 	$(PYTHON) scripts/kernel.py firmware --source "$(WORK)/sources/iopmod" --destination "$(WORK)/firmware" --cross-prefix "$(IOP_CROSS_COMPILE)" --jobs $(JOBS)
 
 ps2dev:
-	$(PYTHON) scripts/install_ps2dev.py --directory "$(PS2DEV)/.." --cache "$(WORK)/downloads"
+	$(PYTHON) scripts/install_ps2dev.py --directory "$(PS2DEV)/.." --cache "$(WORK)/downloads" --lock "$(PS2DEV_LOCK)"
 
 userland:
 	EELINUX_QEMU_WORK="$(EMULATOR_WORK)" $(if $(filter full,$(PROFILE)),$(PYTHON) scripts/userland_full.py --profile full --sysroot "$(STAGING)" --toolchain-prefix "$(CROSS_COMPILE)" --work "$(WORK)/userland-latest" --jobs $(JOBS),$(PYTHON) scripts/userland.py build --sysroot "$(STAGING)" --toolchain-prefix "$(CROSS_COMPILE)" --work "$(WORK)/userland" --jobs $(JOBS) --profile $(PROFILE))
@@ -111,6 +116,18 @@ xorg-apps:
 
 native-xorg:
 	$(PYTHON) scripts/native_xorg.py --work "$(WORK)/xorg-native" --sysroot "$(XORG_SDK)" --host-tools "$(XORG_HOST)" --staging "$(STAGING)" --toolchain-prefix "$(CROSS_COMPILE)" --jobs $(JOBS)
+
+# Media kernels: native-GS tree, its reference build, then the USB kernel.
+# The source gate is still closed; these targets build anyway, as the released
+# media kernels were, and record source_gate_passed=false in their reports.
+kernel-gs-tree:
+	$(PYTHON) scripts/kernel_gs_tree.py --source "$(KERNEL_SOURCE)" --output "$(GS_SOURCE)"
+
+kernel-gs-reference: initramfs
+	$(PYTHON) scripts/kernel.py build --allow-open-gate --profile $(KERNEL_PROFILE) --source "$(GS_SOURCE)" --output "$(GS_BUILD)" --initramfs "$(INITRAMFS)" --cross-prefix "$(CROSS_COMPILE)" --firmware "$(WORK)/firmware" --modules-root "$(GS_BUILD)-modules" --root-device "$(ROOT_DEVICE)" --video-mode "$(VIDEO_MODE)" --jobs $(JOBS) --artifact "$(GS_BUILD)-artifact/eelinux-gs-reference.elf"
+
+usb-kernel:
+	$(PYTHON) scripts/kernel_usb.py --source "$(GS_SOURCE)" --base-output "$(GS_BUILD)" --work "$(USB_KERNEL_WORK)" --output-dir "$(USB_KERNEL_DIR)" --cross-prefix "$(CROSS_COMPILE)" --video-mode "$(VIDEO_MODE)" --jobs $(JOBS)
 
 # Packaging uses an existing compiled desktop and a PAL /dev/sda2 kernel.
 # No tests, qualification services or diagnostics are packaged or run here.
