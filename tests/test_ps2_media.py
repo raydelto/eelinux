@@ -97,6 +97,24 @@ class ProductionMedia(unittest.TestCase):
                 report.write_text(json.dumps(old))
                 with self.assertRaisesRegex(RuntimeError,'native Rock Ridge'):ps2_media.dvd_inputs(args)
 
+    def test_ntsc_usb_fallback_must_match_kernel_modules(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            primary=root/'primary.json'; fallback=root/'fallback.json'
+            record={'kernel_release':'7.2.8','modules':{'module.ko':'abc'}}
+            primary.write_text(json.dumps(record));fallback.write_text(json.dumps(record))
+            args=argparse.Namespace(video_mode='480p',kernel_report=primary,
+                fallback_kernel=root/'EENTSC.ELF',fallback_config=root/'fallback.config',
+                fallback_report=fallback)
+            self.assertEqual(ps2_media.usb_fallback(args)[0],args.fallback_kernel)
+            record['modules']['module.ko']='different'
+            fallback.write_text(json.dumps(record))
+            with self.assertRaisesRegex(RuntimeError,'modules differ'):ps2_media.usb_fallback(args)
+            args.fallback_config=None
+            with self.assertRaisesRegex(RuntimeError,'requires an interlaced'):ps2_media.usb_fallback(args)
+            args.video_mode='576p'
+            self.assertIsNone(ps2_media.usb_fallback(args))
+
     @unittest.skipUnless(shutil.which('genisoimage'),'Linux ISO builder required')
     def test_rock_ridge_preserves_gnu_links_secure_permissions_and_all_file_bytes(self):
         with tempfile.TemporaryDirectory() as folder:
