@@ -2,6 +2,9 @@
 
 ## Host prerequisites
 
+To rebuild the release media on a fresh host, step by step, follow
+[reproducible-build.md](reproducible-build.md).
+
 For the current X.Org applications and test-free PAL DVD/2 GB USB packaging,
 see [pal-desktop-media.md](pal-desktop-media.md). Use `make xorg-apps`,
 `make native-xorg` on the full userland stage, then `make dvd-kernel-pal` and
