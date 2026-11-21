@@ -51,7 +51,7 @@
     "tree": "tree",
     "openssh": "ssh scp sftp ssh-keygen ssh-keyscan ssh-add ssh-agent sshd",
     "openssl": "openssl",
-    "less": "less lessecho lesskey",
+    "less": "less",
     "eelinux": "ps2-video ps2-keyboard",
     "atftp": "atftp atftpd",
     "bmon": "bmon",

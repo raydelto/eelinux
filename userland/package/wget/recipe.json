@@ -23,5 +23,13 @@
   "in_source_build": false,
   "build_jobs": null,
   "special_recipe": "autotools",
-  "build_dependency_only": false
+  "build_dependency_only": false,
+  "patches": [
+    {
+      "path": "userland/patches/wget-1.25.0-openssl4-sslv3.patch",
+      "sha256": "5c9ccd590198eb7a7d2bebaa97d7de704d9c6909114f7de145fcc7e048784c58",
+      "strip": 1,
+      "reason": "OpenSSL 4 removed SSLv3_client_method without defining OPENSSL_NO_SSL3_METHOD"
+    }
+  ]
 }

@@ -1,0 +1,14 @@
+--- a/src/xattrs.c
++++ b/src/xattrs.c
+@@ -139,6 +139,11 @@
+ #ifdef HAVE_POSIX_ACLS
+ 
+ /* acl-at wrappers, TODO: move to gnulib in future? */
++/* libacl 2.4 exports functions with these names and different types;
++   keep tar's private wrappers under their own names. */
++#define acl_get_file_at tar_acl_get_file_at
++#define acl_set_file_at tar_acl_set_file_at
++#define acl_delete_def_file_at tar_acl_delete_def_file_at
+ static acl_t acl_get_file_at (int, const char *, acl_type_t);
+ static int acl_set_file_at (int, const char *, acl_type_t, acl_t);
+ static int file_has_acl_at (int, char const *, struct stat const *);

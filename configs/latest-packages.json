@@ -715,7 +715,8 @@
       "filename": "shadow-4.20.3.tar.xz",
       "url": "https://github.com/shadow-maint/shadow/releases/download/4.20.3/shadow-4.20.3.tar.xz",
       "sha256": "623be9429f64fa2165bfc5957c6a642ec309c5cf23c0d53855c99f7591922297",
-      "version_url": "https://github.com/shadow-maint/shadow/releases/tag/4.20.3"
+      "version_url": "https://github.com/shadow-maint/shadow/releases/tag/4.20.3",
+      "recipe_override": "userland/package/shadow/latest-buildroot-recipe.txt"
     },
     "skalibs": {
       "version": "2.16.0.0",

@@ -95,7 +95,10 @@ def main():
         CPPFLAGS='-I'+str(sysroot/'usr/include'),LDFLAGS='-Wl,-rpath-link,'+str(sysroot/'usr/lib'),
         PKG_CONFIG=str(host/'bin/pkgconf'),PKG_CONFIG_SYSROOT_DIR=str(sysroot),
         PKG_CONFIG_LIBDIR=str(sysroot/'usr/lib/pkgconfig')+':'+str(sysroot/'usr/share/pkgconfig'),
-        CC_FOR_BUILD='gcc',CXX_FOR_BUILD='g++',BUILD_CC='gcc',BUILD_CFLAGS='-O2',
+        CC_FOR_BUILD='gcc',CXX_FOR_BUILD='g++',BUILD_CC='gcc',
+        # Same C dialect as the target build: GCC 15+ hosts default to C23,
+        # which breaks build helpers such as bash's mkbuiltins (bool typedef).
+        BUILD_CFLAGS='-O2 -std=gnu17',CFLAGS_FOR_BUILD='-O2 -std=gnu17',
         FORCE_UNSAFE_CONFIGURE='1')
     env['PATH']=str(host/'bin')+':'+str(Path(PREFIX).parent)+':'+env['PATH']
     for name in args.packages or ORDER:

@@ -697,3 +697,47 @@ endef
 ifeq ($(E2FSPROGS_VERSION),1.47.4)
 E2FSPROGS_POST_PATCH_HOOKS += EELINUX_E2FSPROGS_1474_MOUNTED_READONLY_METADATA
 endif
+
+# libacl 2.4.0 adds acl_get_file_at, acl_set_file_at and acl_delete_def_file_at
+# with types that differ from tar 1.35's private static wrappers of the same
+# names. Rename tar's wrappers; ACL archiving behavior is unchanged.
+define EELINUX_TAR_135_ACL_24_WRAPPER_NAMES
+	printf '%s  %s\n' 0f911ef76c37a9c81467d23f2a09159cef083f98d928abdbf4aede461c1ae8e6 \
+		"$(BR2_EXTERNAL_EELINUX_PATH)/patches/tar-1.35-acl-2.4-wrapper-names.patch" | sha256sum -c -
+	printf '%s  %s\n' 8598a61c46ece2530cde835d3bf8ae99f5a7999207da593ccbbccdb767d521d6 "$(@D)/src/xattrs.c" | sha256sum -c -
+	cd $(@D) && patch --batch --forward --fuzz=0 -p1 \
+		-i "$(BR2_EXTERNAL_EELINUX_PATH)/patches/tar-1.35-acl-2.4-wrapper-names.patch"
+	printf '%s  %s\n' a77499c4369e86eb4e9e4dc089bf8ec0d1558e8a862d05e9962480e381b6f4af "$(@D)/src/xattrs.c" | sha256sum -c -
+endef
+ifeq ($(TAR_VERSION),1.35)
+TAR_POST_PATCH_HOOKS += EELINUX_TAR_135_ACL_24_WRAPPER_NAMES
+endif
+
+# tclZipfs.c needs minizip's crypt.h from Tcl's bundled zlib, but HOST_DIR/include
+# (searched first) also holds host-libxcrypt's unrelated <crypt.h>.
+define EELINUX_HOST_TCL_910_MINIZIP_CRYPT_HEADER
+	printf '%s  %s\n' 1aa87864ec88e641169dbeb09cff800197d2a4cbcd0701d2170a217113899dd7 \
+		"$(BR2_EXTERNAL_EELINUX_PATH)/patches/tcl-9.1.0-minizip-crypt-header.patch" | sha256sum -c -
+	printf '%s  %s\n' 082fe1b161f35b113fc7e7d2db9d525120e7077aed2d142aa6958cb05d741e08 "$(@D)/generic/tclZipfs.c" | sha256sum -c -
+	cd $(@D) && patch --batch --forward --fuzz=0 -p1 \
+		-i "$(BR2_EXTERNAL_EELINUX_PATH)/patches/tcl-9.1.0-minizip-crypt-header.patch"
+	printf '%s  %s\n' 14984857564497686e5e486350bbfc22455a92e3ff040ee4873df3b193e68127 "$(@D)/generic/tclZipfs.c" | sha256sum -c -
+endef
+ifeq ($(TCL_VERSION),9.1.0)
+HOST_TCL_POST_PATCH_HOOKS += EELINUX_HOST_TCL_910_MINIZIP_CRYPT_HEADER
+TCL_POST_PATCH_HOOKS += EELINUX_HOST_TCL_910_MINIZIP_CRYPT_HEADER
+endif
+
+# OpenSSL 4 removed SSLv3_client_method without defining OPENSSL_NO_SSL3_METHOD.
+# --secure-protocol=SSLv3 then fails cleanly, as on SSLv3-less OpenSSL 3 builds.
+define EELINUX_WGET_1250_OPENSSL4_SSLV3
+	printf '%s  %s\n' 5c9ccd590198eb7a7d2bebaa97d7de704d9c6909114f7de145fcc7e048784c58 \
+		"$(BR2_EXTERNAL_EELINUX_PATH)/patches/wget-1.25.0-openssl4-sslv3.patch" | sha256sum -c -
+	printf '%s  %s\n' e9a433bae1863961c2d098ff3658397cbc983d78fe7fe279f7fb3135a21ad3da "$(@D)/src/openssl.c" | sha256sum -c -
+	cd $(@D) && patch --batch --forward --fuzz=0 -p1 \
+		-i "$(BR2_EXTERNAL_EELINUX_PATH)/patches/wget-1.25.0-openssl4-sslv3.patch"
+	printf '%s  %s\n' cd89fa02616bc3fcae6b97306da8b5379d6bc99db32ef3ec7bf5d0dcedb8da36 "$(@D)/src/openssl.c" | sha256sum -c -
+endef
+ifeq ($(WGET_VERSION),1.25.0)
+WGET_POST_PATCH_HOOKS += EELINUX_WGET_1250_OPENSSL4_SSLV3
+endif
