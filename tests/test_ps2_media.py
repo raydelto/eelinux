@@ -77,15 +77,18 @@ class ProductionMedia(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);kernel=root/'kernel.elf';kernel.write_bytes(b'kernel')
             config=root/'config';config.write_text(''.join('CONFIG_'+f+'=y\n' for f in
-                ('PS2_CDVD','ISO9660_FS','OVERLAY_FS','TMPFS_XATTR','FB_PS2','ZRAM','ZRAM_BACKEND_LZ4')))
+                ('PS2_CDVD','ISO9660_FS','OVERLAY_FS','TMPFS_XATTR','FB_PS2','ZRAM','ZRAM_BACKEND_LZ4'))+'CONFIG_CMDLINE="video=ps2fb:720x576p@50"\n')
             report=root/'report.json';report.write_text(json.dumps({'root_device':'/dev/ps2dvd',
-                'USB_required':False,'image_sha256':'checked','config_sha256':'checked',
+                'USB_required':False,'video_mode':'576p','image_sha256':'checked','config_sha256':'checked',
                 'boot_mode':'native Rock Ridge ISO9660 /eelinux/root, RAM overlay'}))
             args=argparse.Namespace(dvd_kernel=kernel,dvd_kernel_config=config,dvd_kernel_report=report,
-                staging=None,output_dir=root)
+                staging=None,output_dir=root,video_mode='576p')
             with patch.object(ps2_media,'sha',return_value='checked'):
                 with self.assertRaisesRegex(RuntimeError,'complete GNU userland'):ps2_media.dvd_inputs(args)
                 args.staging=root
+                args.video_mode='480p'
+                with self.assertRaisesRegex(RuntimeError,'video mode'):ps2_media.dvd_inputs(args)
+                args.video_mode='576p'
                 self.assertFalse(ps2_media.dvd_inputs(args)['USB_required'])
                 config.write_text(config.read_text().replace('CONFIG_ZRAM=y\n',''))
                 with self.assertRaisesRegex(RuntimeError,'DVD kernel needs ZRAM'):ps2_media.dvd_inputs(args)

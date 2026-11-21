@@ -1,4 +1,4 @@
-"""Build the standalone PAL DVD kernel from an already qualified native GS tree.
+"""Build the standalone DVD kernel from an already qualified native GS tree.
 
 The base kernel artifacts are preserved. CDVD source additions are exported as
 a normal patch; a private build directory contains the optical-root config.
@@ -10,6 +10,7 @@ from initramfs import newc
 from iop_dev9 import linker_source, validate_irx_layout
 from iop_firmware import validate_irx
 import kernel
+from video import BOOT_MODES
 
 
 def install(source):
@@ -120,7 +121,7 @@ def build(args):
         'ISO9660_FS':'y','OVERLAY_FS':'y','TMPFS_XATTR':'y',
         'ZRAM':'y','ZRAM_BACKEND_LZ4':'y','ZRAM_DEF_COMP_LZ4':'y',
         'INITRAMFS_SOURCE':'"'+str(cpio)+'"',
-        'CMDLINE':'"console=ttyS0,115200 console=tty0 root=/dev/ps2dvd ro rootwait video=ps2fb:720x576p@50"'}
+        'CMDLINE':json.dumps('console=ttyS0,115200 console=tty0 root=/dev/ps2dvd ro rootwait video=ps2fb:'+BOOT_MODES[args.video_mode])}
     for name,value in values.items():
         config=re.sub(r'^(?:CONFIG_'+name+r'=.*|# CONFIG_'+name+r' is not set)\n','',config,flags=re.M)
         config+='CONFIG_'+name+'='+value+'\n'
@@ -138,8 +139,8 @@ def build(args):
         release,module_files=kernel.install_module_payload(make,out,modules,stream)
     image=args.output_dir/'EELINUX.ELF';shutil.copy2(out/'vmlinuz',image)
     shutil.copy2(out/'.config',args.output_dir/'kernel.config')
-    report={'schema':2,'purpose':'Standalone PAL DVD kernel; native Rock Ridge ISO9660 GNU root',
-        'kernel_version':'7.2.8','root_device':'/dev/ps2dvd','video_mode':'576p',
+    report={'schema':2,'purpose':'Standalone DVD kernel; native Rock Ridge ISO9660 GNU root',
+        'kernel_version':'7.2.8','root_device':'/dev/ps2dvd','video_mode':args.video_mode,
         'image_sha256':kernel.sha256(image),'image_bytes':image.stat().st_size,
         'config_sha256':kernel.sha256(out/'.config'),'layout':kernel.boot_layout(out/'vmlinux',out/'vmlinuz'),
         'source_audit':source_audit,'base_kernel_sha256':kernel.sha256(args.base_output/'vmlinuz'),
@@ -163,6 +164,7 @@ def main():
     for name in ('source','base-output','work','output-dir'):p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--cross-prefix',required=True);p.add_argument('--iop-prefix',required=True)
     p.add_argument('--gs-reference-output',type=Path,help='Require identical native GS sources to this preserved kernel build')
+    p.add_argument('--video-mode',choices=[name for name, spec in BOOT_MODES.items() if spec],default='576p')
     p.add_argument('--jobs',type=int,default=2)
     build(p.parse_args())
 if __name__=='__main__':main()

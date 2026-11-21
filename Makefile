@@ -41,11 +41,12 @@ MEDIA_OUTPUT ?= $(CURDIR)/build/images/pal-desktop
 MEDIA_KERNEL ?= $(OUTPUT)/eelinux-$(KERNEL_PROFILE)-ps2.elf
 MEDIA_KERNEL_CONFIG ?= $(WORK)/kernel-$(KERNEL_PROFILE)/.config
 MEDIA_KERNEL_REPORT ?= $(OUTPUT)/eelinux-$(KERNEL_PROFILE)-ps2.json
-MEDIA_OUTPUT_OPTIONS = --work "$(MEDIA_WORK)" --output-dir "$(MEDIA_OUTPUT)"
+MEDIA_VIDEO_OPTIONS = --video-mode "$(VIDEO_MODE)" $(if $(filter 480p,$(VIDEO_MODE)),--fallback-kernel "$(OUTPUT)/usb-kernel-ntsc/EELINUX.ELF" --fallback-config "$(OUTPUT)/usb-kernel-ntsc/kernel.config" --fallback-report "$(OUTPUT)/usb-kernel-ntsc/kernel-report.json" --dvd-fallback-kernel "$(OUTPUT)/dvd-kernel-ntsc/EELINUX.ELF" --dvd-fallback-config "$(OUTPUT)/dvd-kernel-ntsc/kernel.config" --dvd-fallback-report "$(OUTPUT)/dvd-kernel-ntsc/kernel-report.json",)
+MEDIA_OUTPUT_OPTIONS = $(MEDIA_VIDEO_OPTIONS) --work "$(MEDIA_WORK)" --output-dir "$(MEDIA_OUTPUT)"
 MEDIA_OPTIONS = --kernel "$(MEDIA_KERNEL)" --kernel-config "$(MEDIA_KERNEL_CONFIG)" --kernel-report "$(MEDIA_KERNEL_REPORT)" $(MEDIA_OUTPUT_OPTIONS)
-MEDIA_DVD_KERNEL_DIR ?= $(OUTPUT)/dvd-kernel
+MEDIA_DVD_KERNEL_DIR ?= $(OUTPUT)/dvd-kernel$(if $(filter-out 576p,$(VIDEO_MODE)),-$(VIDEO_MODE),)
 MEDIA_KERNEL_BUILD ?= $(WORK)/kernel-$(KERNEL_PROFILE)
-MEDIA_DVD_WORK ?= $(WORK)/dvd-kernel
+MEDIA_DVD_WORK ?= $(WORK)/dvd-kernel$(if $(filter-out 576p,$(VIDEO_MODE)),-$(VIDEO_MODE),)
 MEDIA_DVD_OPTIONS = --dvd-kernel "$(MEDIA_DVD_KERNEL_DIR)/EELINUX.ELF" --dvd-kernel-config "$(MEDIA_DVD_KERNEL_DIR)/kernel.config" --dvd-kernel-report "$(MEDIA_DVD_KERNEL_DIR)/kernel-report.json"
 .PHONY: help plan check kernel-source kernel-port kernel-modernize kernel-audit toolchain ps2dev firmware userland keyboard locales dhcpcd initramfs kernel image all reference-system emulator-userland-build emulator-smoke emulator-prepare xorg-apps-update xorg-apps native-xorg usb-image-2gb kernel-gs-tree kernel-gs-reference usb-kernel dvd-kernel-pal dvd-iso-slim-pal dvd-iso-fat-pal dvd-isos-pal pal-media
 help:
@@ -135,7 +136,7 @@ usb-image-2gb:
 	$(PYTHON) scripts/ps2_media.py usb $(MEDIA_OPTIONS) --staging "$(STAGING)" --toolchain-prefix "$(CROSS_COMPILE)" $(PASSWORD_OPTION)
 
 dvd-kernel-pal:
-	$(PYTHON) scripts/kernel_dvd.py --source "$(KERNEL_SOURCE)" --base-output "$(MEDIA_KERNEL_BUILD)" --work "$(MEDIA_DVD_WORK)" --output-dir "$(MEDIA_DVD_KERNEL_DIR)" --cross-prefix "$(CROSS_COMPILE)" --iop-prefix "$(IOP_CROSS_COMPILE)" --jobs $(JOBS)
+	$(PYTHON) scripts/kernel_dvd.py --source "$(KERNEL_SOURCE)" --base-output "$(MEDIA_KERNEL_BUILD)" --work "$(MEDIA_DVD_WORK)" --output-dir "$(MEDIA_DVD_KERNEL_DIR)" --cross-prefix "$(CROSS_COMPILE)" --iop-prefix "$(IOP_CROSS_COMPILE)" --video-mode "$(VIDEO_MODE)" --jobs $(JOBS)
 
 dvd-iso-slim-pal:
 	$(PYTHON) scripts/ps2_media.py dvd --variant slim $(MEDIA_OUTPUT_OPTIONS) $(MEDIA_DVD_OPTIONS) --staging "$(STAGING)" --toolchain-prefix "$(CROSS_COMPILE)" $(PASSWORD_OPTION)
