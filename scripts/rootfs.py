@@ -425,7 +425,7 @@ def assemble_tree(staging: Path, target: Path, hostname: str, desktop: bool,
         raise BuildError("unknown startup video mode")
     rgb = any(mode['id'] == video_mode and mode['family'] == 'rgb-sog' for mode in MODES)
     install_file(target, "/etc/default/ps2-video",
-                 content=f"# Preview on the connected display before changing this preference.\nMODE={video_mode}\nRGB_SOG={int(rgb)}\n")
+                 content=f"# Preview on the connected display before changing this preference.\nMODE={'boot' if video_mode == '480p' else video_mode}\nRGB_SOG={int(rgb)}\n")
     install_file(target, "/etc/hosts", content=f"127.0.0.1 localhost {hostname}\n::1 localhost\n")
     if root_password_hash is not None:
         # A zero last-change date forces a password change at the first login.

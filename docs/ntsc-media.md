@@ -2,7 +2,8 @@
 
 The 480p kernel selects `video=ps2fb:720x480p@60`. The interlaced
 recovery kernel selects `576x384i@60` and must be launched as `EENTSC.ELF`.
-PAL remains the default (`VIDEO_MODE=576p`). The Xorg PS2 driver obtains its
+NTSC media keeps the selected kernel mode during startup (`MODE=boot`), so
+the fallback is not switched back to 480p. PAL remains the default (`VIDEO_MODE=576p`). The Xorg PS2 driver obtains its
 screen dimensions from the framebuffer; it does not use an Xorg modeline.
 
 Build the USB kernels with `make usb-kernel VIDEO_MODE=480p` and
