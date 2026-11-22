@@ -61,7 +61,7 @@ MEDIA_DVD_KERNEL_DIR ?= $(OUTPUT)/dvd-kernel$(if $(filter-out 576p,$(VIDEO_MODE)
 MEDIA_KERNEL_BUILD ?= $(WORK)/kernel-$(KERNEL_PROFILE)
 MEDIA_DVD_WORK ?= $(WORK)/dvd-kernel$(if $(filter-out 576p,$(VIDEO_MODE)),-$(VIDEO_MODE),)
 MEDIA_DVD_OPTIONS = --dvd-kernel "$(MEDIA_DVD_KERNEL_DIR)/EELINUX.ELF" --dvd-kernel-config "$(MEDIA_DVD_KERNEL_DIR)/kernel.config" --dvd-kernel-report "$(MEDIA_DVD_KERNEL_DIR)/kernel-report.json"
-.PHONY: help plan check kernel-source kernel-port kernel-modernize kernel-audit toolchain ps2dev firmware userland keyboard locales dhcpcd initramfs kernel image all reference-system emulator-userland-build emulator-smoke emulator-prepare xorg-apps-update xorg-apps native-xorg usb-image-2gb kernel-gs-tree kernel-gs-reference usb-kernel dvd-kernel-pal dvd-iso-slim-pal dvd-iso-fat-pal dvd-isos-pal pal-media ntsc-media
+.PHONY: help plan check kernel-source kernel-port kernel-modernize kernel-audit toolchain ps2dev firmware userland keyboard locales dhcpcd initramfs kernel image all reference-system emulator-userland-build emulator-smoke emulator-prepare xorg-apps-update xorg-apps native-xorg usb-image-2gb kernel-gs-tree kernel-gs-reference usb-kernel dvd-kernel-pal dvd-iso-slim-pal dvd-iso-fat-pal dvd-isos-pal dvd-iso-test-unit pal-media ntsc-media
 help:
 	@$(PYTHON) scripts/project.py help
 
@@ -157,6 +157,11 @@ dvd-iso-slim-pal:
 # Emits separate 2.10/2.12 and 3.04 firmware variants, with explicit PAL limits.
 dvd-iso-fat-pal:
 	$(PYTHON) scripts/ps2_media.py dvd --variant fat $(MEDIA_OUTPUT_OPTIONS) $(MEDIA_DVD_OPTIONS) --staging "$(STAGING)" --toolchain-prefix "$(CROSS_COMPILE)" $(PASSWORD_OPTION)
+
+# Experimental SYSTEM.CNF discs for DTL-H TEST units only; never part of the
+# FreeDVDBoot set. With VIDEO_MODE=480p an interlaced EENTSC.ELF disc is added.
+dvd-iso-test-unit:
+	$(PYTHON) scripts/ps2_media.py dvd --variant test-unit $(MEDIA_OUTPUT_OPTIONS) $(MEDIA_DVD_OPTIONS) --staging "$(STAGING)" --toolchain-prefix "$(CROSS_COMPILE)" $(PASSWORD_OPTION)
 
 dvd-isos-pal:
 	$(PYTHON) scripts/ps2_media.py dvd --variant all $(MEDIA_OUTPUT_OPTIONS) $(MEDIA_DVD_OPTIONS) --staging "$(STAGING)" --toolchain-prefix "$(CROSS_COMPILE)" $(PASSWORD_OPTION)

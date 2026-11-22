@@ -180,6 +180,92 @@ class ProductionMedia(unittest.TestCase):
             args.video_mode='576p'
             self.assertIsNone(ps2_media.usb_fallback(args))
 
+    @staticmethod
+    def vmg(mask):
+        return b'DVDVIDEO-VMG'+bytes(0x23-12)+bytes([mask])+bytes(64)
+
+    def test_freedvdboot_trees_must_be_region_free_dvd_video(self):
+        with tempfile.TemporaryDirectory() as folder:
+            tree=Path(folder);(tree/'VIDEO_TS').mkdir()
+            ifo=tree/'VIDEO_TS/VIDEO_TS.IFO';ifo.write_bytes(self.vmg(0))
+            self.assertEqual(ps2_media.verify_freedvdboot_tree(tree),0)
+            ifo.write_bytes(self.vmg(0x02))  # bit 1 forbids region 2 (Japan)
+            with self.assertRaisesRegex(RuntimeError,r'blocked DVD regions \[2\]'):ps2_media.verify_freedvdboot_tree(tree)
+            ifo.write_bytes(self.vmg(0x01))  # region 1 (US/Canada)
+            with self.assertRaisesRegex(RuntimeError,r'\[1\]'):ps2_media.verify_freedvdboot_tree(tree)
+            ifo.write_bytes(b'DVDVIDEO-VTS'+bytes(64))
+            with self.assertRaisesRegex(RuntimeError,'not a DVD-Video VMG'):ps2_media.verify_freedvdboot_tree(tree)
+            ifo.write_bytes(self.vmg(0));(tree/'SYSTEM.CNF').write_text('BOOT2 = cdrom0:\\X.ELF;1\r\n')
+            with self.assertRaisesRegex(RuntimeError,'must not contain SYSTEM.CNF'):ps2_media.verify_freedvdboot_tree(tree)
+
+    @staticmethod
+    def pinned_freedvdboot():
+        """Hash-verified pinned FreeDVDBoot files, cached between runs; None when offline."""
+        work=Path(os.environ.get('EELINUX_FREEDVDBOOT_CACHE',Path.home()/'.cache/eelinux/test-freedvdboot'))
+        try:
+            work.mkdir(parents=True,exist_ok=True)
+            return ps2_media.fetch_boot(work)[0]
+        except OSError:
+            return None
+
+    def test_real_pinned_freedvdboot_payloads_are_region_free(self):
+        source=self.pinned_freedvdboot()
+        if source is None:self.skipTest('pinned FreeDVDBoot files are not cached and the network is unavailable')
+        ifo=(source/ps2_media.SLIM/'VIDEO_TS/VIDEO_TS.IFO').read_bytes()
+        self.assertEqual(ifo[0x21],0x11)  # DVD-Video specification 1.1: confirms the VMGI_MAT layout
+        self.assertEqual(ps2_media.dvd_region_mask(ifo),0)
+        self.assertEqual(ps2_media.verify_freedvdboot_tree(source/ps2_media.SLIM),0)
+        if not shutil.which('isoinfo'):self.skipTest('isoinfo required for the prebuilt Fat ISOs')
+        for name in ps2_media.FAT.values():
+            with tempfile.TemporaryDirectory() as folder:
+                ps2_media.extract_boot_files(source/'PREBUILT ISOs'/name,Path(folder))
+                self.assertEqual(ps2_media.verify_freedvdboot_tree(Path(folder)),0,name)
+
+    def test_test_unit_discs_are_opt_in_and_boot_the_selected_kernel(self):
+        self.assertEqual(ps2_media.dvd_variants('all','480p'),['slim','fat-2.10-2.12','fat-3.04'])
+        self.assertEqual(ps2_media.dvd_variants('test-unit','480p'),['test-unit','test-unit-interlaced'])
+        self.assertEqual(ps2_media.dvd_variants('test-unit','576p'),['test-unit'])
+        with self.assertRaisesRegex(RuntimeError,'needs 480p'):ps2_media.dvd_variants('test-unit-interlaced','576p')
+        self.assertEqual(ps2_media.system_cnf('EELINUX.ELF','480p'),
+            'BOOT2 = cdrom0:\\EELINUX.ELF;1\r\nVER = 1.00\r\nVMODE = NTSC\r\n')
+        self.assertIn('VMODE = PAL\r\n',ps2_media.system_cnf('EELINUX.ELF','576p'))
+        self.assertIn('cdrom0:\\EENTSC.ELF;1',ps2_media.system_cnf('EENTSC.ELF','480p'))
+        with self.assertRaisesRegex(RuntimeError,'Unsupported'):ps2_media.system_cnf('../X.ELF','480p')
+        for region,variants in (('ntsc',ps2_media.TEST_UNIT),('pal',['test-unit'])):
+            for variant in variants:
+                self.assertIn('Retail',ps2_media.COMPATIBILITY[region][variant])
+        self.assertNotIn('test-unit-interlaced',ps2_media.COMPATIBILITY['pal'])
+        with tempfile.TemporaryDirectory() as folder:
+            (Path(folder)/'eelinux-ntsc-test-unit.iso').write_bytes(b'iso')
+            ps2_media.write_checksums(Path(folder))
+            self.assertIn('eelinux-ntsc-test-unit.iso',(Path(folder)/'SHA256SUMS').read_text())
+
+    @unittest.skipUnless(shutil.which('genisoimage') and shutil.which('isoinfo'),'Linux ISO tools required')
+    def test_test_unit_iso_has_system_cnf_both_kernels_and_no_freedvdboot(self):
+        with tempfile.TemporaryDirectory() as folder:
+            folder=Path(folder);root=folder/'root';(root/'etc').mkdir(parents=True)
+            (root/'etc/hostname').write_text('eelinux\n')
+            kernel=folder/'dvd.elf';kernel.write_bytes(b'\x7fELF480p'*100)
+            fallback=folder/'dvd-ntsc.elf';fallback.write_bytes(b'\x7fELFntsc'*100)
+            manifest=folder/'system.json';manifest.write_text('{}\n')
+            args=argparse.Namespace(work=folder/'work',output_dir=folder/'out',variant='test-unit',video_mode='480p',
+                dvd_kernel=kernel,dvd_fallback_kernel=fallback)
+            args.work.mkdir();args.output_dir.mkdir()
+            with patch.object(ps2_media,'fetch_boot',side_effect=AssertionError('no FreeDVDBoot fetch')):
+                report=ps2_media.build_dvds(args,{},root,iso9660.tree_manifest(root),manifest)
+            images={item['variant']:item for item in report['images']}
+            self.assertEqual(sorted(images),['test-unit','test-unit-interlaced'])
+            for variant,elf in ps2_media.TEST_UNIT.items():
+                image=Path(images[variant]['path'])
+                names=subprocess.check_output(['isoinfo','-i',str(image),'-f'],text=True).split()
+                self.assertFalse([name for name in names if name.startswith('/VIDEO_TS')])
+                cnf=subprocess.check_output(['isoinfo','-i',str(image),'-x','/SYSTEM.CNF;1'])
+                self.assertEqual(cnf,ps2_media.system_cnf(elf,'480p').encode())
+                self.assertEqual(images[variant]['boot']['BOOT2'],'cdrom0:\\'+elf+';1')
+                self.assertFalse(images[variant]['boot']['retail_consoles'])
+            saved=json.loads((args.output_dir/'dvd-compatibility.json').read_text())
+            self.assertEqual(len(saved['images']),2)
+
     @unittest.skipUnless(shutil.which('genisoimage'),'Linux ISO builder required')
     def test_rock_ridge_preserves_gnu_links_secure_permissions_and_all_file_bytes(self):
         with tempfile.TemporaryDirectory() as folder:

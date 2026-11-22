@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Create production PAL or NTSC FreeDVDBoot DVDs and a 2,000,000,000-byte USB image.
 
+An opt-in experimental SYSTEM.CNF disc for DTL-H TEST units is also available.
+
 Only regular output files are accepted. No device is flashed and no disc is
 burned. Standalone DVDs carry a native Rock Ridge GNU root and optical kernel.
 """
@@ -15,6 +17,18 @@ FAT={
  'fat-2.10-2.12':'Some 2.10 models and all 2.12.iso',
  'fat-3.04':'3.04 only - M+maybe other regions except J - English language.iso',
 }
+# Experimental SYSTEM.CNF discs for DTL-H TEST units, which reportedly boot
+# unlicensed burned discs (community reports; unverified here). Retail consoles
+# are expected to reject them, so they are never part of --variant all. Each
+# disc boots one kernel directly, without FreeDVDBoot or uLaunchELF. Neither
+# path has been verified on hardware.
+TEST_UNIT={'test-unit':'EELINUX.ELF','test-unit-interlaced':'EENTSC.ELF'}
+TEST_UNIT_NOTE=(
+ 'Experimental, DTL-H TEST units only: SYSTEM.CNF boots {elf} directly; '
+ 'no FreeDVDBoot, DVD Player version or launcher needed. '
+ 'Retail (SCPH) consoles are expected to reject this disc. '
+ 'Unverified on hardware: whether the TEST unit accepts the burned disc, '
+ 'and whether the eecdvd root driver reads a PS2-format DVD.')
 # Compatibility notes are region-specific: NTSC media must not repeat PAL-only claims.
 COMPATIBILITY={
  'pal':{
@@ -28,6 +42,9 @@ COMPATIBILITY={
   'fat-3.04':'DVD Player 3.04, English language; only M was tested upstream. Upstream explicitly excludes J (NTSC-J): do not use on Japanese consoles. NTSC-U 3.04U is an unverified hypothesis.',
  },
 }
+for _region in COMPATIBILITY:
+ COMPATIBILITY[_region]['test-unit']=TEST_UNIT_NOTE.format(elf='EELINUX.ELF')
+COMPATIBILITY['ntsc']['test-unit-interlaced']=TEST_UNIT_NOTE.format(elf='EENTSC.ELF (interlaced 576x384i@60)')
 def region(video_mode):
  return 'ntsc' if video_mode == '480p' else 'pal'
 DIAGNOSTIC_WORDS=('ps2-xorg-test','ps2-native-sdk-test','gpu2d-probe','xorg-core2d-probe',
@@ -160,6 +177,43 @@ def fetch_boot(work):
    temporary=path.with_suffix(path.suffix+'.part');temporary.write_bytes(data);temporary.replace(path)
   if sha(path)!=expected:raise RuntimeError('Boot source hash mismatch: '+relative)
  return destination,lock
+def dvd_region_mask(ifo):
+ """Return the DVD-Video VMG region mask; a set bit forbids that region.
+
+ Byte offsets come from libdvdread (dvdread/ifo_types.h, vmgi_mat_t):
+ 0x00 "DVDVIDEO-VMG", 0x21 specification version, 0x22 big-endian uint32
+ vmg_category, so 0x23 holds bits 16-23 of vmg_category. That header does
+ not name those bits; reading them as the region mask (bit n set = region
+ n+1 forbidden) follows http://www.mpucoder.com/DVD/ifo.html#vmg.
+ """
+ if len(ifo)<0x24 or ifo[:12]!=b'DVDVIDEO-VMG':raise RuntimeError('FreeDVDBoot VIDEO_TS.IFO is not a DVD-Video VMG')
+ return ifo[0x23]
+def verify_freedvdboot_tree(tree):
+ """Fail unless the DVD Player of every region (1 = US, 2 = Japan) accepts the disc.
+
+ Region-locked IFOs would make the Japanese or US DVD Player refuse the disc
+ before the exploit runs. A SYSTEM.CNF would make the console treat the
+ disc as a PS2 game rather than DVD-Video.
+ """
+ mask=dvd_region_mask((tree/'VIDEO_TS/VIDEO_TS.IFO').read_bytes())
+ if mask:
+  blocked=[region+1 for region in range(8) if mask>>region&1]
+  raise RuntimeError('FreeDVDBoot VIDEO_TS.IFO is region-locked; blocked DVD regions '+str(blocked))
+ if any(path.name.upper().split(';')[0]=='SYSTEM.CNF' for path in tree.rglob('*')):
+  raise RuntimeError('A FreeDVDBoot DVD must not contain SYSTEM.CNF')
+ return mask
+def system_cnf(elf,video_mode):
+ """SYSTEM.CNF for a TEST-unit disc; the ELF name must be 8.3 upper case."""
+ if elf not in TEST_UNIT.values():raise RuntimeError('Unsupported TEST-unit boot ELF: '+elf)
+ return ('BOOT2 = cdrom0:\\'+elf+';1\r\nVER = 1.00\r\nVMODE = '
+   +('PAL' if video_mode=='576p' else 'NTSC')+'\r\n')
+def dvd_variants(variant,video_mode):
+ if variant=='all':return ['slim',*FAT]
+ if variant=='fat':return list(FAT)
+ if variant=='test-unit':return ['test-unit']+(['test-unit-interlaced'] if video_mode=='480p' else [])
+ if variant=='test-unit-interlaced' and video_mode!='480p':
+  raise RuntimeError('The interlaced TEST-unit disc needs 480p media with an EENTSC.ELF fallback')
+ return [variant]
 def boot_readme(video_mode="576p"):
  return (('eeLinux NTSC desktop' if video_mode == '480p' else 'eeLinux PAL desktop')+'\n\n'
    + ('EELINUX.ELF uses 720x480p@60: it needs a component, D-terminal (D2 or higher) or HDMI adapter.\n'
@@ -183,6 +237,8 @@ def boot_readme(video_mode="576p"):
    'This is a homebrew disc, not an authenticated or licensed Sony disc.\n'
    'Fat compatibility depends on DVD Player firmware; consult the adjacent compatibility manifest.\n'
    'Physical DVD/USB boot remains to be verified on your console.\n'
+   'DTL-H TEST units only: the experimental *-test-unit*.iso discs boot directly from SYSTEM.CNF\n'
+   'without FreeDVDBoot or uLaunchELF. Retail consoles are expected to reject them.\n'
    'https://github.com/CTurt/FreeDVDBoot\n')
 def dvd_inputs(args):
  for name in ('dvd_kernel','dvd_kernel_config','dvd_kernel_report'):
@@ -341,8 +397,9 @@ def dvds(args):
 
 def build_dvds(args,dvd_kernel,root,expected,manifest_path):
  import iso9660
- source,lock=fetch_boot(args.work)
- variants=['slim',*FAT] if args.variant=='all' else list(FAT) if args.variant=='fat' else [args.variant]
+ variants=dvd_variants(args.variant,args.video_mode)
+ # TEST-unit discs carry no FreeDVDBoot files; record the pin without fetching.
+ source,lock=fetch_boot(args.work) if any(v not in TEST_UNIT for v in variants) else (None,json.loads(LOCK.read_text()))
  report={'schema':3,'video':BOOT_MODES[args.video_mode],'USB_required':False,'standalone_DVD':True,'official_Sony_disc':False,
   'root_layout':'native Rock Ridge ISO9660 /eelinux/root','embedded_USB_image':False,
   'rootfs_manifest_sha256':sha(manifest_path),'rootfs_manifest':str(manifest_path),
@@ -355,11 +412,14 @@ def build_dvds(args,dvd_kernel,root,expected,manifest_path):
   preservation={}
   with tempfile.TemporaryDirectory(prefix='eelinux-full-dvd-',dir=args.work) as folder:
     tree=Path(folder)/'tree';tree.mkdir()
-    original=None
+    original=None;region_mask=None
     if variant=='slim':shutil.copytree(source/SLIM/'VIDEO_TS',tree/'VIDEO_TS')
-    else:
+    elif variant in FAT:
      original=source/'PREBUILT ISOs'/FAT[variant]
      extract_boot_files(original,tree)
+    if variant in TEST_UNIT:
+     (tree/'SYSTEM.CNF').write_bytes(system_cnf(TEST_UNIT[variant],args.video_mode).encode('ascii'))
+    else:region_mask=verify_freedvdboot_tree(tree)
     shutil.copy2(args.dvd_kernel,tree/'EELINUX.ELF')
     if args.video_mode == '480p':shutil.copy2(args.dvd_fallback_kernel,tree/'EENTSC.ELF')
     (tree/'README.TXT').write_text(boot_readme(args.video_mode))
@@ -380,13 +440,15 @@ def build_dvds(args,dvd_kernel,root,expected,manifest_path):
     subprocess.run(command+['-graft-points',str(tree),'eelinux/root='+str(root)],check=True)
     if original:preservation=fat_append(original,session,candidate)
     # Inspect files inside ISO9660 and compare every unchanged exploit payload.
-    for payload in (tree/'VIDEO_TS').iterdir():
+    for payload in (tree/'VIDEO_TS').iterdir() if region_mask is not None else ():
      data=subprocess.check_output(['isoinfo','-i',str(candidate),'-x','/VIDEO_TS/'+payload.name+';1'])
      if hashlib.sha256(data).hexdigest()!=sha(payload):raise RuntimeError('DVD payload readback mismatch')
     if image_file_hash(candidate,'/EELINUX.ELF;1')!=(sha(args.dvd_kernel),args.dvd_kernel.stat().st_size):
      raise RuntimeError('DVD kernel readback mismatch')
     if args.video_mode == '480p' and image_file_hash(candidate,'/EENTSC.ELF;1')!=(sha(args.dvd_fallback_kernel),args.dvd_fallback_kernel.stat().st_size):
      raise RuntimeError('DVD fallback kernel readback mismatch')
+    if variant in TEST_UNIT and image_file_hash(candidate,'/SYSTEM.CNF;1')[0]!=sha(tree/'SYSTEM.CNF'):
+     raise RuntimeError('SYSTEM.CNF readback mismatch')
     root_readback=iso9660.verify_root(candidate,expected)
     if candidate.stat().st_size>4_700_000_000:raise RuntimeError('Standalone image exceeds single-layer DVD capacity')
     shutil.copyfile(candidate,temporary)
@@ -398,9 +460,15 @@ def build_dvds(args,dvd_kernel,root,expected,manifest_path):
       if attempt==7:raise
       time.sleep(0.25)
   compatibility=COMPATIBILITY[region(args.video_mode)][variant]
-  method='Standalone DVD: uLaunchELF cdfs:/EELINUX.ELF; direct Rock Ridge GNU root; writable RAM overlay'
+  if variant in TEST_UNIT:
+   method=('Experimental DTL-H TEST unit: SYSTEM.CNF BOOT2 cdrom0:\\'+TEST_UNIT[variant]+';1; '
+     'direct Rock Ridge GNU root; writable RAM overlay')
+   boot={'kind':'SYSTEM.CNF','BOOT2':'cdrom0:\\'+TEST_UNIT[variant]+';1','retail_consoles':False,'FreeDVDBoot':False}
+  else:
+   method='Standalone DVD: uLaunchELF cdfs:/EELINUX.ELF; direct Rock Ridge GNU root; writable RAM overlay'
+   boot={'kind':'FreeDVDBoot','DVD_region_mask':region_mask,'DVD_regions':'all (1-8)','SYSTEM_CNF':False}
   report['images'].append({'variant':variant,'path':str(output),'bytes':output.stat().st_size,
-      'sha256':sha(output),'compatibility':compatibility,'method':method,'payload_readback_byte_exact':True,
+      'sha256':sha(output),'compatibility':compatibility,'method':method,'boot':boot,'payload_readback_byte_exact':True,
       'USB_required':False,'embedded_USB_image':False,'root_readback':root_readback,'preservation':preservation})
   save_dvd_report(args,report,lock,manifest_path)
   print('Created '+str(output),flush=True)
@@ -475,7 +543,7 @@ def usb(args):
 def main():
  parser=argparse.ArgumentParser(description=__doc__)
  parser.add_argument('command',choices=['usb','dvd','all'])
- parser.add_argument('--variant',choices=['all','slim','fat',*FAT],default='all')
+ parser.add_argument('--variant',choices=['all','slim','fat',*FAT,*TEST_UNIT],default='all')
  for name in ('output-dir','work'):parser.add_argument('--'+name,type=Path,required=True)
  parser.add_argument('--staging',type=Path);parser.add_argument('--root-password-hash-file',type=Path)
  for name in ('kernel','kernel-config','kernel-report','dvd-kernel','dvd-kernel-config','dvd-kernel-report'):parser.add_argument('--'+name,type=Path)
@@ -489,7 +557,8 @@ def main():
  write_checksums(args.output_dir)
 
 def write_checksums(directory):
- names=[f'eelinux-{region}-{suffix}' for region in ('pal','ntsc') for suffix in ('desktop-2gb-usb.img','slim.iso','fat-2.10-2.12.iso','fat-3.04.iso')]
+ names=[f'eelinux-{region}-{suffix}' for region in ('pal','ntsc') for suffix in ('desktop-2gb-usb.img','slim.iso','fat-2.10-2.12.iso','fat-3.04.iso',
+   *(variant+'.iso' for variant in TEST_UNIT))]
  lines=[]
  for name in names:
   path=directory/name
