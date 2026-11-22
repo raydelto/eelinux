@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create production PAL FreeDVDBoot DVDs and a 2,000,000,000-byte USB image.
+"""Create production PAL or NTSC FreeDVDBoot DVDs and a 2,000,000,000-byte USB image.
 
 Only regular output files are accepted. No device is flashed and no disc is
 burned. Standalone DVDs carry a native Rock Ridge GNU root and optical kernel.
@@ -12,11 +12,24 @@ ROOT=Path(__file__).resolve().parents[1]
 LOCK=ROOT/'boot/freedvdboot-sources.json'
 SLIM='Filesystems/All PS2 slims (3.10 + 3.11) - English language'
 FAT={
- 'fat-2.10-2.12':('Some 2.10 models and all 2.12.iso',
-   'PAL SCPH-30004 R with DVD Player 2.10E (ROMGEN 0160EC20011004); SCPH-39004 is unsupported. DVD Player 2.12 support is documented for U/J/G, not confirmed for E.'),
- 'fat-3.04':('3.04 only - M+maybe other regions except J - English language.iso',
-   'DVD Player 3.04, English language. PAL 3.04E is an upstream compatibility hypothesis; only M was tested upstream. Excludes J.'),
+ 'fat-2.10-2.12':'Some 2.10 models and all 2.12.iso',
+ 'fat-3.04':'3.04 only - M+maybe other regions except J - English language.iso',
 }
+# Compatibility notes are region-specific: NTSC media must not repeat PAL-only claims.
+COMPATIBILITY={
+ 'pal':{
+  'slim':'All Slim models according to upstream; English language required. Physical DVD boot not yet verified.',
+  'fat-2.10-2.12':'PAL SCPH-30004 R with DVD Player 2.10E (ROMGEN 0160EC20011004); SCPH-39004 is unsupported. DVD Player 2.12 support is documented for U/J/G, not confirmed for E.',
+  'fat-3.04':'DVD Player 3.04, English language. PAL 3.04E is an upstream compatibility hypothesis; only M was tested upstream. Excludes J.',
+ },
+ 'ntsc':{
+  'slim':'All Slim models (DVD Player 3.10/3.11) according to upstream, including NTSC-U and NTSC-J; the console language must be set to English. Physical DVD boot not yet verified.',
+  'fat-2.10-2.12':'Fat consoles with DVD Player 2.12 (U/J/G documented upstream) and some 2.10 models. This is the likely image for an NTSC-J Fat with DVD Player 2.12J. Check the DVD Player version on the browser Version screen first.',
+  'fat-3.04':'DVD Player 3.04, English language; only M was tested upstream. Upstream explicitly excludes J (NTSC-J): do not use on Japanese consoles. NTSC-U 3.04U is an unverified hypothesis.',
+ },
+}
+def region(video_mode):
+ return 'ntsc' if video_mode == '480p' else 'pal'
 DIAGNOSTIC_WORDS=('ps2-xorg-test','ps2-native-sdk-test','gpu2d-probe','xorg-core2d-probe',
                   'ps2-gs-test','native-development-probe','native-sdk-check')
 FULL_COMMANDS='gcc g++ as ld ar nm ranlib objcopy objdump readelf strip make m4 bison flex autoconf automake libtool pkgconf nano vim screen wget lynx gdb python3 perl'.split()
@@ -149,7 +162,9 @@ def fetch_boot(work):
  return destination,lock
 def boot_readme(video_mode="576p"):
  return (('eeLinux NTSC desktop' if video_mode == '480p' else 'eeLinux PAL desktop')+'\n\n'
-   + ('For 480i recovery, launch EENTSC.ELF instead.\n' if video_mode == '480p' else '')
+   + ('EELINUX.ELF uses 720x480p@60: it needs a component, D-terminal (D2 or higher) or HDMI adapter.\n'
+      'Composite, S-Video and RGB users: launch EENTSC.ELF (interlaced 576x384i@60) instead.\n'
+      if video_mode == '480p' else '')
    + 'DVD: no USB disk is required. The full system is included on this disc.\n'
    'USB: write the entire 2 GB USB image to a USB disk and boot its EELINUX.ELF.\n'
    'USB first boot silently expands the root partition and ext4 filesystem to fill the drive.\n'
@@ -283,17 +298,25 @@ def fat_append(original,session,output):
          'ISO9660_volume_sectors':sectors,
          'exploit_and_UDF_sectors_byte_exact':True}
 
+def dvd_fallback(args,primary):
+ """Validate the interlaced EENTSC.ELF DVD kernel carried on 480p media."""
+ if args.video_mode != '480p':return None
+ paths=(args.dvd_fallback_kernel,args.dvd_fallback_config,args.dvd_fallback_report)
+ if any(path is None for path in paths):raise RuntimeError('480p media requires an interlaced DVD fallback kernel/config/report')
+ from copy import copy
+ fallback=copy(args)
+ fallback.dvd_kernel,fallback.dvd_kernel_config,fallback.dvd_kernel_report=paths
+ fallback.video_mode='ntsc'
+ report=dvd_inputs(fallback)
+ if report.get('kernel_release') != primary.get('kernel_release') or report.get('modules') != primary.get('modules'):
+  raise RuntimeError('DVD fallback modules differ from primary kernel')
+ args.dvd_fallback_kernel,args.dvd_fallback_config,args.dvd_fallback_report=(
+  fallback.dvd_kernel,fallback.dvd_kernel_config,fallback.dvd_kernel_report)
+ return report
 def dvds(args):
  args.work.mkdir(parents=True,exist_ok=True);args.output_dir.mkdir(parents=True,exist_ok=True)
  dvd_kernel=dvd_inputs(args)
- if args.video_mode == '480p':
-  from copy import copy
-  fallback=copy(args)
-  fallback.dvd_kernel, fallback.dvd_kernel_config, fallback.dvd_kernel_report = args.dvd_fallback_kernel, args.dvd_fallback_config, args.dvd_fallback_report
-  fallback.video_mode='ntsc'
-  fallback_report=dvd_inputs(fallback)
-  if fallback_report.get('kernel_release') != dvd_kernel.get('kernel_release') or fallback_report.get('modules') != dvd_kernel.get('modules'):
-   raise RuntimeError('DVD fallback modules differ from primary kernel')
+ dvd_fallback(args,dvd_kernel)
  import iso9660
  with tempfile.TemporaryDirectory(prefix='production-dvd-root-',dir=args.work) as folder:
   folder=Path(folder)
@@ -327,7 +350,7 @@ def build_dvds(args,dvd_kernel,root,expected,manifest_path):
   'RAM_swap':'16 MiB logical zram; maximum 4 MiB compressed storage; LZ4',
   'FreeDVDBoot_commit':lock['commit'],'tests_and_diagnostics_installed':False,'physical_boot_qualified':False,'images':[]}
  for variant in variants:
-  output=new_file(args.output_dir/('eelinux-'+('ntsc' if args.video_mode == '480p' else 'pal')+'-'+variant+'.iso'))
+  output=new_file(args.output_dir/('eelinux-'+region(args.video_mode)+'-'+variant+'.iso'))
   if not shutil.which('genisoimage'):raise RuntimeError('Install genisoimage on the Linux build host')
   preservation={}
   with tempfile.TemporaryDirectory(prefix='eelinux-full-dvd-',dir=args.work) as folder:
@@ -335,7 +358,7 @@ def build_dvds(args,dvd_kernel,root,expected,manifest_path):
     original=None
     if variant=='slim':shutil.copytree(source/SLIM/'VIDEO_TS',tree/'VIDEO_TS')
     else:
-     name,compatibility=FAT[variant];original=source/'PREBUILT ISOs'/name
+     original=source/'PREBUILT ISOs'/FAT[variant]
      extract_boot_files(original,tree)
     shutil.copy2(args.dvd_kernel,tree/'EELINUX.ELF')
     if args.video_mode == '480p':shutil.copy2(args.dvd_fallback_kernel,tree/'EENTSC.ELF')
@@ -374,7 +397,7 @@ def build_dvds(args,dvd_kernel,root,expected,manifest_path):
      except PermissionError:
       if attempt==7:raise
       time.sleep(0.25)
-  if variant=='slim':compatibility='All Slim models according to upstream; English language required. Physical DVD boot not yet verified.'
+  compatibility=COMPATIBILITY[region(args.video_mode)][variant]
   method='Standalone DVD: uLaunchELF cdfs:/EELINUX.ELF; direct Rock Ridge GNU root; writable RAM overlay'
   report['images'].append({'variant':variant,'path':str(output),'bytes':output.stat().st_size,
       'sha256':sha(output),'compatibility':compatibility,'method':method,'payload_readback_byte_exact':True,
@@ -410,7 +433,7 @@ def usb(args):
  for name in ('kernel','kernel_config','kernel_report'):
   if getattr(args,name,None) is None:raise RuntimeError('--'+name.replace('_','-')+' is required for USB media')
  args.work.mkdir(parents=True,exist_ok=True);args.output_dir.mkdir(parents=True,exist_ok=True)
- output=new_file(args.output_dir/('eelinux-'+('ntsc' if args.video_mode == '480p' else 'pal')+'-desktop-2gb-usb.img'))
+ output=new_file(args.output_dir/('eelinux-'+region(args.video_mode)+'-desktop-2gb-usb.img'))
  with tempfile.TemporaryDirectory(prefix='production-stage-',dir=args.work) as folder:
   stage,removed,inventory,programs=prepare_stage(args,Path(folder),args.kernel_report)
   configure_usb_expansion(stage,True)

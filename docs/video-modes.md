@@ -9,7 +9,11 @@ The previously used PAL interlaced mode flickers on that setup.
 Kernel configuration, Make, the kernel CLI and root filesystem startup use
 the same default. `/etc/default/ps2-video` supplies `MODE=576p` and
 `RGB_SOG=0`; SysVinit applies it before login. Set `MODE=pal` for interlaced
-compatibility or `MODE=auto` for EDID selection. New builds can use
+compatibility or `MODE=auto` for EDID selection. `MODE=boot` leaves the mode the
+kernel booted with untouched. NTSC media (`VIDEO_MODE=480p`) writes `MODE=boot`, so
+`EELINUX.ELF` stays at 480p and the interlaced `EENTSC.ELF` fallback stays
+interlaced. Writing `MODE=480p` there would force the fallback back to 480p; see
+[NTSC media](ntsc-media.md). New builds can use
 `VIDEO_MODE=pal` or `--video-mode pal` for compatibility mode.
 
 Its boot argument explicitly uses `720x576p@50`. Omitting `p`, as the previous

@@ -424,8 +424,13 @@ def assemble_tree(staging: Path, target: Path, hostname: str, desktop: bool,
     if video_mode not in BOOT_MODES:
         raise BuildError("unknown startup video mode")
     rgb = any(mode['id'] == video_mode and mode['family'] == 'rgb-sog' for mode in MODES)
+    # NTSC media boots either the 480p EELINUX.ELF or the interlaced EENTSC.ELF;
+    # MODE=boot keeps whichever mode the kernel selected instead of forcing 480p.
+    boot_note = ("# MODE=boot keeps the kernel's boot mode (480p EELINUX.ELF or interlaced EENTSC.ELF).\n"
+                 "# MODE=480p would force the interlaced fallback back to 480p.\n") if video_mode == '480p' else ""
     install_file(target, "/etc/default/ps2-video",
-                 content=f"# Preview on the connected display before changing this preference.\nMODE={'boot' if video_mode == '480p' else video_mode}\nRGB_SOG={int(rgb)}\n")
+                 content=f"# Preview on the connected display before changing this preference.\n{boot_note}"
+                         f"MODE={'boot' if video_mode == '480p' else video_mode}\nRGB_SOG={int(rgb)}\n")
     install_file(target, "/etc/hosts", content=f"127.0.0.1 localhost {hostname}\n::1 localhost\n")
     if root_password_hash is not None:
         # A zero last-change date forces a password change at the first login.
