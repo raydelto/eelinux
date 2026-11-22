@@ -19,12 +19,16 @@ FAT={
 }
 # Experimental SYSTEM.CNF discs for DTL-H TEST units, which reportedly boot
 # unlicensed burned discs (community reports; unverified here). Retail consoles
-# are expected to reject them, so they are never part of --variant all. Each disc boots one kernel directly, without FreeDVDBoot
-# or uLaunchELF. Neither path has been verified on hardware.
+# are expected to reject them, so they are never part of --variant all. Each
+# disc boots one kernel directly, without FreeDVDBoot or uLaunchELF. Neither
+# path has been verified on hardware.
 TEST_UNIT={'test-unit':'EELINUX.ELF','test-unit-interlaced':'EENTSC.ELF'}
-TEST_UNIT_NOTE=('Experimental, DTL-H TEST units only: SYSTEM.CNF boots {elf} directly; no FreeDVDBoot, '
- 'DVD Player version or launcher needed. Retail (SCPH) consoles are expected to reject this disc. Unverified on hardware: '
- 'whether the TEST unit accepts the burned disc, and whether the eecdvd root driver reads a PS2-format DVD.')
+TEST_UNIT_NOTE=(
+ 'Experimental, DTL-H TEST units only: SYSTEM.CNF boots {elf} directly; '
+ 'no FreeDVDBoot, DVD Player version or launcher needed. '
+ 'Retail (SCPH) consoles are expected to reject this disc. '
+ 'Unverified on hardware: whether the TEST unit accepts the burned disc, '
+ 'and whether the eecdvd root driver reads a PS2-format DVD.')
 # Compatibility notes are region-specific: NTSC media must not repeat PAL-only claims.
 COMPATIBILITY={
  'pal':{
@@ -176,11 +180,11 @@ def fetch_boot(work):
 def dvd_region_mask(ifo):
  """Return the DVD-Video VMG region mask; a set bit forbids that region.
 
- VMGI_MAT layout (libdvdread dvdread/ifo_types.h, vmgi_mat_t; also
- http://www.mpucoder.com/DVD/ifo.html#vmg): 0x00 "DVDVIDEO-VMG", 0x21
- specification version, 0x22 big-endian uint32 vmg_category. Its second byte
- (0x23, bits 16-23) is the region mask; libdvdread's ifo_print reports it as
- (vmg_category >> 16) & 0xff.
+ Byte offsets come from libdvdread (dvdread/ifo_types.h, vmgi_mat_t):
+ 0x00 "DVDVIDEO-VMG", 0x21 specification version, 0x22 big-endian uint32
+ vmg_category, so 0x23 holds bits 16-23 of vmg_category. That header does
+ not name those bits; reading them as the region mask (bit n set = region
+ n+1 forbidden) follows http://www.mpucoder.com/DVD/ifo.html#vmg.
  """
  if len(ifo)<0x24 or ifo[:12]!=b'DVDVIDEO-VMG':raise RuntimeError('FreeDVDBoot VIDEO_TS.IFO is not a DVD-Video VMG')
  return ifo[0x23]

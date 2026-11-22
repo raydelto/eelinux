@@ -29,12 +29,13 @@ problem that PS2L-3 already documented. USB via uLaunchELF is region-independent
 ## Changes made in PS2L-4
 
 1. **Build-time region check.** `ps2_media.verify_freedvdboot_tree()` reads the
-   VMG category in `VIDEO_TS/VIDEO_TS.IFO` (byte `0x23`; see libdvdread
-   `vmgi_mat_t` in `dvdread/ifo_types.h`, or http://www.mpucoder.com/DVD/ifo.html;
-   a set bit forbids that
-   region). It fails the build if any region is blocked, or if a `SYSTEM.CNF`
-   is present. Each FreeDVDBoot image in `dvd-compatibility.json` now records
-   `boot.DVD_region_mask`.
+   region mask in `VIDEO_TS/VIDEO_TS.IFO` (byte `0x23`; a set bit forbids that
+   region). The byte offset comes from libdvdread's `vmgi_mat_t` in
+   `dvdread/ifo_types.h` (bits 16-23 of `vmg_category`). That header does not
+   name the bits; reading them as the region mask follows mpucoder's IFO table,
+   http://www.mpucoder.com/DVD/ifo.html#vmg. The check fails the build if any
+   region is blocked, or if a `SYSTEM.CNF` is present. Each FreeDVDBoot image
+   in `dvd-compatibility.json` now records `boot.DVD_region_mask`.
 2. **Experimental DTL-H TEST-unit discs** (opt-in, never part of `--variant all`):
    `make dvd-iso-test-unit VIDEO_MODE=480p` builds
    - `eelinux-ntsc-test-unit.iso`, with `SYSTEM.CNF`
@@ -52,15 +53,17 @@ On a DTL-H TEST unit with no launcher installed, FreeDVDBoot is the only other
 disc path, and it depends on a DVD Player version that is still unknown.
 TEST units reportedly boot unlicensed burned discs. This comes from community
 reports and has not been verified here; it is the main hardware question below.
-If it holds, a `SYSTEM.CNF` disc can start the kernel directly, without FreeDVDBoot, uLaunchELF or a
-specific DVD Player version. The kernel ELF already loads like a normal PS2
-program (user RAM, `0x00800000`). Linux resets the IOP on entry, so starting
-it from the OSD should match starting it from uLaunchELF.
+If it holds, a `SYSTEM.CNF` disc can start the kernel directly, without
+FreeDVDBoot, uLaunchELF or a specific DVD Player version. The kernel ELF
+already loads like a normal PS2 program (user RAM, `0x00800000`). Linux resets
+the IOP on entry, so starting it from the OSD should match starting it from
+uLaunchELF.
 
 ## Hardware-only questions (checklist items for PS2L-5/PS2L-6)
 
 1. Record `ROMVER`: after boot, `cat /sys/rom/rom0/version/*`, or the
-   `rom0: Version …` kernel line. Expect `Japan` and `DEX` (ROMVER `…JD…`) on a Japanese DTL-H.
+   `rom0: Version …` kernel line. Expect `Japan` and `DEX` (ROMVER `…JD…`) on
+   a Japanese DTL-H.
 2. FreeDVDBoot on the DTL-H: does the TEST unit's DVD Player match one of the
    pinned exploit versions (3.10/3.11 Slim, 2.10/2.12 Fat, 3.04 Fat but not J)?
    Unknown until the Version screen is read.
