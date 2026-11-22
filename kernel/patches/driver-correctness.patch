@@ -14,15 +14,6 @@
  	err = sif_request_cmd(SIF_CMD_PRINTK, cmd_printk, NULL);
 --- a/drivers/usb/host/ohci-ps2.c
 +++ b/drivers/usb/host/ohci-ps2.c
-@@ -2,7 +2,7 @@
- /*
-  * PlayStation 2 USB 1.1 OHCI host controller (HCD)
-  *
-- * Copyright (C) 2017 JÃ¼rgen Urban
-+ * Copyright (C) 2017 Jürgen Urban
-  * Copyright (C) 2018 Fredrik Noring
-  */
- 
 @@ -167,8 +167,8 @@
  	hcd->rsrc_start = regs->start;
  	hcd->rsrc_len = resource_size(regs);
@@ -34,14 +25,6 @@
  		dev_err(dev, "ioremap failed with %d\n", err);
  		goto err_ioremap;
  	}
-@@ -259,6 +259,6 @@
- 
- MODULE_DESCRIPTION(DRIVER_DESC);
- MODULE_AUTHOR("Fredrik Noring");
--MODULE_AUTHOR("JÃ¼rgen Urban");
-+MODULE_AUTHOR("Jürgen Urban");
- MODULE_LICENSE("GPL");
- MODULE_ALIAS("platform:" DRV_NAME);
 --- a/drivers/gpu/drm/gs/gs_drm.c
 +++ b/drivers/gpu/drm/gs/gs_drm.c
 @@ -325,7 +325,8 @@

@@ -3,6 +3,7 @@ from pathlib import Path
 import difflib
 import subprocess
 from kernel_user_vm_port import replace_once
+from common import same_patch_content, write_reviewed_patch
 
 
 def adapt_framebuffer(text):
@@ -51,9 +52,9 @@ def install(source: Path, patch: Path):
     changes=[(name,(source/name).read_text(),fn((source/name).read_text())) for name,fn in adapters]
     blob=''.join(''.join(difflib.unified_diff(a.splitlines(keepends=True),b.splitlines(keepends=True),
         fromfile='a/'+name,tofile='b/'+name)) for name,a,b in changes).encode()
-    if patch.exists() and patch.read_bytes()!=blob:
+    if patch.exists() and not same_patch_content(patch.read_bytes(), blob):
         raise RuntimeError('Preserve reviewed GS allocation patch')
-    patch.parent.mkdir(parents=True,exist_ok=True);patch.write_bytes(blob)
+    patch.parent.mkdir(parents=True,exist_ok=True);write_reviewed_patch(patch, blob)
     subprocess.run(['git','apply','--check',str(patch.resolve())],cwd=source,check=True)
     subprocess.run(['git','apply',str(patch.resolve())],cwd=source,check=True)
     return {'padded_GS_allocation_checked':True,'prospective_font_and_palette_checked':True,

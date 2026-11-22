@@ -3,6 +3,7 @@ from __future__ import annotations
 import difflib
 from pathlib import Path
 import subprocess
+from common import same_patch_content, write_reviewed_patch
 
 PATH = 'arch/mips/ps2/intc-irq.c'
 def adapt(text: str) -> str:
@@ -52,9 +53,9 @@ def install(source: Path, patch: Path) -> dict:
     before = (source / PATH).read_text(); after = adapt(before)
     blob = ''.join(difflib.unified_diff(before.splitlines(keepends=True), after.splitlines(keepends=True),
         fromfile='a/' + PATH, tofile='b/' + PATH)).encode()
-    if patch.exists() and patch.read_bytes() != blob:
+    if patch.exists() and not same_patch_content(patch.read_bytes(), blob):
         raise RuntimeError('Preserve the reviewed INTC patch; differing source needs review')
-    patch.parent.mkdir(parents=True, exist_ok=True); patch.write_bytes(blob)
+    patch.parent.mkdir(parents=True, exist_ok=True); write_reviewed_patch(patch, blob)
     subprocess.run(['git', 'apply', '--check', str(patch.resolve())], cwd=source, check=True)
     subprocess.run(['git', 'apply', str(patch.resolve())], cwd=source, check=True)
     return {'path': PATH, 'physical_interrupt_storm_tested': False}

@@ -77,15 +77,18 @@ class ProductionMedia(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);kernel=root/'kernel.elf';kernel.write_bytes(b'kernel')
             config=root/'config';config.write_text(''.join('CONFIG_'+f+'=y\n' for f in
-                ('PS2_CDVD','ISO9660_FS','OVERLAY_FS','TMPFS_XATTR','FB_PS2','ZRAM','ZRAM_BACKEND_LZ4')))
+                ('PS2_CDVD','ISO9660_FS','OVERLAY_FS','TMPFS_XATTR','FB_PS2','ZRAM','ZRAM_BACKEND_LZ4'))+'CONFIG_CMDLINE="video=ps2fb:720x576p@50"\n')
             report=root/'report.json';report.write_text(json.dumps({'root_device':'/dev/ps2dvd',
-                'USB_required':False,'image_sha256':'checked','config_sha256':'checked',
+                'USB_required':False,'video_mode':'576p','image_sha256':'checked','config_sha256':'checked',
                 'boot_mode':'native Rock Ridge ISO9660 /eelinux/root, RAM overlay'}))
             args=argparse.Namespace(dvd_kernel=kernel,dvd_kernel_config=config,dvd_kernel_report=report,
-                staging=None,output_dir=root)
+                staging=None,output_dir=root,video_mode='576p')
             with patch.object(ps2_media,'sha',return_value='checked'):
                 with self.assertRaisesRegex(RuntimeError,'complete GNU userland'):ps2_media.dvd_inputs(args)
                 args.staging=root
+                args.video_mode='480p'
+                with self.assertRaisesRegex(RuntimeError,'video mode'):ps2_media.dvd_inputs(args)
+                args.video_mode='576p'
                 self.assertFalse(ps2_media.dvd_inputs(args)['USB_required'])
                 config.write_text(config.read_text().replace('CONFIG_ZRAM=y\n',''))
                 with self.assertRaisesRegex(RuntimeError,'DVD kernel needs ZRAM'):ps2_media.dvd_inputs(args)
@@ -93,6 +96,89 @@ class ProductionMedia(unittest.TestCase):
                 old=json.loads(report.read_text());old['boot_mode']='loop-mounted USB image'
                 report.write_text(json.dumps(old))
                 with self.assertRaisesRegex(RuntimeError,'native Rock Ridge'):ps2_media.dvd_inputs(args)
+
+    @staticmethod
+    def dvd_kernel_triplet(root,name,video_mode,spec,modules=None):
+        """Write a minimal DVD kernel/config/report triplet that dvd_inputs accepts."""
+        folder=root/name;folder.mkdir()
+        kernel=folder/'EELINUX.ELF';kernel.write_bytes(b'kernel-'+name.encode())
+        config=folder/'kernel.config';config.write_text(''.join('CONFIG_'+f+'=y\n' for f in
+            ('PS2_CDVD','ISO9660_FS','OVERLAY_FS','TMPFS_XATTR','FB_PS2','ZRAM','ZRAM_BACKEND_LZ4'))+
+            'CONFIG_CMDLINE="root=/dev/ps2dvd video=ps2fb:'+spec+'"\n')
+        report=folder/'kernel-report.json';report.write_text(json.dumps({'root_device':'/dev/ps2dvd',
+            'USB_required':False,'video_mode':video_mode,'image_sha256':ps2_media.sha(kernel),
+            'config_sha256':ps2_media.sha(config),'boot_mode':'native Rock Ridge ISO9660 /eelinux/root, RAM overlay',
+            'kernel_release':'7.2.8-eelinux-ps2','modules':modules if modules is not None else {'net/a.ko':'abc'}}))
+        return kernel,config,report
+
+    def test_dvd_inputs_accept_480p_kernel(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            kernel,config,report=self.dvd_kernel_triplet(root,'dvd-480p','480p','720x480p@60')
+            args=argparse.Namespace(dvd_kernel=kernel,dvd_kernel_config=config,dvd_kernel_report=report,
+                staging=root,output_dir=root,video_mode='480p')
+            self.assertEqual(ps2_media.dvd_inputs(args)['video_mode'],'480p')
+            # A 576p report or a PAL command line must not pass as 480p media.
+            args.video_mode='576p'
+            with self.assertRaisesRegex(RuntimeError,'video mode'):ps2_media.dvd_inputs(args)
+            args.video_mode='480p'
+            config.write_text(config.read_text().replace('720x480p@60','720x576p@50'))
+            data=json.loads(report.read_text());data['config_sha256']=ps2_media.sha(config);report.write_text(json.dumps(data))
+            with self.assertRaisesRegex(RuntimeError,'video mode'):ps2_media.dvd_inputs(args)
+
+    def test_dvd_fallback_is_required_interlaced_and_module_compatible(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            kernel,config,report=self.dvd_kernel_triplet(root,'dvd-480p','480p','720x480p@60')
+            fb_kernel,fb_config,fb_report=self.dvd_kernel_triplet(root,'dvd-ntsc','ntsc','576x384i@60')
+            args=argparse.Namespace(dvd_kernel=kernel,dvd_kernel_config=config,dvd_kernel_report=report,
+                dvd_fallback_kernel=fb_kernel,dvd_fallback_config=fb_config,dvd_fallback_report=fb_report,
+                staging=root,output_dir=root,video_mode='480p')
+            primary=ps2_media.dvd_inputs(args)
+            self.assertEqual(ps2_media.dvd_fallback(args,primary)['video_mode'],'ntsc')
+            # PAL media carries no fallback and ignores the arguments.
+            args.video_mode='576p'
+            self.assertIsNone(ps2_media.dvd_fallback(args,primary))
+            args.video_mode='480p'
+            # Mismatched modules.
+            data=json.loads(fb_report.read_text());data['modules']={'net/a.ko':'different'};fb_report.write_text(json.dumps(data))
+            with self.assertRaisesRegex(RuntimeError,'DVD fallback modules differ'):ps2_media.dvd_fallback(args,primary)
+            # A 480p kernel cannot stand in for the interlaced fallback.
+            args.dvd_fallback_kernel,args.dvd_fallback_config,args.dvd_fallback_report=kernel,config,report
+            with self.assertRaisesRegex(RuntimeError,'video mode'):ps2_media.dvd_fallback(args,primary)
+            # Missing fallback.
+            args.dvd_fallback_report=None
+            with self.assertRaisesRegex(RuntimeError,'requires an interlaced DVD fallback'):ps2_media.dvd_fallback(args,primary)
+
+    def test_ntsc_dvd_compatibility_has_no_pal_only_claims(self):
+        for variant in ('slim',*ps2_media.FAT):
+            ntsc=ps2_media.COMPATIBILITY['ntsc'][variant]
+            self.assertNotIn('PAL',ntsc)
+            self.assertNotEqual(ntsc,ps2_media.COMPATIBILITY['pal'][variant])
+        self.assertIn('English',ps2_media.COMPATIBILITY['ntsc']['slim'])
+        self.assertIn('2.12J',ps2_media.COMPATIBILITY['ntsc']['fat-2.10-2.12'])
+        self.assertIn('excludes J',ps2_media.COMPATIBILITY['ntsc']['fat-3.04'])
+        self.assertEqual(ps2_media.region('480p'),'ntsc');self.assertEqual(ps2_media.region('576p'),'pal')
+        self.assertIn('EENTSC.ELF',ps2_media.boot_readme('480p'))
+        self.assertNotIn('EENTSC.ELF',ps2_media.boot_readme('576p'))
+
+    def test_ntsc_usb_fallback_must_match_kernel_modules(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            primary=root/'primary.json'; fallback=root/'fallback.json'
+            record={'kernel_release':'7.2.8','modules':{'module.ko':'abc'}}
+            primary.write_text(json.dumps(record));fallback.write_text(json.dumps(record))
+            args=argparse.Namespace(video_mode='480p',kernel_report=primary,
+                fallback_kernel=root/'EENTSC.ELF',fallback_config=root/'fallback.config',
+                fallback_report=fallback)
+            self.assertEqual(ps2_media.usb_fallback(args)[0],args.fallback_kernel)
+            record['modules']['module.ko']='different'
+            fallback.write_text(json.dumps(record))
+            with self.assertRaisesRegex(RuntimeError,'modules differ'):ps2_media.usb_fallback(args)
+            args.fallback_config=None
+            with self.assertRaisesRegex(RuntimeError,'requires an interlaced'):ps2_media.usb_fallback(args)
+            args.video_mode='576p'
+            self.assertIsNone(ps2_media.usb_fallback(args))
 
     @unittest.skipUnless(shutil.which('genisoimage'),'Linux ISO builder required')
     def test_rock_ridge_preserves_gnu_links_secure_permissions_and_all_file_bytes(self):

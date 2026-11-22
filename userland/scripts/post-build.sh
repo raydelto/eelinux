@@ -12,3 +12,5 @@ fi
 # consistently even when Shadow finishes after Coreutils.
 test -x "$target/usr/bin/coreutils"
 ln -sf ../usr/bin/coreutils "$target/bin/groups"
+# Runs after Buildroot's RPATH sanitizer; see the script for why.
+python3 "$(dirname "$0")/fix-mips-abiflags.py" "$target"

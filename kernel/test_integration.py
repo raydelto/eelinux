@@ -1,6 +1,7 @@
 """Safety checks for the PS2 image builder; run with unittest discovery."""
 import importlib.util
 import gzip
+import hashlib
 import json
 from pathlib import Path
 import struct
@@ -275,6 +276,94 @@ class CachePortTests(unittest.TestCase):
         start = self.baseline.index("#ifdef CONFIG_CPU_R5900\n#define cache64_unroll32_d")
         end = self.baseline.index("#else\n#define cache64_unroll32_i", start)
         self.assertIn(self.baseline[start:end], adapted)
+
+
+CP0_SPEC = importlib.util.spec_from_file_location("eelinux_cp0_port", ROOT / "scripts/kernel_cp0_port.py")
+cp0_port = importlib.util.module_from_spec(CP0_SPEC)
+CP0_SPEC.loader.exec_module(cp0_port)
+
+
+class SourceGateTests(unittest.TestCase):
+    def report(self, missing=(), rejects=(), version="7.2.8", expected="7.2.8"):
+        return {"missing": list(missing), "rejects": list(rejects), "version": version,
+                "expected_version": expected,
+                "source_gate_passed": not missing and not rejects and version == expected}
+
+    def test_passing_gate_needs_no_waiver(self):
+        self.assertFalse(kernel.require_source_gate(self.report()))
+        self.assertFalse(kernel.require_source_gate(self.report(), True))
+
+    def test_rejects_fail_without_waiver(self):
+        with self.assertRaisesRegex(RuntimeError, "rejected port hunk"):
+            kernel.require_source_gate(self.report(rejects=["mm/fault.c.rej"]))
+
+    def test_waiver_allows_rejects_only(self):
+        self.assertTrue(kernel.require_source_gate(self.report(rejects=["mm/fault.c.rej"]), True))
+
+    def test_waiver_does_not_cover_missing_drivers(self):
+        for missing in (["drivers/video/fbdev/ps2fb.c"], ["Kconfig:SONY_PS2"]):
+            with self.assertRaisesRegex(RuntimeError, "not waivable.*missing PS2 integration"):
+                kernel.require_source_gate(self.report(missing=missing, rejects=["a.rej"]), True)
+
+    def test_waiver_does_not_cover_version_mismatch(self):
+        with self.assertRaisesRegex(RuntimeError, "not waivable.*7.2.7 != expected 7.2.8"):
+            kernel.require_source_gate(self.report(version="7.2.7"), True)
+
+
+class CorrectnessMarkerTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.source = Path(self.temp.name)
+
+    def marker(self, **fields):
+        (self.source / ".eelinux-port.json").write_text(json.dumps(fields))
+
+    def test_marker_with_current_digest_skips_recheck(self):
+        self.marker(driver_correctness_patch_sha256=kernel.sha256(kernel.CORRECTNESS_PATCH))
+        self.assertIsNone(kernel.apply_correctness(self.source))
+
+    def test_marker_without_digest_fails_closed(self):
+        self.marker(target_version="7.2.8")
+        with self.assertRaisesRegex(RuntimeError, "driver correctness patch"):
+            kernel.apply_correctness(self.source)
+
+    def test_marker_with_other_digest_fails_closed(self):
+        self.marker(driver_correctness_patch_sha256="0" * 64)
+        with self.assertRaisesRegex(RuntimeError, "driver correctness patch"):
+            kernel.apply_correctness(self.source)
+
+
+class Cp0ProvenanceTests(unittest.TestCase):
+    PROBE = ("static void probe(void)\n{\n\tif (cpu_has_64bits) {\n"
+             "\t\twrite_c0_entryhi_64(0x3fffffffffffe000ULL);\n\t}\n}\n")
+    TLB = ("/* Read full EntryHi even with CONFIG_32BIT.  */\n"
+           "static u64 get(void)\n{\n\treturn cpu_has_64bits ? read_c0_entryhi_64() : read_c0_entryhi();\n}\n"
+           "static void put(u64 v)\n{\n\tif (cpu_has_64bits)\n\t\twrite_c0_entryhi_64(v);\n}\n"
+           "static void mask(void)\n{\n\tvpn_mask |= cpu_has_64bits ? 3ULL << 62 : 1 << 31;\n}\n")
+
+    def tree(self, name, padding=0):
+        source = Path(self.temp.name) / name
+        for path, text in zip(cp0_port.PATHS, (self.PROBE, self.TLB)):
+            (source / path).parent.mkdir(parents=True, exist_ok=True)
+            # Padding stays outside the diff context (and off line 1, which
+            # git anchors to the file start), so only the hunk offsets move.
+            (source / path).write_text("/* pad */\n" * padding + "/* context */\n" * 4 + text)
+        return source
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+
+    def test_shifted_offsets_record_committed_patch_and_rerun_verifies(self):
+        patch = Path(self.temp.name) / "cp0.patch"
+        cp0_port.install(self.tree("first"), patch)
+        committed = patch.read_bytes()
+        shifted = self.tree("shifted", padding=5)
+        report = cp0_port.install(shifted, patch)
+        self.assertEqual(patch.read_bytes(), committed)
+        self.assertEqual(report["patch_sha256"], hashlib.sha256(committed).hexdigest())
+        self.assertEqual(cp0_port.install(shifted, patch), report)
 
 
 if __name__ == "__main__":

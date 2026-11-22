@@ -21,5 +21,13 @@
   "in_source_build": false,
   "build_jobs": null,
   "special_recipe": "autotools",
-  "build_dependency_only": false
+  "build_dependency_only": false,
+  "patches": [
+    {
+      "path": "userland/patches/tar-1.35-acl-2.4-wrapper-names.patch",
+      "sha256": "0f911ef76c37a9c81467d23f2a09159cef083f98d928abdbf4aede461c1ae8e6",
+      "strip": 1,
+      "reason": "libacl 2.4.0 exports acl_*_file_at with types that conflict with tar's private wrappers"
+    }
+  ]
 }

@@ -12,6 +12,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+from common import same_patch_content, write_reviewed_patch
 
 PATHS = ("arch/mips/kernel/cpu-probe.c", "arch/mips/mm/tlb-r4k.c")
 
@@ -64,13 +65,15 @@ def install(source: Path, patch: Path) -> dict:
         changes[path] = (before, adapter(before))
     data = "".join("".join(difflib.unified_diff(a.splitlines(keepends=True), b.splitlines(keepends=True),
                     fromfile="a/" + p, tofile="b/" + p)) for p, (a, b) in changes.items()).encode()
-    if patch.exists() and patch.read_bytes() != data:
+    if patch.exists() and not same_patch_content(patch.read_bytes(), data):
         raise RuntimeError("Preserve the recorded CP0 patch; review differing source")
     patch.parent.mkdir(parents=True, exist_ok=True)
-    patch.write_bytes(data)
+    write_reviewed_patch(patch, data)
     subprocess.run(["git", "apply", "--check", str(patch.resolve())], cwd=source, check=True)
     subprocess.run(["git", "apply", str(patch.resolve())], cwd=source, check=True)
-    report = {"patch_sha256": hashlib.sha256(data).hexdigest(),
+    # Record the patch as it stays on disk: a committed reviewed patch is kept
+    # even when regenerated hunk offsets shift, and reruns verify against it.
+    report = {"patch_sha256": hashlib.sha256(patch.read_bytes()).hexdigest(),
               "source_sha256": {p: hashlib.sha256((source / p).read_bytes()).hexdigest() for p in PATHS},
               "hardware_validated": False, "complete_port": False}
     marker.write_text(json.dumps(report, indent=2) + "\n")

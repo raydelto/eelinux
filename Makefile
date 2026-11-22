@@ -8,6 +8,7 @@ CROSS_COMPILE ?= $(TOOLCHAIN)/bin/mipsr5900el-unknown-linux-gnu-
 LIBC_SYSROOT ?= $(TOOLCHAIN)/mipsr5900el-unknown-linux-gnu/sysroot
 PS2DEV ?= $(HOME)/.local/eelinux-ps2dev/ps2dev
 IOP_CROSS_COMPILE ?= $(PS2DEV)/iop/bin/mipsel-none-elf-
+PS2DEV_LOCK ?= toolchain/ps2dev-binary-lock.json
 JOBS ?= 2
 PROFILE ?= desktop
 KERNEL_PROFILE ?= 7.2.8
@@ -18,6 +19,10 @@ STAGING := $(WORK)/rootfs-$(PROFILE)
 KERNEL_SOURCE := $(WORK)/sources/linux-$(KERNEL_PROFILE)
 BASELINE_SOURCE := $(WORK)/sources/linux-baseline
 INITRAMFS := $(WORK)/initramfs-$(KERNEL_PROFILE)
+GS_SOURCE ?= $(WORK)/sources/linux-$(KERNEL_PROFILE)-ps2-gs
+GS_BUILD ?= $(WORK)/kernel-$(KERNEL_PROFILE)-ps2-gs
+USB_KERNEL_WORK ?= $(WORK)/usb-kernel-$(VIDEO_MODE)
+USB_KERNEL_DIR ?= $(OUTPUT)/usb-kernel-$(VIDEO_MODE)
 ROOT_PASSWORD_HASH_FILE ?=
 PASSWORD_OPTION := $(if $(ROOT_PASSWORD_HASH_FILE),--root-password-hash-file "$(ROOT_PASSWORD_HASH_FILE)",)
 DESKTOP_OPTION := $(if $(filter base,$(PROFILE)),--no-desktop,)
@@ -31,18 +36,32 @@ EMULATOR_ROOTFS ?= $(OUTPUT)/rootfs.ext4
 EMULATOR_AUDIT ?= 0
 XORG_SDK ?= $(WORK)/userland/output-desktop/staging
 XORG_HOST ?= $(WORK)/userland/output-desktop/host
-MEDIA_WORK ?= $(WORK)/pal-media
-MEDIA_OUTPUT ?= $(CURDIR)/build/images/pal-desktop
+# Media defaults are keyed on VIDEO_MODE so PAL and NTSC outputs never mix.
+# 576p (PAL) keeps the historical paths; 480p (NTSC) uses ntsc-* directories and
+# the usb-kernel-480p triplet produced by `make usb-kernel VIDEO_MODE=480p`.
+MEDIA_REGION := $(if $(filter 480p,$(VIDEO_MODE)),ntsc,pal)
+MEDIA_WORK ?= $(WORK)/$(MEDIA_REGION)-media
+MEDIA_OUTPUT ?= $(CURDIR)/build/images/$(MEDIA_REGION)-desktop
+ifeq ($(MEDIA_REGION),ntsc)
+MEDIA_KERNEL ?= $(OUTPUT)/usb-kernel-480p/EELINUX.ELF
+MEDIA_KERNEL_CONFIG ?= $(OUTPUT)/usb-kernel-480p/kernel.config
+MEDIA_KERNEL_REPORT ?= $(OUTPUT)/usb-kernel-480p/kernel-report.json
+else
 MEDIA_KERNEL ?= $(OUTPUT)/eelinux-$(KERNEL_PROFILE)-ps2.elf
 MEDIA_KERNEL_CONFIG ?= $(WORK)/kernel-$(KERNEL_PROFILE)/.config
 MEDIA_KERNEL_REPORT ?= $(OUTPUT)/eelinux-$(KERNEL_PROFILE)-ps2.json
-MEDIA_OUTPUT_OPTIONS = --work "$(MEDIA_WORK)" --output-dir "$(MEDIA_OUTPUT)"
+endif
+# Interlaced EENTSC.ELF fallback triplets carried on 480p media.
+MEDIA_FALLBACK_KERNEL_DIR ?= $(OUTPUT)/usb-kernel-ntsc
+MEDIA_DVD_FALLBACK_KERNEL_DIR ?= $(OUTPUT)/dvd-kernel-ntsc
+MEDIA_VIDEO_OPTIONS = --video-mode "$(VIDEO_MODE)" $(if $(filter 480p,$(VIDEO_MODE)),--fallback-kernel "$(MEDIA_FALLBACK_KERNEL_DIR)/EELINUX.ELF" --fallback-config "$(MEDIA_FALLBACK_KERNEL_DIR)/kernel.config" --fallback-report "$(MEDIA_FALLBACK_KERNEL_DIR)/kernel-report.json" --dvd-fallback-kernel "$(MEDIA_DVD_FALLBACK_KERNEL_DIR)/EELINUX.ELF" --dvd-fallback-config "$(MEDIA_DVD_FALLBACK_KERNEL_DIR)/kernel.config" --dvd-fallback-report "$(MEDIA_DVD_FALLBACK_KERNEL_DIR)/kernel-report.json",)
+MEDIA_OUTPUT_OPTIONS = $(MEDIA_VIDEO_OPTIONS) --work "$(MEDIA_WORK)" --output-dir "$(MEDIA_OUTPUT)"
 MEDIA_OPTIONS = --kernel "$(MEDIA_KERNEL)" --kernel-config "$(MEDIA_KERNEL_CONFIG)" --kernel-report "$(MEDIA_KERNEL_REPORT)" $(MEDIA_OUTPUT_OPTIONS)
-MEDIA_DVD_KERNEL_DIR ?= $(OUTPUT)/dvd-kernel
+MEDIA_DVD_KERNEL_DIR ?= $(OUTPUT)/dvd-kernel$(if $(filter-out 576p,$(VIDEO_MODE)),-$(VIDEO_MODE),)
 MEDIA_KERNEL_BUILD ?= $(WORK)/kernel-$(KERNEL_PROFILE)
-MEDIA_DVD_WORK ?= $(WORK)/dvd-kernel
+MEDIA_DVD_WORK ?= $(WORK)/dvd-kernel$(if $(filter-out 576p,$(VIDEO_MODE)),-$(VIDEO_MODE),)
 MEDIA_DVD_OPTIONS = --dvd-kernel "$(MEDIA_DVD_KERNEL_DIR)/EELINUX.ELF" --dvd-kernel-config "$(MEDIA_DVD_KERNEL_DIR)/kernel.config" --dvd-kernel-report "$(MEDIA_DVD_KERNEL_DIR)/kernel-report.json"
-.PHONY: help plan check kernel-source kernel-port kernel-modernize kernel-audit toolchain ps2dev firmware userland keyboard locales dhcpcd initramfs kernel image all reference-system emulator-userland-build emulator-smoke emulator-prepare xorg-apps-update xorg-apps native-xorg usb-image-2gb dvd-kernel-pal dvd-iso-slim-pal dvd-iso-fat-pal dvd-isos-pal pal-media
+.PHONY: help plan check kernel-source kernel-port kernel-modernize kernel-audit toolchain ps2dev firmware userland keyboard locales dhcpcd initramfs kernel image all reference-system emulator-userland-build emulator-smoke emulator-prepare xorg-apps-update xorg-apps native-xorg usb-image-2gb kernel-gs-tree kernel-gs-reference usb-kernel dvd-kernel-pal dvd-iso-slim-pal dvd-iso-fat-pal dvd-isos-pal pal-media ntsc-media
 help:
 	@$(PYTHON) scripts/project.py help
 
@@ -75,7 +94,7 @@ firmware:
 	$(PYTHON) scripts/kernel.py firmware --source "$(WORK)/sources/iopmod" --destination "$(WORK)/firmware" --cross-prefix "$(IOP_CROSS_COMPILE)" --jobs $(JOBS)
 
 ps2dev:
-	$(PYTHON) scripts/install_ps2dev.py --directory "$(PS2DEV)/.." --cache "$(WORK)/downloads"
+	$(PYTHON) scripts/install_ps2dev.py --directory "$(PS2DEV)/.." --cache "$(WORK)/downloads" --lock "$(PS2DEV_LOCK)"
 
 userland:
 	EELINUX_QEMU_WORK="$(EMULATOR_WORK)" $(if $(filter full,$(PROFILE)),$(PYTHON) scripts/userland_full.py --profile full --sysroot "$(STAGING)" --toolchain-prefix "$(CROSS_COMPILE)" --work "$(WORK)/userland-latest" --jobs $(JOBS),$(PYTHON) scripts/userland.py build --sysroot "$(STAGING)" --toolchain-prefix "$(CROSS_COMPILE)" --work "$(WORK)/userland" --jobs $(JOBS) --profile $(PROFILE))
@@ -112,13 +131,25 @@ xorg-apps:
 native-xorg:
 	$(PYTHON) scripts/native_xorg.py --work "$(WORK)/xorg-native" --sysroot "$(XORG_SDK)" --host-tools "$(XORG_HOST)" --staging "$(STAGING)" --toolchain-prefix "$(CROSS_COMPILE)" --jobs $(JOBS)
 
-# Packaging uses an existing compiled desktop and a PAL /dev/sda2 kernel.
+# Media kernels: native-GS tree, its reference build, then the USB kernel.
+# The source gate is still closed; these targets build anyway, as the released
+# media kernels were, and record source_gate_passed=false in their reports.
+kernel-gs-tree:
+	$(PYTHON) scripts/kernel_gs_tree.py --source "$(KERNEL_SOURCE)" --output "$(GS_SOURCE)"
+
+kernel-gs-reference: initramfs
+	$(PYTHON) scripts/kernel.py build --allow-open-gate --profile $(KERNEL_PROFILE) --source "$(GS_SOURCE)" --output "$(GS_BUILD)" --initramfs "$(INITRAMFS)" --cross-prefix "$(CROSS_COMPILE)" --firmware "$(WORK)/firmware" --modules-root "$(GS_BUILD)-modules" --root-device "$(ROOT_DEVICE)" --video-mode "$(VIDEO_MODE)" --jobs $(JOBS) --artifact "$(GS_BUILD)-artifact/eelinux-gs-reference.elf"
+
+usb-kernel:
+	$(PYTHON) scripts/kernel_usb.py --source "$(GS_SOURCE)" --base-output "$(GS_BUILD)" --work "$(USB_KERNEL_WORK)" --output-dir "$(USB_KERNEL_DIR)" --cross-prefix "$(CROSS_COMPILE)" --video-mode "$(VIDEO_MODE)" --jobs $(JOBS)
+
+# Packaging uses an existing compiled desktop and a /dev/sda2 kernel (PAL 576p or NTSC 480p).
 # No tests, qualification services or diagnostics are packaged or run here.
 usb-image-2gb:
 	$(PYTHON) scripts/ps2_media.py usb $(MEDIA_OPTIONS) --staging "$(STAGING)" --toolchain-prefix "$(CROSS_COMPILE)" $(PASSWORD_OPTION)
 
 dvd-kernel-pal:
-	$(PYTHON) scripts/kernel_dvd.py --source "$(KERNEL_SOURCE)" --base-output "$(MEDIA_KERNEL_BUILD)" --work "$(MEDIA_DVD_WORK)" --output-dir "$(MEDIA_DVD_KERNEL_DIR)" --cross-prefix "$(CROSS_COMPILE)" --iop-prefix "$(IOP_CROSS_COMPILE)" --jobs $(JOBS)
+	$(PYTHON) scripts/kernel_dvd.py --source "$(KERNEL_SOURCE)" --base-output "$(MEDIA_KERNEL_BUILD)" --work "$(MEDIA_DVD_WORK)" --output-dir "$(MEDIA_DVD_KERNEL_DIR)" --cross-prefix "$(CROSS_COMPILE)" --iop-prefix "$(IOP_CROSS_COMPILE)" --video-mode "$(VIDEO_MODE)" --jobs $(JOBS)
 
 dvd-iso-slim-pal:
 	$(PYTHON) scripts/ps2_media.py dvd --variant slim $(MEDIA_OUTPUT_OPTIONS) $(MEDIA_DVD_OPTIONS) --staging "$(STAGING)" --toolchain-prefix "$(CROSS_COMPILE)" $(PASSWORD_OPTION)
@@ -132,6 +163,10 @@ dvd-isos-pal:
 
 pal-media:
 	$(PYTHON) scripts/ps2_media.py all $(MEDIA_OPTIONS) $(MEDIA_DVD_OPTIONS) --staging "$(STAGING)" --toolchain-prefix "$(CROSS_COMPILE)" $(PASSWORD_OPTION)
+
+# The *-pal target names predate NTSC and follow VIDEO_MODE; this alias reads better.
+ntsc-media:
+	$(MAKE) pal-media VIDEO_MODE=480p
 
 # Linux-user runs selected GNU programs, not the PS2 kernel or PID 1.
 emulator-userland-build:

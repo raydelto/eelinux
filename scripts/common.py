@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 from pathlib import Path
 import subprocess
 import tarfile
@@ -105,3 +106,20 @@ def probe_linux_compiler(prefix, work):
     if "Soft float" not in abi:
         raise RuntimeError("Linux compiler/sysroot is not consistently soft-float")
     return triple
+
+
+def same_patch_content(recorded: bytes, generated: bytes) -> bool:
+    """True when two unified diffs differ at most in hunk line offsets.
+
+    Regenerated port patches shift when earlier steps change line counts in the
+    same file; the reviewed hunk content itself must still match exactly.
+    """
+    header = re.compile(rb"(?m)^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@")
+    return header.sub(b"@@", recorded) == header.sub(b"@@", generated)
+
+
+def write_reviewed_patch(patch: Path, blob: bytes) -> None:
+    """Record a newly generated patch; an existing reviewed patch stays as committed."""
+    patch.parent.mkdir(parents=True, exist_ok=True)
+    if not patch.exists():
+        patch.write_bytes(blob)

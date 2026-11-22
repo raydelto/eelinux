@@ -1,0 +1,12 @@
+--- a/generic/tclZipfs.c
++++ b/generic/tclZipfs.c
+@@ -77,7 +77,8 @@
+     } while (0)
+ 
+ #include "zlib.h"
+-#include "crypt.h"
++/* Not libxcrypt's <crypt.h>, which Buildroot installs in HOST_DIR/include. */
++#include "contrib/minizip/crypt.h"
+ #include "zutil.h"
+ #include "crc32.h"
+ 

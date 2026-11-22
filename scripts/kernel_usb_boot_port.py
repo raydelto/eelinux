@@ -2,6 +2,7 @@
 from pathlib import Path
 import difflib
 import subprocess
+from common import same_patch_content, write_reviewed_patch
 
 PATHS = ('drivers/ps2/Makefile', 'drivers/usb/host/ohci-ps2.c', 'drivers/ps2/iop-irq.c')
 def adapt_makefile(text):
@@ -71,8 +72,8 @@ def install(source: Path, patch: Path) -> dict:
         for name, adapter in zip(PATHS, (adapt_makefile, adapt_ohci, adapt_iop_irq))]
     blob = ''.join(''.join(difflib.unified_diff(before.splitlines(keepends=True), after.splitlines(keepends=True),
         fromfile='a/' + name, tofile='b/' + name)) for name, before, after in changes).encode()
-    if patch.exists() and patch.read_bytes() != blob: raise RuntimeError('Preserve the reviewed USB boot patch')
-    patch.parent.mkdir(parents=True, exist_ok=True); patch.write_bytes(blob)
+    if patch.exists() and not same_patch_content(patch.read_bytes(), blob): raise RuntimeError('Preserve the reviewed USB boot patch')
+    patch.parent.mkdir(parents=True, exist_ok=True); write_reviewed_patch(patch, blob)
     subprocess.run(['git', 'apply', '--check', str(patch.resolve())], cwd=source, check=True)
     subprocess.run(['git', 'apply', str(patch.resolve())], cwd=source, check=True)
     return {'built_in_start_order': 'late_initcall_sync after SIF/IOP bridge', 'physical_USB_root_tested': False}

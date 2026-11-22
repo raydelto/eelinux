@@ -41,7 +41,7 @@
 +ps2-smap-driver-y := ps2-smap.o ps2-smap-iop.o
 --- /dev/null
 +++ b/drivers/net/ethernet/ps2/ps2-smap.c
-@@ -0,0 +1,895 @@
+@@ -0,0 +1,901 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * ps2 native PlayStation 2 SMAP Ethernet.
@@ -76,6 +76,7 @@
 +#include "ps2-smap-core.h"
 +#include "ps2-smap-regs.h"
 +#include "ps2-smap-iop.h"
++#include "ps2-smap-phy.h"
 +
 +/* Slim/DECKARD SMAP is not exposed through the EE's legacy DEV9 window.
 + * Use IOP hardware ownership on every model by default. The old direct
@@ -838,6 +839,11 @@
 +		goto err_bus;
 +	}
 +	s->phy->irq = PHY_POLL;
++	err = smap_phy_prepare(s->phy);
++	if (err) {
++		dev_err(&pdev->dev, "PHY handoff cleanup failed: %d\n", err);
++		goto err_bus;
++	}
 +	err = phy_connect_direct(ndev, s->phy, smap_adjust_link, PHY_INTERFACE_MODE_MII);
 +	if (err) {
 +		dev_err(&pdev->dev, "PHY attachment failed: %d\n", err);
@@ -1084,7 +1090,7 @@
 +#endif
 --- /dev/null
 +++ b/drivers/net/ethernet/ps2/ps2-smap-iop.c
-@@ -0,0 +1,290 @@
+@@ -0,0 +1,292 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/* Native SMAP via IOP. Required on Slim, usable with Fat network adapters.
 + * Only process-context work calls SIF RPC; ndo_start_xmit queues bounded SKBs.
@@ -1106,6 +1112,7 @@
 +#include "ps2-smap-regs.h"
 +#include "ps2-smap-rpc.h"
 +#include "ps2-smap-iop.h"
++#include "ps2-smap-phy.h"
 +
 +struct smap_iop {
 +	struct net_device *ndev;
@@ -1347,6 +1354,7 @@
 +	err=mdiobus_register(s->mii); if (err) goto fail_mii;
 +	s->phy=phy_find_first(s->mii); if (!s->phy) { err=-ENODEV; goto fail_bus; }
 +	s->phy->irq=PHY_POLL;
++	err=smap_phy_prepare(s->phy); if (err) goto fail_bus;
 +	err=phy_connect_direct(ndev,s->phy,smap_iop_adjust,PHY_INTERFACE_MODE_MII); if (err) goto fail_bus;
 +	phy_set_max_speed(s->phy,SPEED_100);
 +	ndev->netdev_ops=&smap_iop_ops; ndev->ethtool_ops=&smap_iop_ethtool;
@@ -1416,6 +1424,53 @@
 +	u32 hardware, tx_packets, tx_bytes, tx_errors, rx_errors;
 +	u8 data[SMAP_RPC_DATA];
 +};
++#endif
+--- /dev/null
++++ b/drivers/net/ethernet/ps2/ps2-smap-phy.h
+@@ -0,0 +1,44 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef PS2_SMAP_PHY_H
++#define PS2_SMAP_PHY_H
++
++#include <linux/errno.h>
++#include <linux/phy.h>
++
++/* Some ROM/IOP loaders leave the external PHY in their self-test loopback
++ * mode. Resetting the EMAC does not reset that PHY, and generic phylib does
++ * not supply a soft_reset callback. genphy_config_aneg also retains LOOPBACK.
++ *
++ * Run before phy_connect_direct(): after this bounded Clause 22 reset,
++ * phylib still performs the selected driver's fixups/config_init/resume.
++ * phy_start later restores its supported advertisement and autonegotiation.
++ * A PHY already in normal mode is only read, preserving the USB handoff.
++ */
++static inline int smap_phy_prepare(struct phy_device *phy)
++{
++	const u16 stale = BMCR_LOOPBACK | BMCR_ISOLATE;
++	int control, err;
++
++	control = phy_read(phy, MII_BMCR);
++	if (control < 0)
++		return control;
++	if (!(control & stale))
++		return 0;
++
++	phydev_info(phy, "clearing loader PHY loopback/isolation (BMCR %#06x)\n",
++		    control);
++	err = genphy_soft_reset(phy);
++	if (err)
++		return err;
++
++	/* Clear an isolate strap/default as well; never force speed or duplex. */
++	err = phy_clear_bits(phy, MII_BMCR, stale);
++	if (err)
++		return err;
++	control = phy_read(phy, MII_BMCR);
++	if (control < 0)
++		return control;
++	return control & stale ? -EIO : 0;
++}
++
 +#endif
 --- a/arch/mips/ps2/Kconfig
 +++ b/arch/mips/ps2/Kconfig
