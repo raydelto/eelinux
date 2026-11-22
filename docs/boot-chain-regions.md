@@ -29,7 +29,9 @@ problem that PS2L-3 already documented. USB via uLaunchELF is region-independent
 ## Changes made in PS2L-4
 
 1. **Build-time region check.** `ps2_media.verify_freedvdboot_tree()` reads the
-   VMG category in `VIDEO_TS/VIDEO_TS.IFO` (byte `0x23`, a set bit forbids that
+   VMG category in `VIDEO_TS/VIDEO_TS.IFO` (byte `0x23`; see libdvdread
+   `vmgi_mat_t` in `dvdread/ifo_types.h`, or http://www.mpucoder.com/DVD/ifo.html;
+   a set bit forbids that
    region). It fails the build if any region is blocked, or if a `SYSTEM.CNF`
    is present. Each FreeDVDBoot image in `dvd-compatibility.json` now records
    `boot.DVD_region_mask`.
@@ -48,8 +50,9 @@ problem that PS2L-3 already documented. USB via uLaunchELF is region-independent
 
 On a DTL-H TEST unit with no launcher installed, FreeDVDBoot is the only other
 disc path, and it depends on a DVD Player version that is still unknown.
-TEST units are documented to boot unlicensed burned discs. A `SYSTEM.CNF` disc
-can therefore start the kernel directly, without FreeDVDBoot, uLaunchELF or a
+TEST units reportedly boot unlicensed burned discs. This comes from community
+reports and has not been verified here; it is the main hardware question below.
+If it holds, a `SYSTEM.CNF` disc can start the kernel directly, without FreeDVDBoot, uLaunchELF or a
 specific DVD Player version. The kernel ELF already loads like a normal PS2
 program (user RAM, `0x00800000`). Linux resets the IOP on entry, so starting
 it from the OSD should match starting it from uLaunchELF.

@@ -49,7 +49,7 @@ unknown until checked.
 | Fat, NTSC-U | 2.10 / 2.12 | `eelinux-ntsc-fat-2.10-2.12.iso`. Only some 2.10 models work. |
 | Fat | 3.04 | `eelinux-ntsc-fat-3.04.iso`. **Never on NTSC-J**: upstream explicitly excludes J. 3.04U is untested. |
 | Anything else | — | Use the USB image. |
-| DTL-H TEST unit, no launcher | any | Experimental `eelinux-ntsc-test-unit.iso` (480p) or `eelinux-ntsc-test-unit-interlaced.iso`, from `make dvd-iso-test-unit VIDEO_MODE=480p`. These boot from `SYSTEM.CNF` without FreeDVDBoot. Retail consoles reject them. Unverified on hardware. |
+| DTL-H TEST unit, no launcher | any | Experimental `eelinux-ntsc-test-unit.iso` (480p) or `eelinux-ntsc-test-unit-interlaced.iso`, from `make dvd-iso-test-unit VIDEO_MODE=480p`. These boot from `SYSTEM.CNF` without FreeDVDBoot. Retail consoles are expected to reject them. Unverified on hardware. |
 
 All FreeDVDBoot payloads are region-free DVD-Video: VMG region mask `0x00`,
 checked at build time. See `boot-chain-regions.md` for the full region audit.

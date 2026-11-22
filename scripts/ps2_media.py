@@ -17,13 +17,13 @@ FAT={
  'fat-2.10-2.12':'Some 2.10 models and all 2.12.iso',
  'fat-3.04':'3.04 only - M+maybe other regions except J - English language.iso',
 }
-# Experimental SYSTEM.CNF discs for DTL-H TEST units, which are documented to
-# boot unlicensed burned discs. Retail consoles reject them, so they are never
-# part of --variant all. Each disc boots one kernel directly, without FreeDVDBoot
+# Experimental SYSTEM.CNF discs for DTL-H TEST units, which reportedly boot
+# unlicensed burned discs (community reports; unverified here). Retail consoles
+# are expected to reject them, so they are never part of --variant all. Each disc boots one kernel directly, without FreeDVDBoot
 # or uLaunchELF. Neither path has been verified on hardware.
 TEST_UNIT={'test-unit':'EELINUX.ELF','test-unit-interlaced':'EENTSC.ELF'}
 TEST_UNIT_NOTE=('Experimental, DTL-H TEST units only: SYSTEM.CNF boots {elf} directly; no FreeDVDBoot, '
- 'DVD Player version or launcher needed. Retail (SCPH) consoles reject this disc. Unverified on hardware: '
+ 'DVD Player version or launcher needed. Retail (SCPH) consoles are expected to reject this disc. Unverified on hardware: '
  'whether the TEST unit accepts the burned disc, and whether the eecdvd root driver reads a PS2-format DVD.')
 # Compatibility notes are region-specific: NTSC media must not repeat PAL-only claims.
 COMPATIBILITY={
@@ -174,7 +174,14 @@ def fetch_boot(work):
   if sha(path)!=expected:raise RuntimeError('Boot source hash mismatch: '+relative)
  return destination,lock
 def dvd_region_mask(ifo):
- """Return the DVD-Video VMG region mask; a set bit forbids that region."""
+ """Return the DVD-Video VMG region mask; a set bit forbids that region.
+
+ VMGI_MAT layout (libdvdread dvdread/ifo_types.h, vmgi_mat_t; also
+ http://www.mpucoder.com/DVD/ifo.html#vmg): 0x00 "DVDVIDEO-VMG", 0x21
+ specification version, 0x22 big-endian uint32 vmg_category. Its second byte
+ (0x23, bits 16-23) is the region mask; libdvdread's ifo_print reports it as
+ (vmg_category >> 16) & 0xff.
+ """
  if len(ifo)<0x24 or ifo[:12]!=b'DVDVIDEO-VMG':raise RuntimeError('FreeDVDBoot VIDEO_TS.IFO is not a DVD-Video VMG')
  return ifo[0x23]
 def verify_freedvdboot_tree(tree):
@@ -227,7 +234,7 @@ def boot_readme(video_mode="576p"):
    'Fat compatibility depends on DVD Player firmware; consult the adjacent compatibility manifest.\n'
    'Physical DVD/USB boot remains to be verified on your console.\n'
    'DTL-H TEST units only: the experimental *-test-unit*.iso discs boot directly from SYSTEM.CNF\n'
-   'without FreeDVDBoot or uLaunchELF. Retail consoles reject them.\n'
+   'without FreeDVDBoot or uLaunchELF. Retail consoles are expected to reject them.\n'
    'https://github.com/CTurt/FreeDVDBoot\n')
 def dvd_inputs(args):
  for name in ('dvd_kernel','dvd_kernel_config','dvd_kernel_report'):

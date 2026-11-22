@@ -198,6 +198,29 @@ class ProductionMedia(unittest.TestCase):
             ifo.write_bytes(self.vmg(0));(tree/'SYSTEM.CNF').write_text('BOOT2 = cdrom0:\\X.ELF;1\r\n')
             with self.assertRaisesRegex(RuntimeError,'must not contain SYSTEM.CNF'):ps2_media.verify_freedvdboot_tree(tree)
 
+    @staticmethod
+    def pinned_freedvdboot():
+        """Hash-verified pinned FreeDVDBoot files, cached between runs; None when offline."""
+        work=Path(os.environ.get('EELINUX_FREEDVDBOOT_CACHE',Path.home()/'.cache/eelinux/test-freedvdboot'))
+        try:
+            work.mkdir(parents=True,exist_ok=True)
+            return ps2_media.fetch_boot(work)[0]
+        except OSError:
+            return None
+
+    def test_real_pinned_freedvdboot_payloads_are_region_free(self):
+        source=self.pinned_freedvdboot()
+        if source is None:self.skipTest('pinned FreeDVDBoot files are not cached and the network is unavailable')
+        ifo=(source/ps2_media.SLIM/'VIDEO_TS/VIDEO_TS.IFO').read_bytes()
+        self.assertEqual(ifo[0x21],0x11)  # DVD-Video specification 1.1: confirms the VMGI_MAT layout
+        self.assertEqual(ps2_media.dvd_region_mask(ifo),0)
+        self.assertEqual(ps2_media.verify_freedvdboot_tree(source/ps2_media.SLIM),0)
+        if not shutil.which('isoinfo'):self.skipTest('isoinfo required for the prebuilt Fat ISOs')
+        for name in ps2_media.FAT.values():
+            with tempfile.TemporaryDirectory() as folder:
+                ps2_media.extract_boot_files(source/'PREBUILT ISOs'/name,Path(folder))
+                self.assertEqual(ps2_media.verify_freedvdboot_tree(Path(folder)),0,name)
+
     def test_test_unit_discs_are_opt_in_and_boot_the_selected_kernel(self):
         self.assertEqual(ps2_media.dvd_variants('all','480p'),['slim','fat-2.10-2.12','fat-3.04'])
         self.assertEqual(ps2_media.dvd_variants('test-unit','480p'),['test-unit','test-unit-interlaced'])
