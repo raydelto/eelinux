@@ -36,7 +36,9 @@ Video modes:
 - `/etc/default/ps2-video` is `MODE=boot`: the system keeps whichever mode the
   kernel started in.
 
-Login: `root`, password `eelinux`. A password change is forced at first login.
+Login: `root`, password `eelinux`. No password change is forced at first login
+(the root shadow entry has a non-zero last-change date). Run `passwd` after
+logging in if you want to set your own password.
 
 ## 2. Record before testing
 
@@ -100,9 +102,11 @@ items 5.1–5.5 with `EENTSC.ELF`.
       immediate return to the browser.
 - [ ] The kernel text appears. Note how long until the first text.
 - [ ] Boot reaches the `login:` prompt. Note the total time.
-- [ ] Login as `root`/`eelinux` works, and the forced password change works.
+- [ ] Login as `root`/`eelinux` works. No password change is asked for; run
+      `passwd` and confirm the new password works after a logout/login.
 - [ ] `cat /sys/rom/rom0/version/*` (or the `rom0: Version` line in `dmesg`).
-      Expected on a Japanese DTL-H: `Japan` and `DEX`. Record the exact text.
+      Record the exact text (region and ROM type). Do not treat any value as
+      a pass/fail condition.
 - [ ] `uname -a`; `cat /proc/cmdline`. The command line should contain
       `video=ps2fb:720x480p@60` for `EELINUX.ELF` and
       `video=ps2fb:576x384i@60` for `EENTSC.ELF`.

@@ -73,8 +73,7 @@ The short version:
    - the DVD Player version from the Version screen;
    - the cable/adapter and display;
    - the boot method (USB or DVD, and which ISO).
-   - `cat /sys/rom/rom0/version/*` after boot. A Japanese DTL-H should show
-     `Japan` and `DEX`.
+   - `cat /sys/rom/rom0/version/*` after boot; record the exact text.
 2. Launch the 480p `EELINUX.ELF`. Check:
    - the boot text is readable;
    - the display is stable;
