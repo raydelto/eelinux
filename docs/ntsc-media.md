@@ -49,6 +49,10 @@ unknown until checked.
 | Fat, NTSC-U | 2.10 / 2.12 | `eelinux-ntsc-fat-2.10-2.12.iso`. Only some 2.10 models work. |
 | Fat | 3.04 | `eelinux-ntsc-fat-3.04.iso`. **Never on NTSC-J**: upstream explicitly excludes J. 3.04U is untested. |
 | Anything else | — | Use the USB image. |
+| DTL-H TEST unit, no launcher | any | Experimental `eelinux-ntsc-test-unit.iso` (480p) or `eelinux-ntsc-test-unit-interlaced.iso`, from `make dvd-iso-test-unit VIDEO_MODE=480p`. These boot from `SYSTEM.CNF` without FreeDVDBoot. Retail consoles reject them. Unverified on hardware. |
+
+All FreeDVDBoot payloads are region-free DVD-Video: VMG region mask `0x00`,
+checked at build time. See `boot-chain-regions.md` for the full region audit.
 
 `dvd-compatibility.json`, next to the ISOs, carries the same per-region notes.
 
@@ -65,6 +69,8 @@ users must boot `EENTSC.ELF`.**
    - the DVD Player version from the Version screen;
    - the cable/adapter and display;
    - the boot method (USB or DVD, and which ISO).
+   - `cat /sys/rom/rom0/version/*` after boot. A Japanese DTL-H should show
+     `Japan` and `DEX`.
 2. Launch the 480p `EELINUX.ELF`. Check:
    - the boot text is readable;
    - the display is stable;
