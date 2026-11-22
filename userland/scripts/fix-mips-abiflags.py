@@ -15,23 +15,33 @@ from pathlib import Path
 
 PT_LOAD, PT_MIPS_ABIFLAGS, SHT_MIPS_ABIFLAGS = 1, 0x70000003, 0x7000002A
 ABIFLAGS_BYTES = 24
+EM_MIPS = 8
 
 
 def repair(path: Path) -> bool:
     data = bytearray(path.read_bytes())
-    if data[:4] != b"\x7fELF" or data[4] != 1 or data[5] != 1 or len(data) < 52:
+    if len(data) < 52 or data[:4] != b"\x7fELF" or data[4] != 1 or data[5] != 1:
         return False  # only 32-bit little-endian objects are expected here
+    if struct.unpack_from("<H", data, 18)[0] != EM_MIPS:
+        return False
     phoff, shoff = struct.unpack_from("<II", data, 28)
     phsize, phnum, shsize, shnum = struct.unpack_from("<HHHH", data, 42)
+    if phnum and (phsize < 32 or phoff + phsize * phnum > len(data)):
+        raise RuntimeError(f"{path}: program header table is out of bounds")
+    if shoff and shnum and (shsize < 40 or shoff + shsize * shnum > len(data)):
+        raise RuntimeError(f"{path}: section header table is out of bounds")
     phdrs = [struct.unpack_from("<8I", data, phoff + i * phsize) for i in range(phnum)]
     target = next((i for i, p in enumerate(phdrs) if p[0] == PT_MIPS_ABIFLAGS), None)
-    if target is None or phdrs[target][4] >= ABIFLAGS_BYTES:
+    if target is None or (phdrs[target][4] >= ABIFLAGS_BYTES and phdrs[target][5] >= ABIFLAGS_BYTES):
         return False
-    sections = [struct.unpack_from("<10I", data, shoff + i * shsize) for i in range(shnum)] if shoff else []
+    sections = ([struct.unpack_from("<10I", data, shoff + i * shsize) for i in range(shnum)]
+                if shoff else [])
     section = next((s for s in sections if s[1] == SHT_MIPS_ABIFLAGS and s[5] >= ABIFLAGS_BYTES), None)
     if section is None:
         raise RuntimeError(f"{path}: empty PT_MIPS_ABIFLAGS and no .MIPS.abiflags section")
     addr, offset, size = section[3], section[4], section[5]
+    if offset + size > len(data):
+        raise RuntimeError(f"{path}: .MIPS.abiflags lies outside the file")
     if not any(p[0] == PT_LOAD and p[1] <= offset and offset + size <= p[1] + p[4]
                and p[2] <= addr and addr - p[2] == offset - p[1] for p in phdrs):
         raise RuntimeError(f"{path}: .MIPS.abiflags is not inside a loaded segment")

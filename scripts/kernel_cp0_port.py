@@ -71,7 +71,9 @@ def install(source: Path, patch: Path) -> dict:
     write_reviewed_patch(patch, data)
     subprocess.run(["git", "apply", "--check", str(patch.resolve())], cwd=source, check=True)
     subprocess.run(["git", "apply", str(patch.resolve())], cwd=source, check=True)
-    report = {"patch_sha256": hashlib.sha256(data).hexdigest(),
+    # Record the patch as it stays on disk: a committed reviewed patch is kept
+    # even when regenerated hunk offsets shift, and reruns verify against it.
+    report = {"patch_sha256": hashlib.sha256(patch.read_bytes()).hexdigest(),
               "source_sha256": {p: hashlib.sha256((source / p).read_bytes()).hexdigest() for p in PATHS},
               "hardware_validated": False, "complete_port": False}
     marker.write_text(json.dumps(report, indent=2) + "\n")

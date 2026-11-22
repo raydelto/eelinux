@@ -173,8 +173,17 @@ on a fresh host:
   `kernel/new-drivers/ps2-smap`, which already contains the r44 PHY-loopback
   handoff (`smap_phy_prepare`). The committed patch now matches.
 - **`kernel.py build` re-checked the correctness patch** after the GS patches
-  had edited the same drivers, so neither direction applied. It now trusts the
-  `.eelinux-port.json` marker that `port` writes after applying it.
+  had edited the same drivers, so neither direction applied. `port` now
+  records `driver_correctness_patch_sha256` in its `.eelinux-port.json`
+  marker, and `build` skips the re-check only when that digest matches the
+  current patch. A tree ported before this change has no digest and fails
+  closed; re-run `make kernel-port` (and the later kernel steps) on a fresh
+  source.
+- **`--allow-open-gate` waives rejected hunks only.** `kernel-gs-reference`
+  passes it because the media kernels were built with `.rej` files still in
+  the tree. Missing PS2 drivers or Kconfig symbols and a kernel version
+  mismatch still fail the build. The boot ELF report lists the waived reject
+  files in `open_gate_waived_rejects`.
 
 The userland failures below only appear in a single clean pass. An incremental
 workspace hides them because packages built before a version bump stay in the
@@ -255,11 +264,14 @@ Known differences from the published r44 images:
   normalized), and media embed build-specific kernels and staging trees. Only
   the file formats, layout, sizes and the packager's checks can be compared.
 - **IOP firmware**: `ata`, `gamepad`, `irq` and `printk` `.irx` match the hashes
-  in `docs/iop-dev9-validation.json` exactly. `dev9.irx` and `irqrelay.irx`
-  differ from every recorded hash; `dev9.irx` is 28,300 bytes against the
-  recorded 16,108. This may come from the different ps2dev SDK (v2.0.0
-  instead of the vanished pinned asset) or from later DEV9 changes. It needs a
-  review before hardware use.
+  in `docs/iop-dev9-validation.json` exactly. `dev9.irx` (28,300 bytes against
+  the recorded 16,108) and `irqrelay.irx` differ, and this is expected. The
+  validation record (2026-10-02) is for the older DEV9 module `0x0101`, while
+  the current recipe (`scripts/iop_dev9.py`) builds `0x0102` with
+  `module/smap-service.h` and an updated `irqrelay.c`. The ps2dev SDK change
+  is not the cause: both builds use `mipsel-none-elf-gcc` 15.2.0, and the four
+  unchanged modules are byte-identical. There is no recorded hardware
+  validation of the `0x0102` modules from this build yet.
 - **Native GS sources**: the generated GS headers match the r43 record where
   it lists the same files (for example `ps2-gs-surface.h` `30c937b6…`). The
   repository holds no r44 kernel hashes to compare against.
@@ -268,4 +280,5 @@ Known differences from the published r44 images:
   `lesskey` program and installs `lessecho` in `/usr/libexec`, so
   `configs/gnu-tools.json` now lists only `less`.
 - **Hardware**: none of these images has been booted on a console or in PCSX2
-  yet.
+  yet. Use the [real-hardware test procedure](hardware-test.md) (USB stick
+  through Tuna/wLaunchELF, then the observation checklist in its section 3).

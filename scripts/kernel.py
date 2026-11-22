@@ -176,6 +176,29 @@ def inspect_source(source, profile):
     return report
 
 
+def require_source_gate(report, allow_open_gate=False):
+    """Fail closed unless the source gate passes.
+
+    --allow-open-gate waives rejected compatibility hunks only. Missing PS2
+    drivers/Kconfig symbols and a kernel version mismatch always fail.
+    Returns True when the build proceeds with an open gate.
+    """
+    if report["source_gate_passed"]:
+        return False
+    problems = []
+    if report["missing"]:
+        problems.append("missing PS2 integration: " + ", ".join(report["missing"]))
+    if report["version"] != report["expected_version"]:
+        problems.append(f"kernel version {report['version']} != expected {report['expected_version']}")
+    if problems:
+        raise RuntimeError("Source integration audit failed (not waivable by --allow-open-gate): "
+                           + "; ".join(problems))
+    if not allow_open_gate:
+        raise RuntimeError(f"Source has {len(report['rejects'])} rejected port hunk files. "
+                           "Run audit; resolve them before building a boot image.")
+    return True
+
+
 def audit(args):
     report = inspect_source(Path(args.source), args.profile)
     if args.report:
@@ -222,6 +245,7 @@ def port(args):
     apply_correctness(source)
     report = {"target_version": "7.2.8", "upstream_ps2_revision": manifest["revision"],
               "imported": imported, "compatibility_patch_sha256": sha256(VENDOR / "ps2-compat.patch"),
+              "driver_correctness_patch_sha256": sha256(CORRECTNESS_PATCH),
               "apply_exit_code": result.returncode, "apply_log": log,
               "rejects": sorted(str(p.relative_to(source)) for p in source.rglob("*.rej")),
               "hardware_validated": False}
@@ -413,9 +437,7 @@ def kernel_command_line(root_device, video_mode="576p"):
 def configure(args):
     linux_required()
     report = inspect_source(Path(args.source), args.profile)
-    if not report["source_gate_passed"] and not getattr(args, "allow_open_gate", False):
-        raise RuntimeError("Source has incomplete PS2 integration or rejected port hunks. "
-                           "Run audit; resolve source defects before configuring a boot image.")
+    require_source_gate(report, getattr(args, "allow_open_gate", False))
     for tool in ("gcc", "ld", "objcopy", "strip"):
         if not shutil.which(args.cross_prefix + tool):
             raise RuntimeError(f"Missing R5900 kernel compiler tool: {args.cross_prefix + tool}")
@@ -514,11 +536,20 @@ def validate_static_init(path):
         raise RuntimeError("Early /init entry is outside its executable load segments")
 
 
+CORRECTNESS_PATCH = ROOT / "kernel/patches/driver-correctness.patch"
+
+
 def apply_correctness(source):
-    patch = ROOT / "kernel/patches/driver-correctness.patch"
-    if (Path(source) / ".eelinux-port.json").is_file():
+    patch = CORRECTNESS_PATCH
+    marker = Path(source) / ".eelinux-port.json"
+    if marker.is_file():
         # port() applied it before writing this marker; later GS patches edit
         # the same drivers, so neither direction checks cleanly afterwards.
+        # Skip only when the marker records this exact patch.
+        recorded = json.loads(marker.read_text()).get("driver_correctness_patch_sha256")
+        if recorded != sha256(patch):
+            raise RuntimeError("Port marker does not record the current driver correctness patch "
+                               "(missing or different SHA-256); re-port from a fresh source")
         return
     check = subprocess.run(["git", "apply", "--check", str(patch)], cwd=source,
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -607,12 +638,11 @@ def boot_layout(kernel_path, compressed_path):
 
 def build(args):
     linux_required()
-    if not inspect_source(Path(args.source), args.profile)["source_gate_passed"]:
-        if not args.allow_open_gate:
-            raise RuntimeError("Source integration audit failed; resolve rejected port hunks before building a boot image")
+    gate = inspect_source(Path(args.source), args.profile)
+    if require_source_gate(gate, args.allow_open_gate):
         # Released media kernels are built from this state; the report keeps it visible.
-        print("kernel: WARNING: source gate is open (rejected port hunks remain); "
-              "building because --allow-open-gate was given", file=sys.stderr)
+        print(f"kernel: WARNING: source gate is open ({len(gate['rejects'])} files with rejected "
+              "port hunks remain); building because --allow-open-gate was given", file=sys.stderr)
     validate_static_init(Path(args.initramfs).resolve() / "init")
     firmware = Path(args.firmware).resolve()
     validate_firmware(firmware)
@@ -670,6 +700,7 @@ def build(args):
                "initramfs_archive_bytes": archive_bytes,
                "boot_layout": layout,
                "source_gate_passed": inspect_source(Path(args.source), args.profile)["source_gate_passed"],
+               "open_gate_waived_rejects": gate["rejects"] if not gate["source_gate_passed"] else [],
                "hardware_validated": False, "native_smap_implemented": True,
                "native_smap_builtin": True, "root_filesystem": "ext4"})
     print(f"Boot ELF: {artifact}; real-hardware validation pending")
@@ -748,8 +779,9 @@ def parser():
             a.add_argument("--jobs", type=int, default=min(2, os.cpu_count() or 1))
             a.add_argument("--artifact", default=str(ROOT / "dist/eelinux-ps2.elf"))
             a.add_argument("--allow-open-gate", action="store_true",
-                           help="build even though the source audit gate is closed; used to reproduce "
-                                "the native-GS reference build that the USB/DVD media kernels derive from")
+                           help="build even though rejected port hunks remain (missing drivers/Kconfig "
+                                "symbols and version mismatches still fail); used to reproduce the "
+                                "native-GS reference build that the USB/DVD media kernels derive from")
     a = sub.add_parser("firmware")
     a.add_argument("--source", required=True)
     a.add_argument("--destination", required=True)
