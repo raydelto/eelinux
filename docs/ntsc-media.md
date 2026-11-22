@@ -64,6 +64,10 @@ users must boot `EENTSC.ELF`.**
 
 ## Hardware checklist (NTSC-J)
 
+The full procedure for the Japanese DTL-H, with write instructions and what
+to capture on failure, is in [ntsc-hardware-test.md](ntsc-hardware-test.md).
+The short version:
+
 1. Record:
    - the exact console model (for example DTL-H…/SCPH-…);
    - the DVD Player version from the Version screen;
