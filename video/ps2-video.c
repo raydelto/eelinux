@@ -98,7 +98,7 @@ static int restore(const char *directory,const char *old_mode,const char *old_bp
     if(write_text(directory,"bits_per_pixel","16")) result=-1;
     if(write_text(directory,"mode",old_mode)) result=-1;
     if(write_text(directory,"bits_per_pixel",old_bpp)) result=-1;
-    if(result) fprintf(stderr,"ps2-video: could not restore the previous mode; reboot returns to PAL\n");
+    if(result) fprintf(stderr,"ps2-video: could not restore the previous mode; reboot returns to the kernel boot mode\n");
     return result;
 }
 
@@ -175,7 +175,7 @@ int main(int argc,char **argv)
                 size=read_edid(path,edid);
         }
         if(!size) {
-            printf("ps2-video: no valid monitor EDID; retaining the current PAL/boot mode\n");
+            printf("ps2-video: no valid monitor EDID; retaining the current boot mode\n");
             return edid_path?1:0;
         }
         const struct mode *mode=select_auto(available,edid,size,rgb);

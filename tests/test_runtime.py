@@ -130,6 +130,26 @@ class RootImageValidation(unittest.TestCase):
         with self.assertRaisesRegex(rootfs.BuildError, "BusyBox payload"):
             rootfs.check_staging(stage, desktop=False)
 
+    @unittest.skipUnless(sys.platform == "linux", "requires Linux executable permissions")
+    def test_ntsc_startup_keeps_kernel_boot_mode(self):
+        # 480p media must not force the interlaced EENTSC.ELF fallback back to 480p.
+        stage = self.folder / "stage"
+        (stage / "bin").mkdir(parents=True)
+        (stage / "lib").mkdir()
+        for command in rootfs.GNU_COMMANDS + rootfs.SYSTEM_COMMANDS:
+            binary = stage / "bin" / command
+            binary.write_bytes(small_elf())
+            binary.chmod(0o755)
+        (stage / "lib/libc.so.6").write_bytes(small_elf())
+        (stage / "usr/share/keymaps").mkdir(parents=True)
+        (stage / "usr/share/keymaps/uk.map").write_text("keycode 2 = one exclam\n")
+        for mode, expected in (("480p", "MODE=boot\n"), ("576p", "MODE=576p\n")):
+            tree = self.folder / ("tree-" + mode)
+            rootfs.assemble_tree(stage, tree, "eelinux", False, None, mode)
+            settings = (tree / "etc/default/ps2-video").read_text()
+            self.assertIn(expected, settings)
+            self.assertEqual("MODE=boot" in settings, mode == "480p")
+
     @unittest.skipUnless(sys.platform == "linux" and shutil.which("fakeroot") and shutil.which("mke2fs") and shutil.which("e2fsck"), "requires Linux image tools")
     def test_regular_ext4_image_is_reproducible_and_has_console(self):
         # This is an image-assembler fixture; these tiny ELF files are deliberately
